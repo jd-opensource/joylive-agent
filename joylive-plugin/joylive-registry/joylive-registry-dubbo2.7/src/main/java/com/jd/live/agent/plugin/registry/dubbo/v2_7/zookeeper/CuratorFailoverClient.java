@@ -185,11 +185,7 @@ public class CuratorFailoverClient {
                         return;
                     }
                     // Update data
-                    try {
-                        client.setData().forPath(pathData.getPath(), pathData.getData());
-                    } catch (Exception ex) {
-                        throw new IllegalStateException(e.getMessage(), ex);
-                    }
+                    client.setData().forPath(pathData.getPath(), pathData.getData());
                 }
             }
         });
