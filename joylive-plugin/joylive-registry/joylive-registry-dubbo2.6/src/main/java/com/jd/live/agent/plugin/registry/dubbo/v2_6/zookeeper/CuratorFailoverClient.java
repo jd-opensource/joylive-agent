@@ -192,9 +192,9 @@ public class CuratorFailoverClient implements ZookeeperClient {
     @Override
     public void close() {
         if (started.compareAndSet(true, false)) {
-            client.close();
             dataListeners.forEach((k, v) -> v.close());
             childListeners.forEach((k, v) -> v.close());
+            client.close();
         }
     }
 
