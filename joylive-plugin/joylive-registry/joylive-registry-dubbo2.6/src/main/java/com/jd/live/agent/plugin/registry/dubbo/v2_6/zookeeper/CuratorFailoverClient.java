@@ -249,7 +249,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
      * @param ephemeral If true, creates ephemeral node (retries on conflict)
      */
     private void createOrUpdate(String path, byte[] data, boolean ephemeral) {
-        CuratorTask.of(client).execute(new PathData(path, data, true), new CuratorVoidExecution() {
+        CuratorTask.of(client).execute(new PathData(path, data, !ephemeral), new CuratorVoidExecution() {
             @Override
             public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
                 try {
@@ -475,6 +475,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
          *                (only tasks matching this version will execute)
          */
         protected void doRecreate(long version) {
+            logger.info("Try recreate paths and caches at {}", ensembleProvider.current());
             // recreate all paths
             paths.forEach((path, data) -> {
                 RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.path", new RecreatePath(data), version, predicate, timer);
