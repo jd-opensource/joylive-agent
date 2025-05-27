@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
+package com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -21,18 +21,20 @@ import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper.CuratorExecution.CuratorVoidExecution;
+import com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper.CuratorExecution.CuratorVoidExecution;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.config.configcenter.ConfigItem;
 import org.apache.dubbo.remoting.zookeeper.ChildListener;
 import org.apache.dubbo.remoting.zookeeper.DataListener;
 import org.apache.dubbo.remoting.zookeeper.StateListener;
 import org.apache.dubbo.remoting.zookeeper.ZookeeperClient;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.data.Stat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -199,27 +201,51 @@ public class CuratorFailoverClient implements ZookeeperClient {
     }
 
     @Override
-    public void create(String path, boolean ephemeral) {
-        if (!ephemeral) {
-            createPersistent(path, null);
-        } else {
-            createEphemeral(path, null);
-        }
+    public void create(String path, boolean ephemeral, boolean faultTolerant) {
+        createOrUpdate(path, null, ephemeral, faultTolerant, null);
     }
 
     @Override
-    public void create(String path, String content, boolean ephemeral) {
-        byte[] data = content == null ? null : content.getBytes(StandardCharsets.UTF_8);
-        if (!ephemeral) {
-            createPersistent(path, data);
-        } else {
-            createEphemeral(path, data);
+    public ConfigItem getConfigItem(String path) {
+        String content;
+        Stat stat;
+        try {
+            stat = new Stat();
+            byte[] dataBytes = client.getData().storingStatIn(stat).forPath(path);
+            content = (dataBytes == null || dataBytes.length == 0) ? null : new String(dataBytes, StandardCharsets.UTF_8);
+        } catch (KeeperException.NoNodeException e) {
+            return new ConfigItem();
+        } catch (Exception e) {
+            throw new IllegalStateException(e.getMessage(), e);
         }
+        return new ConfigItem(content, stat);
+    }
+
+    @Override
+    public void createOrUpdate(String path, String content, boolean ephemeral) {
+        byte[] data = content == null ? null : content.getBytes(StandardCharsets.UTF_8);
+        createOrUpdate(path, data, ephemeral, true, null);
+    }
+
+    @Override
+    public void createOrUpdate(String path, String content, boolean ephemeral, Integer ticket) {
+        byte[] data = content == null ? null : content.getBytes(StandardCharsets.UTF_8);
+        createOrUpdate(path, data, ephemeral, true, ticket);
     }
 
     @Override
     public void delete(String path) {
-        deletePath(path);
+        CuratorTask.of(client).execute(new PathData(path), new CuratorVoidExecution() {
+            @Override
+            protected void doExecute(PathData pathData, CuratorFramework client) throws Exception {
+                try {
+                    client.delete().deletingChildrenIfNeeded().forPath(path);
+                    paths.remove(path);
+                } catch (KeeperException.NoNodeException e) {
+                    paths.remove(path);
+                }
+            }
+        });
     }
 
     @Override
@@ -239,76 +265,33 @@ public class CuratorFailoverClient implements ZookeeperClient {
     }
 
     /**
-     * Creates a persistent ZNode with the given path and data.
+     * Creates or updates a ZooKeeper node with optional fault tolerance.
      *
-     * <p>If the node already exists:
-     * <ul>
-     *   <li>Does nothing if data is null or default</li>
-     *   <li>Updates data if new data is provided</li>
-     * </ul>
-     *
-     * @param path ZNode path to create
-     * @param data Data to store (null or default data triggers no update if exists)
+     * @param path          Node path to create/update
+     * @param data          Node data bytes
+     * @param ephemeral     Whether to create as ephemeral node
+     * @param faultTolerant If true, updates existing node instead of failing
+     * @param ticket        Optional version ticket for conditional update (-1 for any version)
+     * @throws IllegalStateException if node exists and not fault tolerant
      */
-    private void createPersistent(String path, byte[] data) {
-        CuratorTask.of(client).execute(new PathData(path, data, true), new CuratorVoidExecution() {
-            @Override
-            public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
-                try {
-                    client.create().creatingParentsIfNeeded().forPath(pathData.getPath(), pathData.getData());
-                    paths.put(pathData.getPath(), pathData);
-                } catch (KeeperException.NodeExistsException e) {
-                    if (data == null || data == PathData.DEFAULT_DATA) {
-                        logger.warn("ZNode {} already exists.", pathData.getPath(), e);
-                        return;
-                    }
-                    // Update data
-                    client.setData().forPath(pathData.getPath(), pathData.getData());
-                    paths.put(pathData.getPath(), pathData);
-                }
-            }
-        });
-    }
-
-    /**
-     * Creates an ephemeral ZNode with the given path and data.
-     *
-     * @param path The ZNode path to create (ephemeral)
-     * @param data The data to store in the node
-     */
-    private void createEphemeral(String path, byte[] data) {
+    private void createOrUpdate(String path, byte[] data, boolean ephemeral, boolean faultTolerant, Integer ticket) {
         CuratorTask.of(client).execute(new PathData(path, data), new CuratorVoidExecution() {
             @Override
             public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
                 try {
-                    client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(pathData.getPath(), pathData.getData());
+                    client.create()
+                            .creatingParentsIfNeeded()
+                            .withMode(ephemeral ? CreateMode.EPHEMERAL : CreateMode.PERSISTENT)
+                            .forPath(pathData.getPath(), pathData.getData());
                     paths.put(pathData.getPath(), pathData);
                 } catch (KeeperException.NodeExistsException e) {
-                    logger.warn("ZNode {} already exists, try to delete it and create again.", pathData.getPath(), e);
-                    if (deletePath(path)) {
-                        createEphemeral(path, data);
+                    if (!faultTolerant) {
+                        throw new IllegalStateException(e.getMessage(), e);
                     }
+                    // Update data
+                    client.setData().withVersion(ticket != null ? ticket : -1).forPath(pathData.getPath(), pathData.getData());
+                    paths.put(pathData.getPath(), pathData);
                 }
-            }
-        });
-    }
-
-    /**
-     * Deletes a znode and all its children recursively.
-     *
-     * @param path the node path to delete
-     */
-    private boolean deletePath(String path) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> {
-            try {
-                client.delete().deletingChildrenIfNeeded().forPath(path);
-                paths.remove(path);
-                return true;
-            } catch (KeeperException.NoNodeException e) {
-                paths.remove(path);
-                return true;
-            } catch (KeeperException.NoAuthException e) {
-                return false;
             }
         });
     }
@@ -548,11 +531,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
         @Override
         public Boolean call() {
-            if (data.isPersistent()) {
-                createPersistent(data.getPath(), data.getData());
-            } else {
-                createEphemeral(data.getPath(), data.getData());
-            }
+            createOrUpdate(data.getPath(), data.getData(), !data.isPersistent(), true, null);
             return true;
         }
     }

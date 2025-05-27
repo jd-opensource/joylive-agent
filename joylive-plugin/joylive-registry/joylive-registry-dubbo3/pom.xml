@@ -13,6 +13,8 @@
 
     <properties>
         <apache-dubbo.version>3.2.11</apache-dubbo.version>
+        <curator.version>5.8.0</curator.version>
+        <dubbo-remoting-zookeeper.version>2.7.8</dubbo-remoting-zookeeper.version>
     </properties>
 
     <dependencies>
@@ -20,6 +22,18 @@
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
             <version>${apache-dubbo.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>${curator.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>${curator.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
