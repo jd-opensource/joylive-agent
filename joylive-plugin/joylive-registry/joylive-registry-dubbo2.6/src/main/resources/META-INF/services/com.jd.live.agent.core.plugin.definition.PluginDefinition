@@ -2,3 +2,4 @@ com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.ReferenceConfigDefinitio
 com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.ServiceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.RegistryFactoryDefinition
 com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.ClusterUtilsDefinition
+com.jd.live.agent.plugin.registry.dubbo.v2_6.definition.CuratorZookeeperDefinition

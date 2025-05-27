@@ -287,10 +287,14 @@ public class CuratorFailoverClient implements ZookeeperClient {
                 } catch (KeeperException.NodeExistsException e) {
                     if (!faultTolerant) {
                         throw new IllegalStateException(e.getMessage(), e);
+                    } else if (ephemeral && (data == null || data == PathData.DEFAULT_DATA)) {
+                        delete(path);
+                        createOrUpdate(path, data, true, true, ticket);
+                    } else {
+                        // Update data
+                        client.setData().withVersion(ticket != null ? ticket : -1).forPath(pathData.getPath(), pathData.getData());
+                        paths.put(pathData.getPath(), pathData);
                     }
-                    // Update data
-                    client.setData().withVersion(ticket != null ? ticket : -1).forPath(pathData.getPath(), pathData.getData());
-                    paths.put(pathData.getPath(), pathData);
                 }
             }
         });

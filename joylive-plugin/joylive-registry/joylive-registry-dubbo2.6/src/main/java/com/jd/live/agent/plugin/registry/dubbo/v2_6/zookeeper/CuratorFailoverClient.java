@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
+package com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -21,7 +21,7 @@ import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper.CuratorExecution.CuratorVoidExecution;
+import com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper.CuratorExecution.CuratorVoidExecution;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.TreeCache;
@@ -235,11 +235,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
         });
     }
 
-    @Override
-    public boolean checkExists(String path) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> client.checkExists().forPath(path) != null);
-    }
-
     /**
      * Creates or updates a ZNode with optional ephemeral flag.
      *
@@ -249,8 +244,8 @@ public class CuratorFailoverClient implements ZookeeperClient {
      *   <li>For new data: Updates existing node</li>
      * </ul>
      *
-     * @param path ZNode path to create/update
-     * @param data Data to store (null/default skips update)
+     * @param path      ZNode path to create/update
+     * @param data      Data to store (null/default skips update)
      * @param ephemeral If true, creates ephemeral node (retries on conflict)
      */
     private void createOrUpdate(String path, byte[] data, boolean ephemeral) {
