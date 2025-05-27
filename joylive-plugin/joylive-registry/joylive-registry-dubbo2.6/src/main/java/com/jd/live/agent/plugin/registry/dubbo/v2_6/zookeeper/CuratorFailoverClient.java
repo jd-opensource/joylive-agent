@@ -261,7 +261,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
                 } catch (KeeperException.NodeExistsException e) {
                     if (data == null || data == PathData.DEFAULT_DATA) {
                         if (ephemeral) {
-                            logger.warn("ZNode {} already exists, try to delete it and create again.", pathData.getPath());
                             delete(path);
                             createOrUpdate(path, data, true);
                         }

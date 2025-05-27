@@ -288,7 +288,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
                     if (!faultTolerant) {
                         throw new IllegalStateException(e.getMessage(), e);
                     } else if (ephemeral && (data == null || data == PathData.DEFAULT_DATA)) {
-                        logger.warn("ZNode {} already exists, try to delete it and create again.", pathData.getPath());
                         delete(path);
                         createOrUpdate(path, data, true, true, ticket);
                     } else {
