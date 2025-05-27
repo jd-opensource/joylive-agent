@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.constants.RemotingConstants;
 import org.apache.dubbo.common.url.component.PathURLAddress;
 import org.apache.dubbo.registry.client.DefaultServiceInstance;
 import org.apache.dubbo.registry.client.InstanceAddressURL;
@@ -52,7 +51,7 @@ public class UrlUtils {
     private static final String FIELD_URL_ADDRESS = "urlAddress";
 
     public static String getClusterName(URL url) {
-        return url.toString(RemotingConstants.BACKUP_KEY);
+        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
     }
 
     /**
