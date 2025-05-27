@@ -29,8 +29,7 @@ public class CuratorRecoverTask extends AbstractCuratorDetectTask {
     }
 
     @Override
-    public Boolean call() throws Exception {
-        onBefore();
+    public Boolean call() {
         switch (detect(address)) {
             case SUCCESS_EXCEEDED:
                 onSuccess();

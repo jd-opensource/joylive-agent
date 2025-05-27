@@ -21,13 +21,6 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 public interface CuratorDetectTaskListener {
 
     /**
-     * Invoked before starting a detection attempt.
-     */
-    default void onBefore() {
-
-    }
-
-    /**
      * Invoked when connection detection succeeds.
      */
     default void onSuccess() {

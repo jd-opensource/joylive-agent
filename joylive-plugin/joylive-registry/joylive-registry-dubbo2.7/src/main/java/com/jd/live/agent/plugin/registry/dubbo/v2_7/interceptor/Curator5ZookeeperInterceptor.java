@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper.curator5.Curator5FailoverClient;
+import com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper.CuratorFailoverClient;
 
 /**
  * Curator5ZookeeperInterceptor
@@ -35,6 +35,6 @@ public class Curator5ZookeeperInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        mc.skipWithResult(new Curator5FailoverClient(ctx.getArgument(0), timer));
+        mc.skipWithResult(new CuratorFailoverClient(ctx.getArgument(0), timer));
     }
 }

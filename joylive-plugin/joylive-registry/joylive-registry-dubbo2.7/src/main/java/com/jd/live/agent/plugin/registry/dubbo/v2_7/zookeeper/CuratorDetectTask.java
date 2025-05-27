@@ -33,8 +33,7 @@ public class CuratorDetectTask extends AbstractCuratorDetectTask {
     }
 
     @Override
-    public Boolean call() throws Exception {
-        onBefore();
+    public Boolean call() {
         String current = addressList.current();
         switch (detect(current)) {
             case SUCCESS_EXCEEDED:

@@ -16,20 +16,20 @@
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
 import org.apache.curator.framework.api.CuratorWatcher;
-import org.apache.curator.framework.recipes.cache.TreeCacheListener;
+
+import java.util.List;
 
 /**
- * Composite listener interface combining {@link CuratorWatcher} and {@link TreeCacheListener} capabilities.
- * <p>
- * Implementations can receive both single-path watcher events and recursive tree cache events
- * through a single interface.
- *
- * @see CuratorWatcher For single-path watch functionality
- * @see TreeCacheListener For recursive tree monitoring
+ * Watches for changes to the children of a specified ZooKeeper path and triggers callbacks.
  */
-public interface CuratorListener extends CuratorWatcher, TreeCacheListener {
+public interface PathChildWatcher {
 
-    void removeDataListener();
-
-    void removeChildrenListener();
+    /**
+     * Begins watching the children of the specified path and returns the current children.
+     *
+     * @param path    the ZooKeeper path to watch for child changes (must exist)
+     * @param watcher the callback to invoke when children change (cannot be null)
+     * @return the current list of child node names (in natural order), or empty list if no children exist
+     */
+    List<String> watch(String path, CuratorWatcher watcher) throws Exception;
 }

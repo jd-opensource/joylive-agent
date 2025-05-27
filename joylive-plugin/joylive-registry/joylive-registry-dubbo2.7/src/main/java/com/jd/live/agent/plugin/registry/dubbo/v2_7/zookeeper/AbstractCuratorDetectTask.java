@@ -114,15 +114,6 @@ public abstract class AbstractCuratorDetectTask implements RetryExecution {
     }
 
     /**
-     * Notifies the registered listener before starting an operation.
-     */
-    protected void onBefore() {
-        if (listener != null) {
-            listener.onBefore();
-        }
-    }
-
-    /**
      * Notifies the registered listener about a failed operation.
      */
     protected void onFailure() {
