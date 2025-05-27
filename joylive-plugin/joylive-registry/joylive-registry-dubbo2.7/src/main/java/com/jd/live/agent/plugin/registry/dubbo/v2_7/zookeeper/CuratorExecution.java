@@ -29,32 +29,8 @@ public interface CuratorExecution<T> {
      * @param pathData the node path and data to operate on (non-null)
      * @param client   the Curator client instance for ZooKeeper operations (non-null)
      * @throws Exception if execution fails, with specific exceptions triggering fallback behaviors.
-     * @see #onNodeExists
-     * @see #onNoNode
      */
     T execute(PathData pathData, CuratorFramework client) throws Exception;
-
-    /**
-     * Fallback handler when target node exists.
-     *
-     * @param pathData node path and data (non-null)
-     * @param client   Curator client instance (non-null)
-     * @param e        the exception that triggered this callback
-     */
-    default T onNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-        return null;
-    }
-
-    /**
-     * Fallback handler when target node is missing.
-     *
-     * @param pathData node path and data (non-null)
-     * @param client   Curator client instance (non-null)
-     * @param e        the exception that triggered this callback
-     */
-    default T onNoNode(PathData pathData, CuratorFramework client, Exception e) {
-        return null;
-    }
 
     /**
      * Base implementation of {@link CuratorExecution} for void operations.
@@ -70,18 +46,6 @@ public interface CuratorExecution<T> {
             return null;
         }
 
-        @Override
-        public Void onNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-            doOnNodeExists(pathData, client, e);
-            return null;
-        }
-
-        @Override
-        public Void onNoNode(PathData pathData, CuratorFramework client, Exception e) {
-            doOnNoNode(pathData, client, e);
-            return null;
-        }
-
         /**
          * Template method for execution logic.
          *
@@ -90,27 +54,6 @@ public interface CuratorExecution<T> {
          * @throws Exception on execution failure
          */
         protected void doExecute(PathData pathData, CuratorFramework client) throws Exception {
-
-        }
-
-        /**
-         * Callback when target node exists (default no-op).
-         *
-         * @param pathData contains path and data
-         * @param client   Curator client instance
-         * @param e        triggering exception
-         */
-        protected void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-        }
-
-        /**
-         * Callback when target node doesn't exist (default no-op).
-         *
-         * @param pathData contains path and data
-         * @param client   Curator client instance
-         * @param e        triggering exception
-         */
-        protected void doOnNoNode(PathData pathData, CuratorFramework client, Exception e) {
 
         }
     }

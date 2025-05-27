@@ -26,23 +26,38 @@ import java.nio.charset.StandardCharsets;
 @Getter
 public class PathData {
 
-    private static final byte[] DEFAULT_DATA = getDefaultData();
+    public static final byte[] DEFAULT_DATA = getDefaultData();
 
     private final String path;
 
     private final byte[] data;
 
+    private final boolean persistent;
+
     public PathData(String path) {
-        this(path, DEFAULT_DATA);
+        this(path, DEFAULT_DATA, false);
+    }
+
+    public PathData(String path, boolean persistent) {
+        this(path, DEFAULT_DATA, persistent);
     }
 
     public PathData(String path, byte[] data) {
-        this.path = path;
-        this.data = data;
+        this(path, data == null ? DEFAULT_DATA : data, false);
     }
 
     public PathData(String path, String data) {
-        this(path, data == null || data.isEmpty() ? DEFAULT_DATA : data.getBytes(StandardCharsets.UTF_8));
+        this(path, data, false);
+    }
+
+    public PathData(String path, String data, boolean persistent) {
+        this(path, data == null || data.isEmpty() ? DEFAULT_DATA : data.getBytes(StandardCharsets.UTF_8), persistent);
+    }
+
+    public PathData(String path, byte[] data, boolean persistent) {
+        this.path = path;
+        this.data = data == null ? DEFAULT_DATA : data;
+        this.persistent = persistent;
     }
 
     private static byte[] getDefaultData() {

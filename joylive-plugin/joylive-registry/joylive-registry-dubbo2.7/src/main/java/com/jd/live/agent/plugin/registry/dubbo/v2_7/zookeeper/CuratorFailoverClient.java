@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
@@ -30,6 +31,7 @@ import org.apache.dubbo.common.URL;
 import org.apache.dubbo.remoting.zookeeper.ChildListener;
 import org.apache.dubbo.remoting.zookeeper.DataListener;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -78,18 +80,21 @@ public class CuratorFailoverClient {
     private final Consumer<Integer> stateListener;
     private final Timer timer;
     private final int timeout;
+    private final int sessionExpireMs;
     private final int successThreshold;
     private final boolean autoRecover;
-    private final List<String> addresses = new ArrayList<>();
+    private final List<String> addresses;
     private final CuratorFailoverEnsembleProvider ensembleProvider;
     private final CuratorConnectionStateListener connectionListener;
     private final CuratorFramework client;
+    private final CuratorTask executor;
     private final AtomicLong versions = new AtomicLong(0);
     private final Predicate<RetryVersionTask> predicate = v -> v.getVersion() == versions.get();
     @SuppressWarnings("deprecation")
     private final Map<String, TreeCache> caches = new ConcurrentHashMap<>();
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final CountDownLatch connectLatch = new CountDownLatch(1);
+    private final Map<String, PathData> paths = new ConcurrentHashMap<>(16);
 
     public CuratorFailoverClient(URL url, Consumer<Integer> stateListener, Timer timer) {
         this.url = url;
@@ -98,49 +103,12 @@ public class CuratorFailoverClient {
         this.timeout = url.getParameter(TIMEOUT_KEY, DEFAULT_CONNECTION_TIMEOUT_MS);
         this.successThreshold = url.getParameter("successThreshold", 3);
         this.autoRecover = url.getParameter("autoRecover", true);
-        int sessionExpireMs = url.getParameter(ZK_SESSION_EXPIRE_KEY, DEFAULT_SESSION_TIMEOUT_MS);
-        addresses.add(url.getBackupAddress());
-        addresses.addAll(splitList(url.getParameter("failovers"), ';'));
+        this.sessionExpireMs = url.getParameter(ZK_SESSION_EXPIRE_KEY, DEFAULT_SESSION_TIMEOUT_MS);
+        this.addresses = getAddresses(url);
         this.ensembleProvider = new CuratorFailoverEnsembleProvider(addresses);
-        this.connectionListener = new CuratorConnectionStateListener(stateListener, timeout, sessionExpireMs) {
-            @Override
-            protected void onLost() {
-                doLost();
-                super.onLost();
-            }
-
-            @Override
-            protected void onSuspended(long sessionId) {
-                doSuspended(sessionId);
-                super.onSuspended(sessionId);
-            }
-
-            @Override
-            protected void onConnected(long sessionId) {
-                doConnected(sessionId);
-                super.onConnected(sessionId);
-                // Notify main thread which is waiting for connection
-                connectLatch.countDown();
-            }
-
-            @Override
-            protected void onReconnected(long sessionId) {
-                doReconnected(sessionId);
-                super.onReconnected(sessionId);
-            }
-        };
-        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
-                .ensembleProvider(ensembleProvider)
-                .retryPolicy(new RetryNTimes(1, 1000))
-                .connectionTimeoutMs(timeout)
-                .sessionTimeoutMs(sessionExpireMs);
-        String authority = url.getAuthority();
-        if (authority != null && !authority.isEmpty()) {
-            builder = builder.authorization("digest", authority.getBytes());
-        }
-        this.client = builder.build();
-        client.getConnectionStateListenable().addListener(connectionListener);
-
+        this.connectionListener = new FailoverConnectionStateListener(stateListener, timeout, sessionExpireMs);
+        this.client = createClient(url);
+        this.executor = CuratorTask.of(client);
         try {
             // Replace client.start() with addDetectTask
             logger.info("Try detect healthy zookeeper {}", join(addresses, ';'));
@@ -150,6 +118,8 @@ public class CuratorFailoverClient {
                 versions.incrementAndGet();
                 throw new IllegalStateException("It's timeout to connect to zookeeper.");
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
@@ -177,18 +147,7 @@ public class CuratorFailoverClient {
      * @param path the node path to create
      */
     public void createPersistent(String path) {
-        CuratorTask.of(client).execute(new PathData(path), new CuratorVoidExecution() {
-
-            @Override
-            public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
-                client.create().forPath(pathData.getPath(), pathData.getData());
-            }
-
-            @Override
-            public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-                logger.warn("ZNode {} already exists.", pathData.getPath(), e);
-            }
-        });
+        createPersistent(path, (byte[]) null);
     }
 
     /**
@@ -198,18 +157,39 @@ public class CuratorFailoverClient {
      * @param data the data to store in the node
      */
     public void createPersistent(String path, String data) {
-        CuratorTask.of(client).execute(new PathData(path, data), new CuratorVoidExecution() {
+        createPersistent(path, data == null ? PathData.DEFAULT_DATA : data.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Creates a persistent ZNode with the given path and data.
+     *
+     * <p>If the node already exists:
+     * <ul>
+     *   <li>Does nothing if data is null or default</li>
+     *   <li>Updates data if new data is provided</li>
+     * </ul>
+     *
+     * @param path ZNode path to create
+     * @param data Data to store (null or default data triggers no update if exists)
+     */
+    protected void createPersistent(String path, byte[] data) {
+        executor.execute(new PathData(path, data, true), new CuratorVoidExecution() {
             @Override
             public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
-                client.create().forPath(pathData.getPath(), pathData.getData());
-            }
-
-            @Override
-            public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
                 try {
-                    client.setData().forPath(pathData.getPath(), pathData.getData());
-                } catch (Exception ex) {
-                    throw new IllegalStateException(e.getMessage(), ex);
+                    client.create().forPath(pathData.getPath(), pathData.getData());
+                    paths.put(pathData.getPath(), pathData);
+                } catch (KeeperException.NodeExistsException e) {
+                    if (data == null || data == PathData.DEFAULT_DATA) {
+                        logger.warn("ZNode {} already exists.", pathData.getPath(), e);
+                        return;
+                    }
+                    // Update data
+                    try {
+                        client.setData().forPath(pathData.getPath(), pathData.getData());
+                    } catch (Exception ex) {
+                        throw new IllegalStateException(e.getMessage(), ex);
+                    }
                 }
             }
         });
@@ -221,22 +201,7 @@ public class CuratorFailoverClient {
      * @param path the node path to create (will be removed on session close)
      */
     public void createEphemeral(String path) {
-        CuratorTask.of(client).execute(new PathData(path), new CuratorVoidExecution() {
-            @Override
-            public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
-                client.create().withMode(CreateMode.EPHEMERAL).forPath(pathData.getPath(), pathData.getData());
-            }
-
-            @Override
-            public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-                logger.warn("ZNode {} already exists, since we will only try to recreate a node on a session expiration" +
-                        ", this duplication might be caused by a delete delay from the zk server, which means the old expired session" +
-                        " may still holds this ZNode and the server just hasn't got time to do the deletion. In this case, " +
-                        "we can just try to delete and create again.", pathData.getPath(), e);
-                deletePath(path);
-                createEphemeral(path);
-            }
-        });
+        createEphemeral(path, (byte[]) null);
     }
 
     /**
@@ -246,20 +211,28 @@ public class CuratorFailoverClient {
      * @param data the data to store in the node
      */
     public void createEphemeral(String path, String data) {
-        CuratorTask.of(client).execute(new PathData(path, data), new CuratorVoidExecution() {
+        createEphemeral(path, data == null ? PathData.DEFAULT_DATA : data.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Creates an ephemeral ZNode with the given path and data.
+     *
+     * @param path The ZNode path to create (ephemeral)
+     * @param data The data to store in the node
+     */
+    protected void createEphemeral(String path, byte[] data) {
+        executor.execute(new PathData(path, data), new CuratorVoidExecution() {
             @Override
             public void doExecute(PathData pathData, CuratorFramework client) throws Exception {
-                client.create().withMode(CreateMode.EPHEMERAL).forPath(pathData.getPath(), pathData.getData());
-            }
-
-            @Override
-            public void doOnNodeExists(PathData pathData, CuratorFramework client, Exception e) {
-                logger.warn("ZNode {} already exists, since we will only try to recreate a node on a session expiration" +
-                        ", this duplication might be caused by a delete delay from the zk server, which means the old expired session" +
-                        " may still holds this ZNode and the server just hasn't got time to do the deletion. In this case, " +
-                        "we can just try to delete and create again.", pathData.getPath(), e);
-                deletePath(path);
-                createEphemeral(path, data);
+                try {
+                    client.create().withMode(CreateMode.EPHEMERAL).forPath(pathData.getPath(), pathData.getData());
+                    paths.put(pathData.getPath(), pathData);
+                } catch (KeeperException.NodeExistsException e) {
+                    logger.warn("ZNode {} already exists, try to delete it and create again.", pathData.getPath(), e);
+                    if (deletePath(path)) {
+                        createEphemeral(path, data);
+                    }
+                }
             }
         });
     }
@@ -271,7 +244,13 @@ public class CuratorFailoverClient {
      * @return list of child node names
      */
     public List<String> getChildren(String path) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> client.getChildren().forPath(path));
+        return executor.execute(new PathData(path), (pathData, client) -> {
+            try {
+                return client.getChildren().forPath(path);
+            } catch (KeeperException.NoNodeException e) {
+                return new ArrayList<>(0);
+            }
+        });
     }
 
     /**
@@ -279,10 +258,17 @@ public class CuratorFailoverClient {
      *
      * @param path the node path to delete
      */
-    public void deletePath(String path) {
-        CuratorTask.of(client).execute(new PathData(path), (CuratorExecution<Void>) (pathData, client) -> {
-            client.delete().deletingChildrenIfNeeded().forPath(path);
-            return null;
+    public boolean deletePath(String path) {
+        return executor.execute(new PathData(path), (pathData, client) -> {
+            try {
+                client.delete().deletingChildrenIfNeeded().forPath(path);
+                paths.remove(path);
+                return true;
+            } catch (KeeperException.NoNodeException e) {
+                return true;
+            } catch (KeeperException.NoAuthException e) {
+                return false;
+            }
         });
     }
 
@@ -293,7 +279,7 @@ public class CuratorFailoverClient {
      * @return true if node exists, false otherwise
      */
     public boolean checkExists(String path) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> client.checkExists().forPath(path) != null);
+        return executor.execute(new PathData(path), (pathData, client) -> client.checkExists().forPath(path) != null);
     }
 
     /**
@@ -303,9 +289,13 @@ public class CuratorFailoverClient {
      * @return the node data as string, or null if empty
      */
     public String getData(String path) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> {
-            byte[] dataBytes = client.getData().forPath(path);
-            return (dataBytes == null || dataBytes.length == 0) ? null : new String(dataBytes, StandardCharsets.UTF_8);
+        return executor.execute(new PathData(path), (pathData, client) -> {
+            try {
+                byte[] dataBytes = client.getData().forPath(path);
+                return (dataBytes == null || dataBytes.length == 0) ? null : new String(dataBytes, StandardCharsets.UTF_8);
+            } catch (KeeperException.NoNodeException e) {
+                return null;
+            }
         });
     }
 
@@ -338,7 +328,7 @@ public class CuratorFailoverClient {
      * @return current list of children
      */
     public List<String> addChildListener(String path, CuratorListener listener) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> client.getChildren().usingWatcher(listener).forPath(path));
+        return executor.execute(new PathData(path), (pathData, client) -> client.getChildren().usingWatcher(listener).forPath(path));
     }
 
     /**
@@ -456,7 +446,7 @@ public class CuratorFailoverClient {
                 connectLatch.countDown();
             }
         });
-        RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper-detect", detect, version, predicate, timer);
+        RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.detect", detect, version, predicate, timer);
         // fast to reconnect when initialization
         task.delay(connected ? Timer.getRetryInterval(1500, 5000) : 0);
     }
@@ -480,25 +470,164 @@ public class CuratorFailoverClient {
         long version = versions.incrementAndGet();
         connected.set(true);
         if (autoRecover) {
-            String current = ensembleProvider.current();
-            String first = ensembleProvider.first();
-            if (!Objects.equals(current, first)) {
-                logger.info("Try detect and recover {}...", first);
-                CuratorRecoverTask execution = new CuratorRecoverTask(first, timeout, successThreshold, new CuratorDetectTaskListener() {
-                    @Override
-                    public void onSuccess() {
-                        if (!Objects.equals(ensembleProvider.current(), first)) {
-                            client.close();
-                            // recover immediately
-                            ensembleProvider.reset();
-                            logger.info("Try switch to the healthy preferred zookeeper {}.", ensembleProvider.current());
-                            client.start();
-                        }
-                    }
-                });
-                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper-recover", execution, version, predicate, timer);
-                task.delay(Timer.getRetryInterval(1500, 5000));
+            doRecover(version);
+        }
+        if (connected.get()) {
+            recreatePath(version);
+        }
+    }
+
+    /**
+     * Attempts to detect and recover connection to the preferred ZooKeeper ensemble server.
+     *
+     * @param version The version number used for tracking recovery attempts and ensuring
+     *                only the latest recovery task executes when multiple are scheduled
+     */
+    private void doRecover(long version) {
+        String current = ensembleProvider.current();
+        String first = ensembleProvider.first();
+        if (Objects.equals(current, first)) {
+            return;
+        }
+        logger.info("Try detect and recover {}...", first);
+        CuratorRecoverTask execution = new CuratorRecoverTask(first, timeout, successThreshold, new CuratorDetectTaskListener() {
+            @Override
+            public void onSuccess() {
+                if (!Objects.equals(ensembleProvider.current(), first)) {
+                    client.close();
+                    // recover immediately
+                    ensembleProvider.reset();
+                    logger.info("Try switch to the healthy preferred zookeeper {}.", ensembleProvider.current());
+                    client.start();
+                }
             }
+        });
+        RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recover", execution, version, predicate, timer);
+        task.delay(Timer.getRetryInterval(1500, 5000));
+    }
+
+    /**
+     * Recreates ZooKeeper paths with version-controlled retry logic.
+     *
+     * @param version Used to track and ensure only the latest recreation task executes
+     */
+    private void recreatePath(long version) {
+        paths.forEach((path, data) -> {
+            RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate", new RecreateExecution(data), version, predicate, timer);
+            task.delay(Timer.getRetryInterval(100, 500));
+        });
+    }
+
+    /**
+     * Retrieves a list of failover addresses from the given URL.
+     *
+     * <p>The address list consists of:
+     * <ol>
+     *   <li>The primary backup address from {@link URL#getBackupAddress()}</li>
+     *   <li>Additional failover addresses parsed from the "failovers" URL parameter (semicolon-delimited)</li>
+     * </ol>
+     *
+     * @param url The URL containing address configuration
+     * @return List of all available addresses (primary backup first, then failovers)
+     * @see URL#getBackupAddress()
+     */
+    private List<String> getAddresses(URL url) {
+        List<String> result = new ArrayList<>(2);
+        result.add(url.getBackupAddress());
+        result.addAll(splitList(url.getParameter("failovers"), ';'));
+        return result;
+    }
+
+    /**
+     * Creates and configures a new CuratorFramework client instance based on the provided URL.
+     *
+     * @param url The configuration URL containing:
+     *            - Authority information (for optional authentication)
+     *            - Other connection parameters
+     * @return A configured but unstarted CuratorFramework client instance
+     */
+    private CuratorFramework createClient(URL url) {
+        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
+                .ensembleProvider(ensembleProvider)
+                .retryPolicy(new RetryNTimes(1, 1000))
+                .connectionTimeoutMs(timeout)
+                .defaultData(PathData.DEFAULT_DATA)
+                .sessionTimeoutMs(sessionExpireMs);
+        String authority = url.getAuthority();
+        if (authority != null && !authority.isEmpty()) {
+            builder = builder.authorization("digest", authority.getBytes());
+        }
+        CuratorFramework client = builder.build();
+        client.getConnectionStateListenable().addListener(connectionListener);
+        return client;
+    }
+
+    /**
+     * A failover-aware connection state listener that extends {@link CuratorConnectionStateListener}.
+     * <p>
+     * Provides custom handling for ZooKeeper connection state changes with additional failover logic.
+     * Notifies waiting threads when a successful connection is established.
+     * </p>
+     *
+     * @see CuratorConnectionStateListener
+     */
+    private class FailoverConnectionStateListener extends CuratorConnectionStateListener {
+
+        FailoverConnectionStateListener(Consumer<Integer> stateListener, int timeout, int sessionExpireMs) {
+            super(stateListener, timeout, sessionExpireMs);
+        }
+
+        @Override
+        protected void onLost() {
+            doLost();
+            super.onLost();
+        }
+
+        @Override
+        protected void onSuspended(long sessionId) {
+            doSuspended(sessionId);
+            super.onSuspended(sessionId);
+        }
+
+        @Override
+        protected void onConnected(long sessionId) {
+            doConnected(sessionId);
+            super.onConnected(sessionId);
+            // Notify main thread which is waiting for connection
+            connectLatch.countDown();
+        }
+
+        @Override
+        protected void onReconnected(long sessionId) {
+            doReconnected(sessionId);
+            super.onReconnected(sessionId);
+        }
+    }
+
+    /**
+     * A retryable execution task for creating ZooKeeper nodes (both persistent and ephemeral).
+     * Implements {@link RetryExecution} to support retry logic with a fixed interval.
+     */
+    private class RecreateExecution implements RetryExecution {
+        private final PathData data;
+
+        RecreateExecution(PathData data) {
+            this.data = data;
+        }
+
+        @Override
+        public long getRetryInterval() {
+            return Timer.getRetryInterval(1000, 1000);
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            if (data.isPersistent()) {
+                createPersistent(data.getPath(), data.getData());
+            } else {
+                createEphemeral(data.getPath(), data.getData());
+            }
+            return true;
         }
     }
 }

@@ -566,14 +566,17 @@ public class DubboZookeeperRegistry implements RegistryService {
         Stat stat = client.checkExists().forPath(path.getPath());
         if (stat == null) {
             return true;
-        } else if (stat.getEphemeralOwner() != client.getZookeeperClient().getZooKeeper().getSessionId()) {
+        } else if (stat.getEphemeralOwner() == client.getZookeeperClient().getZooKeeper().getSessionId()) {
             try {
                 client.delete().forPath(path.getPath());
                 return true;
-            } catch (KeeperException.NoNodeException ignored) {
+            } catch (KeeperException.NoNodeException e) {
                 return true;
+            } catch (Exception e) {
+                return false;
             }
         }
+        // Ephemeral nodes owned by other sessions cannot be deleted.
         return false;
     }
 

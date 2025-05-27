@@ -16,8 +16,6 @@
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 
 /**
  * A wrapper for executing {@link CuratorExecution} operations with automatic error handling.
@@ -47,10 +45,6 @@ public class CuratorTask {
     public <T> T execute(PathData pathData, CuratorExecution<T> execution) {
         try {
             return execution.execute(pathData, client);
-        } catch (NodeExistsException e) {
-            return execution.onNodeExists(pathData, client, e);
-        } catch (NoNodeException e) {
-            return execution.onNoNode(pathData, client, e);
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
