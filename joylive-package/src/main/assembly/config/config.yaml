@@ -302,7 +302,7 @@ agent:
           username: ${CONFIG_REGISTRY_USERNAME_FIRST:${REGISTRY_USERNAME:guest}}
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:guest}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_FIRST}
-          namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:public}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:${REGISTRY_NAMESPACE:public}}
           group: ${CONFIG_REGISTRY_GROUP_FIRST:DEFAULT_GROUP}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
@@ -313,7 +313,7 @@ agent:
           username: ${CONFIG_REGISTRY_USERNAME_SECOND:${REGISTRY_USERNAME:guest}}
           password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:guest}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_SECOND}
-          namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:public}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:${REGISTRY_NAMESPACE:public}}
           group: ${CONFIG_REGISTRY_GROUP_SECOND:DEFAULT_GROUP}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
@@ -324,7 +324,7 @@ agent:
           username: ${CONFIG_REGISTRY_USERNAME_THIRD:${REGISTRY_USERNAME:guest}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_THIRD}
           password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:guest}}
-          namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:public}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:${REGISTRY_NAMESPACE:public}}
           group: ${CONFIG_REGISTRY_GROUP_THIRD:DEFAULT_GROUP}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
