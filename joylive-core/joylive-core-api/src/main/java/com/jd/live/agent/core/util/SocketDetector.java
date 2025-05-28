@@ -15,12 +15,11 @@
  */
 package com.jd.live.agent.core.util;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -90,35 +89,6 @@ public class SocketDetector implements BiPredicate<String, Integer> {
          */
         boolean receive(InputStream in) throws IOException;
 
-    }
-
-    /**
-     * Default ZooKeeper socket listener implementation.
-     * Sends "srvr" command and accepts any response as valid.
-     */
-    public static class ZookeeperSocketListener implements SocketListener {
-
-        @Override
-        public void send(OutputStream out) throws IOException {
-            out.write("srvr\n".getBytes(StandardCharsets.UTF_8));
-            out.flush();
-        }
-
-        @Override
-        public boolean receive(InputStream in) throws IOException {
-            Map<String, String> status = new HashMap<>();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                int pos;
-                while ((line = reader.readLine()) != null) {
-                    pos = line.indexOf(':');
-                    if (pos > 0) {
-                        status.put(line.substring(0, pos).trim(), line.substring(pos + 1).trim());
-                    }
-                }
-            }
-            return !status.isEmpty();
-        }
     }
 
 }

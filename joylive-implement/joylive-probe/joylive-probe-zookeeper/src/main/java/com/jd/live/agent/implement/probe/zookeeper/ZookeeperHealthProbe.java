@@ -90,7 +90,6 @@ public class ZookeeperHealthProbe implements HealthProbe, ExtensionInitializer {
             StringBuilder builder = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 String line;
-                int pos;
                 while ((line = reader.readLine()) != null) {
                     builder.append(line).append('\n');
                 }
