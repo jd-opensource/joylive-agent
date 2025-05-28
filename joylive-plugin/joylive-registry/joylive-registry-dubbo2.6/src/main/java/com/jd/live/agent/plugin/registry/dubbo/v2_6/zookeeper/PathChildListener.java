@@ -46,6 +46,8 @@ public class PathChildListener implements CuratorWatcher {
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
+    private final Object mutex = new Object();
+
     @Getter
     private List<String> children = new ArrayList<>();
 
@@ -66,10 +68,13 @@ public class PathChildListener implements CuratorWatcher {
         if (event.getType() == EventType.None) {
             return;
         }
-        if (started.get()) {
-            children = watcher.watch(path, this);
-            for (ChildListener listener : listeners) {
-                listener.childChanged(path, children);
+        // Prevent concurrent watch triggering
+        synchronized (mutex) {
+            if (started.get()) {
+                children = watcher.watch(path, this);
+                for (ChildListener listener : listeners) {
+                    listener.childChanged(path, children);
+                }
             }
         }
     }
@@ -109,6 +114,18 @@ public class PathChildListener implements CuratorWatcher {
         try {
             process(new WatchedEvent(EventType.NodeChildrenChanged, KeeperState.SyncConnected, path));
         } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Recreates the resource by either updating it (if already started)
+     * or starting it fresh (if not currently active).
+     */
+    public void recreate() {
+        if (isStarted()) {
+            update();
+        } else {
+            start();
         }
     }
 

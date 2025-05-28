@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -74,6 +75,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private final CuratorConnectionStateListener connectionListener;
     private final Function<String, TreeCache> cacheFactory;
     private final Predicate<RetryVersionTask> predicate;
+    private final PathChildWatcher watcher;
     private volatile CuratorFramework client;
 
     private final Map<String, PathData> paths = new ConcurrentHashMap<>(16);
@@ -100,6 +102,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
         this.connectionListener = new CuratorConnectionStateListener(stateListeners, timeout, sessionExpireMs);
         this.cacheFactory = path -> TreeCache.newBuilder(client, path).setCacheData(false).build();
         this.predicate = v -> started.get() && v.getVersion() == versions.get();
+        this.watcher = (p, w) -> client.getChildren().usingWatcher(w).forPath(p);
         this.client = createClient(url);
         try {
             // Replace client.start() with addDetectTask
@@ -142,7 +145,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
     @Override
     public List<String> addChildListener(String path, ChildListener listener) {
-        PathChildWatcher watcher = (p, w) -> client.getChildren().usingWatcher(w).forPath(p);
         PathChildListener children = childListeners.computeIfAbsent(path, p -> new PathChildListener(path, watcher));
         if (children.addListener(listener) && isConnected()) {
             children.start();
@@ -477,20 +479,25 @@ public class CuratorFailoverClient implements ZookeeperClient {
          *                (only tasks matching this version will execute)
          */
         protected void doRecreate(long version) {
-            logger.info("Try recreate paths and caches at {}", ensembleProvider.current());
-            // recreate all paths
+            AtomicInteger pathCounter = new AtomicInteger(paths.size());
+            AtomicInteger childCounter = new AtomicInteger(childListeners.size());
+            AtomicInteger cacheCounter = new AtomicInteger(dataListeners.size());
+            logger.info("Try recreate paths {}, children watchers {}, caches {} at {}", pathCounter.get(), childCounter.get(), cacheCounter.get(), ensembleProvider.current());
+
             paths.forEach((path, data) -> {
-                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.path", new RecreatePath(data), version, predicate, timer);
+                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.path", new RecreatePath(data, pathCounter), version, predicate, timer);
                 task.delay(Timer.getRetryInterval(100, 500));
             });
+
             // recreate all children
             childListeners.forEach((path, data) -> {
-                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.children", new RecreateChildren(path), version, predicate, timer);
+                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.children", new RecreateChildren(path, childCounter), version, predicate, timer);
                 task.delay(Timer.getRetryInterval(100, 500));
             });
+
             // recreate all caches
             dataListeners.forEach((path, data) -> {
-                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.cache", new RecreateCache(path), version, predicate, timer);
+                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.cache", new RecreateCache(path, cacheCounter), version, predicate, timer);
                 task.delay(Timer.getRetryInterval(100, 500));
             });
         }
@@ -504,8 +511,11 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
         private final PathData data;
 
-        RecreatePath(PathData data) {
+        private final AtomicInteger counter;
+
+        RecreatePath(PathData data, AtomicInteger counter) {
             this.data = data;
+            this.counter = counter;
         }
 
         @Override
@@ -516,6 +526,9 @@ public class CuratorFailoverClient implements ZookeeperClient {
         @Override
         public Boolean call() {
             createOrUpdate(data.getPath(), data.getData(), !data.isPersistent());
+            if (counter.decrementAndGet() == 0) {
+                logger.info("Complete recreate paths at {}", ensembleProvider.current());
+            }
             return true;
         }
     }
@@ -527,8 +540,11 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
         private final String path;
 
-        RecreateCache(String path) {
+        private final AtomicInteger counter;
+
+        RecreateCache(String path, AtomicInteger counter) {
             this.path = path;
+            this.counter = counter;
         }
 
         @Override
@@ -540,11 +556,10 @@ public class CuratorFailoverClient implements ZookeeperClient {
         public Boolean call() {
             PathDataListener dataListener = dataListeners.get(path);
             if (dataListener != null) {
-                if (dataListener.isStarted()) {
-                    dataListener.update();
-                } else {
-                    dataListener.start();
-                }
+                dataListener.recreate();
+            }
+            if (counter.decrementAndGet() == 0) {
+                logger.info("Complete recreate caches at {}", ensembleProvider.current());
             }
             return true;
         }
@@ -557,8 +572,11 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
         private final String path;
 
-        RecreateChildren(String path) {
+        private final AtomicInteger counter;
+
+        RecreateChildren(String path, AtomicInteger counter) {
             this.path = path;
+            this.counter = counter;
         }
 
         @Override
@@ -570,11 +588,10 @@ public class CuratorFailoverClient implements ZookeeperClient {
         public Boolean call() {
             PathChildListener children = childListeners.get(path);
             if (children != null) {
-                if (children.isStarted()) {
-                    children.start();
-                } else {
-                    children.update();
-                }
+                children.recreate();
+            }
+            if (counter.decrementAndGet() == 0) {
+                logger.info("Complete recreate children watchers at {}", ensembleProvider.current());
             }
             return true;
         }

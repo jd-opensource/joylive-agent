@@ -39,6 +39,7 @@ import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toInstanc
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toServiceId;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.EXPORTED_SERVICES_REVISION_PROPERTY_NAME;
+import static org.apache.dubbo.rpc.Constants.GENERIC_KEY;
 
 /**
  * Dubbo notification listener that bridges between Dubbo's NotifyListener and RegistryEvent system.
@@ -49,6 +50,10 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     private static final Logger logger = LoggerFactory.getLogger(DubboNotifyListener.class);
 
     private final URL url;
+
+    private final ServiceId serviceId;
+
+    private final String generic;
 
     @Getter
     private final NotifyListener delegate;
@@ -64,8 +69,6 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     private final Set<ServiceInstanceNotificationCustomizer> customizers;
 
     private final BiFunction<String, List<ServiceInstance>, MetadataInfo> revisionFunc;
-
-    private final ServiceId serviceId;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
@@ -91,6 +94,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
                                BiFunction<String, List<ServiceInstance>, MetadataInfo> revisionFunc) {
         this.url = url;
         this.serviceId = serviceId;
+        this.generic = url.getParameter(GENERIC_KEY, false) ? "generic service " : "";
         this.delegate = delegate;
         this.publisher = publisher;
         this.defaultGroup = defaultGroup;
@@ -137,9 +141,9 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
         List<URL> urls = toList(instances, UrlUtils::toURL);
         try {
             delegate.notify(urls);
-            logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());
+            logger.info("Dubbo registry notify event {} instances for {}{}", urls.size(), generic, serviceId.getUniqueName());
         } catch (Throwable e) {
-            logger.error("Failed to notify service change event for {}", serviceId.getUniqueName(), e);
+            logger.error("Failed to notify service change event for {}{}", generic, serviceId.getUniqueName(), e);
         }
     }
 

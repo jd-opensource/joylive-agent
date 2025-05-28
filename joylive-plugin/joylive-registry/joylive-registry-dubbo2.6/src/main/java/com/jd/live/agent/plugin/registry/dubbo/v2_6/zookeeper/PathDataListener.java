@@ -171,6 +171,18 @@ public class PathDataListener implements TreeCacheListener {
     }
 
     /**
+     * Recreates the resource by either updating it (if already started)
+     * or starting it fresh (if not currently active).
+     */
+    public void recreate() {
+        if (isStarted()) {
+            update();
+        } else {
+            start();
+        }
+    }
+
+    /**
      * Stops the cache and cleans up resources.
      * <p>
      * Atomic operation - only succeeds if currently active.

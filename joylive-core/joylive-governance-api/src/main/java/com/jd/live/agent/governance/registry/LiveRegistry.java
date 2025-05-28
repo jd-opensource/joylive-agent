@@ -678,6 +678,8 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
          */
         private volatile RegistryEvent event;
 
+        private final AtomicBoolean notified = new AtomicBoolean(false);
+
         private final Object mutex = new Object();
 
         Subscription(ServiceId service, List<ClusterSubscription> clusters, Timer timer) {
@@ -850,9 +852,31 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                 logger.info(builder.toString());
 
                 this.event = new RegistryEvent(event.getVersion(), serviceId.getService(), serviceId.group, newEndpoints, event.getDefaultGroup());
-                for (Consumer<RegistryEvent> consumer : consumers) {
-                    consumer.accept(new RegistryEvent(serviceId.getService(), serviceId.group, newEndpoints));
-                }
+                addNotifier();
+            }
+        }
+
+        /**
+         * Schedules a delayed notification to all consumers if no notification is currently active.
+         * Uses atomic check to prevent duplicate notifications. If the event changes during processing,
+         * automatically re-triggers notification.
+         */
+        private void addNotifier() {
+            if (notified.compareAndSet(false, true)) {
+                timer.delay("instance-notifier", 1000, () -> {
+                    RegistryEvent e = event;
+                    try {
+                        // TODO duplicated consumers
+                        for (Consumer<RegistryEvent> consumer : consumers) {
+                            consumer.accept(new RegistryEvent(serviceId.getService(), serviceId.group, e.getInstances()));
+                        }
+                    } finally {
+                        notified.set(false);
+                        if (event != e) {
+                            addNotifier();
+                        }
+                    }
+                });
             }
         }
 

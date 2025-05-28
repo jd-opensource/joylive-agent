@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toURL;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
+import static org.apache.dubbo.rpc.Constants.GENERIC_KEY;
 
 /**
  * Dubbo notification listener that bridges between Dubbo's NotifyListener and RegistryEvent system.
@@ -43,6 +44,10 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     private static final Logger logger = LoggerFactory.getLogger(DubboNotifyListener.class);
 
     private final URL url;
+
+    private final ServiceId serviceId;
+
+    private final String generic;
 
     @Getter
     private final NotifyListener delegate;
@@ -55,8 +60,6 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
 
     private final Registry registry;
 
-    private final ServiceId serviceId;
-
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     public DubboNotifyListener(URL url,
@@ -68,6 +71,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
                                Registry registry) {
         this.url = url;
         this.serviceId = serviceId;
+        this.generic = url.getParameter(GENERIC_KEY, false) ? "generic service " : "";
         this.delegate = delegate;
         this.discovery = discovery;
         this.publisher = publisher;
@@ -101,9 +105,9 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
         List<URL> urls = toList(endpoints, e -> toURL(serviceId, e, url, discovery));
         try {
             delegate.notify(urls);
-            logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());
+            logger.info("Dubbo registry notify event {} instances for {}{}", urls.size(), generic, serviceId.getUniqueName());
         } catch (Throwable e) {
-            logger.error("Failed to notify service change event for {}", serviceId.getUniqueName(), e);
+            logger.error("Failed to notify service change event for {}{}", generic, serviceId.getUniqueName(), e);
         }
     }
 

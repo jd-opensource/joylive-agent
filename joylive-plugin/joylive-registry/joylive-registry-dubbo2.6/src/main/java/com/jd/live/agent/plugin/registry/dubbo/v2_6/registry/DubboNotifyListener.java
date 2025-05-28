@@ -42,6 +42,10 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
 
     private final URL url;
 
+    private final ServiceId serviceId;
+
+    private final String generic;
+
     @Getter
     private final NotifyListener delegate;
 
@@ -50,8 +54,6 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     private final String defaultGroup;
 
     private final Registry registry;
-
-    private final ServiceId serviceId;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
@@ -63,6 +65,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
                                Registry registry) {
         this.url = url;
         this.serviceId = serviceId;
+        this.generic = url.getParameter(GENERIC_KEY, false) ? "generic service " : "";
         this.delegate = delegate;
         this.publisher = publisher;
         this.defaultGroup = defaultGroup;
@@ -91,9 +94,9 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
         List<URL> urls = toList(endpoints, UrlUtils::toURL);
         try {
             delegate.notify(urls);
-            logger.info("Dubbo registry notify event {} instances for {}", urls.size(), serviceId.getUniqueName());
+            logger.info("Dubbo registry notify event {} instances for {}{}", urls.size(), generic, serviceId.getUniqueName());
         } catch (Throwable e) {
-            logger.error("Failed to notify service change event for {}", serviceId.getUniqueName(), e);
+            logger.error("Failed to notify service change event for {}{}", generic, serviceId.getUniqueName(), e);
         }
     }
 
