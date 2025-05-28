@@ -816,14 +816,19 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                     return;
                 }
                 event = delta(clusterName, event);
-                int size = event.size();
+                int newSize = event.size();
 
-                List<ServiceEndpoint> olds = size == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
+                List<ServiceEndpoint> olds = newSize == 0 ? clustersEndpoints.remove(clusterName) : clustersEndpoints.put(clusterName, event.getInstances());
+                int oldSize = olds == null ? 0 : olds.size();
+                if (newSize == 0 && oldSize == 0 && olds != null) {
+                    // ignore duplicated empty event
+                    return;
+                }
 
                 // merge endpoints by order
                 RegistryEvent oldsEvent = this.event;
                 int capacity = oldsEvent == null ? 0 : oldsEvent.size();
-                capacity = capacity + size - (olds == null ? 0 : olds.size());
+                capacity = capacity + newSize - oldSize;
                 Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
                 for (ClusterSubscription cluster : clusters) {
                     olds = clustersEndpoints.get(cluster.getClusterName());
@@ -832,11 +837,22 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
                     }
                 }
                 List<ServiceEndpoint> newEndpoints = new ArrayList<>(merged.values());
+
+                // log
+                StringBuilder builder = new StringBuilder("Merge instances to ").append(newEndpoints.size()).append(" [")
+                        .append(oldSize).append("->").append(newSize).append(" in ").append(clusterName);
+                clustersEndpoints.forEach((name, endpoints) -> {
+                    if (!name.equals(clusterName)) {
+                        builder.append(", ").append(endpoints.size()).append(" in ").append(name);
+                    }
+                });
+                builder.append("], ").append(serviceId.getUniqueName());
+                logger.info(builder.toString());
+
                 this.event = new RegistryEvent(event.getVersion(), serviceId.getService(), serviceId.group, newEndpoints, event.getDefaultGroup());
                 for (Consumer<RegistryEvent> consumer : consumers) {
                     consumer.accept(new RegistryEvent(serviceId.getService(), serviceId.group, newEndpoints));
                 }
-                logger.info("Service instances is changed to {} at {}, totals is {}, {}", size, clusterName, newEndpoints.size(), serviceId.getUniqueName());
             }
         }
 
