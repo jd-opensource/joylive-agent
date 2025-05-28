@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.registry.zookeeper;
+package com.jd.live.agent.implement.service.registry.zookeeper.dubbo;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;

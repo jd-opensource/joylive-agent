@@ -1,1 +1,1 @@
-com.jd.live.agent.implement.service.registry.zookeeper.DubboZookeeperRegistryFactory
+com.jd.live.agent.implement.service.registry.zookeeper.dubbo.DubboZookeeperRegistryFactory

@@ -106,7 +106,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
         this.client = createClient(url);
         try {
             // Replace client.start() with addDetectTask
-            logger.info("Try detect healthy zookeeper {}", join(addresses, ';'));
+            logger.info("Try detecting healthy zookeeper {}", join(addresses, ';'));
             stateListener.addDetectTask(false);
             // wait for connected
             if (!connectLatch.await((long) timeout * addresses.size(), TimeUnit.MILLISECONDS)) {
@@ -417,7 +417,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
                 @Override
                 public void onSuccess() {
-                    logger.info("Try connect to healthy zookeeper {}", ensembleProvider.current());
+                    logger.info("Try connecting to healthy zookeeper {}", ensembleProvider.current());
                     // recreate client
                     client = createClient(url);
                     client.start();
@@ -477,13 +477,13 @@ public class CuratorFailoverClient implements ZookeeperClient {
             if (Objects.equals(current, first)) {
                 return;
             }
-            logger.info("Try detect and recover {}...", first);
+            logger.info("Try detecting unhealthy preferred zookeeper {}...", first);
             CuratorRecoverTask execution = new CuratorRecoverTask(first, probe, successThreshold, () -> {
                 if (!Objects.equals(ensembleProvider.current(), first)) {
                     // recover immediately
                     client.close();
                     ensembleProvider.reset();
-                    logger.info("Try switch to the healthy preferred zookeeper {}.", ensembleProvider.current());
+                    logger.info("Try switching to the healthy preferred zookeeper {}.", ensembleProvider.current());
                     client = createClient(url);
                     client.start();
                 }
@@ -502,7 +502,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
             AtomicInteger pathCounter = new AtomicInteger(paths.size());
             AtomicInteger childCounter = new AtomicInteger(childListeners.size());
             AtomicInteger cacheCounter = new AtomicInteger(dataListeners.size());
-            logger.info("Try recreate paths {}, children watchers{}, caches {} at {}", pathCounter.get(), childCounter.get(), cacheCounter.get(), ensembleProvider.current());
+            logger.info("Try recreating paths {}, children watchers{}, caches {} at {}", pathCounter.get(), childCounter.get(), cacheCounter.get(), ensembleProvider.current());
             // recreate all paths
             paths.forEach((path, data) -> {
                 RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.path", new RecreatePath(data, pathCounter), version, predicate, timer);
