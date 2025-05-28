@@ -112,6 +112,11 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
         notify(StateListener.SESSION_LOST);
     }
 
+    /**
+     * Notifies all registered state listeners about a state change.
+     *
+     * @param state the new state value to notify listeners about
+     */
     private void notify(int state) {
         for (StateListener stateListener : stateListeners) {
             stateListener.stateChanged(state);

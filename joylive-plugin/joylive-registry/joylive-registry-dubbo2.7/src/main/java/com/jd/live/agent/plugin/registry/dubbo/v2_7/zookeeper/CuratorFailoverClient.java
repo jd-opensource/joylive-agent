@@ -72,7 +72,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private final List<String> addresses;
     private final CuratorFailoverEnsembleProvider ensembleProvider;
     private final FailoverStateListener stateListener;
-    private final CuratorConnectionStateListener connectionListener;
     private final Function<String, TreeCache> cacheFactory;
     private final Predicate<RetryVersionTask> predicate;
     private final PathChildWatcher watcher;
@@ -99,7 +98,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
         this.ensembleProvider = new CuratorFailoverEnsembleProvider(addresses);
         this.stateListener = new FailoverStateListener();
         this.stateListeners.add(stateListener);
-        this.connectionListener = new CuratorConnectionStateListener(stateListeners, timeout, sessionExpireMs);
         this.cacheFactory = path -> TreeCache.newBuilder(client, path).setCacheData(false).build();
         this.predicate = v -> started.get() && v.getVersion() == versions.get();
         this.watcher = (p, w) -> client.getChildren().usingWatcher(w).forPath(p);
@@ -324,7 +322,8 @@ public class CuratorFailoverClient implements ZookeeperClient {
             builder = builder.authorization("digest", authority.getBytes());
         }
         CuratorFramework client = builder.build();
-        client.getConnectionStateListenable().addListener(connectionListener);
+        // listener keep session id, so create new one.
+        client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(stateListeners, timeout, sessionExpireMs));
         return client;
     }
 
