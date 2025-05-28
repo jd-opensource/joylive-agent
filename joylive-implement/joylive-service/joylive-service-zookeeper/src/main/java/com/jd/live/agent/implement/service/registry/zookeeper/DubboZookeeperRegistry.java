@@ -21,8 +21,6 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.parser.json.JsonType;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.SocketDetector;
-import com.jd.live.agent.core.util.SocketDetector.ZookeeperSocketListener;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
@@ -31,6 +29,7 @@ import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryDeltaEvent.EventType;
 import lombok.Getter;
@@ -87,6 +86,8 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private final ObjectParser parser;
 
+    private final HealthProbe probe;
+
     private final String name;
 
     private final List<URI> uris;
@@ -115,10 +116,11 @@ public class DubboZookeeperRegistry implements RegistryService {
 
     private final Predicate<RetryVersionTask> predicate = t -> t.getVersion() == versions.get();
 
-    public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer, ObjectParser parser) {
+    public DubboZookeeperRegistry(RegistryClusterConfig config, Timer timer, ObjectParser parser, HealthProbe probe) {
         this.config = config;
         this.timer = timer;
         this.parser = parser;
+        this.probe = probe;
         this.uris = shuffle(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse));
         this.address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
@@ -329,7 +331,7 @@ public class DubboZookeeperRegistry implements RegistryService {
      * @param delay   Initial delay before first execution (milliseconds)
      */
     private void addDetectTask(long version, long delay) {
-        DetectExecution detection = new DetectExecution(name, uris, client, connectTimeout);
+        DetectExecution detection = new DetectExecution(name, address, client, probe);
         RetryVersionTask task = new RetryVersionTimerTask("DetectTask", detection, version, predicate, timer);
         task.delay(delay);
     }
@@ -678,19 +680,19 @@ public class DubboZookeeperRegistry implements RegistryService {
 
         private final String name;
 
-        private final List<URI> uris;
+        private final String address;
 
         private final CuratorFramework client;
 
         private final AtomicLong counter = new AtomicLong(0);
 
-        private final SocketDetector detector;
+        private final HealthProbe probe;
 
-        DetectExecution(String name, List<URI> uris, CuratorFramework client, int connectTimeout) {
+        DetectExecution(String name, String address, CuratorFramework client, HealthProbe probe) {
             this.name = name;
-            this.uris = uris;
+            this.address = address;
             this.client = client;
-            this.detector = new SocketDetector(connectTimeout, 2181, new ZookeeperSocketListener());
+            this.probe = probe;
         }
 
         @Override
@@ -699,11 +701,9 @@ public class DubboZookeeperRegistry implements RegistryService {
                 client.close();
             }
             // the uris is shuffled to avoid the same server is probed by many clients.
-            for (URI uri : uris) {
-                if (detector.test(uri.getHost(), uri.getPort())) {
-                    client.start();
-                    return true;
-                }
+            if (probe.test(address)) {
+                client.start();
+                return true;
             }
             if (counter.incrementAndGet() % 50 == 0) {
                 logger.error("Retry connecting to zookeeper {} times, {}", counter.get(), name);

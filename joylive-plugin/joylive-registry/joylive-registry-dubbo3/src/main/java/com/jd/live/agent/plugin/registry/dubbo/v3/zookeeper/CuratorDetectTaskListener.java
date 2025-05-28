@@ -18,14 +18,13 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper;
 /**
  * Callback interface for ZooKeeper connection detection events.
  */
+@FunctionalInterface
 public interface CuratorDetectTaskListener {
 
     /**
      * Invoked when connection detection succeeds.
      */
-    default void onSuccess() {
-
-    }
+    void onSuccess();
 
     /**
      * Invoked when connection detection fails.

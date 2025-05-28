@@ -21,6 +21,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.registry.RegistryFactory;
 import com.jd.live.agent.governance.registry.RegistryService;
 
@@ -38,14 +39,11 @@ public class DubboZookeeperRegistryFactory implements RegistryFactory {
     @Inject(ObjectParser.JSON)
     private ObjectParser parser;
 
-    /**
-     * Creates a new instance of {@link DubboZookeeperRegistry} using the provided {@link RegistryClusterConfig}.
-     *
-     * @param config The configuration used to initialize the {@link DubboZookeeperRegistry}.
-     * @return A new instance of {@link DubboZookeeperRegistry}.
-     */
+    @Inject(HealthProbe.ZOOKEEPER)
+    private HealthProbe probe;
+
     @Override
     public RegistryService create(RegistryClusterConfig config) {
-        return new DubboZookeeperRegistry(config, timer, parser);
+        return new DubboZookeeperRegistry(config, timer, parser, probe);
     }
 }

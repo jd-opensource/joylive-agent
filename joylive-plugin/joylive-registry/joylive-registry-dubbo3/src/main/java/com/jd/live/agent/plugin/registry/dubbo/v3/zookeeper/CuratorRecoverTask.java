@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper;
 
+import com.jd.live.agent.governance.probe.HealthProbe;
+
 /**
  * A detect task that tests connectivity to ZooKeeper servers.
  * Requires consecutive successful checks to confirm recovery.
@@ -23,8 +25,8 @@ public class CuratorRecoverTask extends AbstractCuratorDetectTask {
 
     private final String address;
 
-    public CuratorRecoverTask(String address, int connectTimeout, int successThreshold, CuratorDetectTaskListener runnable) {
-        super(connectTimeout, successThreshold, 0, true, runnable);
+    public CuratorRecoverTask(String address, HealthProbe probe, int successThreshold, CuratorDetectTaskListener runnable) {
+        super(probe, successThreshold, 0, true, runnable);
         this.address = address;
     }
 

@@ -23,6 +23,7 @@
         <module>joylive-function</module>
         <module>joylive-flowcontrol</module>
         <module>joylive-expression</module>
+        <module>joylive-probe</module>
     </modules>
 
     <dependencies>

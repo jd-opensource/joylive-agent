@@ -67,6 +67,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-probe-zookeeper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-eventbus-jbus</artifactId>
         </dependency>
         <dependency>

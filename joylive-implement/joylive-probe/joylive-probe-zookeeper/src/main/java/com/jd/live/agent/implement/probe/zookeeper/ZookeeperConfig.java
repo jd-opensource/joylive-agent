@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
+package com.jd.live.agent.implement.probe.zookeeper;
 
-/**
- * Callback interface for ZooKeeper connection detection events.
- */
-@FunctionalInterface
-public interface CuratorDetectTaskListener {
+import lombok.Getter;
+import lombok.Setter;
 
-    /**
-     * Invoked when connection detection succeeds.
-     */
-    void onSuccess();
+@Getter
+@Setter
+public class ZookeeperConfig {
 
-    /**
-     * Invoked when connection detection fails.
-     */
-    default void onFailure() {
+    public static final String COMMAND_SRVR = "srvr";
 
-    }
+    private int connectTimeout = 1000;
+
+    private int defaultPort = 2181;
+
+    private String command = COMMAND_SRVR;
+
+    private String response;
+
 }

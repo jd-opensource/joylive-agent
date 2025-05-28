@@ -105,6 +105,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-probe-zookeeper</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-function-bkdrhash</artifactId>
                 <version>${revision}</version>
             </dependency>

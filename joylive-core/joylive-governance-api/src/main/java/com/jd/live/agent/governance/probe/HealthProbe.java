@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
+package com.jd.live.agent.governance.probe;
+
+import com.jd.live.agent.core.extension.annotation.Extensible;
+
+import java.util.function.Predicate;
 
 /**
- * Callback interface for ZooKeeper connection detection events.
+ * Health checking probe interface for services/components.
+ *
+ * @see Predicate Functional interface providing the test() method
  */
-@FunctionalInterface
-public interface CuratorDetectTaskListener {
+@Extensible("HealthProbe")
+public interface HealthProbe extends Predicate<String> {
 
-    /**
-     * Invoked when connection detection succeeds.
-     */
-    void onSuccess();
+    String ZOOKEEPER = "zookeeper";
 
-    /**
-     * Invoked when connection detection fails.
-     */
-    default void onFailure() {
-
-    }
+    @Override
+    boolean test(String address);
 }

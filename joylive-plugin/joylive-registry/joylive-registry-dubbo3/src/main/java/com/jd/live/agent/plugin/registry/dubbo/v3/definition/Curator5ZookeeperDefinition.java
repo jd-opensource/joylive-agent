@@ -25,8 +25,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.Curator5ZookeeperInterceptor;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.plugin.registry.dubbo.v3.condition.ConditionalOnDubbo3GovernanceEnabled;
+import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.Curator5ZookeeperInterceptor;
 
 /**
  * CuratorZookeeperDefinition
@@ -48,12 +49,15 @@ public class Curator5ZookeeperDefinition extends PluginDefinitionAdapter {
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
+    @Inject(HealthProbe.ZOOKEEPER)
+    private HealthProbe probe;
+
     public Curator5ZookeeperDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new Curator5ZookeeperInterceptor(timer))
+                        () -> new Curator5ZookeeperInterceptor(timer, probe))
         };
     }
 }

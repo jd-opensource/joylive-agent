@@ -17,18 +17,12 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.util.SocketDetector;
-import com.jd.live.agent.core.util.SocketDetector.ZookeeperSocketListener;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.probe.HealthProbe;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.split;
 
 /**
  * A detect task that tests connectivity to ZooKeeper servers.
@@ -38,6 +32,8 @@ public abstract class AbstractCuratorDetectTask implements RetryExecution {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractCuratorDetectTask.class);
 
+    protected final HealthProbe probe;
+
     protected final int successThreshold;
 
     protected final int maxRetries;
@@ -46,22 +42,20 @@ public abstract class AbstractCuratorDetectTask implements RetryExecution {
 
     protected final CuratorDetectTaskListener listener;
 
-    protected final SocketDetector detector;
-
     protected final AtomicInteger successes = new AtomicInteger(0);
 
     protected final AtomicLong counter = new AtomicLong(0);
 
-    public AbstractCuratorDetectTask(int connectTimeout,
+    public AbstractCuratorDetectTask(HealthProbe probe,
                                      int successThreshold,
                                      int maxRetries,
                                      boolean connected,
                                      CuratorDetectTaskListener listener) {
+        this.probe = probe;
         this.successThreshold = successThreshold <= 0 ? 3 : successThreshold;
         this.maxRetries = maxRetries;
         this.connected = connected;
         this.listener = listener;
-        this.detector = new SocketDetector(connectTimeout, 2181, new ZookeeperSocketListener());
     }
 
     @Override
@@ -81,20 +75,7 @@ public abstract class AbstractCuratorDetectTask implements RetryExecution {
         if (count % 50 == 0) {
             logger.error("Test zookeeper connection {} times, current address is {}", count, address);
         }
-        List<URI> uris = toList(split(address, ','), URI::parse);
-        int threshold = uris.size() / 2 + 1;
-        int win = 0;
-        int fail = 0;
-        for (URI uri : uris) {
-            if (detector.test(uri.getHost(), uri.getPort())) {
-                if (++win >= threshold) {
-                    break;
-                }
-            } else if (++fail >= threshold) {
-                break;
-            }
-        }
-        if (win >= threshold) {
+        if (probe.test(address)) {
             if (successes.incrementAndGet() == successThreshold) {
                 return Connectivity.SUCCESS_EXCEEDED;
             }

@@ -21,6 +21,7 @@ import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper.CuratorExecution.CuratorVoidExecution;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -61,13 +62,14 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private static final int DEFAULT_SESSION_TIMEOUT_MS = 60 * 1000;
 
     private final URL url;
-    private final Set<StateListener> stateListeners = new CopyOnWriteArraySet<>();
     private final Timer timer;
+    private final HealthProbe probe;
     private final int timeout;
     private final int sessionExpireMs;
     private final int successThreshold;
     private final boolean autoRecover;
 
+    private final Set<StateListener> stateListeners = new CopyOnWriteArraySet<>();
     private final List<String> addresses;
     private final CuratorFailoverEnsembleProvider ensembleProvider;
     private final FailoverStateListener stateListener;
@@ -85,9 +87,10 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean started = new AtomicBoolean(true);
 
-    public CuratorFailoverClient(URL url, Timer timer) {
+    public CuratorFailoverClient(URL url, Timer timer, HealthProbe probe) {
         this.url = url;
         this.timer = timer;
+        this.probe = probe;
         this.timeout = url.getParameter(TIMEOUT_KEY, DEFAULT_CONNECTION_TIMEOUT_MS);
         this.successThreshold = url.getParameter("successThreshold", 3);
         this.autoRecover = url.getParameter("autoRecover", true);
@@ -409,7 +412,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
          */
         protected void addDetectTask(boolean connected) {
             long version = versions.incrementAndGet();
-            CuratorDetectTask detect = new CuratorDetectTask(ensembleProvider, timeout, successThreshold, connected, new CuratorDetectTaskListener() {
+            CuratorDetectTask detect = new CuratorDetectTask(ensembleProvider, probe, successThreshold, connected, new CuratorDetectTaskListener() {
 
                 @Override
                 public void onSuccess() {
@@ -474,17 +477,14 @@ public class CuratorFailoverClient implements ZookeeperClient {
                 return;
             }
             logger.info("Try detect and recover {}...", first);
-            CuratorRecoverTask execution = new CuratorRecoverTask(first, timeout, successThreshold, new CuratorDetectTaskListener() {
-                @Override
-                public void onSuccess() {
-                    if (!Objects.equals(ensembleProvider.current(), first)) {
-                        // recover immediately
-                        client.close();
-                        ensembleProvider.reset();
-                        logger.info("Try switch to the healthy preferred zookeeper {}.", ensembleProvider.current());
-                        client = createClient(url);
-                        client.start();
-                    }
+            CuratorRecoverTask execution = new CuratorRecoverTask(first, probe, successThreshold, () -> {
+                if (!Objects.equals(ensembleProvider.current(), first)) {
+                    // recover immediately
+                    client.close();
+                    ensembleProvider.reset();
+                    logger.info("Try switch to the healthy preferred zookeeper {}.", ensembleProvider.current());
+                    client = createClient(url);
+                    client.start();
                 }
             });
             RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recover", execution, version, predicate, timer);
