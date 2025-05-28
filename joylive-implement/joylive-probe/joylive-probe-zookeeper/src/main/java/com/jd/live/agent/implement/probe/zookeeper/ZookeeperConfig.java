@@ -26,8 +26,6 @@ public class ZookeeperConfig {
 
     private int connectTimeout = 1000;
 
-    private int defaultPort = 2181;
-
     private String command = COMMAND_SRVR;
 
     private String response;

@@ -328,6 +328,10 @@ agent:
           group: ${CONFIG_REGISTRY_GROUP_THIRD:${APPLICATION_SERVICE_GROUP}}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
+    probe:
+      zookeeper:
+        command: ${CONFIG_PROBE_ZOOKEEPER_COMMAND:srvr}
+        response: ${CONFIG_PROBE_ZOOKEEPER_RESPONSE:}
   counter:
     gateway: true
     service: true

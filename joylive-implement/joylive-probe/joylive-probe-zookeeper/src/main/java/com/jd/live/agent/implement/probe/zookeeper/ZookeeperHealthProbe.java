@@ -44,7 +44,7 @@ public class ZookeeperHealthProbe implements HealthProbe, ExtensionInitializer {
 
     @Override
     public void initialize() {
-        detector = new SocketDetector(config.getConnectTimeout(), config.getDefaultPort(), new ZookeeperSocketListener(config));
+        detector = new SocketDetector(config.getConnectTimeout(), 2181, new ZookeeperSocketListener(config));
     }
 
     @Override
