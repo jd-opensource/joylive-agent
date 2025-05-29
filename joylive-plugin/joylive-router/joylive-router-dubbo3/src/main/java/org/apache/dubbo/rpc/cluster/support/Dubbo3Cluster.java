@@ -40,6 +40,7 @@ import org.apache.dubbo.rpc.*;
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -197,7 +198,7 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
         RpcInvocation invocation = (RpcInvocation) request.getRequest();
         String body = degradeConfig.getResponseBody();
         AppResponse response = new AppResponse();
-        response.setAttachments(degradeConfig.getAttributes());
+        response.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
         if (body != null) {
             Object value;
             if (request.isGeneric()) {

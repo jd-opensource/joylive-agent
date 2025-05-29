@@ -44,6 +44,7 @@ import com.jd.live.agent.plugin.router.dubbo.v2_6.response.DubboResponse.DubboOu
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -197,7 +198,7 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
         RpcInvocation invocation = (RpcInvocation) request.getRequest();
         String body = degradeConfig.getResponseBody();
         RpcResult result = new RpcResult();
-        result.setAttachments(degradeConfig.getAttributes());
+        result.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
         if (body != null) {
             Object value;
             if (request.isGeneric()) {

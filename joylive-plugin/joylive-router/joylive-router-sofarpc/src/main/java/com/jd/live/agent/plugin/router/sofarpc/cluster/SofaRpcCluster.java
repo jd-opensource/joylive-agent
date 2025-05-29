@@ -204,9 +204,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
         SofaRequest sofaRequest = request.getRequest();
         String body = degradeConfig.getResponseBody();
         SofaResponse result = new SofaResponse();
-        if (degradeConfig.getAttributes() != null) {
-            result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
-        }
+        result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
         if (body != null) {
             Object value;
             if (request.isGeneric()) {
