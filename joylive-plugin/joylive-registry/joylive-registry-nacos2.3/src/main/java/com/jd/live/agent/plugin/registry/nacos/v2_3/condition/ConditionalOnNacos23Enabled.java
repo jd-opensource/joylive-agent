@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.nacos.v2_3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 
 import java.lang.annotation.*;
@@ -23,10 +24,15 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@ConditionalOnClass(ConditionalOnNacos23Enabled.TYPE_SOURCE_TYPE)
 @ConditionalOnMissingClass(ConditionalOnNacos23Enabled.TYPE_SELECTOR_MANAGER)
 @ConditionalComposite
 public @interface ConditionalOnNacos23Enabled {
 
+    // Compatible with 2.1+
+    String TYPE_SOURCE_TYPE = "com.alibaba.nacos.client.env.SourceType";
+
+    // 2.4+
     String TYPE_SELECTOR_MANAGER = "com.alibaba.nacos.client.selector.SelectorManager";
 
 }

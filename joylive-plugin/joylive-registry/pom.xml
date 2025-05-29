@@ -28,6 +28,8 @@
         <module>joylive-registry-zuul</module>
         <module>joylive-registry-nacos2.4</module>
         <module>joylive-registry-nacos2.3</module>
+        <module>joylive-registry-nacos2.0</module>
+        <module>joylive-registry-nacos1.4</module>
         <module>joylive-registry-eureka</module>
     </modules>
 </project>

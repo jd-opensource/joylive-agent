@@ -29,6 +29,7 @@ public class NacosNotifyCenterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
+        // After nacos instances change notifier creation in init method.
         // Change notifier to NacosInstancesChangeNotifier
         NacosInstancePublisher publisher = LOCAL_PUBLISHER.get();
         if (publisher != null) {

@@ -18,9 +18,11 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.registry.RegistryService;
 
 import java.util.Properties;
+
+import static com.jd.live.agent.governance.registry.RegistryService.KEY_SYSTEM_REGISTERED;
+import static com.jd.live.agent.governance.registry.RegistryService.SYSTEM_REGISTERED;
 
 /**
  * NacosPropertiesInterceptor
@@ -31,6 +33,6 @@ public class NacosPropertiesInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         Properties properties = ((MethodContext) ctx).getResult();
         // A flag to exclude intercepting nacos.
-        properties.setProperty(RegistryService.SYSTEM, "true");
+        properties.setProperty(KEY_SYSTEM_REGISTERED, SYSTEM_REGISTERED);
     }
 }

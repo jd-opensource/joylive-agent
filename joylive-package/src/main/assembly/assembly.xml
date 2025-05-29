@@ -243,6 +243,8 @@
             <includes>
                 <include>com.jd.live:joylive-registry-nacos2.4</include>
                 <include>com.jd.live:joylive-registry-nacos2.3</include>
+                <include>com.jd.live:joylive-registry-nacos2.0</include>
+                <include>com.jd.live:joylive-registry-nacos1.4</include>
             </includes>
         </dependencySet>
 

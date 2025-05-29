@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingClien
  * NacosNamingClientProxyDelegateDefinition
  */
 @Injectable
-@Extension(value = "NacosNamingClientProxyDelegateDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosNamingClientProxyDelegateDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos24GovernanceEnabled
 @ConditionalOnClass(NacosNamingClientProxyDelegateDefinition.TYPE)
 public class NacosNamingClientProxyDelegateDefinition extends PluginDefinitionAdapter {

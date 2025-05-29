@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Provides functionality for managing the lifecycle of a registry service,
@@ -34,6 +35,12 @@ import java.util.function.Consumer;
 public interface RegistryService extends AutoCloseable {
 
     String SYSTEM = "system";
+
+    String SYSTEM_REGISTERED = "true";
+
+    String KEY_SYSTEM_REGISTERED = "system_registered";
+
+    Predicate<String> SYSTEM_REGISTERED_PREDICATE = SYSTEM_REGISTERED::equalsIgnoreCase;
 
     /**
      * Retrieves the name of the registry service.

@@ -27,14 +27,14 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.nacos.v2_4.condition.ConditionalOnNacos24GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingServiceConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingServiceInitInterceptor;
 import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingServiceShutdownInterceptor;
 
 /**
  * NacosNamingServiceDefinition
  */
 @Injectable
-@Extension(value = "NacosNamingServiceDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosNamingServiceDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos24GovernanceEnabled
 @ConditionalOnClass(NacosNamingServiceDefinition.TYPE)
 public class NacosNamingServiceDefinition extends PluginDefinitionAdapter {
@@ -43,6 +43,12 @@ public class NacosNamingServiceDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SHUTDOWN = "shutdown";
 
+    private static final String METHOD_INIT = "init";
+
+    private static final String[] ARGUMENTS_INIT = new String[]{
+            "java.util.Properties"
+    };
+
     @Inject(Registry.COMPONENT_REGISTRY)
     private CompositeRegistry registry;
 
@@ -50,7 +56,8 @@ public class NacosNamingServiceDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new NacosNamingServiceConstructorInterceptor(registry)),
+                        MatcherBuilder.named(METHOD_INIT).and(MatcherBuilder.arguments(ARGUMENTS_INIT)),
+                        () -> new NacosNamingServiceInitInterceptor(registry)),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SHUTDOWN), () -> new NacosNamingServiceShutdownInterceptor(registry)),
         };

@@ -13,38 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor;
+package com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor;
 
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
-import com.jd.live.agent.governance.registry.RegistryService;
-import com.jd.live.agent.plugin.registry.nacos.v2_3.registry.NacosInstancePublisher;
-import com.jd.live.agent.plugin.registry.nacos.v2_3.registry.NacosRegistryService;
+import com.jd.live.agent.plugin.registry.nacos.v2_4.registry.NacosInstancePublisher;
+import com.jd.live.agent.plugin.registry.nacos.v2_4.registry.NacosRegistryService;
 
 import java.util.Properties;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
-import static com.jd.live.agent.plugin.registry.nacos.v2_3.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
+import static com.jd.live.agent.governance.registry.RegistryService.KEY_SYSTEM_REGISTERED;
+import static com.jd.live.agent.governance.registry.RegistryService.SYSTEM_REGISTERED_PREDICATE;
+import static com.jd.live.agent.plugin.registry.nacos.v2_4.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**
  * NacosNamingServiceConstructorInterceptor
  */
-public class NacosNamingServiceConstructorInterceptor extends InterceptorAdaptor {
+public class NacosNamingServiceInitInterceptor extends InterceptorAdaptor {
 
     private final CompositeRegistry supervisor;
 
-    public NacosNamingServiceConstructorInterceptor(CompositeRegistry supervisor) {
+    public NacosNamingServiceInitInterceptor(CompositeRegistry supervisor) {
         this.supervisor = supervisor;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object arg = ctx.getArgument(0);
-        Properties properties = arg instanceof Properties ? (Properties) arg : null;
-        String system = properties == null ? null : properties.getProperty(RegistryService.SYSTEM);
-        if (!"true".equalsIgnoreCase(system)) {
+        // InstancesChangeNotifier.constructor -> NotifyCenter.registerSubscriber ->NamingClientProxyDelegate.constructor
+        Properties properties = ctx.getArgument(0);
+        // for dubbo
+        if (!SYSTEM_REGISTERED_PREDICATE.test(properties.getProperty(KEY_SYSTEM_REGISTERED))) {
             NacosRegistryService registry = new NacosRegistryService(null, properties);
             LOCAL_PUBLISHER.set(new NacosInstancePublisher(registry, null));
         }

@@ -28,7 +28,7 @@ import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosServiceDisc
 /**
  * NacosServiceDiscoveryDefinition
  */
-@Extension(value = "NacosServiceDiscoveryDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosServiceDiscoveryDefinition_v2.3", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos23GovernanceEnabled
 @ConditionalOnClass(NacosServiceDiscoveryDefinition.TYPE_NACOS_SERVICE_DISCOVERY)
 public class NacosServiceDiscoveryDefinition extends PluginDefinitionAdapter {

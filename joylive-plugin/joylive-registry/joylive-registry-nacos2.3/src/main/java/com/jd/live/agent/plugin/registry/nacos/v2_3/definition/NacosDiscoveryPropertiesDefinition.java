@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosDiscoveryPr
  * NacosDiscoveryPropertiesDefinition
  */
 @Injectable
-@Extension(value = "NacosDiscoveryPropertiesDefinition", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosDiscoveryPropertiesDefinition_v2.3", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos23GovernanceEnabled
 @ConditionalOnClass(NacosDiscoveryPropertiesDefinition.TYPE)
 public class NacosDiscoveryPropertiesDefinition extends PluginDefinitionAdapter {

@@ -56,9 +56,9 @@ public class NacosRegistryService extends AbstractSystemRegistryService implemen
     public NacosRegistryService(NacosNamingService client, Properties properties) {
         super(getSchemeAddress("nacos", properties.getProperty(SERVER_ADDR), null));
         this.client = client;
-        this.secure = properties != null && Converts.getBoolean(properties.getProperty(Constants.LABEL_SECURE), false);
-        this.group = properties == null ? null : properties.getProperty(Constants.LABEL_GROUP);
-        this.namespace = properties == null ? null : properties.getProperty(Constants.LABEL_NAMESPACE);
+        this.secure = Converts.getBoolean(properties.getProperty(Constants.LABEL_SECURE), false);
+        this.group = properties.getProperty(Constants.LABEL_GROUP);
+        this.namespace = properties.getProperty(Constants.LABEL_NAMESPACE);
     }
 
     @Override

@@ -30,6 +30,7 @@ public class NacosInstancesChangeNotifierInterceptor extends InterceptorAdaptor 
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // in nacos naming service init method
         InstancesChangeNotifier notifier = (InstancesChangeNotifier) ctx.getTarget();
         NacosInstancePublisher publisher = LOCAL_PUBLISHER.get();
         if (publisher != null) {
