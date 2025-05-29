@@ -51,7 +51,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
 
     @Override
     protected void startSync() throws Exception {
-        spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
+        spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), application.getName(), this::onSpaceListResponse);
         spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
         String liveSpaceId = location == null ? null : location.getLiveSpaceId();
@@ -110,7 +110,7 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
      * @param spaceId The ID of the LiveSpace object to synchronize.
      */
     protected void syncSpace(String spaceId) {
-        Subscription<K1, LiveSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+        Subscription<K1, LiveSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), application.getName(), r -> onSpaceResponse(r, spaceId));
         if (subscriptions.put(spaceId, subscription) == null) {
             syncer.sync(subscription);
         }
