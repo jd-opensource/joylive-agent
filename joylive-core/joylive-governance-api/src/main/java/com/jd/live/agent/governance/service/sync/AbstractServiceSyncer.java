@@ -132,7 +132,7 @@ public abstract class AbstractServiceSyncer<K extends ServiceKey> extends Abstra
      * @return A new Subscription object for synchronizing Service objects.
      */
     protected Subscription<K, Service> createSubscription(PolicySubscription subscriber) {
-        Subscription<K, Service> result = new Subscription<>(getName(), createServiceKey(subscriber));
+        Subscription<K, Service> result = new Subscription<>(getName(), createServiceKey(subscriber), application.getName());
         result.setListener(r -> onResponse(result, r));
         return result;
     }

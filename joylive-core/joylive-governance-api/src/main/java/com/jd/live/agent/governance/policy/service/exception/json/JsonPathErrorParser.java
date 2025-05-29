@@ -19,32 +19,24 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.JsonPathParser;
-import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
+import com.jd.live.agent.governance.policy.service.exception.AbstractErrorParser;
 
 import java.io.InputStream;
 
 @Injectable
 @Extension("JsonPath")
-public class JsonPathErrorParser implements ErrorParser {
+public class JsonPathErrorParser extends AbstractErrorParser {
 
     @Inject
     private JsonPathParser parser;
 
     @Override
-    public String getValue(String expression, Object response) {
-        if (expression == null || expression.isEmpty() || response == null) {
-            return null;
-        }
-        Object result;
-        if (response instanceof String) {
-            result = parser.read((String) response, expression);
-        } else if (response instanceof byte[]) {
-            result = parser.read(new String((byte[]) response), expression);
-        } else if (response instanceof InputStream) {
-            result = parser.read((InputStream) response, expression);
-        } else {
-            result = parser.read(response.toString(), expression);
-        }
-        return result == null ? null : result.toString();
+    protected String parse(String expression, String response) {
+        return parser.read(response, expression);
+    }
+
+    @Override
+    protected String parse(String expression, InputStream response) {
+        return parser.read(response, expression);
     }
 }

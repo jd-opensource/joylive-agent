@@ -19,6 +19,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -75,8 +77,14 @@ public class DegradeConfig {
     }
 
     public void foreach(BiConsumer<String, String> consumer) {
-        if (attributes != null) {
+        if (attributes != null && !attributes.isEmpty() && consumer != null) {
             attributes.forEach(consumer);
+        }
+    }
+
+    public void append(Map<String, Collection<String>> headers) {
+        if (headers != null) {
+            foreach((key, value) -> headers.computeIfAbsent(key, v -> new ArrayList<>()).add(value));
         }
     }
 
@@ -100,5 +108,25 @@ public class DegradeConfig {
             }
         }
         return responseBytes;
+    }
+
+    protected void cache() {
+        if (attributes != null) {
+            // filter empty key and value
+            Map<String, String> headers = new HashMap<>(attributes.size());
+            String key;
+            String value;
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                key = entry.getKey();
+                key = key == null ? null : key.trim();
+                value = entry.getValue();
+                if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+                    headers.put(key, value);
+                }
+            }
+            attributes = headers;
+        } else {
+            attributes = new HashMap<>();
+        }
     }
 }

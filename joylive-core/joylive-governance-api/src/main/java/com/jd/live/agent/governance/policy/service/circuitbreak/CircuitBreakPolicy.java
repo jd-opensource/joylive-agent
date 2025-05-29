@@ -451,6 +451,9 @@ public class CircuitBreakPolicy extends PolicyId
         if (codePolicy != null) {
             codePolicy.cache();
         }
+        if (degradeConfig != null) {
+            degradeConfig.cache();
+        }
         recoverRatio = isRecoveryEnabled() ? new RecoverRatio(getRecoveryDuration(), getRecoveryPhase()) : null;
     }
 

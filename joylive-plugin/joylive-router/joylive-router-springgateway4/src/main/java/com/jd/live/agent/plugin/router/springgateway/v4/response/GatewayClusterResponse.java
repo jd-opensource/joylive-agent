@@ -34,7 +34,6 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -119,10 +118,7 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
         DataBuffer buffer = response.bufferFactory().wrap(degradeConfig.getResponseBytes());
         HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
         headers.putAll(request.getHeaders());
-        Map<String, String> attributes = degradeConfig.getAttributes();
-        if (attributes != null) {
-            attributes.forEach(headers::add);
-        }
+        degradeConfig.foreach(headers::add);
         response.setRawStatusCode(degradeConfig.getResponseCode());
         response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
         headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
