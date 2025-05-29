@@ -88,6 +88,7 @@ public class GovernanceConfig {
     public static final String CONFIG_PROTECT_MARIADB_ENABLED = CONFIG_SWITCH_PROTECT + ".mariadb";
     public static final String CONFIG_PROTECT_POSTGRESQL_ENABLED = CONFIG_SWITCH_PROTECT + ".postgresql";
     public static final String CONFIG_PROTECT_OPENGAUSS_ENABLED = CONFIG_SWITCH_PROTECT + ".opengauss";
+    public static final String CONFIG_PROTECT_MYSQL_ENABLED = CONFIG_SWITCH_PROTECT + ".mysql";
     public static final String CONFIG_PROTECT_MONGODB_ENABLED = CONFIG_SWITCH_PROTECT + ".mongodb";
     public static final String CONFIG_PROTECT_REDIS_ENABLED = CONFIG_SWITCH_PROTECT + ".redis";
 

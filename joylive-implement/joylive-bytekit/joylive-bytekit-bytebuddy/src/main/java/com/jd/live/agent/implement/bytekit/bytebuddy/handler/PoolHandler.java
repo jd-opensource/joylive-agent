@@ -47,7 +47,7 @@ public class PoolHandler implements BuilderHandler, ExtensionInitializer {
     @Inject(EnhanceConfig.COMPONENT_ENHANCE_CONFIG)
     private EnhanceConfig enhanceConfig;
 
-    @Inject(Timer.COMPONENT_TIMER)
+    @Inject(value = Timer.COMPONENT_TIMER, nullable = true)
     private Timer timer;
 
     private final PoolCache poolCache = new PoolCache(256);
@@ -65,14 +65,17 @@ public class PoolHandler implements BuilderHandler, ExtensionInitializer {
     }
 
     private void addCleanTask() {
-        timer.delay("LiveAgent-ByteBuddy-Pool-Cleaner", enhanceConfig.getPoolCleanInterval(), () -> {
-            int old = poolCache.size();
-            poolCache.recycle(enhanceConfig.getPoolExpireTime());
-            int current = poolCache.size();
-            if (old != current || ThreadLocalRandom.current().nextInt(10) == 0) {
-                logger.info("Clean expired cache from byte buddy pool. " + old + " -> " + current);
-            }
-            addCleanTask();
-        });
+        if (timer != null) {
+            timer.delay("LiveAgent-ByteBuddy-Pool-Cleaner", enhanceConfig.getPoolCleanInterval(), () -> {
+                int old = poolCache.size();
+                poolCache.recycle(enhanceConfig.getPoolExpireTime());
+                int current = poolCache.size();
+                if (old != current || ThreadLocalRandom.current().nextInt(10) == 0) {
+                    logger.info("Clean expired cache from byte buddy pool. " + old + " -> " + current);
+                }
+                addCleanTask();
+            });
+        }
+
     }
 }
