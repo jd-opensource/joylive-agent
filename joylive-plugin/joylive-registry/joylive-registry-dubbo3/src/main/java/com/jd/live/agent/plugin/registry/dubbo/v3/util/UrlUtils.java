@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.util;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
@@ -51,7 +52,7 @@ public class UrlUtils {
     private static final String FIELD_URL_ADDRESS = "urlAddress";
 
     public static String getClusterName(URL url) {
-        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
+        return URI.getAddress(url.getProtocol(), url.getHost(), url.getPort());
     }
 
     /**

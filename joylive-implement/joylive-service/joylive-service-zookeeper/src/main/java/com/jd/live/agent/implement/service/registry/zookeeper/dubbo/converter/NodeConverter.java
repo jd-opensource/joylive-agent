@@ -31,7 +31,7 @@ public class NodeConverter implements Converter<ServiceInstance, String> {
     @Override
     public String convert(ServiceInstance instance) {
         URI uri = URI.builder()
-                .schema(instance.getScheme())
+                .scheme(instance.getScheme())
                 .host(instance.getHost())
                 .port(instance.getPort())
                 .path(instance.getService())

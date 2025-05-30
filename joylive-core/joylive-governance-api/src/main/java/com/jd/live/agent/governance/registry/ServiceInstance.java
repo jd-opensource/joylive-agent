@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Builder;
 import lombok.Getter;
@@ -80,12 +81,7 @@ public class ServiceInstance extends ServiceId {
     }
 
     public String getAddress() {
-        int port = getPort();
-        if (port > 0) {
-            return getHost() + ":" + port;
-        } else {
-            return getHost();
-        }
+        return URI.getAddress(getHost(), getPort());
     }
 
     public String getMetadata(String key) {
@@ -98,27 +94,7 @@ public class ServiceInstance extends ServiceId {
     }
 
     public String getSchemeAddress() {
-        return getSchemeAddress(getScheme(), getHost(), getPort());
+        return URI.getAddress(getScheme(), getHost(), getPort());
 
-    }
-
-    public static String getSchemeAddress(String scheme, String host, int port) {
-        if (port > 0) {
-            if (scheme == null || scheme.isEmpty()) {
-                return host + ":" + port;
-            }
-            return scheme + "://" + host + ":" + port;
-        } else if (scheme == null || scheme.isEmpty()) {
-            return host;
-        }
-        return scheme + "://" + host;
-    }
-
-    public static String getSchemeAddress(String scheme, String host, String port) {
-        try {
-            return getSchemeAddress(scheme, host, Integer.parseInt(port));
-        } catch (NumberFormatException e) {
-            return getSchemeAddress(scheme, host, 0);
-        }
     }
 }

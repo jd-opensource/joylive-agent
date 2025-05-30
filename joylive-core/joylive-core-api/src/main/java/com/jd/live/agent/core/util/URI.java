@@ -25,13 +25,13 @@ import java.util.Map;
 import java.util.zip.CRC32;
 
 /**
- * Represents a URI (Uniform Resource Identifier) with components like schema, host, port, path, and parameters.
+ * Represents a URI (Uniform Resource Identifier) with components like scheme, host, port, path, and parameters.
  * Provides methods to construct and modify the URI.
  */
 public class URI {
 
     @Getter
-    private String schema;
+    private String scheme;
 
     @Getter
     private String user;
@@ -60,7 +60,7 @@ public class URI {
     public URI() {
     }
 
-    private URI(String schema,
+    private URI(String scheme,
                 String user,
                 String password,
                 String host,
@@ -68,7 +68,7 @@ public class URI {
                 String path,
                 Map<String, String> parameters,
                 String url) {
-        this.schema = schema;
+        this.scheme = scheme;
         this.user = user;
         this.password = password;
         this.host = host;
@@ -79,26 +79,26 @@ public class URI {
     }
 
     /**
-     * Constructs a URI with the specified schema, host, path, and parameters.
+     * Constructs a URI with the specified scheme, host, path, and parameters.
      *
-     * @param schema     the URI schema (e.g., "http", "https").
+     * @param scheme     the URI scheme (e.g., "http", "https").
      * @param host       the host name or IP address.
      * @param port       the port.
      * @param path       the path component of the URI.
      * @param parameters the query parameters as a map.
      */
-    public URI(String schema,
+    public URI(String scheme,
                String host,
                Integer port,
                String path,
                Map<String, String> parameters) {
-        this(schema, null, null, host, port, path, parameters, null);
+        this(scheme, null, null, host, port, path, parameters, null);
     }
 
     /**
-     * Constructs a URI with the specified schema, host, path, and parameters.
+     * Constructs a URI with the specified scheme, host, path, and parameters.
      *
-     * @param schema     the URI schema (e.g., "http", "https").
+     * @param scheme     the URI scheme (e.g., "http", "https").
      * @param user       the user info.
      * @param password   the password info.
      * @param host       the host name or IP address.
@@ -107,14 +107,19 @@ public class URI {
      * @param parameters the query parameters as a map.
      */
     @Builder
-    public URI(String schema,
+    public URI(String scheme,
                String user,
                String password,
                String host,
                Integer port,
                String path,
                Map<String, String> parameters) {
-        this(schema, user, password, host, port, path, parameters, null);
+        this(scheme, user, password, host, port, path, parameters, null);
+    }
+
+    @Deprecated
+    public String getSchema() {
+        return scheme;
     }
 
     public int getPort(int defaultPort) {
@@ -125,11 +130,22 @@ public class URI {
     }
 
     /**
-     * Sets the schema component of the URI.
+     * Sets the scheme component of the URI.
      *
-     * @param schema the new schema.
-     * @return a new URI instance with the updated schema.
+     * @param scheme the new scheme.
+     * @return a new URI instance with the updated scheme.
      */
+    public URI scheme(String scheme) {
+        return new URI(scheme, user, password, host, port, path, parameters);
+    }
+
+    /**
+     * Sets the scheme component of the URI.
+     *
+     * @param schema the new scheme.
+     * @return a new URI instance with the updated scheme.
+     */
+    @Deprecated
     public URI schema(String schema) {
         return new URI(schema, user, password, host, port, path, parameters);
     }
@@ -141,7 +157,7 @@ public class URI {
      * @return a new URI instance with the updated user component
      */
     public URI user(String user) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return new URI(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -151,7 +167,7 @@ public class URI {
      * @return a new URI instance with the updated password component
      */
     public URI password(String password) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return new URI(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -161,7 +177,7 @@ public class URI {
      * @return a new URI instance with the updated host.
      */
     public URI host(String host) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return new URI(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -171,7 +187,7 @@ public class URI {
      * @return a new URI instance with the updated port.
      */
     public URI port(Integer port) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return new URI(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -181,7 +197,7 @@ public class URI {
      * @return a new URI instance with the updated path.
      */
     public URI path(String path) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return new URI(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -191,7 +207,7 @@ public class URI {
      * @return a new URI instance with the updated path.
      */
     public URI parameters(Map<String, String> parameters) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return new URI(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -224,7 +240,7 @@ public class URI {
             }
             newUrl = builder.toString();
         }
-        return new URI(schema, user, password, host, port, path, newParameters, newUrl);
+        return new URI(scheme, user, password, host, port, path, newParameters, newUrl);
     }
 
     /**
@@ -237,26 +253,11 @@ public class URI {
     /**
      * Returns the formatted address string.
      *
-     * @param withSchema whether to include schema prefix (e.g. "http://")
-     * @return host:port (with schema if requested)
+     * @param withScheme whether to include scheme prefix (e.g. "http://")
+     * @return host:port (with scheme if requested)
      */
-    public String getAddress(boolean withSchema) {
-        if (!withSchema || schema == null) {
-            if (port == null) {
-                return host;
-            } else {
-                return host + ":" + port;
-            }
-        }
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(schema).append("://");
-        if (host != null) {
-            sb.append(host);
-        }
-        if (port != null) {
-            sb.append(":").append(port);
-        }
-        return sb.toString();
+    public String getAddress(boolean withScheme) {
+        return withScheme ? getAddress(scheme, host, port) : getAddress(host, port);
     }
 
     /**
@@ -285,8 +286,8 @@ public class URI {
     public String getUri() {
         if (url == null) {
             StringBuilder sb = new StringBuilder(128);
-            if (schema != null && !schema.isEmpty()) {
-                sb.append(schema).append("://");
+            if (scheme != null && !scheme.isEmpty()) {
+                sb.append(scheme).append("://");
             }
             int userLen = user == null ? 0 : user.length();
             int passwordLen = password == null ? 0 : password.length();
@@ -300,7 +301,11 @@ public class URI {
                 sb.append('@');
             }
             if (host != null) {
-                sb.append(host);
+                if (!isIpv6(host) || host.charAt(0) == '[') {
+                    sb.append(host);
+                } else {
+                    sb.append('[').append(host).append(']');
+                }
             }
             if (port != null) {
                 sb.append(':').append(port);
@@ -348,6 +353,10 @@ public class URI {
     @Override
     public String toString() {
         return getUri();
+    }
+
+    private static boolean isIpv6(String host) {
+        return host.indexOf(':') >= 0;
     }
 
     /**
@@ -399,6 +408,54 @@ public class URI {
     }
 
     /**
+     * Constructs a formatted address string with optional scheme and port.
+     *
+     * <p>For IPv6 addresses, automatically adds square brackets if not already present.
+     *
+     * @param scheme The URI scheme (e.g., "http", "https"). May be null or empty.
+     * @param host   The hostname or IP address. IPv6 addresses will be properly formatted.
+     * @param port   The port number. Values <= 0 will omit the port from the output.
+     * @return Formatted address string in one of these formats:
+     * - "scheme://host:port"
+     * - "scheme://host"
+     * - "host:port"
+     * - "host"
+     */
+    public static String getAddress(String scheme, String host, int port) {
+        if (scheme == null || scheme.isEmpty()) {
+            return getAddress(host, port);
+        }
+        return scheme + "://" + getAddress(host, port);
+    }
+
+    public static String getAddress(String scheme, String host, String port) {
+        try {
+            return getAddress(scheme, host, Integer.parseInt(port));
+        } catch (NumberFormatException e) {
+            return getAddress(scheme, host, 0);
+        }
+    }
+
+    /**
+     * Formats a host and port into a standard address string.
+     * Automatically wraps IPv6 addresses in square brackets if needed.
+     *
+     * @param host the hostname or IP address (IPv4 or IPv6)
+     * @param port the port number (ignored if <= 0)
+     * @return formatted address as either "host", "host:port",
+     * "[IPv6]", or "[IPv6]:port"
+     */
+    public static String getAddress(String host, Integer port) {
+        if (isIpv6(host) && host.charAt(0) != '[') {
+            host = "[" + host + "]";
+        }
+        if (port != null && port > 0) {
+            return host + ":" + port;
+        }
+        return host;
+    }
+
+    /**
      * Represents a parsed URI with all components.
      * Handles schema, authentication, host, port, path, query and fragment.
      */
@@ -415,7 +472,7 @@ public class URI {
          * @throws NullPointerException if uri is null
          */
         public static int[] parse(char[] uri, boolean onlyHost) {
-            int[] pos = new int[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+            int[] pos = new int[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
             doParse(uri, onlyHost, pos);
             return pos;
         }
@@ -511,19 +568,19 @@ public class URI {
             doParseHost(uri, pos);
             doParsePath(uri, pos);
             if (Role.PATH.isEndless(pos)) {
-                success = Role.QUERY.align(pos, Role.PATH);
+                success = !Role.QUERY.align(pos, Role.PATH) && Role.FRAGMENT.align(pos, Role.PATH);
             }
             if (Role.PORT.isEndless(pos)) {
-                success = !Role.PATH.align(pos, Role.PORT) && Role.QUERY.align(pos, Role.PORT);
+                success = !Role.PATH.align(pos, Role.PORT) && !Role.QUERY.align(pos, Role.PORT) && Role.FRAGMENT.align(pos, Role.PORT);
             }
             if (Role.HOST.isEndless(pos)) {
-                success = !Role.PATH.align(pos, Role.HOST) && Role.QUERY.align(pos, Role.HOST);
+                success = !Role.PATH.align(pos, Role.HOST) && !Role.QUERY.align(pos, Role.HOST) && Role.FRAGMENT.align(pos, Role.HOST);
             }
             if (Role.PASSWORD.isEndless(pos)) {
-                success = !Role.HOST.align(pos, Role.PASSWORD) && !Role.PATH.align(pos, Role.PASSWORD) && Role.QUERY.align(pos, Role.PASSWORD);
+                success = !Role.HOST.align(pos, Role.PASSWORD) && !Role.PATH.align(pos, Role.PASSWORD) && !Role.QUERY.align(pos, Role.PASSWORD) && Role.FRAGMENT.align(pos, Role.PASSWORD);
             }
             if (Role.USER.isEndless(pos)) {
-                success = !Role.PASSWORD.align(pos, Role.USER) && !Role.HOST.align(pos, Role.USER) && !Role.PATH.align(pos, Role.USER) && Role.QUERY.align(pos, Role.USER);
+                success = !Role.PASSWORD.align(pos, Role.USER) && !Role.HOST.align(pos, Role.USER) && !Role.PATH.align(pos, Role.USER) && !Role.QUERY.align(pos, Role.USER) && Role.FRAGMENT.align(pos, Role.USER);
             }
         }
 
@@ -542,6 +599,11 @@ public class URI {
                         // query
                         Role.PATH.setEnd(pos, i);
                         Role.QUERY.setStart(pos, i + 1);
+                        return;
+                    case '#':
+                        // fragment
+                        Role.PATH.setEnd(pos, i);
+                        Role.FRAGMENT.setStart(pos, i + 1);
                         return;
                     case '=':
                         Role.PATH.setEnd(pos, i);
@@ -581,6 +643,10 @@ public class URI {
                         return;
                     case '?':
                         Role.QUERY.setStart(pos, i + 1);
+                        return;
+                    case '#':
+                        // fragment
+                        Role.FRAGMENT.setStart(pos, i + 1);
                         return;
                     case '=':
                         Role.QUERY.setStart(pos, i);
@@ -680,7 +746,12 @@ public class URI {
         /**
          * Query string component
          */
-        QUERY(14, 15);
+        QUERY(14, 15),
+
+        /**
+         * Fragment component
+         */
+        FRAGMENT(16, 17);
 
         protected final int startPos;
         protected final int endPos;

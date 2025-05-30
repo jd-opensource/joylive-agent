@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.governance.registry.ServiceInstance.getSchemeAddress;
+import static com.jd.live.agent.core.util.URI.getAddress;
 
 /**
  * Registry service implementation for Eureka discovery client.
@@ -42,7 +42,7 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     private DiscoveryClient client;
 
     public EurekaRegistryService(EurekaClientConfig config) {
-        super(getSchemeAddress("eureka", config.getEurekaServerDNSName(), config.getEurekaServerPort()));
+        super(getAddress("eureka", config.getEurekaServerDNSName(), config.getEurekaServerPort()));
     }
 
     public EurekaRegistryService(DiscoveryClient client) {

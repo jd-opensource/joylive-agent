@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.util;
 
 import com.alibaba.dubbo.common.URL;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
@@ -36,7 +37,7 @@ public class UrlUtils {
     private static final String VERSION = "2.6";
 
     public static String getClusterName(URL url) {
-        return ServiceInstance.getSchemeAddress(url.getProtocol(), url.getHost(), url.getPort());
+        return URI.getAddress(url.getProtocol(), url.getHost(), url.getPort());
     }
 
     /**

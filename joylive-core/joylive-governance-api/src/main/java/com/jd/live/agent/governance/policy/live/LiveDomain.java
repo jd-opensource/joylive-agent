@@ -34,7 +34,7 @@ import java.util.Set;
 
 public class LiveDomain extends PolicyId {
 
-    public static final URI LIVE_ROOT = URI.builder().schema("live").build();
+    public static final URI LIVE_ROOT = URI.builder().scheme("live").build();
 
     @Getter
     @Setter

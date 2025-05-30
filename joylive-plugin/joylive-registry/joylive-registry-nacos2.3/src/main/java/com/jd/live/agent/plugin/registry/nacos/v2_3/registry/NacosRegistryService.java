@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.registry.nacos.v2_3.registry;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
@@ -32,7 +33,6 @@ import java.util.Properties;
 
 import static com.alibaba.nacos.api.PropertyKeyConst.SERVER_ADDR;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.governance.registry.ServiceInstance.getSchemeAddress;
 
 /**
  * Registry service implementation for Eureka discovery client.
@@ -54,7 +54,7 @@ public class NacosRegistryService extends AbstractSystemRegistryService implemen
     }
 
     public NacosRegistryService(NacosNamingService client, Properties properties) {
-        super(getSchemeAddress("nacos", properties.getProperty(SERVER_ADDR), null));
+        super(URI.getAddress("nacos", properties.getProperty(SERVER_ADDR), null));
         this.client = client;
         this.secure = Converts.getBoolean(properties.getProperty(Constants.LABEL_SECURE), false);
         this.group = properties.getProperty(Constants.LABEL_GROUP);

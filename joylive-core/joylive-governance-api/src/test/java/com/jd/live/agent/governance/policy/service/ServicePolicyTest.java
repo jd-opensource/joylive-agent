@@ -43,7 +43,7 @@ public class ServicePolicyTest {
         ServicePolicy source = null;
         ServicePolicy target = new ServicePolicy();
         target.setId(123L);
-        target.supplement(() -> URI.builder().schema("service").host("order").path("/").build().parameter("group", "test"));
+        target.supplement(() -> URI.builder().scheme("service").host("order").path("/").build().parameter("group", "test"));
         target.setLoadBalancePolicy(new LoadBalancePolicy());
         target.setClusterPolicy(new ClusterPolicy());
         target.setLivePolicy(new ServiceLivePolicy());
@@ -75,7 +75,7 @@ public class ServicePolicyTest {
         source = target;
         target = new ServicePolicy();
         target.setId(456L);
-        target.supplement(() -> URI.builder().schema("service").host("order").path("/add").build().parameter("group", "test"));
+        target.supplement(() -> URI.builder().scheme("service").host("order").path("/add").build().parameter("group", "test"));
         target.supplement(source);
         Assertions.assertNotNull(target.getLoadBalancePolicy());
         Assertions.assertNotNull(target.getClusterPolicy());

@@ -140,7 +140,7 @@ public class EndpointConverter implements BiConverter<ServiceId, ChildData, Dubb
         return DubboZookeeperEndpoint.builder()
                 .service(serviceId.getService())
                 .group(group)
-                .scheme(uri.getSchema())
+                .scheme(uri.getScheme())
                 .host(uri.getHost())
                 .port(uri.getPort())
                 .metadata(parameters == null ? null : new HashMap<>(parameters))
