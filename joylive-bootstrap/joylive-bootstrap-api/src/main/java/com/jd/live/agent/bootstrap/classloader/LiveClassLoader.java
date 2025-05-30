@@ -133,7 +133,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
             if (candidates != null) {
                 try {
                     return loadByClassLoader(candidates, name, resolve, c -> c != this);
-                } catch (ClassNotFoundException ignored) {
+                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
                     // ignore
                 }
             }
@@ -202,7 +202,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         ClassLoader parent = getParent();
         try {
             return loadByClassLoader(parent, name, resolve);
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
             // javax.servlet.http.HttpServlet in tomcat-core
             // spring boot jar
             return loadByClassLoader(candidates, name, resolve, c -> c != parent);
@@ -248,7 +248,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
                 if (classLoader != null && (predicate == null || predicate.test(classLoader))) {
                     try {
                         return loadByClassLoader(classLoader, name, resolve);
-                    } catch (ClassNotFoundException ignored) {
+                    } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
                     }
                 }
             }

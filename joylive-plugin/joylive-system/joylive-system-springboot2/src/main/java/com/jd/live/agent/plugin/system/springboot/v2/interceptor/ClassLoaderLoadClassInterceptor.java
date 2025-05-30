@@ -21,8 +21,6 @@ import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
-import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.setContextLoaderEnabled;
-
 public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
 
     private final Resourcer resourcer;
@@ -37,15 +35,13 @@ public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
     @Override
     public void onError(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        String name = (String) ctx.getArguments()[0];
+        String name = ctx.getArgument(0);
+        // This is joy live agent class
         if (classLoaderConfig.isEssential(name)) {
-            // Disable context class loader to avoid circuit.
-            boolean isContextLoaderEnabled = setContextLoaderEnabled(false);
+            // resourcer is plugin loader manager.
             try {
                 mc.success(resourcer.loadClass(name));
             } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-            } finally {
-                setContextLoaderEnabled(isContextLoaderEnabled);
             }
         }
     }

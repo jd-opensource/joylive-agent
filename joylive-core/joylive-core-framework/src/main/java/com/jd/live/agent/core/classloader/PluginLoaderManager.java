@@ -15,10 +15,7 @@
  */
 package com.jd.live.agent.core.classloader;
 
-import com.jd.live.agent.bootstrap.classloader.ClassLoaderFactory;
-import com.jd.live.agent.bootstrap.classloader.ClassLoaderSupervisor;
-import com.jd.live.agent.bootstrap.classloader.Resourcer;
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
+import com.jd.live.agent.bootstrap.classloader.*;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.util.Close;
 
@@ -27,8 +24,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.setContextLoaderEnabled;
 
 /**
  * The PluginLoaderManager class is responsible for managing class loaders for plugins. It implements
@@ -98,28 +93,18 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         // Only load classes with "com.jd.live.agent." prefix
         if (config.isEssential(name)) {
-            // TODO fast locate classloader by package
-            // Disable context classloader to avoid loading multiple times.
-            boolean isContextLoaderEnabled = setContextLoaderEnabled(false);
+            // This is called by spring class loader, so disable context classloader.
+            CandidateFeature feature = CandidateProvider.setCandidateFeature(null);
             try {
                 for (ClassLoader classLoader : loaders.values()) {
                     try {
-                        Class<?> clazz = classLoader.loadClass(name);
-                        if (clazz != null) {
-                            return clazz;
-                        }
-                    } catch (ClassNotFoundException ignore) {
-                    }
-                }
-                // Try to load class from context classloader.
-                if (isContextLoaderEnabled) {
-                    ClassLoader candidator = Thread.currentThread().getContextClassLoader();
-                    if (candidator != null) {
-                        return candidator.loadClass(name);
+                        return classLoader.loadClass(name);
+                    } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                        // ignore
                     }
                 }
             } finally {
-                setContextLoaderEnabled(isContextLoaderEnabled);
+                CandidateProvider.setCandidateFeature(feature);
             }
         }
         throw new ClassNotFoundException("class " + name + " is not found.");

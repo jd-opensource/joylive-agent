@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.core.classloader;
 
+import com.jd.live.agent.bootstrap.classloader.CandidateFeature;
+import com.jd.live.agent.bootstrap.classloader.CandidateProvider;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfigFilter;
 
 import java.io.File;
-
-import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.isContextLoaderEnabled;
 
 /**
  * The PluginResourceFilter class extends the functionality of a ResourceConfigFilter,
@@ -29,8 +29,6 @@ import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.isContex
  * @see ResourceConfigFilter
  */
 public class PluginResourceFilter extends ResourceConfigFilter {
-
-    public static ClassLoader BOOT_CLASS_LOADER = null;
 
     /**
      * Constructs a PluginResourceFilter with a specific ResourceConfig and a path to the configuration file.
@@ -53,20 +51,20 @@ public class PluginResourceFilter extends ResourceConfigFilter {
 
     @Override
     public ClassLoader[] getCandidates() {
-        if (!isContextLoaderEnabled()) {
+        CandidateFeature feature = CandidateProvider.getCandidateFeature();
+        if (feature == null || !feature.isContextLoaderEnabled()) {
             return null;
         }
         // The thread context class loader may be inconsistent with the framework's boot class loader.
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        if (BOOT_CLASS_LOADER == null) {
+        contextClassLoader = contextClassLoader == APP_CLASS_LOADER || !feature.test(contextClassLoader) ? null : contextClassLoader;
+        ClassLoader bootClassLoader = BOOT_CLASS_LOADER == APP_CLASS_LOADER || BOOT_CLASS_LOADER == contextClassLoader || !feature.test(BOOT_CLASS_LOADER) ? null : BOOT_CLASS_LOADER;
+        if (bootClassLoader == null) {
             return contextClassLoader == null ? null : new ClassLoader[]{contextClassLoader};
-        } else if (contextClassLoader == null || contextClassLoader == BOOT_CLASS_LOADER) {
-            return new ClassLoader[]{BOOT_CLASS_LOADER};
+        } else if (contextClassLoader == null) {
+            return new ClassLoader[]{bootClassLoader};
         }
-        ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-        return contextClassLoader == systemClassLoader
-                ? new ClassLoader[]{BOOT_CLASS_LOADER}
-                : new ClassLoader[]{BOOT_CLASS_LOADER, contextClassLoader};
+        return new ClassLoader[]{BOOT_CLASS_LOADER, contextClassLoader};
     }
 }
 

@@ -23,6 +23,9 @@ import java.util.Enumeration;
 
 public class ResourceConfigFilter implements ResourceFilter {
 
+    public static ClassLoader BOOT_CLASS_LOADER = null;
+
+    public static ClassLoader APP_CLASS_LOADER = null;
 
     private final ResourceConfig config;
 
