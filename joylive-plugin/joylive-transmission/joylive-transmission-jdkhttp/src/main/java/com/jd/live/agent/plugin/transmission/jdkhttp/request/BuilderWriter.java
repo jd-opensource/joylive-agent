@@ -15,16 +15,15 @@
  */
 package com.jd.live.agent.plugin.transmission.jdkhttp.request;
 
-import com.jd.live.agent.core.util.type.FieldPath;
 import com.jd.live.agent.governance.request.HeaderWriter.MultiValueMapWriter;
 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class BuilderWriter extends MultiValueMapWriter {
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
-    private static final FieldPath path = new FieldPath("jdk.internal.net.http.HttpRequestBuilderImpl", "headersBuilder.headersMap");
+public class BuilderWriter extends MultiValueMapWriter {
 
     public BuilderWriter(Map<String, List<String>> map) {
         super(map);
@@ -38,7 +37,11 @@ public class BuilderWriter extends MultiValueMapWriter {
      */
     @SuppressWarnings("unchecked")
     public static BuilderWriter of(Object builder) {
-        return new BuilderWriter((Map<String, List<String>>) path.get(builder, TreeMap::new));
+        Object target = getQuietly(getQuietly(builder, "headersBuilder"), "headersMap");
+        if (target instanceof Map) {
+            return new BuilderWriter((Map<String, List<String>>) target);
+        }
+        return new BuilderWriter(new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
     }
 
 }
