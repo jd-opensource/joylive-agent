@@ -92,22 +92,20 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         // Only load classes with "com.jd.live.agent." prefix
-        if (config.isEssential(name)) {
-            // This is called by spring class loader, so disable context classloader.
-            CandidateFeature feature = CandidateProvider.setCandidateFeature(null);
-            try {
-                for (ClassLoader classLoader : loaders.values()) {
-                    try {
-                        return classLoader.loadClass(name);
-                    } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-                        // ignore
-                    }
-                }
-            } finally {
-                CandidateProvider.setCandidateFeature(feature);
-            }
+        if (!test(name)) {
+            throw new ClassNotFoundException("class " + name + " is not found.");
         }
-        throw new ClassNotFoundException("class " + name + " is not found.");
+        // This is called by spring class loader, so disable context classloader.
+        return CandidateProvider.getCandidateFeature().disableAndRun(() -> {
+            for (ClassLoader classLoader : loaders.values()) {
+                try {
+                    return classLoader.loadClass(name);
+                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                    // ignore
+                }
+            }
+            throw new ClassNotFoundException("class " + name + " is not found.");
+        });
     }
 
     @Override
@@ -170,6 +168,11 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
             }
         }
         return Collections.enumeration(urls);
+    }
+
+    @Override
+    public boolean test(String name) {
+        return config.isEssential(name);
     }
 
     @Override

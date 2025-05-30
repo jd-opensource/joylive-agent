@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.system.springboot.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
-import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
 import java.net.URL;
@@ -27,11 +26,8 @@ public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
 
     private final Resourcer resourcer;
 
-    private final ClassLoaderConfig classLoaderConfig;
-
-    public ClassLoaderFindResourceInterceptor(Resourcer resourcer, ClassLoaderConfig classLoaderConfig) {
+    public ClassLoaderFindResourceInterceptor(Resourcer resourcer) {
         this.resourcer = resourcer;
-        this.classLoaderConfig = classLoaderConfig;
     }
 
     @Override
@@ -39,8 +35,8 @@ public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         if (mc.getResult() == null) {
             String name = mc.getArgument(0);
-            String path = name.replace('/', '.');
-            if (classLoaderConfig.isEssential(path)) {
+            String className = name.replace('/', '.');
+            if (resourcer.test(className)) {
                 URL url = resourcer.findResource(name);
                 if (url != null) {
                     mc.setResult(url);

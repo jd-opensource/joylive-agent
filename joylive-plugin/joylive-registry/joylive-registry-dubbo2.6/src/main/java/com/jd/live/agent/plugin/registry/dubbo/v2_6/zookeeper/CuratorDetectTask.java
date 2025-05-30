@@ -53,4 +53,9 @@ public class CuratorDetectTask extends AbstractCuratorDetectTask {
 
         }
     }
+
+    @Override
+    public long getRetryInterval() {
+        return !connected ? 0 : super.getRetryInterval();
+    }
 }

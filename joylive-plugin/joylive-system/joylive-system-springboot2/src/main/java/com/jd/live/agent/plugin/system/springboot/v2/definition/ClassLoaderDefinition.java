@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.system.springboot.v2.definition;
 
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -56,20 +55,17 @@ public class ClassLoaderDefinition extends PluginDefinitionAdapter {
     @Inject(Resourcer.COMPONENT_RESOURCER)
     private Resourcer resourcer;
 
-    @Inject(ClassLoaderConfig.COMPONENT_CLASSLOADER_CONFIG)
-    private ClassLoaderConfig classLoaderConfig;
-
     public ClassLoaderDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_LAUNCHED_URL_CLASSLOADER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_LOAD_CLASS).
                                 and(MatcherBuilder.arguments(ARGUMENT_LOAD_CLASS)),
-                        () -> new ClassLoaderLoadClassInterceptor(resourcer, classLoaderConfig)),
+                        () -> new ClassLoaderLoadClassInterceptor(resourcer)),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FIND_RESOURCE).
                                 and(MatcherBuilder.arguments(ARGUMENT_FIND_RESOURCE)),
-                        () -> new ClassLoaderFindResourceInterceptor(resourcer, classLoaderConfig))
+                        () -> new ClassLoaderFindResourceInterceptor(resourcer))
         };
     }
 }

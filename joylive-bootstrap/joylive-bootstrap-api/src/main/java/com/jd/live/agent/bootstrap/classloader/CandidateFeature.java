@@ -18,6 +18,7 @@ package com.jd.live.agent.bootstrap.classloader;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 @Getter
@@ -30,6 +31,22 @@ public class CandidateFeature {
 
     public boolean test(ClassLoader classLoader) {
         return classLoader != null && (predicate == null || predicate.test(classLoader));
+    }
+
+    public Class<?> disableAndRun(Callable<Class<?>> callable) throws ClassNotFoundException {
+        boolean enabled = contextLoaderEnabled;
+        try {
+            contextLoaderEnabled = false;
+            return callable.call();
+        } catch (ClassNotFoundException e) {
+            throw e;
+        } catch (NoClassDefFoundError e) {
+            throw new ClassNotFoundException(e.getMessage(), e);
+        } catch (Exception e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        } finally {
+            contextLoaderEnabled = enabled;
+        }
     }
 
 }

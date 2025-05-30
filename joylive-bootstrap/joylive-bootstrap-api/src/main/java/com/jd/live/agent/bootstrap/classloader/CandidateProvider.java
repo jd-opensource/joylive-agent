@@ -26,7 +26,7 @@ package com.jd.live.agent.bootstrap.classloader;
 @FunctionalInterface
 public interface CandidateProvider {
 
-    ThreadLocal<CandidateFeature> CONTEXT_LOADER_ENABLED = new ThreadLocal<>();
+    ThreadLocal<CandidateFeature> CONTEXT_LOADER_ENABLED = ThreadLocal.withInitial(CandidateFeature::new);
 
     /**
      * Gets the candidate class loader that should be used for class loading operations.
@@ -38,12 +38,5 @@ public interface CandidateProvider {
     static CandidateFeature getCandidateFeature() {
         return CONTEXT_LOADER_ENABLED.get();
     }
-
-    static CandidateFeature setCandidateFeature(CandidateFeature feature) {
-        CandidateFeature result = CONTEXT_LOADER_ENABLED.get();
-        CONTEXT_LOADER_ENABLED.set(feature);
-        return result;
-    }
-
 }
 

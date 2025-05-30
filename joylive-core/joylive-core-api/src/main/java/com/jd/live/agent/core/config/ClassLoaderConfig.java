@@ -30,6 +30,7 @@ import java.util.Set;
 public class ClassLoaderConfig {
 
     public static final String COMPONENT_CLASSLOADER_CONFIG = "classLoaderConfig";
+    private static final String DEMO = "com.jd.live.agent.demo.";
 
     @Config("core")
     private ResourceConfig coreResource = ResourceConfig.DEFAULT_CORE_RESOURCE_CONFIG;
@@ -49,8 +50,9 @@ public class ClassLoaderConfig {
         }
         if (essentialPackage != null) {
             for (String value : essentialPackage) {
-                if (name.startsWith(value))
-                    return true;
+                if (name.startsWith(value)) {
+                    return !name.startsWith(DEMO);
+                }
             }
         }
         return false;
