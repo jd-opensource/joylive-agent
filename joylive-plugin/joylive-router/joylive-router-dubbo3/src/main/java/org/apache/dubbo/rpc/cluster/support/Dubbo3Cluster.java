@@ -19,6 +19,8 @@ package org.apache.dubbo.rpc.cluster.support;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
@@ -26,8 +28,9 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
-import com.jd.live.agent.governance.exception.ErrorPredicate;
-import com.jd.live.agent.governance.exception.ServiceError;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.StickySession;
 import com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3OutboundThrower;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
@@ -37,13 +40,18 @@ import org.apache.dubbo.rpc.*;
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
 import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
+import static org.apache.dubbo.rpc.cluster.Constants.CLUSTER_STICKY_KEY;
+import static org.apache.dubbo.rpc.cluster.Constants.DEFAULT_CLUSTER_STICKY;
 
 
 /**
@@ -69,11 +77,7 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
 
     private final Dubbo3OutboundThrower thrower;
 
-    /**
-     * The identifier used for stickiness. This ID is used to route requests to
-     * the same provider consistently.
-     */
-    private String stickyId;
+    private final Map<String, StickySession> sessions = new ConcurrentHashMap<>();
 
     public Dubbo3Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
         this.cluster = cluster;
@@ -82,13 +86,11 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
     }
 
     @Override
-    public String getStickyId() {
-        return stickyId;
-    }
-
-    @Override
-    public void setStickyId(String stickyId) {
-        this.stickyId = stickyId;
+    public StickySession getStickySession(ServiceRequest request) {
+        return sessions.computeIfAbsent(request.getMethod(), m -> {
+            StickyType stickyType = cluster.getUrl().getMethodParameter(m, CLUSTER_STICKY_KEY, DEFAULT_CLUSTER_STICKY) ? StickyType.PREFERRED : StickyType.NONE;
+            return new StickySession.DefaultStickySession(stickyType);
+        });
     }
 
     @Override
@@ -196,7 +198,7 @@ public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, Dub
         RpcInvocation invocation = (RpcInvocation) request.getRequest();
         String body = degradeConfig.getResponseBody();
         AppResponse response = new AppResponse();
-        response.setAttachments(degradeConfig.getAttributes());
+        response.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
         if (body != null) {
             Object value;
             if (request.isGeneric()) {

@@ -44,17 +44,20 @@ public class Subscription<K extends SyncKey, T> implements SyncListener<T> {
     @Setter
     private long version;
 
+    private final String application;
+
     private final AtomicLong counter = new AtomicLong();
 
     private final AtomicBoolean status = new AtomicBoolean(false);
 
-    public Subscription(String owner, K key) {
-        this(owner, key, null);
+    public Subscription(String owner, K key, String application) {
+        this(owner, key, application, null);
     }
 
-    public Subscription(String owner, K key, SyncListener<T> listener) {
+    public Subscription(String owner, K key, String application, SyncListener<T> listener) {
         this.owner = owner;
         this.key = key;
+        this.application = application;
         this.listener = listener;
     }
 
@@ -92,6 +95,7 @@ public class Subscription<K extends SyncKey, T> implements SyncListener<T> {
      */
     public String getSuccessMessage(SyncStatus status) {
         return "Success synchronizing " + key.getType() + " policy from " + owner + ". name=" + key
+                + ", application=" + application
                 + ", status=" + status
                 + ", counter=" + counter.get();
     }
@@ -105,6 +109,7 @@ public class Subscription<K extends SyncKey, T> implements SyncListener<T> {
      */
     public String getErrorMessage(SyncStatus status, String message) {
         return "Failed to synchronize " + key.getType() + " policy from " + owner + ". name=" + key
+                + ", application=" + application
                 + ", status=" + status
                 + ", message=" + message
                 + ", counter=" + counter.get();

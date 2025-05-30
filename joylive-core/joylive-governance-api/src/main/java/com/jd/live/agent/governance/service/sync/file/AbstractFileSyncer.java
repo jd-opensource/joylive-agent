@@ -66,7 +66,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
 
     @Override
     protected void startSync() throws Exception {
-        subscription = new Subscription<>(getName(), createFileKey(file), response -> {
+        subscription = new Subscription<>(getName(), createFileKey(file), application.getName(), response -> {
             switch (response.getStatus()) {
                 case SUCCESS:
                     onSuccess(response.getData());

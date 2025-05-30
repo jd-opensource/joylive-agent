@@ -17,17 +17,31 @@ package com.jd.live.agent.governance.policy.service.exception.value;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.type.ValuePath;
-import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
+import com.jd.live.agent.governance.policy.service.exception.AbstractErrorParser;
 
-@Extension("ValuePath")
-public class ValuePathErrorParser implements ErrorParser {
+import java.io.InputStream;
+
+@Extension(value = {"ValuePath", "JavaPath"})
+public class ValuePathErrorParser extends AbstractErrorParser {
 
     @Override
-    public String getValue(String expression, Object response) {
-        if (expression == null || expression.isEmpty() || response == null) {
-            return null;
-        }
+    protected String parse(String expression, String response) {
+        return null;
+    }
+
+    @Override
+    protected String parse(String expression, InputStream response) {
+        return null;
+    }
+
+    @Override
+    protected String parse(String expression, Object response) {
         Object result = ValuePath.of(expression).get(response);
         return result == null ? null : result.toString();
+    }
+
+    @Override
+    protected String parse(String expression, byte[] response) {
+        return null;
     }
 }

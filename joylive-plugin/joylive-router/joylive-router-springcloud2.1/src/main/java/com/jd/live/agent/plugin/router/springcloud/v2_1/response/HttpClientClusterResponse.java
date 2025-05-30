@@ -113,9 +113,7 @@ public class HttpClientClusterResponse extends AbstractHttpOutboundResponse<Clos
                 "OK"
         );
         byte[] data = degradeConfig.getResponseBytes();
-        if (degradeConfig.getAttributes() != null) {
-            degradeConfig.getAttributes().forEach(response::addHeader);
-        }
+        degradeConfig.foreach(response::addHeader);
         response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(data.length));
         response.addHeader(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
         response.setEntity(new ByteArrayEntity(data));

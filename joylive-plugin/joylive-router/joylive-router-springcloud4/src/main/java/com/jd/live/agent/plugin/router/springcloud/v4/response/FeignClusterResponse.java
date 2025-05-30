@@ -156,9 +156,7 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
     public static FeignClusterResponse create(Request request, DegradeConfig degradeConfig) {
         byte[] data = degradeConfig.getResponseBytes();
         Map<String, Collection<String>> headers = new HashMap<>(request.headers());
-        if (degradeConfig.getAttributes() != null) {
-            degradeConfig.getAttributes().forEach((k, v) -> headers.computeIfAbsent(k, k1 -> new ArrayList<>()).add(v));
-        }
+        degradeConfig.append(headers);
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
         headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
 
