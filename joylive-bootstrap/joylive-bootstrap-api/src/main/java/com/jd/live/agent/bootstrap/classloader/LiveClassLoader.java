@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * A class loader that supports dynamic loading of classes and resources from URLs,
@@ -121,17 +122,17 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         if (!started.get()) {
             throw new ClassNotFoundException("class " + name + " is not found.");
         }
-        // ThreadContextClassLoader is candidator for plugin classloader.
-        ClassLoader candidature = filter == null ? null : filter.getCandidator();
+        // candidates for plugin classloader.
+        ClassLoader[] candidates = filter == null ? null : filter.getCandidates();
         if (filter != null && filter.loadBySelf(name)) {
             return loadBySelf(getClassLoadingLock(name), name, resolve);
         } else if (filter != null && filter.loadByParent(name)) {
-            return loadByParent(name, resolve, candidature);
+            return loadByParent(name, resolve, candidates);
         } else {
             // first candidature for plugin classloader, use the classloader of the enhanced type and thread context.
-            if (candidature != null && candidature != this) {
+            if (candidates != null) {
                 try {
-                    return loadByClassLoader(candidature, name, resolve);
+                    return loadByClassLoader(candidates, name, resolve, c -> c != this);
                 } catch (ClassNotFoundException ignored) {
                     // ignore
                 }
@@ -193,21 +194,18 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
      *
      * @param name        the fully qualified name of the desired class
      * @param resolve     if true, resolve the class (perform linking and verification)
-     * @param candidature the class loader to use for candidature
+     * @param candidates the class loader to use for candidature
      * @return the resulting Class object
      * @throws ClassNotFoundException if the class cannot be found by the parent loader
      */
-    private Class<?> loadByParent(String name, boolean resolve, ClassLoader candidature) throws ClassNotFoundException {
+    private Class<?> loadByParent(String name, boolean resolve, ClassLoader[] candidates) throws ClassNotFoundException {
         ClassLoader parent = getParent();
         try {
             return loadByClassLoader(parent, name, resolve);
         } catch (ClassNotFoundException e) {
             // javax.servlet.http.HttpServlet in tomcat-core
             // spring boot jar
-            if (candidature != null && candidature != parent) {
-                return loadByClassLoader(candidature, name, resolve);
-            }
-            throw e;
+            return loadByClassLoader(candidates, name, resolve, c -> c != parent);
         }
     }
 
@@ -233,6 +231,29 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
             }
         }
         return type;
+    }
+
+    /**
+     * Loads a class using the specified class loader with optional resolution.
+     *
+     * @param classLoaders the class loader to use for loading the class
+     * @param name         the fully qualified name of the desired class
+     * @param resolve      if true, resolve the class (perform linking and verification)
+     * @return the resulting Class object
+     * @throws ClassNotFoundException if the class cannot be found by the specified loader
+     */
+    private Class<?> loadByClassLoader(ClassLoader[] classLoaders, String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
+        if (classLoaders != null) {
+            for (ClassLoader classLoader : classLoaders) {
+                if (classLoader != null && (predicate == null || predicate.test(classLoader))) {
+                    try {
+                        return loadByClassLoader(classLoader, name, resolve);
+                    } catch (ClassNotFoundException ignored) {
+                    }
+                }
+            }
+        }
+        throw new ClassNotFoundException("class " + name + " is not found.");
     }
 
     /**

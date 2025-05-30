@@ -18,15 +18,12 @@ package com.jd.live.agent.plugin.system.springboot.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
 import java.net.URL;
 
 public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
-    private static final Logger logger = LoggerFactory.getLogger(ClassLoaderFindResourceInterceptor.class);
 
     private final Resourcer resourcer;
 
@@ -37,25 +34,16 @@ public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
         this.classLoaderConfig = classLoaderConfig;
     }
 
-    /**
-     * Enhanced logic after method successfully execute
-     *
-     * @param ctx ExecutableContext
-     * @see <code>org.springframework.boot.loader.LaunchedURLClassLoader#findResource</code>
-     */
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         if (mc.getResult() == null) {
-            String name = (String) mc.getArguments()[0];
+            String name = mc.getArgument(0);
             String path = name.replace('/', '.');
             if (classLoaderConfig.isEssential(path)) {
                 URL url = resourcer.findResource(name);
                 if (url != null) {
                     mc.setResult(url);
-                    logger.info("successfully find resource " + name);
-                } else {
-                    logger.warn("failed to find resource " + name);
                 }
             }
         }

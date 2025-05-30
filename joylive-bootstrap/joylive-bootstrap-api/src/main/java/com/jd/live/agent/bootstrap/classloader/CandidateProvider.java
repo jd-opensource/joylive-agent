@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * method reference, or an anonymous class that implements the single abstract method.
  */
 @FunctionalInterface
-public interface CandidatorProvider {
+public interface CandidateProvider {
 
     ThreadLocal<AtomicBoolean> CONTEXT_LOADER_ENABLED = ThreadLocal.withInitial(() -> new AtomicBoolean(true));
 
@@ -35,7 +35,7 @@ public interface CandidatorProvider {
      *
      * @return The {@link ClassLoader} to be used as a candidate for loading classes.
      */
-    ClassLoader getCandidator();
+    ClassLoader[] getCandidates();
 
     static boolean setContextLoaderEnabled(boolean contextLoaderEnabled) {
         return CONTEXT_LOADER_ENABLED.get().getAndSet(contextLoaderEnabled);

@@ -34,7 +34,7 @@ public class ResourceConfigFilter implements ResourceFilter {
     }
 
     @Override
-    public ClassLoader getCandidator() {
+    public ClassLoader[] getCandidates() {
         return null;
     }
 

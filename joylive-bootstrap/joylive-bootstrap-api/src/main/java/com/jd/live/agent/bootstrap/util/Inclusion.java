@@ -50,8 +50,7 @@ public class Inclusion implements Predicate<String> {
     }
 
     public Inclusion(Set<String> names, Set<String> prefixes) {
-        this.names = names;
-        this.prefixes = prefixes;
+        this(names, prefixes, false);
     }
 
     public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable) {
@@ -157,6 +156,10 @@ public class Inclusion implements Predicate<String> {
     public boolean test(String name) {
         // TODO use a trie to improve performance
         return execute(names, prefixes, nullable, name, null, null) != InclusionType.EXCLUDE;
+    }
+
+    public boolean test(String name, Predicate<String> otherPredicate) {
+        return execute(names, prefixes, nullable, name, otherPredicate, null) != InclusionType.EXCLUDE;
     }
 
     /**

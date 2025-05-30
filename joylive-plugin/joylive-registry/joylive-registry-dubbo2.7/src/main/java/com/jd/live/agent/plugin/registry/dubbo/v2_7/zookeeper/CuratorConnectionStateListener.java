@@ -47,20 +47,27 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
 
     @Override
     public void stateChanged(CuratorFramework client, ConnectionState state) {
-        long sessionId = UNKNOWN_SESSION_ID;
+        ClassLoader newLoader = client.getClass().getClassLoader();
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
         try {
-            sessionId = client.getZookeeperClient().getZooKeeper().getSessionId();
-        } catch (Exception e) {
-            logger.warn("Curator client state changed, but failed to get the related zk session instance.");
-        }
-        if (state == ConnectionState.LOST) {
-            onLost();
-        } else if (state == ConnectionState.SUSPENDED) {
-            onSuspended(sessionId);
-        } else if (state == ConnectionState.CONNECTED) {
-            onConnected(sessionId);
-        } else if (state == ConnectionState.RECONNECTED) {
-            onReconnected(sessionId);
+            Thread.currentThread().setContextClassLoader(newLoader);
+            long sessionId = UNKNOWN_SESSION_ID;
+            try {
+                sessionId = client.getZookeeperClient().getZooKeeper().getSessionId();
+            } catch (Exception e) {
+                logger.warn("Curator client state changed, but failed to get the related zk session instance.");
+            }
+            if (state == ConnectionState.LOST) {
+                onLost();
+            } else if (state == ConnectionState.SUSPENDED) {
+                onSuspended(sessionId);
+            } else if (state == ConnectionState.CONNECTED) {
+                onConnected(sessionId);
+            } else if (state == ConnectionState.RECONNECTED) {
+                onReconnected(sessionId);
+            }
+        } finally {
+            Thread.currentThread().setContextClassLoader(old);
         }
     }
 

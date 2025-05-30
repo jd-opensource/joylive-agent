@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.classloader.ClassLoaderFactory;
 import com.jd.live.agent.bootstrap.classloader.ClassLoaderSupervisor;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
+import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.util.Close;
 
 import java.io.Closeable;
@@ -27,7 +28,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.setContextLoaderEnabled;
+import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.setContextLoaderEnabled;
 
 /**
  * The PluginLoaderManager class is responsible for managing class loaders for plugins. It implements
@@ -43,6 +44,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
      */
     private final Map<String, ClassLoader> loaders = new ConcurrentHashMap<>(100);
 
+    private final ClassLoaderConfig config;
+
     /**
      * The factory used to create new class loaders.
      */
@@ -53,7 +56,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
      *
      * @param builder The ClassLoaderFactory to use for creating new class loaders.
      */
-    public PluginLoaderManager(ClassLoaderFactory builder) {
+    public PluginLoaderManager(ClassLoaderConfig config, ClassLoaderFactory builder) {
+        this.config = config;
         this.builder = builder;
     }
 
@@ -92,7 +96,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name != null && !name.isEmpty()) {
+        // Only load classes with "com.jd.live.agent." prefix
+        if (config.isEssential(name)) {
             // TODO fast locate classloader by package
             // Disable context classloader to avoid loading multiple times.
             boolean isContextLoaderEnabled = setContextLoaderEnabled(false);

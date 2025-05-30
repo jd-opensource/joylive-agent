@@ -21,7 +21,7 @@ import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
-import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.setContextLoaderEnabled;
+import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.setContextLoaderEnabled;
 
 public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
 

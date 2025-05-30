@@ -20,7 +20,7 @@ import com.jd.live.agent.bootstrap.classloader.ResourceConfigFilter;
 
 import java.io.File;
 
-import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.isContextLoaderEnabled;
+import static com.jd.live.agent.bootstrap.classloader.CandidateProvider.isContextLoaderEnabled;
 
 /**
  * The PluginResourceFilter class extends the functionality of a ResourceConfigFilter,
@@ -29,6 +29,8 @@ import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.isConte
  * @see ResourceConfigFilter
  */
 public class PluginResourceFilter extends ResourceConfigFilter {
+
+    public static ClassLoader BOOT_CLASS_LOADER = null;
 
     /**
      * Constructs a PluginResourceFilter with a specific ResourceConfig and a path to the configuration file.
@@ -50,8 +52,21 @@ public class PluginResourceFilter extends ResourceConfigFilter {
     }
 
     @Override
-    public ClassLoader getCandidator() {
-        return isContextLoaderEnabled() ? Thread.currentThread().getContextClassLoader() : null;
+    public ClassLoader[] getCandidates() {
+        if (!isContextLoaderEnabled()) {
+            return null;
+        }
+        // The thread context class loader may be inconsistent with the framework's boot class loader.
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        if (BOOT_CLASS_LOADER == null) {
+            return contextClassLoader == null ? null : new ClassLoader[]{contextClassLoader};
+        } else if (contextClassLoader == null || contextClassLoader == BOOT_CLASS_LOADER) {
+            return new ClassLoader[]{BOOT_CLASS_LOADER};
+        }
+        ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+        return contextClassLoader == systemClassLoader
+                ? new ClassLoader[]{BOOT_CLASS_LOADER}
+                : new ClassLoader[]{BOOT_CLASS_LOADER, contextClassLoader};
     }
 }
 

@@ -41,11 +41,12 @@ public class ClassLoaderConfig {
     private ResourceConfig pluginResource = ResourceConfig.DEFAULT_PLUGIN_RESOURCE_CONFIG;
 
     @Config("essential")
-    private Set<String> essentialPackage = Collections.singleton("com.jd.live.agent");
+    private Set<String> essentialPackage = Collections.singleton("com.jd.live.agent.");
 
     public boolean isEssential(String name) {
-        if (name == null || name.isEmpty())
+        if (name == null || name.isEmpty()) {
             return false;
+        }
         if (essentialPackage != null) {
             for (String value : essentialPackage) {
                 if (name.startsWith(value))
