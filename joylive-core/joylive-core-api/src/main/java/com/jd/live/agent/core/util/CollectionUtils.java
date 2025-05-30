@@ -209,6 +209,20 @@ public class CollectionUtils {
     }
 
     /**
+     * Shuffles the given list randomly. Returns the list unchanged if null or size ≤ 1.
+     *
+     * @param <E>  the element type
+     * @param list the list to shuffle (may be null)
+     * @return the shuffled list or original if unchanged
+     */
+    public static <E> List<E> shuffle(List<E> list) {
+        if (list != null && list.size() > 1) {
+            Collections.shuffle(list);
+        }
+        return list;
+    }
+
+    /**
      * Converts an array to a List by applying a transformation function to each element.
      * The resulting list contains the transformed elements, excluding any null values produced by the function.
      *

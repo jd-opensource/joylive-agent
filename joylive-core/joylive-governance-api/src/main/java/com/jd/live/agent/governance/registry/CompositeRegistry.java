@@ -26,14 +26,9 @@ public interface CompositeRegistry extends Registry {
      *
      * @param registryService the service implementation to add
      */
-    void setSystemRegistry(RegistryService registryService);
+    void addSystemRegistry(RegistryService registryService);
 
-    /**
-     * Gets the system registry service.
-     *
-     * @return the system registry service implementation, or null if not found
-     */
-    RegistryService getSystemRegistry();
+    void removeSystemRegistry(RegistryService registryService);
 
     /**
      * Set the system registry service .
@@ -42,11 +37,4 @@ public interface CompositeRegistry extends Registry {
      * @param registryService the service implementation to add
      */
     void addSystemRegistry(String service, RegistryService registryService);
-
-    /**
-     * Gets the system registry service.
-     *
-     * @return the system registry service implementation, or null if not found
-     */
-    RegistryService getSystemRegistry(String service);
 }

@@ -19,42 +19,49 @@ import com.jd.live.agent.governance.registry.RegistryEvent;
 import com.jd.live.agent.governance.registry.RegistryListener;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
 import com.netflix.discovery.DiscoveryClient;
+import com.netflix.discovery.EurekaClientConfig;
 import com.netflix.discovery.shared.Application;
+import lombok.Setter;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.URI.getAddress;
 
 /**
  * Registry service implementation for Eureka discovery client.
  * Handles service instance registration and discovery through Eureka server.
  */
-public class EurekaRegistryService extends AbstractSystemRegistryService {
+public class EurekaRegistryService extends AbstractSystemRegistryService implements EurekaRegistryPublisher {
 
-    private final DiscoveryClient client;
+    @Setter
+    private DiscoveryClient client;
+
+    public EurekaRegistryService(EurekaClientConfig config) {
+        super(getAddress("eureka", config.getEurekaServerDNSName(), config.getEurekaServerPort()));
+    }
 
     public EurekaRegistryService(DiscoveryClient client) {
+        this(client.getEurekaClientConfig());
         this.client = client;
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(String service, String group) {
-        return getEndpoints(client.getApplication(service), group);
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
+        return getEndpoints(client.getApplication(serviceId.getService()), serviceId.getGroup());
     }
 
-    /**
-     * Publishes application instance changes to all registered listeners.
-     * Only listeners subscribed to this application's service name will receive updates.
-     *
-     * @param application the application containing instance changes (ignored if null)
-     */
+    @Override
     public void publish(Application application) {
         if (application != null) {
             for (RegistryListener listener : listeners) {
-                List<ServiceEndpoint> endpoints = getEndpoints(application, listener.getGroup());
-                publish(new RegistryEvent(application.getName(), listener.getGroup(), endpoints, getDefaultGroup()), listener);
+                ServiceId serviceId = listener.getServiceId();
+                List<ServiceEndpoint> endpoints = getEndpoints(application, serviceId.getGroup());
+                publish(new RegistryEvent(serviceId, endpoints, getDefaultGroup()), listener);
             }
         }
     }
@@ -69,4 +76,14 @@ public class EurekaRegistryService extends AbstractSystemRegistryService {
         });
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof EurekaRegistryService)) return false;
+        return client == ((EurekaRegistryService) o).client;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(client);
+    }
 }

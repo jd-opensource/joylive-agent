@@ -15,10 +15,8 @@
  */
 package com.jd.live.agent.core.classloader;
 
-import com.jd.live.agent.bootstrap.classloader.ClassLoaderFactory;
-import com.jd.live.agent.bootstrap.classloader.ClassLoaderSupervisor;
-import com.jd.live.agent.bootstrap.classloader.Resourcer;
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
+import com.jd.live.agent.bootstrap.classloader.*;
+import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.util.Close;
 
 import java.io.Closeable;
@@ -26,8 +24,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.bootstrap.classloader.CandidatorProvider.setContextLoaderEnabled;
 
 /**
  * The PluginLoaderManager class is responsible for managing class loaders for plugins. It implements
@@ -43,6 +39,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
      */
     private final Map<String, ClassLoader> loaders = new ConcurrentHashMap<>(100);
 
+    private final ClassLoaderConfig config;
+
     /**
      * The factory used to create new class loaders.
      */
@@ -53,7 +51,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
      *
      * @param builder The ClassLoaderFactory to use for creating new class loaders.
      */
-    public PluginLoaderManager(ClassLoaderFactory builder) {
+    public PluginLoaderManager(ClassLoaderConfig config, ClassLoaderFactory builder) {
+        this.config = config;
         this.builder = builder;
     }
 
@@ -92,32 +91,21 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name != null && !name.isEmpty()) {
-            // TODO fast locate classloader by package
-            // Disable context classloader to avoid loading multiple times.
-            boolean isContextLoaderEnabled = setContextLoaderEnabled(false);
-            try {
-                for (ClassLoader classLoader : loaders.values()) {
-                    try {
-                        Class<?> clazz = classLoader.loadClass(name);
-                        if (clazz != null) {
-                            return clazz;
-                        }
-                    } catch (ClassNotFoundException ignore) {
-                    }
-                }
-                // Try to load class from context classloader.
-                if (isContextLoaderEnabled) {
-                    ClassLoader candidator = Thread.currentThread().getContextClassLoader();
-                    if (candidator != null) {
-                        return candidator.loadClass(name);
-                    }
-                }
-            } finally {
-                setContextLoaderEnabled(isContextLoaderEnabled);
-            }
+        // Only load classes with "com.jd.live.agent." prefix
+        if (!test(name)) {
+            throw new ClassNotFoundException("class " + name + " is not found.");
         }
-        throw new ClassNotFoundException("class " + name + " is not found.");
+        // This is called by spring class loader, so disable context classloader.
+        return CandidateProvider.getCandidateFeature().disableAndRun(() -> {
+            for (ClassLoader classLoader : loaders.values()) {
+                try {
+                    return classLoader.loadClass(name);
+                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                    // ignore
+                }
+            }
+            throw new ClassNotFoundException("class " + name + " is not found.");
+        });
     }
 
     @Override
@@ -180,6 +168,11 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
             }
         }
         return Collections.enumeration(urls);
+    }
+
+    @Override
+    public boolean test(String name) {
+        return config.isEssential(name);
     }
 
     @Override

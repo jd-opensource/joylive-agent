@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.transmission.thread.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -60,7 +61,9 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         Object target = ctx.getTarget();
         String name = target.getClass().getSimpleName();
         Object[] arguments = ctx.getArguments();
-        if (arguments == null
+        // filter agent thread executor
+        if (target.getClass().getClassLoader() instanceof Resourcer
+                || arguments == null
                 || arguments.length == 0
                 || cameras.length == 0
                 || isExcludedExecutor(target)
@@ -73,6 +76,9 @@ public class ExecutorInterceptor extends InterceptorAdaptor {
         if (argument == null) {
             return;
         } else if (unwrapped instanceof AbstractThreadAdapter) {
+            return;
+        } else if (unwrapped.getClass().getClassLoader() instanceof Resourcer) {
+            // filter agent thread task
             return;
         } else if (isExcludedTask(unwrapped)) {
             return;

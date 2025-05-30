@@ -740,7 +740,7 @@ public class StringUtils {
         sb.append(left == 0 ? EMPTY : prefix);
         String str;
         for (T value : values) {
-            str = converter == null ? value.toString() : converter.apply(value);
+            str = converter == null ? (value == null ? null : value.toString()) : converter.apply(value);
             if (!isEmpty(str)) {
                 if (counter++ > 0) {
                     sb.append(separator);

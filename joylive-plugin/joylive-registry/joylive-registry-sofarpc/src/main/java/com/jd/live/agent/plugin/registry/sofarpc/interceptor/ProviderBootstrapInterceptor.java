@@ -22,6 +22,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 /**
  * ProviderBootstrapInterceptor
@@ -36,10 +37,9 @@ public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<P
 
     @Override
     protected void subscribe(ProviderConfig<?> config) {
-        String service = config.getInterfaceId();
-        String group = getGroup(config);
-        registry.register(service, group);
-        logger.info("Found sofa rpc provider, service: {}, group: {}", service, group);
+        ServiceId serviceId = new ServiceId(config.getInterfaceId(), getGroup(config), true);
+        registry.register(serviceId);
+        logger.info("Found sofa rpc provider {}.", serviceId.getUniqueName());
     }
 
     @Override

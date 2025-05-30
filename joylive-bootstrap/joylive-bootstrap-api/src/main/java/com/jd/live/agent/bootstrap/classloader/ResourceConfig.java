@@ -16,7 +16,6 @@
 package com.jd.live.agent.bootstrap.classloader;
 
 import com.jd.live.agent.bootstrap.util.Inclusion;
-import com.jd.live.agent.bootstrap.util.Inclusion.InclusionType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,13 +39,13 @@ public class ResourceConfig {
             },
             null,
             new String[]{
-                    "com.jd.live.agent.bootstrap",
-                    "java.",
-                    "javax.",
-                    "sun."
+                    "com.jd.live.agent.bootstrap.",
             },
             new String[]{},
-            new String[]{"com.jd.live.agent.core."},
+            new String[]{
+                    "com.jd.live.agent.core.",
+                    "com.jd.live.agent.governance."
+            },
             null,
             new String[]{
                     "META-INF/services/com.jd.live.agent"
@@ -59,12 +58,12 @@ public class ResourceConfig {
                     "com.jd.live.agent.bootstrap.",
                     "com.jd.live.agent.core.",
                     "com.jd.live.agent.governance.",
-                    "java.",
-                    "javax.",
-                    "sun."
             },
             new String[]{},
-            new String[]{"com.jd.live.agent.implement."},
+            new String[]{
+                    "com.jd.live.agent.implement.",
+                    "com.jd.live.agent.shaded."
+            },
             new String[]{},
             new String[]{}); // can be loaded in the parent class loader
     public static final ResourceConfig DEFAULT_PLUGIN_RESOURCE_CONFIG = new ResourceConfig(
@@ -72,40 +71,29 @@ public class ResourceConfig {
             null,
             null,
             new String[]{
-                    "com.jd.live.agent.bootstrap",
+                    "com.jd.live.agent.bootstrap.",
                     "com.jd.live.agent.core.",
-                    "com.jd.live.agent.governance",
-                    "java.",
-                    "javax.",
-                    "sun."
+                    "com.jd.live.agent.governance.",
             },
             new String[]{},
             new String[]{"com.jd.live.agent.plugin."},
             null,
             null); // can be loaded in the parent class loader
 
-    private Set<String> configResources;
-    private Set<String> configExtensions;
-    private Set<String> parentResources;
-    private Set<String> parentPrefixes;
-    private Set<String> selfResources;
-    private Set<String> selfPrefixes;
-    private Set<String> isolationResources;
-    private Set<String> isolationPrefixes;
+    private Inclusion config;
+    private Inclusion parent;
+    private Inclusion self;
+    private Inclusion isolation;
 
     public ResourceConfig() {
     }
 
     public ResourceConfig(Function<String, Object> env, String prefix) {
         // use java native method in LiveAgent
-        configResources = parse(env, prefix + ".configResources");
-        configExtensions = parse(env, prefix + ".configExtensions");
-        parentResources = parse(env, prefix + ".parentResources");
-        parentPrefixes = parse(env, prefix + ".parentPrefixes");
-        selfResources = parse(env, prefix + ".selfResources");
-        selfPrefixes = parse(env, prefix + ".selfPrefixes");
-        isolationResources = parse(env, prefix + ".isolationResources");
-        isolationPrefixes = parse(env, prefix + ".isolationPrefixes");
+        config = new Inclusion(parse(env, prefix + ".configResources"), parse(env, prefix + ".configExtensions"));
+        parent = new Inclusion(parse(env, prefix + ".parentResources"), parse(env, prefix + ".parentPrefixes"));
+        self = new Inclusion(parse(env, prefix + ".selfResources"), parse(env, prefix + ".selfPrefixes"));
+        isolation = new Inclusion(parse(env, prefix + ".isolationResources"), parse(env, prefix + ".isolationPrefixes"));
     }
 
     public ResourceConfig(String[] configResources,
@@ -116,14 +104,14 @@ public class ResourceConfig {
                           String[] selfPrefixes,
                           String[] isolationResources,
                           String[] isolationPrefixes) {
-        this.configResources = configResources == null ? null : new HashSet<>(Arrays.asList(configResources));
-        this.configExtensions = configExtensions == null ? null : new HashSet<>(Arrays.asList(configExtensions));
-        this.parentResources = parentResources == null ? null : new HashSet<>(Arrays.asList(parentResources));
-        this.parentPrefixes = parentPrefixes == null ? null : new HashSet<>(Arrays.asList(parentPrefixes));
-        this.selfResources = selfResources == null ? null : new HashSet<>(Arrays.asList(selfResources));
-        this.selfPrefixes = selfPrefixes == null ? null : new HashSet<>(Arrays.asList(selfPrefixes));
-        this.isolationResources = isolationResources == null ? null : new HashSet<>(Arrays.asList(isolationResources));
-        this.isolationPrefixes = isolationPrefixes == null ? null : new HashSet<>(Arrays.asList(isolationPrefixes));
+        config = new Inclusion(configResources == null ? null : new HashSet<>(Arrays.asList(configResources)),
+                configExtensions == null ? null : new HashSet<>(Arrays.asList(configExtensions)));
+        parent = new Inclusion(parentResources == null ? null : new HashSet<>(Arrays.asList(parentResources)),
+                parentPrefixes == null ? null : new HashSet<>(Arrays.asList(parentPrefixes)));
+        self = new Inclusion(selfResources == null ? null : new HashSet<>(Arrays.asList(selfResources)),
+                selfPrefixes == null ? null : new HashSet<>(Arrays.asList(selfPrefixes)));
+        isolation = new Inclusion(isolationResources == null ? null : new HashSet<>(Arrays.asList(isolationResources)),
+                isolationPrefixes == null ? null : new HashSet<>(Arrays.asList(isolationPrefixes)));
     }
 
     public boolean isConfig(String name) {
@@ -132,20 +120,20 @@ public class ResourceConfig {
         } else {
             int pos = name.lastIndexOf('.');
             String extension = pos > 0 ? name.substring(pos + 1) : "";
-            return Inclusion.execute(configResources, configExtensions, false, name, extension::equalsIgnoreCase, null) != InclusionType.EXCLUDE;
+            return config.test(name, extension::equalsIgnoreCase);
         }
     }
 
     public boolean isParent(String name) {
-        return Inclusion.test(parentResources, parentPrefixes, false, name);
+        return parent.test(name);
     }
 
     public boolean isSelf(String name) {
-        return Inclusion.test(selfResources, selfPrefixes, false, name);
+        return self.test(name);
     }
 
     public boolean isIsolation(String name) {
-        return Inclusion.test(isolationResources, isolationPrefixes, false, name);
+        return isolation.test(name);
     }
 
     protected Set<String> parse(Function<String, Object> env, String key) {

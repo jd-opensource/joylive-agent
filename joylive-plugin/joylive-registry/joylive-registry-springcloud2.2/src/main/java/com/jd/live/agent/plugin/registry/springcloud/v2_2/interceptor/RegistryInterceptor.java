@@ -23,7 +23,8 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
-import org.springframework.boot.SpringBootVersion;
+import com.jd.live.agent.governance.util.FrameworkVersion;
+import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
 import java.util.HashMap;
@@ -46,7 +47,6 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Map<String, String> metadata = registration.getMetadata();
         if (metadata != null) {
             application.labelRegistry(metadata::putIfAbsent, true);
-            metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
             if (registration.isSecure()) {
                 metadata.put(Constants.LABEL_SECURE, String.valueOf(registration.isSecure()));
             }
@@ -62,13 +62,23 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
         Registration registration = (Registration) ctx.getArguments()[0];
         Map<String, String> metadata = registration.getMetadata();
         metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
+        FrameworkVersion version = getFrameworkVersion();
+        metadata.put(Constants.LABEL_FRAMEWORK, version.toString());
         return ServiceInstance.builder()
-                .type("spring-cloud-2.2")
+                .interfaceMode(false)
+                .framework(version)
                 .service(registration.getServiceId())
                 .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
                 .scheme(registration.getScheme())
                 .host(registration.getHost())
                 .port(registration.getPort())
+                .metadata(metadata)
                 .build();
+    }
+
+    private FrameworkVersion getFrameworkVersion() {
+        String version = AutoServiceRegistrationProperties.class.getPackage().getImplementationVersion();
+        version = version == null || version.isEmpty() ? "2.2" : version;
+        return new FrameworkVersion("spring-cloud", version);
     }
 }

@@ -50,13 +50,13 @@ public class ClassLoaderManager {
      */
     private final PluginLoaderManager pluginLoaders;
 
-    public ClassLoaderManager(LiveClassLoader coreLoader, ClassLoaderConfig loaderConfig, AgentPath agentPath) {
+    public ClassLoaderManager(LiveClassLoader coreLoader, ClassLoaderConfig config, AgentPath agentPath) {
         this.coreLoader = coreLoader;
         URL[] implLibs = agentPath.getLibUrls(agentPath.getCoreImplLibPath());
-        ResourceFilter implFilter = new CoreImplResourceFilter(loaderConfig.getCoreImplResource(), agentPath.getConfigPath());
+        ResourceFilter implFilter = new CoreImplResourceFilter(config.getCoreImplResource(), agentPath.getConfigPath());
         this.coreImplLoader = new LiveClassLoader(implLibs, coreLoader, CORE_IMPL, implFilter);
-        this.pluginLoaders = new PluginLoaderManager((name, urls) -> {
-            ResourceFilter filter = new PluginResourceFilter(loaderConfig.getPluginResource(), agentPath.getConfigPath());
+        this.pluginLoaders = new PluginLoaderManager(config, (name, urls) -> {
+            ResourceFilter filter = new PluginResourceFilter(config.getPluginResource(), agentPath.getConfigPath());
             return new LiveClassLoader(urls, coreLoader, PLUGIN, filter, PLUGIN.getName() + "-" + name);
         });
     }

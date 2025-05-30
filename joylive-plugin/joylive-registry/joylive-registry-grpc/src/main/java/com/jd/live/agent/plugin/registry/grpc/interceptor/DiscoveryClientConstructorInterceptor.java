@@ -21,6 +21,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 /**
  * DiscoveryClientConstructorInterceptor
@@ -40,7 +41,8 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        String serviceId = ctx.getArgument(0);
+        String service = ctx.getArgument(0);
+        ServiceId serviceId = new ServiceId(service, null, true);
         if (!application.isReady()) {
             registry.subscribe(serviceId);
         } else {
@@ -50,6 +52,6 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
                 return null;
             });
         }
-        logger.info("Found grpc consumer, service: {}", serviceId);
+        logger.info("Found grpc consumer, service: {}", service);
     }
 }

@@ -37,7 +37,7 @@ import java.util.function.BiConsumer;
  */
 public class Service extends PolicyOwner implements ServiceName {
 
-    private static final URI SERVICE_URI = URI.builder().schema("service").build();
+    private static final URI SERVICE_URI = URI.builder().scheme("service").build();
 
     @Getter
     @Setter

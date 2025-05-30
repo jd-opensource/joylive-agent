@@ -21,6 +21,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 import java.util.Map;
 
@@ -48,7 +49,7 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         RegisterType info = getRegisterType(config);
         if (!isDubboSystemService(info.getInterfaceName())) {
             application.labelRegistry(map::putIfAbsent);
-            subscribe(info.getInterfaceName(), info.getGroup());
+            subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
         }
     }
 
@@ -65,9 +66,8 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     /**
      * Subscribes to a specific service in the specified group.
      *
-     * @param service The name of the service to subscribe to.
-     * @param group   The group to which the service belongs.
+     * @param serviceId The id of the service to subscribe to.
      */
-    protected abstract void subscribe(String service, String group);
+    protected abstract void subscribe(ServiceId serviceId);
 
 }

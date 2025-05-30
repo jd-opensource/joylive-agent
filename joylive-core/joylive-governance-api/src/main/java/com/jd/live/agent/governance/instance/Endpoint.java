@@ -87,9 +87,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return The address of the endpoint.
      */
     default String getAddress() {
-        String host = getHost();
-        int port = getPort();
-        return port <= 0 ? host : host + ":" + port;
+        return URI.getAddress(getHost(), getPort());
     }
 
     default String getScheme() {

@@ -24,6 +24,8 @@ import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.RegistryFactory;
 import com.jd.live.agent.governance.registry.RegistryService;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * A factory implementation for creating instances of {@link NacosRegistry}.
  * This class is annotated with {@link Extension} to indicate it provides the "nacos" extension.
@@ -31,12 +33,8 @@ import com.jd.live.agent.governance.registry.RegistryService;
 @Extension("nacos")
 public class NacosRegistryFactory implements RegistryFactory, ExtensionInitializer {
 
-    /**
-     * Creates a new instance of {@link NacosRegistry} using the provided {@link RegistryClusterConfig}.
-     *
-     * @param config The configuration used to initialize the {@link NacosRegistry}.
-     * @return A new instance of {@link NacosRegistry}.
-     */
+    private static final AtomicBoolean initialized = new AtomicBoolean(false);
+
     @Override
     public RegistryService create(RegistryClusterConfig config) {
         return new NacosRegistry(config);
@@ -44,9 +42,11 @@ public class NacosRegistryFactory implements RegistryFactory, ExtensionInitializ
 
     @Override
     public void initialize() {
-        // init payload registry in repack mode.
-        SnapShotSwitch.setIsSnapShot(false);
-        PayloadRegistry.init();
-        NacosAbilityManagerHolder.getInstance();
+        if (initialized.compareAndSet(false, true)) {
+            // init payload registry in repack mode.
+            SnapShotSwitch.setIsSnapShot(false);
+            PayloadRegistry.init();
+            NacosAbilityManagerHolder.getInstance();
+        }
     }
 }

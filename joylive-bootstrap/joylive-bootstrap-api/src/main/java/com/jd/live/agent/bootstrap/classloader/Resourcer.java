@@ -79,6 +79,16 @@ public interface Resourcer extends ResourceFinder {
     Enumeration<URL> getResources(String path) throws IOException;
 
     /**
+     * Test whether the class name can be loaded by this resourcer.
+     *
+     * @param name The class name
+     * @return An enumeration of {@link URL} objects for reading the resources.
+     */
+    default boolean test(String name) {
+        return name != null && !name.isEmpty();
+    }
+
+    /**
      * Gets the type of the resourcer. This can be used to distinguish between different implementations
      * or strategies of resource and class loading.
      *

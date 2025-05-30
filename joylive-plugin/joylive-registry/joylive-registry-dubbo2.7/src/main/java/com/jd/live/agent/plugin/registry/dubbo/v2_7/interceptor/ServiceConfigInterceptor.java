@@ -22,6 +22,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
@@ -66,9 +67,9 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected void subscribe(String service, String group) {
-        registry.register(service, group);
-        logger.info("Found dubbo provider, service: {}, group: {}", service, group);
+    protected void subscribe(ServiceId serviceId) {
+        registry.register(serviceId);
+        logger.info("Found dubbo provider {}.", serviceId.getUniqueName());
     }
 
     @Override

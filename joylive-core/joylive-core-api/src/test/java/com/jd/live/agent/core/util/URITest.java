@@ -24,7 +24,7 @@ public class URITest {
     void testParse() {
         URI uri = URI.parse("http://a.b.com/order?id=123&a&c=&=d");
         Assertions.assertNotNull(uri);
-        Assertions.assertEquals("http", uri.getSchema());
+        Assertions.assertEquals("http", uri.getScheme());
         Assertions.assertEquals("a.b.com", uri.getHost());
         Assertions.assertEquals("/order", uri.getPath());
         Assertions.assertEquals("123", uri.getParameter("id"));
@@ -41,7 +41,16 @@ public class URITest {
     }
 
     @Test
+    void testPort() {
+        Assertions.assertEquals(8080, URI.parse("http://a:8080").getPort());
+        Assertions.assertEquals("1080:0:0:0:8:800:200C:417A", URI.parse("[1080:0:0:0:8:800:200C:417A]:8080#book").getHost());
+        Assertions.assertEquals(8080, URI.parse("[1080:0:0:0:8:800:200C:417A]:8080#book").getPort());
+        Assertions.assertEquals("[1080:0:0:0:8:800:200C:417A]:8080", URI.parse("[1080:0:0:0:8:800:200C:417A]:8080#book").getAddress());
+    }
+
+    @Test
     void testParseHost() {
+
         Assertions.assertEquals("a.b.com", URI.parseHost("http://a.b.com"));
         Assertions.assertEquals("a.b.com", URI.parseHost("http://a.b.com?userid=1"));
         Assertions.assertEquals("a.b.com", URI.parseHost("http://a.b.com/book"));
