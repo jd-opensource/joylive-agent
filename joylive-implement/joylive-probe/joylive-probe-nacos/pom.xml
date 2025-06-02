@@ -5,23 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.jd.live</groupId>
-        <artifactId>joylive-implement</artifactId>
+        <artifactId>joylive-probe</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-probe</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>joylive-probe-zookeeper</module>
-        <module>joylive-probe-nacos</module>
-    </modules>
+    <artifactId>joylive-probe-nacos</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-governance-api</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
-
 </project>

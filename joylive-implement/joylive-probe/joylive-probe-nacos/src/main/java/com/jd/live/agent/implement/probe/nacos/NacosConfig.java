@@ -13,24 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.nacos.config;
+package com.jd.live.agent.implement.probe.nacos;
 
-import com.jd.live.agent.governance.config.SyncConfig;
-import com.jd.live.agent.implement.service.config.nacos.client.NacosProperties;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- *  NacosSyncConfig is responsible for Nacos settings.
- */
 @Getter
 @Setter
-public class NacosSyncConfig extends SyncConfig {
+public class NacosConfig {
 
-    private NacosConfig nacos = new NacosConfig();
+    public static final String DEFAULT_PATH = "/nacos/v1/console/health/liveness";
 
-    public NacosProperties getProperties() {
-        return new NacosProperties(getUrl(), nacos.getUsername(), nacos.getPassword(), nacos.getNamespace(), getTimeout(), false, null);
+    public static final String DEFAULT_OK_RESPONSE = "OK";
+
+    private int connectTimeout = 1000;
+
+    private int readTimeout = 1000;
+
+    private String path = DEFAULT_PATH;
+
+    private String response = DEFAULT_OK_RESPONSE;
+
+    public boolean match(String response) {
+        if (this.response == null || this.response.isEmpty()) {
+            return true;
+        }
+        return response != null && response.contains(this.response);
     }
-
 }

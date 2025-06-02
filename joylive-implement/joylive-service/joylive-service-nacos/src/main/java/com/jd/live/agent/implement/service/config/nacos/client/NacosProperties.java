@@ -18,6 +18,9 @@ package com.jd.live.agent.implement.service.config.nacos.client;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 public class NacosProperties {
 
@@ -33,16 +36,21 @@ public class NacosProperties {
 
     private final boolean grayEnabled;
 
-    public NacosProperties(String url, String username, String password, String namespace, long timeout, boolean grayEnabled) {
+    private final Map<String, String> properties;
+
+    public NacosProperties(String url, String username, String password, String namespace, long timeout, boolean grayEnabled, Map<String, String> properties) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.namespace = namespace;
         this.timeout = timeout;
         this.grayEnabled = grayEnabled;
+        this.properties = properties;
     }
 
     public NacosProperties(ConfigCenterConfig config, String namespace) {
-        this(config.getAddress(), config.getUsername(), config.getPassword(), namespace, config.getTimeout(), config.isGrayEnabled());
+        this(config.getAddress(), config.getUsername(), config.getPassword(),
+                namespace, config.getTimeout(), config.isGrayEnabled(),
+                config.getProperties() == null ? null : new HashMap<>(config.getProperties()));
     }
 }

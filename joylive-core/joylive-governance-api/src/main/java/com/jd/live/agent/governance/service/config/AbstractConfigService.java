@@ -63,6 +63,7 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
     @Override
     protected CompletableFuture<Void> doStart() {
         try {
+            // TODO Wait config ready
             ConfigCenterConfig config = governanceConfig.getConfigCenterConfig();
             Set<ConfigName> uniqueNames = new HashSet<>();
             List<ConfigName> names = config.getConfigs();

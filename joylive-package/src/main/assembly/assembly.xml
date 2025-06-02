@@ -61,6 +61,7 @@
                 <include>com.jd.live:joylive-parser-properties</include>
                 <include>com.jd.live:joylive-parser-jxpath</include>
                 <include>com.jd.live:joylive-probe-zookeeper</include>
+                <include>com.jd.live:joylive-probe-nacos</include>
                 <include>com.jd.live:joylive-service-file</include>
                 <include>com.jd.live:joylive-service-multilive</include>
                 <include>com.jd.live:joylive-service-microservice</include>

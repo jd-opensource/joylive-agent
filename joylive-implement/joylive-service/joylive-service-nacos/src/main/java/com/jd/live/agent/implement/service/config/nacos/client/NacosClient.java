@@ -70,18 +70,19 @@ public class NacosClient implements NacosClientApi {
 
     @Override
     public void connect() throws NacosException {
-        Properties properties = new Properties();
-        List<URI> uris = toList(split(this.properties.getUrl(), SEMICOLON_COMMA), URI::parse);
+        Properties config = new Properties();
+        List<URI> uris = toList(split(properties.getUrl(), SEMICOLON_COMMA), URI::parse);
         String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
-        properties.put(PropertyKeyConst.SERVER_ADDR, address);
-        if (!isEmpty(this.properties.getNamespace()) && !DEFAULT_NAMESPACE_ID.equals(this.properties.getNamespace())) {
-            properties.put(PropertyKeyConst.NAMESPACE, this.properties.getNamespace());
+        config.put(PropertyKeyConst.SERVER_ADDR, address);
+        if (!isEmpty(properties.getNamespace()) && !DEFAULT_NAMESPACE_ID.equals(properties.getNamespace())) {
+            config.put(PropertyKeyConst.NAMESPACE, properties.getNamespace());
         }
-        if (!isEmpty(this.properties.getUsername())) {
-            properties.put(PropertyKeyConst.USERNAME, this.properties.getUsername());
-            properties.put(PropertyKeyConst.PASSWORD, this.properties.getPassword());
+        if (!isEmpty(properties.getUsername())) {
+            config.put(PropertyKeyConst.USERNAME, properties.getUsername());
+            config.put(PropertyKeyConst.PASSWORD, properties.getPassword());
         }
-        configService = NacosFactory.createConfigService(properties);
+        // TODO wait config service ready
+        configService = NacosFactory.createConfigService(config);
     }
 
     @Override

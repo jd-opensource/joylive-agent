@@ -29,6 +29,8 @@ public interface HealthProbe extends Predicate<String> {
 
     String ZOOKEEPER = "zookeeper";
 
+    String NACOS = "nacos";
+
     @Override
     boolean test(String address);
 }

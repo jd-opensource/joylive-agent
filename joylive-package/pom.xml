@@ -75,6 +75,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-probe-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-eventbus-jbus</artifactId>
         </dependency>
         <dependency>
