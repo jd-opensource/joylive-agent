@@ -21,6 +21,9 @@ import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.probe.DetectTaskListener;
+import com.jd.live.agent.governance.probe.FailoverDetectTask;
+import com.jd.live.agent.governance.probe.FailoverRecoverTask;
 import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper.CuratorExecution.CuratorVoidExecution;
 import org.apache.curator.framework.CuratorFramework;
@@ -413,7 +416,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
          */
         protected void addDetectTask(boolean connected) {
             long version = versions.incrementAndGet();
-            CuratorDetectTask detect = new CuratorDetectTask(ensembleProvider, probe, successThreshold, connected, new CuratorDetectTaskListener() {
+            FailoverDetectTask detect = new FailoverDetectTask(ensembleProvider, probe, successThreshold, connected, new DetectTaskListener() {
 
                 @Override
                 public void onSuccess() {
@@ -478,7 +481,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
                 return;
             }
             logger.info("Try detecting unhealthy preferred zookeeper {}...", first);
-            CuratorRecoverTask execution = new CuratorRecoverTask(first, probe, successThreshold, () -> {
+            FailoverRecoverTask execution = new FailoverRecoverTask(first, probe, successThreshold, () -> {
                 if (!Objects.equals(ensembleProvider.current(), first)) {
                     // recover immediately
                     client.close();

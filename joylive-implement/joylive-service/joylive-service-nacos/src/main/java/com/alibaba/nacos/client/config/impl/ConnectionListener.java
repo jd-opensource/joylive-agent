@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper;
+package com.alibaba.nacos.client.config.impl;
 
 /**
- * Callback interface for ZooKeeper connection detection events.
+ * Callback for connection state changes.
  */
-@FunctionalInterface
-public interface CuratorDetectTaskListener {
+public interface ConnectionListener {
+    /**
+     * Thread-local storage for active listener instance.
+     */
+    ThreadLocal<ConnectionListener> LISTENER = new ThreadLocal<>();
 
     /**
-     * Invoked when connection detection succeeds.
+     * Triggered when connection is lost.
      */
-    void onSuccess();
-
-    /**
-     * Invoked when connection detection fails.
-     */
-    default void onFailure() {
-
-    }
+    void onDisconnected();
 }

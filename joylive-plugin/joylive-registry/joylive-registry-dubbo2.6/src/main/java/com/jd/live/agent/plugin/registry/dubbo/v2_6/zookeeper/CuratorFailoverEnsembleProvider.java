@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper;
 
+import com.jd.live.agent.governance.probe.FailoverAddressList;
 import org.apache.curator.ensemble.EnsembleProvider;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import static com.jd.live.agent.core.util.StringUtils.splitList;
  *   <li>Basic failover counting mechanism
  * </ul>
  */
-public class CuratorFailoverEnsembleProvider implements EnsembleProvider, CuratorFailoverAddressList {
+public class CuratorFailoverEnsembleProvider implements EnsembleProvider, FailoverAddressList {
 
     private volatile List<String> addresses;
 
