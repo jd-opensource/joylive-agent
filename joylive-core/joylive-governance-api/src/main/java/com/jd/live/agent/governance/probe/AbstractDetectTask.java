@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
+package com.jd.live.agent.governance.probe;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.probe.HealthProbe;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,9 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * A detect task that tests connectivity to ZooKeeper servers.
  * Requires consecutive successful checks to confirm recovery.
  */
-public abstract class AbstractCuratorDetectTask implements RetryExecution {
+public abstract class AbstractDetectTask implements RetryExecution {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractCuratorDetectTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractDetectTask.class);
 
     protected final HealthProbe probe;
 
@@ -40,17 +39,17 @@ public abstract class AbstractCuratorDetectTask implements RetryExecution {
 
     protected final boolean connected;
 
-    protected final CuratorDetectTaskListener listener;
+    protected final DetectTaskListener listener;
 
     protected final AtomicInteger successes = new AtomicInteger(0);
 
     protected final AtomicLong counter = new AtomicLong(0);
 
-    public AbstractCuratorDetectTask(HealthProbe probe,
-                                     int successThreshold,
-                                     int maxRetries,
-                                     boolean connected,
-                                     CuratorDetectTaskListener listener) {
+    public AbstractDetectTask(HealthProbe probe,
+                              int successThreshold,
+                              int maxRetries,
+                              boolean connected,
+                              DetectTaskListener listener) {
         this.probe = probe;
         this.successThreshold = successThreshold <= 0 ? 3 : successThreshold;
         this.maxRetries = maxRetries;

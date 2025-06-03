@@ -87,12 +87,4 @@ public class ApolloClient implements ApolloClientApi {
             System.setProperty(key, value);
         }
     }
-
-    private static class Address {
-
-        private String type;
-
-        private String url;
-
-    }
 }

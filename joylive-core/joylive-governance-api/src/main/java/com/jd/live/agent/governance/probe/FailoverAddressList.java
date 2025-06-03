@@ -13,23 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
+package com.jd.live.agent.governance.probe;
 
 /**
- * Callback interface for ZooKeeper connection detection events.
+ * Manages failover between multiple server addresses in distributed systems.
+ * Handles connection failures and provides recovery mechanisms.
  */
-@FunctionalInterface
-public interface CuratorDetectTaskListener {
+public interface FailoverAddressList {
 
     /**
-     * Invoked when connection detection succeeds.
+     * @return Current active server address
      */
-    void onSuccess();
+    String current();
 
     /**
-     * Invoked when connection detection fails.
+     * @return First available server address in the list
      */
-    default void onFailure() {
+    String first();
 
-    }
+    /**
+     * Switches to next available server address
+     */
+    void next();
+
+    /**
+     * Resets to initial server address
+     */
+    void reset();
+
+    /**
+     * @return Total number of available server addresses
+     */
+    int size();
 }

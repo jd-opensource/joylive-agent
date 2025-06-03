@@ -38,6 +38,11 @@ public class StringUtils {
     public static final char CHAR_COMMA = ',';
 
     /**
+     * A character is a semicolon.
+     */
+    public static final char CHAR_SEMICOLON = ';';
+
+    /**
      * A character is a equal.
      */
     public static final char CHAR_EQUAL = '=';

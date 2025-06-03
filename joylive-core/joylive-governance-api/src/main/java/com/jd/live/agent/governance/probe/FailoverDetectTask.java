@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
-
-import com.jd.live.agent.governance.probe.HealthProbe;
+package com.jd.live.agent.governance.probe;
 
 /**
- * A detect task that tests connectivity to ZooKeeper servers.
+ * A detect task that tests connectivity to servers.
  * Requires consecutive successful checks to confirm recovery.
  */
-public class CuratorDetectTask extends AbstractCuratorDetectTask {
+public class FailoverDetectTask extends AbstractDetectTask {
 
-    private final CuratorFailoverAddressList addressList;
+    private final FailoverAddressList addressList;
 
-    public CuratorDetectTask(CuratorFailoverAddressList addressList,
-                             HealthProbe probe,
-                             int successThreshold,
-                             boolean connected,
-                             CuratorDetectTaskListener listener) {
+    public FailoverDetectTask(FailoverAddressList addressList,
+                              HealthProbe probe,
+                              int successThreshold,
+                              boolean connected,
+                              DetectTaskListener listener) {
         super(probe, connected ? successThreshold : 1, connected ? 0 : addressList.size(), connected, listener);
         this.addressList = addressList;
     }
