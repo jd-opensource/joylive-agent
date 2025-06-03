@@ -23,6 +23,7 @@ import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.converter.BiConverter;
 import com.jd.live.agent.core.util.converter.TriConverter;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.task.RetryExecution;
@@ -69,6 +70,8 @@ public class DubboZookeeperRegistry implements RegistryService {
     private static final Logger logger = LoggerFactory.getLogger(DubboZookeeperRegistry.class);
 
     private static final String PROVIDERS = "providers";
+    private static final int DEFAULT_CONNECTION_TIMEOUT_MS = 5 * 1000;
+    private static final int DEFAULT_SESSION_TIMEOUT_MS = 30 * 1000;
 
     private final RegistryClusterConfig config;
     private final Timer timer;
@@ -77,7 +80,7 @@ public class DubboZookeeperRegistry implements RegistryService {
     private final String name;
     private final List<URI> uris;
     private final String address;
-    private final int connectTimeout;
+    private final int connectionTimeout;
     private final int sessionTimeout;
 
     private final TriConverter<ServiceId, String, String, String> servicePathConverter;
@@ -103,8 +106,9 @@ public class DubboZookeeperRegistry implements RegistryService {
         this.address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
         Option option = new MapOption(config.getProperties());
-        this.connectTimeout = option.getInteger("connectTimeout", 1000);
-        this.sessionTimeout = option.getInteger("sessionTimeout", 20000);
+        this.connectionTimeout = Converts.getPositive(option.getString("connectionTimeout", System.getenv("ZOOKEEPER_CONNECTION_TIMEOUT")), DEFAULT_CONNECTION_TIMEOUT_MS);
+        this.sessionTimeout = Converts.getPositive(option.getString("sessionTimeout", System.getenv("ZOOKEEPER_SESSION_TIMEOUT")), DEFAULT_SESSION_TIMEOUT_MS);
+
         String interfaceRoot = url("/", config.getProperty("interfaceRoot", "dubbo"));
         String serviceRoot = url("/", config.getProperty("serviceRoot", "services"));
         this.servicePathConverter = new ServicePathConverter(interfaceRoot, serviceRoot);
@@ -211,7 +215,7 @@ public class DubboZookeeperRegistry implements RegistryService {
             CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                     .connectString(address)
                     .sessionTimeoutMs(sessionTimeout)
-                    .connectionTimeoutMs(connectTimeout)
+                    .connectionTimeoutMs(connectionTimeout)
                     .retryPolicy(new RetryNTimes(1, 1000));
             String authority = config.getAuthority();
             if (authority != null && !authority.isEmpty()) {

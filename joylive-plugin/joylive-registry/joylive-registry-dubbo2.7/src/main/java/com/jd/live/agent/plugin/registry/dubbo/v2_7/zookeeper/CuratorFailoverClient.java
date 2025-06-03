@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.zookeeper;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
@@ -61,13 +62,13 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private static final String ZK_SESSION_EXPIRE_KEY = "zk.session.expire";
 
     private static final int DEFAULT_CONNECTION_TIMEOUT_MS = 5 * 1000;
-    private static final int DEFAULT_SESSION_TIMEOUT_MS = 60 * 1000;
+    private static final int DEFAULT_SESSION_TIMEOUT_MS = 30 * 1000;
 
     private final URL url;
     private final Timer timer;
     private final HealthProbe probe;
-    private final int timeout;
-    private final int sessionExpireMs;
+    private final int connectionTimeout;
+    private final int sessionTimeout;
     private final int successThreshold;
     private final boolean autoRecover;
 
@@ -93,10 +94,10 @@ public class CuratorFailoverClient implements ZookeeperClient {
         this.url = url;
         this.timer = timer;
         this.probe = probe;
-        this.timeout = url.getParameter(TIMEOUT_KEY, DEFAULT_CONNECTION_TIMEOUT_MS);
-        this.successThreshold = url.getParameter("successThreshold", 3);
-        this.autoRecover = url.getParameter("autoRecover", true);
-        this.sessionExpireMs = url.getParameter(ZK_SESSION_EXPIRE_KEY, DEFAULT_SESSION_TIMEOUT_MS);
+        this.connectionTimeout = Converts.getPositive(url.getParameter(TIMEOUT_KEY, System.getenv("ZOOKEEPER_CONNECTION_TIMEOUT")), DEFAULT_CONNECTION_TIMEOUT_MS);
+        this.sessionTimeout = Converts.getPositive(url.getParameter(ZK_SESSION_EXPIRE_KEY, System.getenv("ZOOKEEPER_SESSION_TIMEOUT")), DEFAULT_SESSION_TIMEOUT_MS);
+        this.successThreshold = Converts.getPositive(url.getParameter("successThreshold", System.getenv("ZOOKEEPER_SUCCESS_THRESHOLD")), 3);
+        this.autoRecover = Converts.getBoolean(url.getParameter("autoRecover", System.getenv("ZOOKEEPER_AUTO_RECOVER")), true);
         this.addresses = getAddresses(url);
         this.ensembleProvider = new CuratorFailoverEnsembleProvider(addresses);
         this.stateListener = new FailoverStateListener();
@@ -110,7 +111,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
             logger.info("Try detecting healthy zookeeper {}", join(addresses, ';'));
             stateListener.addDetectTask(false);
             // wait for connected
-            if (!connectLatch.await((long) timeout * addresses.size(), TimeUnit.MILLISECONDS)) {
+            if (!connectLatch.await((long) connectionTimeout * addresses.size(), TimeUnit.MILLISECONDS)) {
                 // cancel task.
                 versions.incrementAndGet();
                 throw new IllegalStateException("It's timeout to connect to zookeeper.");
@@ -301,7 +302,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private List<String> getAddresses(URL url) {
         List<String> result = new ArrayList<>(2);
         result.add(url.getBackupAddress());
-        result.addAll(splitList(url.getParameter("failovers"), ';'));
+        result.addAll(splitList(url.getParameter("failovers", System.getenv("ZOOKEEPER_FAILOVER_ADDRESS")), ';'));
         return result;
     }
 
@@ -317,16 +318,16 @@ public class CuratorFailoverClient implements ZookeeperClient {
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                 .ensembleProvider(ensembleProvider)
                 .retryPolicy(new RetryNTimes(1, 1000))
-                .connectionTimeoutMs(timeout)
-                .defaultData(PathData.DEFAULT_DATA)
-                .sessionTimeoutMs(sessionExpireMs);
+                .connectionTimeoutMs(connectionTimeout)
+                .sessionTimeoutMs(sessionTimeout)
+                .defaultData(PathData.DEFAULT_DATA);
         String authority = url.getAuthority();
         if (authority != null && !authority.isEmpty()) {
             builder = builder.authorization("digest", authority.getBytes());
         }
         CuratorFramework client = builder.build();
         // listener keep session id, so create new one.
-        client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(stateListeners, timeout, sessionExpireMs));
+        client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(stateListeners, connectionTimeout, sessionTimeout));
         return client;
     }
 
