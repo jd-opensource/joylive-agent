@@ -65,6 +65,11 @@ public class ZookeeperHealthProbe implements HealthProbe, ExtensionInitializer {
         return win >= threshold;
     }
 
+    @Override
+    public String type() {
+        return HealthProbe.ZOOKEEPER;
+    }
+
     /**
      * ZooKeeper socket listener implementation.
      */

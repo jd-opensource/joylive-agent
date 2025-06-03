@@ -27,6 +27,14 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.task.RetryVersionTask;
+import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
+import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.probe.DetectTaskListener;
+import com.jd.live.agent.governance.probe.FailoverDetectTask;
+import com.jd.live.agent.governance.probe.FailoverRecoverTask;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
@@ -36,10 +44,15 @@ import lombok.Setter;
 import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+import static com.alibaba.nacos.client.config.impl.ConnectionListener.LISTENER;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
 
@@ -53,27 +66,40 @@ public class NacosClient implements NacosClientApi {
     private static final Set<String> FORMATS = new HashSet<>(Arrays.asList("json", "properties", "yml", "yaml", "xml", "txt", "html", "toml"));
 
     private final NacosProperties properties;
-
+    private final HealthProbe probe;
+    private final Timer timer;
     private final ObjectParser json;
-
     private final Application application;
 
-    private ConfigService configService;
+    private final long timeout;
+    private final boolean autoRecover;
+    private final List<String> servers;
+    private String server;
+    private final NacosFailoverAddressList addressList;
+    private final Properties config = new Properties();
 
+    private volatile ConfigService configService;
     private final Map<ConfigKey, ConfigWatcher> watchers = new ConcurrentHashMap<>();
+    private final CountDownLatch connectLatch = new CountDownLatch(1);
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicLong versions = new AtomicLong(0);
+    private final Predicate<RetryVersionTask> predicate = p -> started.get() && p.getVersion() == versions.get();
 
-    public NacosClient(NacosProperties properties, ObjectParser json, Application application) {
+    public NacosClient(NacosProperties properties, HealthProbe probe, Timer timer, ObjectParser json, Application application) {
         this.properties = properties;
+        this.probe = probe;
+        this.timer = timer;
         this.json = json;
         this.application = application;
-    }
-
-    @Override
-    public void connect() throws NacosException {
-        Properties config = new Properties();
-        List<URI> uris = toList(split(properties.getUrl(), SEMICOLON_COMMA), URI::parse);
-        String address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
-        config.put(PropertyKeyConst.SERVER_ADDR, address);
+        this.timeout = properties.getTimeout() <= 0 ? 5000 : properties.getTimeout();
+        this.autoRecover = MapOption.of(properties.getProperties()).getBoolean("autoRecover", true);
+        this.servers = toList(splitList(properties.getUrl(), CHAR_SEMICOLON),
+                v -> join(toList(toList(splitList(v, CHAR_COMMA), URI::parse), u -> u.getAddress(true))));
+        this.addressList = new NacosFailoverAddressList(servers);
+        if (properties.getProperties() != null) {
+            config.putAll(properties.getProperties());
+        }
+        config.put(PropertyKeyConst.SERVER_NAME, "nacos-config-server");
         if (!isEmpty(properties.getNamespace()) && !DEFAULT_NAMESPACE_ID.equals(properties.getNamespace())) {
             config.put(PropertyKeyConst.NAMESPACE, properties.getNamespace());
         }
@@ -81,25 +107,46 @@ public class NacosClient implements NacosClientApi {
             config.put(PropertyKeyConst.USERNAME, properties.getUsername());
             config.put(PropertyKeyConst.PASSWORD, properties.getPassword());
         }
-        // TODO wait config service ready
-        configService = NacosFactory.createConfigService(config);
+
     }
 
     @Override
-    public void close() throws NacosException {
-        if (configService != null) {
-            configService.shutDown();
+    public void connect() throws NacosException {
+        if (started.compareAndSet(false, true)) {
+            logger.info("Try detecting healthy nacos {}", join(servers));
+            try {
+                // wait for connected
+                addDetectTask(0);
+                if (!connectLatch.await(timeout, TimeUnit.MILLISECONDS)) {
+                    // cancel task.
+                    throw new NacosException(NacosException.CLIENT_DISCONNECT, "It's timeout to connect to nacos.");
+                }
+            } catch (NacosException e) {
+                started.set(false);
+                throw e;
+            } catch (InterruptedException e) {
+                started.set(false);
+                Thread.currentThread().interrupt();
+                throw new NacosException(NacosException.CLIENT_DISCONNECT, "The nacos connecting thread is interrupted.");
+            }
+        }
+
+    }
+
+    @Override
+    public void close() {
+        if (started.compareAndSet(true, false)) {
+            close(configService);
         }
     }
 
     @Override
     public void subscribe(String dataId, String group, Listener listener) throws NacosException {
-        if (configService == null) {
-            throw new NacosException(NacosException.CLIENT_DISCONNECT, "nacos is not connected.");
-        }
         ConfigKey key = new ConfigKey(dataId, group);
         ConfigWatcher watcher = watchers.computeIfAbsent(key, k -> new ConfigWatcher(k, listener));
-        watcher.subscribe();
+        if (started.get()) {
+            watcher.subscribe();
+        }
     }
 
     @Override
@@ -129,6 +176,111 @@ public class NacosClient implements NacosClientApi {
                 subscription.onUpdate(new SyncResponse<>(e));
             }
         };
+    }
+
+    /**
+     * Schedules a new failover detection task with version control.
+     *
+     * @param delay Initial delay before first execution (milliseconds)
+     */
+    private void addDetectTask(long delay) {
+        long version = versions.incrementAndGet();
+        FailoverDetectTask detect = new FailoverDetectTask(addressList, probe, 1, false, new NacosDetectTaskListener());
+        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.detect", detect, version, predicate, timer);
+        // fast to reconnect when initialization
+        task.delay(delay);
+    }
+
+    /**
+     * Gracefully shuts down a ConfigService instance.
+     *
+     * @param service The ConfigService to close
+     */
+    private void close(ConfigService service) {
+        if (service != null) {
+            try {
+                service.shutDown();
+            } catch (NacosException ignored) {
+            }
+        }
+    }
+
+    /**
+     * Handles disconnection by closing current config service
+     * and immediately scheduling a failover detection task.
+     */
+    private void onDisconnected() {
+        close(configService);
+        addDetectTask(Timer.getRetryInterval(1000, 3000L));
+    }
+
+    /**
+     * Reconnects to the current Nacos server address.
+     *
+     * @param address The address to connect to
+     */
+    private void onDetected(String address) {
+        if (!address.equals(server)) {
+            config.put(PropertyKeyConst.SERVER_ADDR, address);
+            // set listener thread local to add it in ServerListManager
+            LISTENER.set(this::onDisconnected);
+            try {
+                // re-create config service
+                configService = NacosFactory.createConfigService(config);
+                server = address;
+                connectLatch.countDown();
+                resubscribe();
+                doRecover(address);
+            } catch (NacosException e) {
+                throw new IllegalStateException("Failed to connect to nacos " + address, e);
+            } finally {
+                LISTENER.remove();
+            }
+        }
+    }
+
+    /**
+     * Resubscribes all registered config watchers.
+     */
+    private void resubscribe() {
+        ConfigWatcher watcher;
+        for (Map.Entry<ConfigKey, ConfigWatcher> entry : watchers.entrySet()) {
+            watcher = entry.getValue();
+            try {
+                watcher.subscribe();
+            } catch (NacosException e) {
+                ResubscribeTask resubscribe = new ResubscribeTask(watcher);
+                resubscribe.addTask();
+            }
+        }
+    }
+
+    /**
+     * Attempts to detect and recover connection to the preferred nacos server.
+     *
+     * @param address The current address.
+     */
+    private void doRecover(String address) {
+        if (!autoRecover) {
+            return;
+        }
+        String first = addressList.first();
+        if (Objects.equals(address, first)) {
+            return;
+        }
+        logger.info("Try detecting unhealthy preferred nacos {}...", first);
+        FailoverRecoverTask execution = new FailoverRecoverTask(first, probe, 1, () -> {
+            if (!Objects.equals(addressList.current(), first)) {
+                // recover immediately
+                close(configService);
+                // reset preferred nacos
+                addressList.reset();
+                logger.info("Try switching to the healthy preferred nacos {}.", addressList.current());
+                onDetected(addressList.current());
+            }
+        });
+        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.recover", execution, versions.get(), predicate, timer);
+        task.delay(Timer.getRetryInterval(1500, 5000));
     }
 
     /**
@@ -357,4 +509,53 @@ public class NacosClient implements NacosClientApi {
             }
         }
     }
+
+    /**
+     * Listener for Nacos server detection tasks.
+     * Handles connection success/failure events and manages ConfigService lifecycle.
+     */
+    private class NacosDetectTaskListener implements DetectTaskListener {
+        @Override
+        public void onSuccess() {
+            String current = addressList.current();
+            if (!current.equals(server)) {
+                logger.info("Try connecting to healthy nacos {}", current);
+                // reconnect to server
+                onDetected(current);
+            }
+        }
+
+        @Override
+        public void onFailure() {
+            connectLatch.countDown();
+        }
+    }
+
+    /**
+     * Retry task for failed Nacos config subscriptions.
+     */
+    private class ResubscribeTask implements Runnable {
+
+        private final ConfigWatcher watcher;
+
+        ResubscribeTask(ConfigWatcher watcher) {
+            this.watcher = watcher;
+        }
+
+        @Override
+        public void run() {
+            if (started.get() && watchers.containsKey(watcher.keyRelease)) {
+                try {
+                    watcher.subscribe();
+                } catch (NacosException e) {
+                    addTask();
+                }
+            }
+        }
+
+        public void addTask() {
+            timer.delay("resubscribe-config", Timer.getRetryInterval(1000L, 1000L), this);
+        }
+    }
+
 }

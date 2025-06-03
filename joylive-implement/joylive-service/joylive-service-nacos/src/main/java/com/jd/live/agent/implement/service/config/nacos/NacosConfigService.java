@@ -22,7 +22,9 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.annotation.ConditionalOnConfigCenterEnabled;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.service.config.AbstractConfigService;
 import com.jd.live.agent.governance.service.config.ConfigSubscription;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
@@ -50,13 +52,19 @@ public class NacosConfigService extends AbstractConfigService<NacosClientApi> {
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
+    @Inject(HealthProbe.NACOS)
+    private HealthProbe probe;
+
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     protected final Map<String, NacosClientApi> clients = new ConcurrentHashMap<>();
 
     @Override
     protected ConfigSubscription<NacosClientApi> createSubscription(ConfigName configName) throws Exception {
         String namespace = configName.getNamespace();
         namespace = namespace == null || namespace.isEmpty() ? DEFAULT_NAMESPACE_ID : namespace;
-        NacosClientApi client = clients.computeIfAbsent(namespace, n -> NacosClientFactory.create(getProperties(n), json, application));
+        NacosClientApi client = clients.computeIfAbsent(namespace, n -> NacosClientFactory.create(getProperties(n), probe, timer, json, application));
         client.connect();
         return new ConfigSubscription<>(client, configName, getParser(configName));
     }

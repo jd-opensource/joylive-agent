@@ -33,4 +33,6 @@ public interface HealthProbe extends Predicate<String> {
 
     @Override
     boolean test(String address);
+
+    String type();
 }

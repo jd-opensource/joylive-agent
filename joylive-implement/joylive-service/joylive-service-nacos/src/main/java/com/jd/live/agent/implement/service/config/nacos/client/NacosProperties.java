@@ -18,7 +18,6 @@ package com.jd.live.agent.implement.service.config.nacos.client;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import lombok.Getter;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Getter
@@ -51,6 +50,6 @@ public class NacosProperties {
     public NacosProperties(ConfigCenterConfig config, String namespace) {
         this(config.getAddress(), config.getUsername(), config.getPassword(),
                 namespace, config.getTimeout(), config.isGrayEnabled(),
-                config.getProperties() == null ? null : new HashMap<>(config.getProperties()));
+                config.getProperties());
     }
 }

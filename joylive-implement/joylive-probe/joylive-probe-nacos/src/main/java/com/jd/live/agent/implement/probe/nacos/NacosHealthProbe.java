@@ -19,6 +19,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectReader;
+import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpStatus;
@@ -26,7 +27,10 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.probe.HealthProbe;
 
 import java.io.IOException;
+import java.util.List;
 
+import static com.jd.live.agent.core.util.StringUtils.CHAR_COMMA;
+import static com.jd.live.agent.core.util.StringUtils.split;
 import static com.jd.live.agent.governance.config.GovernanceConfig.CONFIG_PROBE_NACOS;
 
 @Injectable
@@ -38,17 +42,25 @@ public class NacosHealthProbe implements HealthProbe {
 
     @Override
     public boolean test(String address) {
-        URI uri = URI.parse(address);
-        uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(config.getPath()).build();
-        try {
-            HttpResponse<String> response = HttpUtils.get(uri.toString(), c -> {
-                c.setConnectTimeout(config.getConnectTimeout());
-                c.setReadTimeout(config.getReadTimeout());
-            }, new ObjectReader.StringReader<>());
-            return response.getStatus() == HttpStatus.OK && config.match(response.getData());
-        } catch (IOException e) {
-            return false;
+        List<URI> uris = CollectionUtils.toList(split(address, CHAR_COMMA), URI::parse);
+        for (URI uri : uris) {
+            uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(config.getPath()).build();
+            try {
+                HttpResponse<String> response = HttpUtils.get(uri.toString(), c -> {
+                    c.setConnectTimeout(config.getConnectTimeout());
+                    c.setReadTimeout(config.getReadTimeout());
+                }, new ObjectReader.StringReader<>());
+                if (response.getStatus() == HttpStatus.OK && config.match(response.getData())) {
+                    return true;
+                }
+            } catch (IOException ignore) {
+            }
         }
+        return false;
     }
 
+    @Override
+    public String type() {
+        return HealthProbe.NACOS;
+    }
 }

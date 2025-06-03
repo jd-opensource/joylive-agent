@@ -72,7 +72,7 @@ public abstract class AbstractDetectTask implements RetryExecution {
             return Connectivity.FAILURE_MAX_RETRIES;
         }
         if (count % 50 == 0) {
-            logger.info("Test zookeeper connectivity {}, {} times.", address, count);
+            logger.info("Test {} connectivity {}, {} times.", probe.type(), address, count);
         }
         if (probe.test(address)) {
             if (successes.incrementAndGet() == successThreshold) {

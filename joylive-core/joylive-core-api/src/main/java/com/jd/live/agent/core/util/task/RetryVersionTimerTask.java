@@ -60,7 +60,7 @@ public class RetryVersionTimerTask implements RetryVersionTask {
 
     @Override
     public void run() {
-        if (predicate.test(this)) {
+        if (predicate == null || predicate.test(this)) {
             try {
                 if (task.call()) {
                     return;

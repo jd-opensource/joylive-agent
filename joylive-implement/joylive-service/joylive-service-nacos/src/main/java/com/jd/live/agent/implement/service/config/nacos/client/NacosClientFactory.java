@@ -22,6 +22,8 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.service.config.AbstractSharedClientApi;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
@@ -42,21 +44,25 @@ public abstract class NacosClientFactory {
      * Creates a new instance of NacosClientApi using the provided configuration.
      *
      * @param config The NacosProperties object containing the configuration for the client.
+     * @param probe  Health probe for monitoring
+     * @param timer  Timer for scheduling client operations
      * @return A new instance of NacosClientApi.
      */
-    public static NacosClientApi create(NacosProperties config) {
-        return create(config, null, null);
+    public static NacosClientApi create(NacosProperties config, HealthProbe probe, Timer timer) {
+        return create(config, probe, timer, null, null);
     }
 
     /**
-     * Creates a new instance of NacosClientApi using the provided configuration.
+     * Creates and manages a shared Nacos client instance based on the provided configuration.
      *
-     * @param config      The NacosProperties object containing the configuration for the client.
-     * @param json        The json parser used to parse the policy.
-     * @param application The application instance.
-     * @return A new instance of NacosClientApi.
+     * @param config Nacos connection configuration including URL, namespace and credentials
+     * @param probe Health monitoring probe for the client
+     * @param timer Timer for scheduling client operations
+     * @param json Parser for handling JSON data
+     * @param application Application context
+     * @return Shared Nacos client API instance
      */
-    public static NacosClientApi create(NacosProperties config, ObjectParser json, Application application) {
+    public static NacosClientApi create(NacosProperties config, HealthProbe probe, Timer timer, ObjectParser json, Application application) {
         URI uri = URI.parse(config.getUrl());
         if (uri == null) {
             throw new ConfigException("Invalid config center address: " + config.getUrl());
@@ -66,7 +72,7 @@ public abstract class NacosClientFactory {
         String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();
         String name = username + ":" + password + "@" + uri.getAddress() + "/" + namespace;
         SharedNacosClientApi client = clients.computeIfAbsent(name, n ->
-                new SharedNacosClientApi(n, new NacosClient(config, json, application), clients::remove));
+                new SharedNacosClientApi(n, new NacosClient(config, probe, timer, json, application), clients::remove));
         client.incReference();
         return client;
     }
