@@ -129,7 +129,6 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         } else if (filter != null && filter.loadByParent(name)) {
             return loadByParent(name, resolve, candidates);
         } else {
-            // first candidature for plugin classloader, use the classloader of the enhanced type and thread context.
             if (candidates != null) {
                 try {
                     return loadByClassLoader(candidates, name, resolve, c -> c != this);

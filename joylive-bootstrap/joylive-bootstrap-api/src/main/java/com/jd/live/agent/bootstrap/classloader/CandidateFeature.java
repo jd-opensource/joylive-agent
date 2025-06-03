@@ -30,7 +30,7 @@ public class CandidateFeature {
     private Predicate<ClassLoader> predicate;
 
     public boolean test(ClassLoader classLoader) {
-        return classLoader != null && (predicate == null || predicate.test(classLoader));
+        return classLoader != null && !(classLoader instanceof Resourcer) && (predicate == null || predicate.test(classLoader));
     }
 
     public Class<?> disableAndRun(Callable<Class<?>> callable) throws ClassNotFoundException {

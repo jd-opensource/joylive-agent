@@ -20,7 +20,10 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.plugin.definition.*;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
+import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.PluginDefinition;
+import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientInterceptor;
@@ -34,7 +37,7 @@ import com.jd.live.agent.plugin.transmission.jdkhttp.interceptor.JavaHttpClientI
 @Extension(value = "JavaHttpClientDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(JavaHttpClientDefinition.TYPE_HTTP_REQUEST_BUILDER_IMPL)
-public class JavaHttpClientDefinition extends PluginDefinitionAdapter implements PluginImporter {
+public class JavaHttpClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_HTTP_REQUEST_BUILDER_IMPL = "jdk.internal.net.http.HttpRequestBuilderImpl";
 
@@ -51,10 +54,5 @@ public class JavaHttpClientDefinition extends PluginDefinitionAdapter implements
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_BUILD, METHOD_BUILD_FOR_WEBSOCKET),
                         () -> new JavaHttpClientInterceptor(propagation))};
-    }
-
-    @Override
-    public String[] getImports() {
-        return new String[]{"jdk.internal.net.http.HttpRequestBuilderImpl"};
     }
 }
