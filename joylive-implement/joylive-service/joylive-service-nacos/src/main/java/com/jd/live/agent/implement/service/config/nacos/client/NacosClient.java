@@ -82,6 +82,7 @@ public class NacosClient implements NacosClientApi {
     private final Map<ConfigKey, ConfigWatcher> watchers = new ConcurrentHashMap<>();
     private final CountDownLatch connectLatch = new CountDownLatch(1);
     private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicLong versions = new AtomicLong(0);
     private final Predicate<RetryVersionTask> predicate = p -> started.get() && p.getVersion() == versions.get();
 
@@ -118,6 +119,7 @@ public class NacosClient implements NacosClientApi {
                 // wait for connected
                 addDetectTask(0);
                 if (!connectLatch.await(timeout, TimeUnit.MILLISECONDS)) {
+                    logger.error("It's timeout to connect to nacos. {}", join(servers));
                     // cancel task.
                     throw new NacosException(NacosException.CLIENT_DISCONNECT, "It's timeout to connect to nacos.");
                 }
@@ -136,6 +138,7 @@ public class NacosClient implements NacosClientApi {
     @Override
     public void close() {
         if (started.compareAndSet(true, false)) {
+            connected.set(false);
             close(configService);
         }
     }
@@ -144,7 +147,7 @@ public class NacosClient implements NacosClientApi {
     public void subscribe(String dataId, String group, Listener listener) throws NacosException {
         ConfigKey key = new ConfigKey(dataId, group);
         ConfigWatcher watcher = watchers.computeIfAbsent(key, k -> new ConfigWatcher(k, listener));
-        if (started.get()) {
+        if (connected.get()) {
             watcher.subscribe();
         }
     }
@@ -210,6 +213,7 @@ public class NacosClient implements NacosClientApi {
      * and immediately scheduling a failover detection task.
      */
     private void onDisconnected() {
+        connected.set(false);
         close(configService);
         addDetectTask(Timer.getRetryInterval(1000, 3000L));
     }
@@ -228,6 +232,7 @@ public class NacosClient implements NacosClientApi {
                 // re-create config service
                 configService = NacosFactory.createConfigService(config);
                 server = address;
+                connected.set(true);
                 connectLatch.countDown();
                 resubscribe();
                 doRecover(address);
@@ -272,6 +277,7 @@ public class NacosClient implements NacosClientApi {
         FailoverRecoverTask execution = new FailoverRecoverTask(first, probe, 1, () -> {
             if (!Objects.equals(addressList.current(), first)) {
                 // recover immediately
+                connected.set(false);
                 close(configService);
                 // reset preferred nacos
                 addressList.reset();
