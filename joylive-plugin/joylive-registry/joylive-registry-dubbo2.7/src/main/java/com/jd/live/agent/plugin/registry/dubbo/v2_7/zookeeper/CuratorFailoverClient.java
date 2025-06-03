@@ -69,6 +69,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
     private final HealthProbe probe;
     private final int connectionTimeout;
     private final int sessionTimeout;
+    private final int initializationTimeout;
     private final int successThreshold;
     private final boolean autoRecover;
 
@@ -99,6 +100,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
         this.successThreshold = Converts.getPositive(url.getParameter("successThreshold", System.getenv("ZOOKEEPER_SUCCESS_THRESHOLD")), 3);
         this.autoRecover = Converts.getBoolean(url.getParameter("autoRecover", System.getenv("ZOOKEEPER_AUTO_RECOVER")), true);
         this.addresses = getAddresses(url);
+        this.initializationTimeout = Converts.getPositive(url.getParameter("initializationTimeout", System.getenv("ZOOKEEPER_INITIALIZATION_TIMEOUT")), connectionTimeout * addresses.size());
         this.ensembleProvider = new CuratorFailoverEnsembleProvider(addresses);
         this.stateListener = new FailoverStateListener();
         this.stateListeners.add(stateListener);
@@ -111,7 +113,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
             logger.info("Try detecting healthy zookeeper {}", join(addresses, ';'));
             stateListener.addDetectTask(false);
             // wait for connected
-            if (!connectLatch.await((long) connectionTimeout * addresses.size(), TimeUnit.MILLISECONDS)) {
+            if (!connectLatch.await(initializationTimeout, TimeUnit.MILLISECONDS)) {
                 // cancel task.
                 versions.incrementAndGet();
                 throw new IllegalStateException("It's timeout to connect to zookeeper.");
