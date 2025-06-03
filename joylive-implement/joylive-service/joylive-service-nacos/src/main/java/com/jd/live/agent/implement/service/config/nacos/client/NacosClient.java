@@ -26,6 +26,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
+import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
@@ -100,7 +101,6 @@ public class NacosClient implements NacosClientApi {
         if (properties.getProperties() != null) {
             config.putAll(properties.getProperties());
         }
-        config.put(PropertyKeyConst.SERVER_NAME, "nacos-config-server");
         if (!isEmpty(properties.getNamespace()) && !DEFAULT_NAMESPACE_ID.equals(properties.getNamespace())) {
             config.put(PropertyKeyConst.NAMESPACE, properties.getNamespace());
         }
@@ -230,13 +230,13 @@ public class NacosClient implements NacosClientApi {
             LISTENER.set(this::onDisconnected);
             try {
                 // re-create config service
-                configService = NacosFactory.createConfigService(config);
+                configService = Executors.call(NacosClient.class.getClassLoader(), () -> NacosFactory.createConfigService(config));
                 server = address;
+                resubscribe();
                 connected.set(true);
                 connectLatch.countDown();
-                resubscribe();
                 doRecover(address);
-            } catch (NacosException e) {
+            } catch (Exception e) {
                 throw new IllegalStateException("Failed to connect to nacos " + address, e);
             } finally {
                 LISTENER.remove();

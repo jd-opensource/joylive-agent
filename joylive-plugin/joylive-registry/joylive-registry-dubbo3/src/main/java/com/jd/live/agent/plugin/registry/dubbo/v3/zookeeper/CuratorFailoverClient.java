@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.zookeeper;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
@@ -335,20 +336,22 @@ public class CuratorFailoverClient implements ZookeeperClient {
      * @return A configured but unstarted CuratorFramework client instance
      */
     private CuratorFramework createClient(URL url) {
-        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
-                .ensembleProvider(ensembleProvider)
-                .retryPolicy(new RetryNTimes(1, 1000))
-                .connectionTimeoutMs(timeout)
-                .defaultData(PathData.DEFAULT_DATA)
-                .sessionTimeoutMs(sessionExpireMs);
-        String authority = url.getAuthority();
-        if (authority != null && !authority.isEmpty()) {
-            builder = builder.authorization("digest", authority.getBytes());
-        }
-        CuratorFramework client = builder.build();
-        // listener keep session id, so create new one.
-        client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(stateListeners, timeout, sessionExpireMs));
-        return client;
+        return Executors.get(url.getClass().getClassLoader(), () -> {
+            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
+                    .ensembleProvider(ensembleProvider)
+                    .retryPolicy(new RetryNTimes(1, 1000))
+                    .connectionTimeoutMs(timeout)
+                    .defaultData(PathData.DEFAULT_DATA)
+                    .sessionTimeoutMs(sessionExpireMs);
+            String authority = url.getAuthority();
+            if (authority != null && !authority.isEmpty()) {
+                builder = builder.authorization("digest", authority.getBytes());
+            }
+            CuratorFramework client = builder.build();
+            // listener keep session id, so create new one.
+            client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(stateListeners, timeout, sessionExpireMs));
+            return client;
+        });
     }
 
     /**

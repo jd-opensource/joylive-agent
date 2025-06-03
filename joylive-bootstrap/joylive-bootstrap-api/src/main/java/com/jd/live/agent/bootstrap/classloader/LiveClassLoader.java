@@ -186,7 +186,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         if (type != null) {
             return type;
         }
-        throw new ClassNotFoundException("class " + name + " is not found.");
+        throw new ClassNotFoundException("class " + name + " is not found by " + getType());
     }
 
     /**
@@ -253,7 +253,7 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
                 }
             }
         }
-        throw new ClassNotFoundException("class " + name + " is not found.");
+        throw new ClassNotFoundException("class " + name + " is not found by " + getType());
     }
 
     /**

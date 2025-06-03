@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.converter.BiConverter;
 import com.jd.live.agent.core.util.converter.TriConverter;
@@ -206,16 +207,18 @@ public class DubboZookeeperRegistry implements RegistryService {
      * @return configured CuratorFramework client with connection settings and optional authentication
      */
     private CuratorFramework createClient() {
-        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
-                .connectString(address)
-                .sessionTimeoutMs(sessionTimeout)
-                .connectionTimeoutMs(connectTimeout)
-                .retryPolicy(new RetryNTimes(1, 1000));
-        String authority = config.getAuthority();
-        if (authority != null && !authority.isEmpty()) {
-            builder.authorization("digest", authority.getBytes());
-        }
-        return builder.build();
+        return Executors.get(this.getClass().getClassLoader(), () -> {
+            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
+                    .connectString(address)
+                    .sessionTimeoutMs(sessionTimeout)
+                    .connectionTimeoutMs(connectTimeout)
+                    .retryPolicy(new RetryNTimes(1, 1000));
+            String authority = config.getAuthority();
+            if (authority != null && !authority.isEmpty()) {
+                builder.authorization("digest", authority.getBytes());
+            }
+            return builder.build();
+        });
     }
 
     /**

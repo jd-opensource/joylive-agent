@@ -90,7 +90,7 @@ public class NacosRegistry implements RegistryService {
             if (config.isDenyEmptyEnabled()) {
                 properties.put(NAMING_PUSH_EMPTY_PROTECTION, "true");
             }
-            namingService = Executors.execute(this.getClass().getClassLoader(), () -> new NacosNamingService(properties));
+            namingService = Executors.call(this.getClass().getClassLoader(), () -> new NacosNamingService(properties));
         }
     }
 
