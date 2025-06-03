@@ -19,19 +19,19 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
 import com.jd.live.agent.governance.registry.*;
+import com.jd.live.agent.implement.service.registry.nacos.converter.InstanceConverter;
+import com.jd.live.agent.implement.service.registry.nacos.converter.PropertiesConverter;
 
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static com.alibaba.nacos.api.PropertyKeyConst.*;
+import static com.alibaba.nacos.api.PropertyKeyConst.SERVER_ADDR;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
 
@@ -75,21 +75,8 @@ public class NacosRegistry implements RegistryService {
     @Override
     public void start() throws Exception {
         if (started.compareAndSet(false, true)) {
-            Properties properties = new Properties();
+            Properties properties = PropertiesConverter.INSTANCE.convert(config);
             properties.put(SERVER_ADDR, address);
-            if (config.getProperties() != null) {
-                properties.putAll(config.getProperties());
-            }
-            if (!isEmpty(config.getNamespace())) {
-                properties.put(NAMESPACE, config.getNamespace());
-            }
-            if (!isEmpty(config.getUsername())) {
-                properties.put(USERNAME, config.getUsername());
-                properties.put(PASSWORD, config.getPassword());
-            }
-            if (config.isDenyEmptyEnabled()) {
-                properties.put(NAMING_PUSH_EMPTY_PROTECTION, "true");
-            }
             namingService = Executors.call(this.getClass().getClassLoader(), () -> new NacosNamingService(properties));
         }
     }
@@ -108,12 +95,14 @@ public class NacosRegistry implements RegistryService {
 
     @Override
     public void register(ServiceId serviceId, ServiceInstance instance) throws Exception {
-        namingService.registerInstance(getService(serviceId, instance), getGroup(serviceId.getGroup()), toInstance(instance));
+        namingService.registerInstance(getService(serviceId, instance), getGroup(serviceId.getGroup()),
+                InstanceConverter.INSTANCE.convert(instance));
     }
 
     @Override
     public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
-        namingService.deregisterInstance(getService(serviceId, instance), getGroup(serviceId.getGroup()), toInstance(instance));
+        namingService.deregisterInstance(getService(serviceId, instance), getGroup(serviceId.getGroup()),
+                InstanceConverter.INSTANCE.convert(instance));
     }
 
     @Override
@@ -132,17 +121,6 @@ public class NacosRegistry implements RegistryService {
         namingService.unsubscribe(serviceId.getService(), getGroup(serviceId.getGroup()), event -> {
 
         });
-    }
-
-    protected Instance toInstance(ServiceInstance instance) {
-        Instance result = new Instance();
-        result.setInstanceId(instance.getId());
-        result.setIp(instance.getHost());
-        result.setPort(instance.getPort());
-        result.setServiceName(instance.getService());
-        result.setMetadata(instance.getMetadata() == null ? null : new HashMap<>(instance.getMetadata()));
-        result.setWeight(instance.getWeight());
-        return result;
     }
 
     protected String getGroup(String group) {

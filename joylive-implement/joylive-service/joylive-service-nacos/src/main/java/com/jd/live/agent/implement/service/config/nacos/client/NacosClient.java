@@ -28,7 +28,9 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.task.RetryVersionTask;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
@@ -38,6 +40,7 @@ import com.jd.live.agent.governance.probe.FailoverRecoverTask;
 import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.Syncer;
+import com.jd.live.agent.implement.service.config.nacos.client.converter.PropertiesConverter;
 import com.jd.live.agent.implement.service.policy.nacos.NacosSyncKey;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,7 +55,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 import static com.alibaba.nacos.client.config.impl.ConnectionListener.LISTENER;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
@@ -72,12 +74,12 @@ public class NacosClient implements NacosClientApi {
     private final ObjectParser json;
     private final Application application;
 
-    private final long timeout;
+    private final int initializationTimeout;
     private final boolean autoRecover;
     private final List<String> servers;
     private String server;
     private final NacosFailoverAddressList addressList;
-    private final Properties config = new Properties();
+    private final Properties config;
 
     private volatile ConfigService configService;
     private final Map<ConfigKey, ConfigWatcher> watchers = new ConcurrentHashMap<>();
@@ -93,22 +95,14 @@ public class NacosClient implements NacosClientApi {
         this.timer = timer;
         this.json = json;
         this.application = application;
-        this.timeout = properties.getTimeout() <= 0 ? 5000 : properties.getTimeout();
-        this.autoRecover = MapOption.of(properties.getProperties()).getBoolean("autoRecover", true);
+        Option option = MapOption.of(properties.getProperties());
+        int connectionTimeout = Converts.getPositive(option.getString("connectionTimeout", System.getenv("NACOS_CONNECTION_TIMEOUT")), 5000);
+        this.autoRecover = Converts.getBoolean(option.getString("autoRecover", System.getenv("NACOS_AUTO_RECOVER")), true);
         this.servers = toList(splitList(properties.getUrl(), CHAR_SEMICOLON),
                 v -> join(toList(toList(splitList(v, CHAR_COMMA), URI::parse), u -> u.getAddress(true))));
+        this.initializationTimeout = Converts.getPositive(option.getString("initializationTimeout", System.getenv("NACOS_INITIALIZATION_TIMEOUT")), connectionTimeout * Math.max(1, servers.size()));
         this.addressList = new NacosFailoverAddressList(servers);
-        if (properties.getProperties() != null) {
-            config.putAll(properties.getProperties());
-        }
-        if (!isEmpty(properties.getNamespace()) && !DEFAULT_NAMESPACE_ID.equals(properties.getNamespace())) {
-            config.put(PropertyKeyConst.NAMESPACE, properties.getNamespace());
-        }
-        if (!isEmpty(properties.getUsername())) {
-            config.put(PropertyKeyConst.USERNAME, properties.getUsername());
-            config.put(PropertyKeyConst.PASSWORD, properties.getPassword());
-        }
-
+        this.config = PropertiesConverter.INSTANCE.convert(properties);
     }
 
     @Override
@@ -118,7 +112,7 @@ public class NacosClient implements NacosClientApi {
             try {
                 // wait for connected
                 addDetectTask(0);
-                if (!connectLatch.await(timeout, TimeUnit.MILLISECONDS)) {
+                if (!connectLatch.await(initializationTimeout, TimeUnit.MILLISECONDS)) {
                     logger.error("It's timeout to connect to nacos. {}", join(servers));
                     // cancel task.
                     throw new NacosException(NacosException.CLIENT_DISCONNECT, "It's timeout to connect to nacos.");
