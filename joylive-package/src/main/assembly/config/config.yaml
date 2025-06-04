@@ -332,6 +332,9 @@ agent:
       zookeeper:
         command: ${CONFIG_PROBE_ZOOKEEPER_COMMAND:srvr}
         response: ${CONFIG_PROBE_ZOOKEEPER_RESPONSE:}
+      nacos:
+        path: ${CONFIG_PROBE_NACOS_PATH:/nacos/v1/console/health/liveness}
+        response: ${CONFIG_PROBE_NACOS_RESPONSE:OK}
   counter:
     gateway: true
     service: true
