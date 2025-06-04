@@ -8,7 +8,7 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
 
-<img src="docs/image/weixin.png" title="该二维码有效期截止到2025/05/14" width="150"  />
+<img src="docs/image/weixin.png" title="该二维码有效期截止到2025/06/11" width="150"  />
 
 [English](./README.md) | 简体中文
 
