@@ -30,6 +30,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientConstructorInterceptor;
 import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientDeltaUpdateInterceptor;
 import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientFullUpdateInterceptor;
+import com.jd.live.agent.plugin.registry.eureka.interceptor.DiscoveryClientShutdownInterceptor;
 
 /**
  * DiscoveryClientDefinition
@@ -46,6 +47,17 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_UPDATE_DELTA = "updateDelta";
 
+    private static final String METHOD_SHUTDOWN = "shutdown";
+
+    private static final String[] ARGUMENTS_CONSTRUCTOR = new String[]{
+            "com.netflix.appinfo.ApplicationInfoManager",
+            "com.netflix.discovery.EurekaClientConfig",
+            "com.netflix.discovery.shared.transport.jersey.TransportClientFactories",
+            "com.netflix.discovery.AbstractDiscoveryClientOptionalArgs",
+            "jakarta.inject.Provider",
+            "com.netflix.discovery.shared.resolver.EndpointRandomizer"
+    };
+
     @Inject(Registry.COMPONENT_REGISTRY)
     private CompositeRegistry registry;
 
@@ -53,12 +65,14 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISCOVERY_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_GET_AND_STORE_FULL_REGISTRY), () -> new DiscoveryClientFullUpdateInterceptor(registry)),
+                        MatcherBuilder.named(METHOD_GET_AND_STORE_FULL_REGISTRY), () -> new DiscoveryClientFullUpdateInterceptor()),
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_UPDATE_DELTA), () -> new DiscoveryClientDeltaUpdateInterceptor(registry)),
+                        MatcherBuilder.named(METHOD_UPDATE_DELTA), () -> new DiscoveryClientDeltaUpdateInterceptor()),
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(), () -> new DiscoveryClientConstructorInterceptor(registry))
-
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR)),
+                        () -> new DiscoveryClientConstructorInterceptor(registry)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_SHUTDOWN), () -> new DiscoveryClientShutdownInterceptor(registry)),
         };
     }
 }

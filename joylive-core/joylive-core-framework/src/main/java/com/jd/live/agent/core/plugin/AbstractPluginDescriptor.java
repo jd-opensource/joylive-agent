@@ -240,11 +240,7 @@ public abstract class AbstractPluginDescriptor implements PluginDescriptor {
         }
         // The previous call has already ensured that the class exists.
         // Set the class loader for the current thread.
-        try {
-            return Executors.execute(classLoader, () -> definition.getMatcher().match(typeDesc));
-        } catch (Exception e) {
-            return false;
-        }
+        return Executors.get(classLoader, () -> definition.getMatcher().match(typeDesc));
     }
 
 

@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.gprc.loadbalance;
 
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import io.grpc.LoadBalancer;
 import io.grpc.LoadBalancerProvider;
 
@@ -52,7 +53,7 @@ public class LiveLoadBalancerProvider extends LoadBalancerProvider {
     @Override
     public LoadBalancer newLoadBalancer(LoadBalancer.Helper helper) {
         LiveLoadBalancer balancer = new LiveLoadBalancer(helper, timer);
-        registry.subscribe(balancer.getServiceName(), balancer::handle);
+        registry.subscribe(new ServiceId(balancer.getServiceName(), null, true), balancer::handle);
         return balancer;
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 
+import com.alipay.sofa.rpc.common.Version;
 import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.alipay.sofa.rpc.config.ServerConfig;
 import com.alipay.sofa.rpc.registry.utils.RegistryUtils;
@@ -24,6 +25,7 @@ import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +66,8 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
             for (ServerConfig serverConfig : serverConfigs) {
                 instances.add(
                         ServiceInstance.builder()
-                                .type("sofa-rpc")
+                                .interfaceMode(true)
+                                .framework(new FrameworkVersion("sofa-rpc", Version.VERSION))
                                 .service(config.getInterfaceId())
                                 .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
                                 .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())

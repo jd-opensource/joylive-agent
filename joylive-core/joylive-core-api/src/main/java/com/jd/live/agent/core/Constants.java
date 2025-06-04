@@ -151,6 +151,10 @@ public interface Constants {
      */
     String LABEL_WARMUP = "warmup";
 
+    String LABEL_NAMESPACE = "namespace";
+
+    String LABEL_GROUP = "group";
+
     String LABEL_STATE = "state";
 
     /**

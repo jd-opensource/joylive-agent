@@ -1,0 +1,6 @@
+com.jd.live.agent.plugin.registry.nacos.v1_4.definition.NacosServiceDiscoveryDefinition
+com.jd.live.agent.plugin.registry.nacos.v1_4.definition.NacosInstancesChangeNotifierDefinition
+com.jd.live.agent.plugin.registry.nacos.v1_4.definition.NacosNamingServiceDefinition
+com.jd.live.agent.plugin.registry.nacos.v1_4.definition.NacosDiscoveryPropertiesDefinition
+com.jd.live.agent.plugin.registry.nacos.v1_4.definition.NacosNotifyCenterDefinition
+com.jd.live.agent.plugin.registry.nacos.v1_4.definition.HostReactorDefinition

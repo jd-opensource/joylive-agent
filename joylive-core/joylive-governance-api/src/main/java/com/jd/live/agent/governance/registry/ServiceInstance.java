@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +30,9 @@ import java.util.Map;
 @Setter
 public class ServiceInstance extends ServiceId {
 
-    private String type;
+    private String id;
+
+    private FrameworkVersion framework;
 
     private String version;
 
@@ -46,24 +50,51 @@ public class ServiceInstance extends ServiceId {
     }
 
     @Builder
-    public ServiceInstance(String id,
-                           String namespace,
+    public ServiceInstance(String namespace,
                            String service,
                            String group,
-                           String type,
+                           boolean interfaceMode,
+                           String id,
+                           FrameworkVersion framework,
                            String version,
                            String scheme,
                            String host,
                            int port,
                            int weight,
                            Map<String, String> metadata) {
-        super(id, namespace, service, group);
-        this.type = type;
+        super(namespace, service, group, interfaceMode);
+        this.id = id;
+        this.framework = framework;
         this.version = version;
         this.scheme = scheme;
         this.host = host;
         this.port = port;
         this.weight = weight;
         this.metadata = metadata;
+    }
+
+    public String getId() {
+        if (id == null) {
+            id = getAddress();
+        }
+        return id;
+    }
+
+    public String getAddress() {
+        return URI.getAddress(getHost(), getPort());
+    }
+
+    public String getMetadata(String key) {
+        return metadata == null || key == null ? null : metadata.get(key);
+    }
+
+    public String getMetadata(String key, String defaultValue) {
+        String value = getMetadata(key);
+        return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    public String getSchemeAddress() {
+        return URI.getAddress(getScheme(), getHost(), getPort());
+
     }
 }

@@ -21,6 +21,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
@@ -67,16 +68,16 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         switch (mode) {
             case INSTANCE:
                 ctx.put(REGISTRY_TYPE_KEY, mode.getName());
-                subscribe(info.getService(), info.getGroup());
+                subscribe(new ServiceId(info.getService(), info.getGroup(), false));
                 break;
             case ALL:
                 ctx.put(REGISTRY_TYPE_KEY, mode.getName());
-                subscribe(info.getService(), info.getGroup());
-                subscribe(info.getInterfaceName(), info.getGroup());
+                subscribe(new ServiceId(info.getService(), info.getGroup(), false));
+                subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
                 break;
             case INTERFACE:
             default:
-                subscribe(info.getInterfaceName(), info.getGroup());
+                subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
 
         }
     }
@@ -85,10 +86,9 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
      * Subscribes to a specific service in the specified group.
      * This method must be implemented by subclasses to define the subscription logic.
      *
-     * @param service the name of the service to subscribe to.
-     * @param group   the group to which the service belongs.
+     * @param serviceId the id of the service to subscribe to.
      */
-    protected abstract void subscribe(String service, String group);
+    protected abstract void subscribe(ServiceId serviceId);
 
     /**
      * Gets the context map for the given executable context.

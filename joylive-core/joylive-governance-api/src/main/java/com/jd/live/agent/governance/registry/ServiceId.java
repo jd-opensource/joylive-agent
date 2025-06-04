@@ -25,13 +25,13 @@ import java.io.Serializable;
 @Setter
 public class ServiceId implements Serializable {
 
-    protected String id;
-
     protected String namespace;
 
     protected String service;
 
     protected String group;
+
+    protected boolean interfaceMode;
 
     protected String uniqueName;
 
@@ -39,22 +39,26 @@ public class ServiceId implements Serializable {
     }
 
     public ServiceId(String service) {
-        this(null, null, service, null);
+        this(null, service, null, false);
     }
 
     public ServiceId(String service, String group) {
-        this(null, null, service, group);
+        this(null, service, group, false);
+    }
+
+    public ServiceId(String service, String group, boolean interfaceMode) {
+        this(null, service, group, interfaceMode);
     }
 
     public ServiceId(String namespace, String service, String group) {
-        this(null, namespace, service, group);
+        this(namespace, service, group, false);
     }
 
-    public ServiceId(String id, String namespace, String service, String group) {
-        this.id = id;
+    public ServiceId(String namespace, String service, String group, boolean interfaceMode) {
         this.namespace = namespace;
         this.service = service;
         this.group = group;
+        this.interfaceMode = interfaceMode;
     }
 
     public String getUniqueName() {
@@ -62,5 +66,38 @@ public class ServiceId implements Serializable {
             uniqueName = ServiceName.getUniqueName(namespace, service, group);
         }
         return uniqueName;
+    }
+
+    /**
+     * Checks if this service matches the target service using the same rules as {@link #match(ServiceId, ServiceId, String)}.
+     *
+     * @param target target service to match against (may be null)
+     * @param defaultGroup default group name used when this service's group is empty (may be null)
+     * @return true if services match (case-insensitive) and groups match according to rules
+     */
+    public boolean match(ServiceId target, String defaultGroup) {
+        return match(this, target, defaultGroup);
+    }
+
+    /**
+     * Determines if two service IDs match according to the specified matching rules.
+     *
+     * @param source the source service ID to match against (may be null)
+     * @param target the target service ID to check (may be null)
+     * @param defaultGroup the default group name to use when source group is empty (may be null)
+     * @return true if the service IDs match according to the rules, false otherwise
+     */
+    public static boolean match(ServiceId source, ServiceId target, String defaultGroup) {
+        String sourceService = source == null ? null : source.getService();
+        String sourceGroup = source == null ? null : source.getGroup();
+        String targetService = target == null ? null : target.getService();
+        String targetGroup = target == null ? null : target.getGroup();
+        if (sourceService == null || !sourceService.equalsIgnoreCase(targetService)) {
+            return false;
+        }
+        if (sourceGroup == null || sourceGroup.isEmpty()) {
+            return targetGroup == null || targetGroup.isEmpty() || targetGroup.equalsIgnoreCase(defaultGroup);
+        }
+        return sourceGroup.equalsIgnoreCase(targetGroup);
     }
 }

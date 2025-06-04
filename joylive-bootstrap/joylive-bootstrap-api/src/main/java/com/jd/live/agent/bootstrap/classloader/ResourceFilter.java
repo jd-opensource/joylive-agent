@@ -20,10 +20,10 @@ import java.net.URL;
 import java.util.Enumeration;
 
 /**
- * An interface extending {@link CandidatorProvider} to define filtering behavior
+ * An interface extending {@link CandidateProvider} to define filtering behavior
  * for class loading and resource retrieval.
  */
-public interface ResourceFilter extends CandidatorProvider {
+public interface ResourceFilter extends CandidateProvider {
 
     /**
      * Determines whether a resource with the given name should be loaded by the parent class loader.

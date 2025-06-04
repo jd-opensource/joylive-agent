@@ -91,15 +91,15 @@ public class ApolloAddress {
         List<URI> configServers = new ArrayList<>(8);
         for (String url : urls) {
             URI uri = URI.parse(url);
-            String schema = uri.getSchema();
+            String schema = uri.getScheme();
             if (SCHEMA_META.equalsIgnoreCase(schema)) {
-                metaServer = uri.schema(SCHEMA_HTTP);
+                metaServer = uri.scheme(SCHEMA_HTTP);
                 break;
             } else if (SCHEMA_METAS.equalsIgnoreCase(schema)) {
-                metaServer = uri.schema(SCHEMA_HTTPS);
+                metaServer = uri.scheme(SCHEMA_HTTPS);
                 break;
             } else if (schema == null || schema.isEmpty()) {
-                configServers.add(uri.schema(SCHEMA_HTTP));
+                configServers.add(uri.scheme(SCHEMA_HTTP));
             } else {
                 configServers.add(uri);
             }

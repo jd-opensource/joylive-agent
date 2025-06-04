@@ -70,7 +70,7 @@ public class LiveLoadBalancer extends LoadBalancer {
      * @param event the endpoint event to handle
      */
     protected void handle(RegistryEvent event) {
-        if (serviceName.equals(event.getService())) {
+        if (serviceName.equals(event.getServiceId().getService())) {
             helper.getSynchronizationContext().execute(helper::refreshNameResolution);
         }
     }

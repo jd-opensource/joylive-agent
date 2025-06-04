@@ -18,29 +18,48 @@ package com.jd.live.agent.governance.registry;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Getter
 public class RegistryEvent {
 
-    protected final String service;
+    public static final AtomicLong VERSION = new AtomicLong(0);
 
-    protected final String group;
+    protected final long version;
+
+    protected final ServiceId serviceId;
 
     protected final List<ServiceEndpoint> instances;
 
     protected final String defaultGroup;
 
     public RegistryEvent(String service, List<ServiceEndpoint> instances) {
-        this(service, null, instances, null);
+        this(VERSION.incrementAndGet(), new ServiceId(service), instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances) {
-        this(service, group, instances, null);
+        this(VERSION.incrementAndGet(), new ServiceId(service, group), instances, null);
+    }
+
+    public RegistryEvent(ServiceId serviceId, List<ServiceEndpoint> instances) {
+        this(VERSION.incrementAndGet(), serviceId, instances, null);
     }
 
     public RegistryEvent(String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
-        this.service = service;
-        this.group = group;
+        this(VERSION.incrementAndGet(), new ServiceId(service, group), instances, defaultGroup);
+    }
+
+    public RegistryEvent(ServiceId serviceId, List<ServiceEndpoint> instances, String defaultGroup) {
+        this(VERSION.incrementAndGet(), serviceId, instances, defaultGroup);
+    }
+
+    public RegistryEvent(long version, String service, String group, List<ServiceEndpoint> instances, String defaultGroup) {
+        this(version, new ServiceId(service, group), instances, defaultGroup);
+    }
+
+    public RegistryEvent(long version, ServiceId serviceId, List<ServiceEndpoint> instances, String defaultGroup) {
+        this.version = version;
+        this.serviceId = serviceId;
         this.instances = instances;
         this.defaultGroup = defaultGroup;
     }
@@ -51,6 +70,10 @@ public class RegistryEvent {
 
     public int size() {
         return instances == null ? 0 : instances.size();
+    }
+
+    public boolean isFull() {
+        return true;
     }
 
 }
