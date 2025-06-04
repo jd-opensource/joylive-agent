@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.implement.service.config.nacos.client;
 
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.option.OptionSupplier;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import lombok.Getter;
 
 import java.util.Map;
 
 @Getter
-public class NacosProperties {
+public class NacosProperties implements OptionSupplier {
 
     private final String url;
 
@@ -52,4 +55,10 @@ public class NacosProperties {
                 namespace, config.getTimeout(), config.isGrayEnabled(),
                 config.getProperties());
     }
+
+    @Override
+    public Option getOption() {
+        return MapOption.of(properties);
+    }
+
 }

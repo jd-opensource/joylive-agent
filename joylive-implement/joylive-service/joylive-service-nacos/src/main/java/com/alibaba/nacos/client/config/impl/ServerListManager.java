@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.ConnectionListener;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -40,7 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.client.config.impl.ConnectionListener.LISTENER;
+import static com.alibaba.nacos.ConnectionListener.LISTENER;
 
 /**
  * Serverlist Manager.

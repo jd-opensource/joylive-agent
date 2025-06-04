@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.implement.service.registry.nacos;
 
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 
@@ -23,8 +25,8 @@ public class NacosDubboRegistry extends NacosRegistry {
 
     private static final String SEPARATOR = System.getProperty("nacos.service.name.separator", ":");
 
-    public NacosDubboRegistry(RegistryClusterConfig config) {
-        super(config);
+    public NacosDubboRegistry(RegistryClusterConfig config, HealthProbe probe, Timer timer) {
+        super(config, probe, timer);
     }
 
     @Override

@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.impl;
+package com.jd.live.agent.core.util.option;
 
 /**
- * Callback for connection state changes.
+ * Provides access to an Option instance.
  */
-public interface ConnectionListener {
-    /**
-     * Thread-local storage for active listener instance.
-     */
-    ThreadLocal<ConnectionListener> LISTENER = new ThreadLocal<>();
+public interface OptionSupplier {
 
     /**
-     * Triggered when connection is lost.
+     * @return The Option instance
      */
-    void onDisconnected();
+    Option getOption();
+
 }

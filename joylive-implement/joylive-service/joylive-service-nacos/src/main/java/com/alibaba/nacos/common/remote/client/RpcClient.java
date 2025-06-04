@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.ConnectionListener;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
@@ -94,6 +95,8 @@ public abstract class RpcClient implements Closeable {
 
     protected RpcClientConfig rpcClientConfig;
 
+    protected ConnectionListener connectionListener;
+
     protected final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
     static {
@@ -116,6 +119,7 @@ public abstract class RpcClient implements Closeable {
             LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory = {}",
                     serverListFactory.getClass().getName());
         }
+        this.connectionListener = ConnectionListener.LISTENER.get();
     }
 
     /**
@@ -441,6 +445,11 @@ public abstract class RpcClient implements Closeable {
                         rpcClientConfig.name(), currentConnection.serverInfo.getAddress());
                 rpcClientStatus.set(RpcClientStatus.RUNNING);
                 return;
+            }
+
+            // Add to support NacosRegistry
+            if (connectionListener != null) {
+                connectionListener.onDisconnected();
             }
 
             LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Try to reconnect to a new server, server is {}",

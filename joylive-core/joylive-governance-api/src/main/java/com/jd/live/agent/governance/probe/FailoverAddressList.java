@@ -15,6 +15,9 @@
  */
 package com.jd.live.agent.governance.probe;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Manages failover between multiple server addresses in distributed systems.
  * Handles connection failures and provides recovery mechanisms.
@@ -45,4 +48,43 @@ public interface FailoverAddressList {
      * @return Total number of available server addresses
      */
     int size();
+
+    class SimpleAddressList implements FailoverAddressList {
+
+        private final List<String> addresses;
+
+        private final AtomicLong index = new AtomicLong(0);
+
+        private final int size;
+
+        public SimpleAddressList(List<String> addresses) {
+            this.addresses = addresses;
+            this.size = addresses == null ? 0 : addresses.size();
+        }
+
+        @Override
+        public String current() {
+            return size == 0 ? null : addresses.get((int) (index.get() % size));
+        }
+
+        @Override
+        public String first() {
+            return size == 0 ? null : addresses.get(0);
+        }
+
+        @Override
+        public void next() {
+            index.incrementAndGet();
+        }
+
+        @Override
+        public void reset() {
+            index.set(0);
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+    }
 }

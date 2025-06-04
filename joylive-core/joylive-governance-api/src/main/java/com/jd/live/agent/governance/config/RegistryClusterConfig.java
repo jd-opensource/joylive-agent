@@ -1,6 +1,9 @@
 package com.jd.live.agent.governance.config;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.option.OptionSupplier;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,7 +11,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-public class RegistryClusterConfig {
+public class RegistryClusterConfig implements OptionSupplier {
 
     private String type;
 
@@ -72,5 +75,10 @@ public class RegistryClusterConfig {
     public String getProperty(String key, String defaultValue) {
         String value = getProperty(key);
         return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    @Override
+    public Option getOption() {
+        return MapOption.of(properties);
     }
 }

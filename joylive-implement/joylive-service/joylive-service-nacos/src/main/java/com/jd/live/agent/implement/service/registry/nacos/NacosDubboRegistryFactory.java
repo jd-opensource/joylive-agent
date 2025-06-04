@@ -16,14 +16,25 @@
 package com.jd.live.agent.implement.service.registry.nacos;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.registry.RegistryService;
 
+@Injectable
 @Extension("dubbo-nacos")
 public class NacosDubboRegistryFactory extends NacosRegistryFactory {
 
+    @Inject(HealthProbe.NACOS)
+    private HealthProbe probe;
+
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     @Override
     public RegistryService create(RegistryClusterConfig config) {
-        return new NacosDubboRegistry(config);
+        return new NacosDubboRegistry(config, probe, timer);
     }
 }
