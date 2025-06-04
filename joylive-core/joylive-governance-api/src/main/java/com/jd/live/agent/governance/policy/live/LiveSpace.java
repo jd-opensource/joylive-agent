@@ -65,6 +65,11 @@ public class LiveSpace {
         return spec == null ? null : spec.getUnits();
     }
 
+    public int getUnitSize() {
+        List<Unit> units = getUnits();
+        return units == null ? 0 : units.size();
+    }
+
     public Unit getUnit(String code) {
         return spec == null ? null : spec.getUnit(code);
     }

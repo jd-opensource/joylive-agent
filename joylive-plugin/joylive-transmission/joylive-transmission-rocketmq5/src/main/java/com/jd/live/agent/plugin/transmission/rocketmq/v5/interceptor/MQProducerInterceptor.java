@@ -16,10 +16,12 @@
 package com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.request.HeaderWriter.StringMapWriter;
 import org.apache.rocketmq.common.message.Message;
 
@@ -27,10 +29,10 @@ import java.util.Collection;
 
 public class MQProducerInterceptor extends InterceptorAdaptor {
 
-    private final Propagation propagation;
+    private final InvocationContext context;
 
-    public MQProducerInterceptor(Propagation propagation) {
-        this.propagation = propagation;
+    public MQProducerInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     @SuppressWarnings("unchecked")
@@ -38,14 +40,16 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         Object argument = ctx.getArgument(0);
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
+        Location location = context.isLiveEnabled() ? context.getLocation() : null;
+        Propagation propagation = context.getPropagation();
         if (argument instanceof Message) {
             Message message = (Message) argument;
-            propagation.write(RequestContext.get(), new StringMapWriter(message.getProperties(), message::putUserProperty));
+            propagation.write(RequestContext.get(), location, new StringMapWriter(message.getProperties(), message::putUserProperty));
         } else if (argument instanceof Collection) {
             Collection<Message> messages = (Collection<Message>) argument;
             Carrier carrier = RequestContext.get();
             for (Message message : messages) {
-                propagation.write(carrier, new StringMapWriter(message.getProperties(), message::putUserProperty));
+                propagation.write(carrier, location, new StringMapWriter(message.getProperties(), message::putUserProperty));
             }
         }
     }

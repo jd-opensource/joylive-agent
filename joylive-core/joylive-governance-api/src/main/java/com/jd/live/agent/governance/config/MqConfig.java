@@ -96,7 +96,7 @@ public class MqConfig {
     public MqMode getLiveMode(String topic) {
         TopicConfig config = topics == null || topic == null ? null : topics.get(topic);
         MqMode mode = config == null ? null : config.getLiveMode();
-        return mode == null ? laneMode : mode;
+        return mode == null ? liveMode : mode;
     }
 
 }

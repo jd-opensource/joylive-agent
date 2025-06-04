@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
-import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor.SendInterceptor;
 
 @Injectable
@@ -40,14 +40,14 @@ public class MessageBuilderDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SEND_ASYNC = "sendAsync";
 
-    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
-    private Propagation propagation;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     public MessageBuilderDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_TYPED_MESSAGE_BUILDER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ASYNC),
-                        () -> new SendInterceptor(propagation))};
+                        () -> new SendInterceptor(context))};
     }
 }

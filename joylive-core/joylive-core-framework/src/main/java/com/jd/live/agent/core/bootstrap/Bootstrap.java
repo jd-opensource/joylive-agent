@@ -477,6 +477,7 @@ public class Bootstrap implements AgentLifecycle {
         setAgentVersion(app);
         location.setIp(Ipv4.getLocalIp());
         location.setHost(Ipv4.getLocalHost());
+        location.getTags();
         setProperty(Constants.LABEL_INSTANCE_ID, app.getInstance());
         setProperty(Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
         setProperty(Constants.LABEL_RULE_ID, location.getUnitRuleId());

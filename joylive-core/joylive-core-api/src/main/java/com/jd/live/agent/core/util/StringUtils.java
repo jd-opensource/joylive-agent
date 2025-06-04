@@ -187,14 +187,17 @@ public class StringUtils {
      * @param emptyable A flag indicating whether to append the key if the value is null or empty
      */
     public static void append(StringBuilder builder, char separator, String key, String value, boolean emptyable) {
-        if (builder.length() > 0) {
-            builder.append(separator);
-        }
         if (value == null || value.isEmpty()) {
             if (emptyable) {
+                if (builder.length() > 0) {
+                    builder.append(separator);
+                }
                 builder.append(key);
             }
         } else {
+            if (builder.length() > 0) {
+                builder.append(separator);
+            }
             builder.append(key).append(CHAR_EQUAL).append(value);
         }
 

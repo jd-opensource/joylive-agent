@@ -60,6 +60,12 @@ public abstract class AbstractMessage implements Message {
      */
     protected String lane;
 
+    protected String locationLiveSpaceId;
+
+    protected String locationUnit;
+
+    protected String locationCell;
+
     public AbstractMessage(String topic, Function<String, String> headerFunc) {
         this.topic = topic;
         this.headerFunc = headerFunc;
@@ -113,5 +119,29 @@ public abstract class AbstractMessage implements Message {
             lane = getHeader(Constants.LABEL_LANE);
         }
         return lane;
+    }
+
+    @Override
+    public String getLocationLiveSpaceId() {
+        if (locationLiveSpaceId == null) {
+            locationLiveSpaceId = getHeader(Constants.LABEL_LOCATION_LIVE_SPACE_ID);
+        }
+        return locationLiveSpaceId;
+    }
+
+    @Override
+    public String getLocationUnit() {
+        if (locationUnit == null) {
+            locationUnit = getHeader(Constants.LABEL_LOCATION_UNIT);
+        }
+        return locationUnit;
+    }
+
+    @Override
+    public String getLocationCell() {
+        if (locationCell == null) {
+            locationCell = getHeader(Constants.LABEL_LOCATION_CELL);
+        }
+        return locationCell;
     }
 }

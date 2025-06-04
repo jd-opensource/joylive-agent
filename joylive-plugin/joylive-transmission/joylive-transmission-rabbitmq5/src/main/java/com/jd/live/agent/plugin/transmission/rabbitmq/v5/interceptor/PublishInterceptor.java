@@ -16,10 +16,12 @@
 package com.jd.live.agent.plugin.transmission.rabbitmq.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.request.HeaderWriter.ObjectMapWriter;
 import com.jd.live.agent.governance.request.Message;
 import com.rabbitmq.client.AMQP;
@@ -31,10 +33,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class PublishInterceptor extends InterceptorAdaptor {
 
-    private final Propagation propagation;
+    private final InvocationContext context;
 
-    public PublishInterceptor(Propagation propagation) {
-        this.propagation = propagation;
+    public PublishInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     @Override
@@ -67,7 +69,9 @@ public class PublishInterceptor extends InterceptorAdaptor {
             }
         }
         // write to the carrier
-        propagation.write(RequestContext.get(), new ObjectMapWriter(headers, newHeaders::put));
+        Location location = context.isLiveEnabled() ? context.getLocation() : null;
+        Propagation propagation = context.getPropagation();
+        propagation.write(RequestContext.get(), location, new ObjectMapWriter(headers, newHeaders::put));
         if (!newHeaders.isEmpty() && headers != null) {
             newHeaders.putAll(headers);
         }

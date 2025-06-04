@@ -16,24 +16,28 @@
 package com.jd.live.agent.plugin.transmission.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.transmission.kafka.v3.request.KafkaHeaderParser;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 public class KafkaProducerInterceptor extends InterceptorAdaptor {
 
-    private final Propagation propagation;
+    private final InvocationContext context;
 
-    public KafkaProducerInterceptor(Propagation propagation) {
-        this.propagation = propagation;
+    public KafkaProducerInterceptor(InvocationContext context) {
+        this.context = context;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         ProducerRecord<?, ?> record = (ProducerRecord<?, ?>) ctx.getArguments()[0];
-        propagation.write(RequestContext.get(), new KafkaHeaderParser(record.headers()));
+        Location location = context.isLiveEnabled() ? context.getLocation() : null;
+        Propagation propagation = context.getPropagation();
+        propagation.write(RequestContext.get(), location, new KafkaHeaderParser(record.headers()));
     }
 
 }
