@@ -31,6 +31,10 @@ public class LiveDatabaseGroup {
 
     @Getter
     @Setter
+    private String type;
+
+    @Getter
+    @Setter
     private String description;
 
     @Getter
