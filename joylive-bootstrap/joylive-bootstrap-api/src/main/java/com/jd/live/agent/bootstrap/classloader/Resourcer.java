@@ -61,17 +61,6 @@ public interface Resourcer extends ResourceFinder {
     Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException;
 
     /**
-     * Loads the class with the specified name, with options to resolve it and provide a custom {@link CandidatorProvider}.
-     *
-     * @param name               The binary name of the class to load.
-     * @param resolve            If {@code true}, then resolve the class.
-     * @param candidatorProvider Provides a mechanism to influence the class loading process.
-     * @return The resulting {@link Class} object.
-     * @throws ClassNotFoundException If the class was not found.
-     */
-    Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException;
-
-    /**
      * Retrieves a resource located by a specified path.
      *
      * @param path The path to the resource.
@@ -88,6 +77,16 @@ public interface Resourcer extends ResourceFinder {
      * @throws IOException If an I/O error occurs.
      */
     Enumeration<URL> getResources(String path) throws IOException;
+
+    /**
+     * Test whether the class name can be loaded by this resourcer.
+     *
+     * @param name The class name
+     * @return An enumeration of {@link URL} objects for reading the resources.
+     */
+    default boolean test(String name) {
+        return name != null && !name.isEmpty();
+    }
 
     /**
      * Gets the type of the resourcer. This can be used to distinguish between different implementations

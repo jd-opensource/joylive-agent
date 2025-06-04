@@ -1,3 +1,8 @@
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ServiceConfigDefinition
 com.jd.live.agent.plugin.registry.dubbo.v3.definition.ReferenceConfigDefinition
-com.jd.live.agent.plugin.registry.dubbo.v3.definition.RegistryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.ClusterUtilsDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.RegistryFactoryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.ServiceDiscoveryFactoryDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.NacosPropertiesDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.Curator5ZookeeperDefinition
+com.jd.live.agent.plugin.registry.dubbo.v3.definition.CuratorZookeeperDefinition

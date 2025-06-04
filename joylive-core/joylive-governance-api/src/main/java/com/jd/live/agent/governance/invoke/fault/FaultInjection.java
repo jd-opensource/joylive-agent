@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.invoke.fault;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
 
 import java.util.Random;
@@ -29,12 +30,12 @@ import java.util.Random;
 public interface FaultInjection {
 
     /**
-     * Attempts to obtain a permit according to the specified fault injection policy.
-     * The permit acquisition process is influenced by the provided policy and a random number generator.
+     * Attempts to acquire a fault injection permit based on the given policy.
+     * Uses random sampling to determine permit availability.
      *
-     * @param policy The fault injection policy to be used when attempting to acquire a permit.
-     *               This policy defines the conditions under which a permit is granted or denied.
-     * @param random A random number generator used to introduce variability in the permit acquisition process.
+     * @param policy fault injection rules to evaluate
+     * @param random random number generator for sampling decisions
+     * @return permit acquisition result (success/failure)
      */
-    void acquire(FaultInjectionPolicy policy, Random random);
+    Permission acquire(FaultInjectionPolicy policy, Random random);
 }

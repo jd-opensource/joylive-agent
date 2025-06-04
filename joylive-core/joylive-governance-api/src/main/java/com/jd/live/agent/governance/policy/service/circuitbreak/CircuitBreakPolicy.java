@@ -377,6 +377,9 @@ public class CircuitBreakPolicy extends PolicyId
      * @return {@code true} if protect mode should be enabled, {@code false} otherwise.
      */
     public boolean isProtectMode(int instances) {
+        if (level == null || !level.isProtectionSupported()) {
+            return false;
+        }
         // the ratio is greater than zero.
         double ratio = getOutlierMaxPercent();
         // The number of instances cannot exceed the maximum limit.
@@ -447,6 +450,9 @@ public class CircuitBreakPolicy extends PolicyId
     public void cache() {
         if (codePolicy != null) {
             codePolicy.cache();
+        }
+        if (degradeConfig != null) {
+            degradeConfig.cache();
         }
         recoverRatio = isRecoveryEnabled() ? new RecoverRatio(getRecoveryDuration(), getRecoveryPhase()) : null;
     }

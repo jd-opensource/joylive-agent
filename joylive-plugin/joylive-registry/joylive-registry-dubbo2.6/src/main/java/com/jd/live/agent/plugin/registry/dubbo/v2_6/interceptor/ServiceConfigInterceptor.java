@@ -20,7 +20,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 import java.util.Map;
 
@@ -35,6 +38,11 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
         super(application, registry);
     }
 
+    @Override
+    protected RegisterType getRegisterType(ServiceConfig<?> config) {
+        return new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup());
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
@@ -42,18 +50,8 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected String getService(ServiceConfig<?> config) {
-        return config.getInterface();
-    }
-
-    @Override
-    protected String getGroup(ServiceConfig<?> config) {
-        return config.getGroup();
-    }
-
-    @Override
-    protected void subscribe(String service, String group) {
-        registry.register(service, group);
-        logger.info("Found dubbo provider, service: {}, group: {}", service, group);
+    protected void subscribe(ServiceId serviceId) {
+        registry.register(serviceId);
+        logger.info("Found dubbo provider {}", serviceId);
     }
 }

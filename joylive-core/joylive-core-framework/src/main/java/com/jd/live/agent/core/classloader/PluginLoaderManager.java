@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.classloader;
 
 import com.jd.live.agent.bootstrap.classloader.*;
+import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.util.Close;
 
 import java.io.Closeable;
@@ -36,7 +37,9 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     /**
      * A thread-safe collection of live class loaders, indexed by their name.
      */
-    private final Map<String, LiveClassLoader> loaders = new ConcurrentHashMap<>(100);
+    private final Map<String, ClassLoader> loaders = new ConcurrentHashMap<>(100);
+
+    private final ClassLoaderConfig config;
 
     /**
      * The factory used to create new class loaders.
@@ -48,7 +51,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
      *
      * @param builder The ClassLoaderFactory to use for creating new class loaders.
      */
-    public PluginLoaderManager(ClassLoaderFactory builder) {
+    public PluginLoaderManager(ClassLoaderConfig config, ClassLoaderFactory builder) {
+        this.config = config;
         this.builder = builder;
     }
 
@@ -64,43 +68,44 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public ClassLoader create(String name) {
-        return name == null || name.isEmpty() ? null : builder.create(name);
+        ClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name);
+        if (loader != null) {
+            loaders.put(name, loader);
+        }
+        return loader;
     }
 
     @Override
     public ClassLoader create(String name, URL[] urls) {
-        return name == null || name.isEmpty() ? null : builder.create(name, urls);
+        ClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name, urls);
+        if (loader != null) {
+            loaders.put(name, loader);
+        }
+        return loader;
     }
 
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
-        return loadClass(name, false, null);
+        return loadClass(name, false);
     }
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        return loadClass(name, resolve, null);
-    }
-
-    @Override
-    public Class<?> loadClass(String name, boolean resolve, CandidatorProvider candidatorProvider) throws ClassNotFoundException {
-        if (name != null && !name.isEmpty()) {
+        // Only load classes with "com.jd.live.agent." prefix
+        if (!test(name)) {
+            throw new ClassNotFoundException("class " + name + " is not found.");
+        }
+        // This is called by spring class loader, so disable context classloader.
+        return CandidateProvider.getCandidateFeature().disableAndRun(() -> {
             for (ClassLoader classLoader : loaders.values()) {
                 try {
-                    Class<?> clazz = classLoader.loadClass(name);
-                    if (clazz != null) {
-                        return clazz;
-                    }
-                } catch (ClassNotFoundException ignore) {
+                    return classLoader.loadClass(name);
+                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                    // ignore
                 }
             }
-            if (candidatorProvider != null) {
-                ClassLoader candidator = candidatorProvider.getCandidator();
-                if (candidator != null)
-                    return candidator.loadClass(name);
-            }
-        }
-        throw new ClassNotFoundException("class " + name + " is not found.");
+            throw new ClassNotFoundException("class " + name + " is not found.");
+        });
     }
 
     @Override
@@ -166,13 +171,23 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     }
 
     @Override
+    public boolean test(String name) {
+        return config.isEssential(name);
+    }
+
+    @Override
     public ResourcerType getType() {
         return ResourcerType.PLUGIN;
     }
 
     @Override
     public void close() {
-        loaders.values().forEach(o -> Close.instance().close(o));
+        Close close = Close.instance();
+        loaders.values().forEach(o -> {
+            if (o instanceof AutoCloseable) {
+                close.close((AutoCloseable) o);
+            }
+        });
         loaders.clear();
     }
 }

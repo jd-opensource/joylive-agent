@@ -57,7 +57,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[2];
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
-        DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1]);
+        DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1], null);
         if (!request.isSystem() && !request.isDisabled()) {
             try {
                 DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);

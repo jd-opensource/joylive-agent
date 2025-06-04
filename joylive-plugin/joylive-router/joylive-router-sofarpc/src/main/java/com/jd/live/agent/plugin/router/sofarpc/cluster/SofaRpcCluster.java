@@ -27,10 +27,10 @@ import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.transport.ClientTransport;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.util.type.ClassDesc;
 import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -40,6 +40,10 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
+import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySession.DefaultStickySession;
 import com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcOutboundThrower;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.GenericType;
@@ -84,42 +88,33 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
 
     private final ObjectParser parser;
 
-    private final FieldDesc consumerConfigField;
+    private final ConsumerConfig<?> config;
 
-    private final FieldDesc connectionHolderField;
+    private final ConnectionHolder connectionHolder;
 
-    private final FieldDesc destroyedField;
+    private final UnsafeFieldAccessor destroyed;
 
-    private final Method fieldChainMethod;
+    private final Method filterChainMethod;
 
     private final SofaRpcOutboundThrower thrower;
 
-    /**
-     * The identifier used for stickiness. This ID is used to route requests to
-     * the same provider consistently.
-     */
-    private String stickyId;
+    private final StickySession stickySession;
 
     public SofaRpcCluster(AbstractCluster cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
         this.thrower = new SofaRpcOutboundThrower(cluster);
-        ClassDesc classDesc = ClassUtils.describe(cluster.getClass());
-        this.consumerConfigField = classDesc.getFieldList().getField("consumerConfig");
-        this.connectionHolderField = classDesc.getFieldList().getField("connectionHolder");
-        this.destroyedField = classDesc.getFieldList().getField("destroyed");
-        this.fieldChainMethod = classDesc.getMethodList().getMethods("filterChain").get(0);
-        fieldChainMethod.setAccessible(true);
+        this.config = UnsafeFieldAccessorFactory.getQuietly(cluster, "consumerConfig");
+        this.stickySession = config.isSticky() ? new DefaultStickySession(StickyType.PREFERRED) : null;
+        this.connectionHolder = UnsafeFieldAccessorFactory.getQuietly(cluster, "connectionHolder");
+        this.destroyed = UnsafeFieldAccessorFactory.getAccessor(cluster.getClass(), "destroyed");
+        this.filterChainMethod = ClassUtils.describe(cluster.getClass()).getMethodList().getMethods("filterChain").get(0);
+        filterChainMethod.setAccessible(true);
     }
 
     @Override
-    public String getStickyId() {
-        return stickyId;
-    }
-
-    @Override
-    public void setStickyId(String stickyId) {
-        this.stickyId = stickyId;
+    public StickySession getStickySession(ServiceRequest request) {
+        return stickySession;
     }
 
     @Override
@@ -128,7 +123,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
         if (cluster instanceof FailoverCluster) {
             // no interval config in com.alipay.sofa.rpc.client.FailoverCluster
             RetryPolicy retryPolicy = new RetryPolicy();
-            retryPolicy.setRetry(getRetries(request.getRequest().getMethodName()));
+            retryPolicy.setRetry(config.getMethodRetries(request.getRequest().getMethodName()));
             policy.setType(ClusterInvoker.TYPE_FAILOVER);
             policy.setRetryPolicy(retryPolicy);
         } else {
@@ -160,7 +155,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     @Override
     public CompletionStage<SofaRpcOutboundResponse> invoke(SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
         try {
-            SofaResponse response = (SofaResponse) fieldChainMethod.invoke(cluster, endpoint.getProvider(), request.getRequest());
+            SofaResponse response = (SofaResponse) filterChainMethod.invoke(cluster, endpoint.getProvider(), request.getRequest());
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
         } catch (Throwable e) {
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(new ServiceError(e, false), getRetryPredicate()));
@@ -174,7 +169,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
 
     @Override
     public boolean isDestroyed() {
-        return (Boolean) destroyedField.get(cluster);
+        return destroyed.getBoolean(cluster);
     }
 
     @Override
@@ -209,9 +204,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
         SofaRequest sofaRequest = request.getRequest();
         String body = degradeConfig.getResponseBody();
         SofaResponse result = new SofaResponse();
-        if (degradeConfig.getAttributes() != null) {
-            result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
-        }
+        result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
         if (body != null) {
             Object value;
             if (request.isGeneric()) {
@@ -273,20 +266,8 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
      * @return {@code true} if there is an active connection to the provider; {@code false} otherwise
      */
     private boolean isConnected(ProviderInfo providerInfo) {
-        ConnectionHolder connectionHolder = (ConnectionHolder) connectionHolderField.get(cluster);
         ClientTransport lastTransport = connectionHolder.getAvailableClientTransport(providerInfo);
         return lastTransport != null && lastTransport.isAvailable();
-    }
-
-    /**
-     * Retrieves the configured number of retries for a specific method invocation.
-     *
-     * @param methodName The name of the method for which the retry count is to be retrieved.
-     * @return The number of retries configured for the specified method
-     */
-    private int getRetries(String methodName) {
-        ConsumerConfig<?> config = (ConsumerConfig<?>) consumerConfigField.get(cluster);
-        return config.getMethodRetries(methodName);
     }
 
     private Object convertGenericObject(Object value) {

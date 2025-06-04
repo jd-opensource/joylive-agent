@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.bootstrap;
 
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
+import com.jd.live.agent.core.classloader.PluginResourceFilter;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -41,6 +42,7 @@ public class AppBootstrapListener extends AppListenerAdapter {
     @Override
     public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
         application.setClassLoader(classLoader);
+        PluginResourceFilter.BOOT_CLASS_LOADER = classLoader;
         application.setMainClass(mainClass);
         publisher.offer(AgentEvent.onApplicationLoading("Application is loading"));
     }

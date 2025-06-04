@@ -50,7 +50,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
 
     @Override
     protected void startSync() throws Exception {
-        spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), this::onSpaceListResponse);
+        spaceListSubscription = new Subscription<>(getName(), createSpaceListKey(), application.getName(), this::onSpaceListResponse);
         spaceListSyncer = createSpaceListSyncer();
         Location location = application.getLocation();
         String laneSpaceId = location == null ? null : location.getLaneSpaceId();
@@ -109,7 +109,7 @@ public abstract class AbstractLaneSpaceSyncer<K extends LaneSpaceKey> extends Ab
      * @param spaceId The ID of the LaneSpace object to synchronize.
      */
     protected void syncSpace(String spaceId) {
-        Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), r -> onSpaceResponse(r, spaceId));
+        Subscription<K, LaneSpace> subscription = new Subscription<>(getName(), createSpaceKey(spaceId), application.getName(), r -> onSpaceResponse(r, spaceId));
         if (subscriptions.putIfAbsent(spaceId, subscription) == null) {
             syncer.sync(subscription);
         }

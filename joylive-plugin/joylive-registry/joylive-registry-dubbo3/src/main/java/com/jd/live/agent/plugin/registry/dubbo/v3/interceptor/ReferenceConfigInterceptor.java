@@ -20,7 +20,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.ReferenceConfig;
 
 import java.util.Map;
@@ -31,25 +34,42 @@ import java.util.Map;
 public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<ReferenceConfig<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
+    private static final String KEY_REFERENCE_MIGRATION = "migration.step";
+    private static final String KEY_APPLICATION_MIGRATION = "dubbo.application.service-discovery.migration";
+    private static final String FORCE_INTERFACE = "FORCE_INTERFACE";
+    private static final String FORCE_APPLICATION = "FORCE_APPLICATION";
 
     public ReferenceConfigInterceptor(Application application, Registry registry) {
         super(application, registry);
     }
 
     @Override
-    protected void subscribe(String service, String group) {
-        registry.subscribe(service, group);
-        logger.info("Found dubbo consumer, service: {}, group: {}", service, group);
+    protected RegisterType getServiceId(ReferenceConfig<?> config) {
+        String providedBy = config.getProvidedBy();
+        Map<String, String> parameters = config.getParameters();
+        String migration = parameters.get(KEY_REFERENCE_MIGRATION);
+        migration = migration == null || migration.isEmpty() ?
+                config.getApplication().getScopeModel().modelEnvironment().getAppConfigMap().get(KEY_APPLICATION_MIGRATION)
+                : migration;
+        migration = migration == null || migration.isEmpty() ? System.getProperty(KEY_APPLICATION_MIGRATION) : migration;
+        if (FORCE_INTERFACE.equalsIgnoreCase(migration)) {
+            return new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup());
+        } else if (FORCE_APPLICATION.equalsIgnoreCase(migration)) {
+            return new RegisterType(RegisterMode.INSTANCE, providedBy, config.getInterface(), config.getGroup());
+        }
+        return providedBy == null || providedBy.isEmpty()
+                ? new RegisterType(RegisterMode.INTERFACE, config.getInterface(), config.getInterface(), config.getGroup())
+                : new RegisterType(RegisterMode.INSTANCE, providedBy, config.getInterface(), config.getGroup());
+    }
+
+    @Override
+    protected void subscribe(ServiceId serviceId) {
+        registry.subscribe(serviceId);
+        logger.info("Found dubbo consumer {}.", serviceId.getUniqueName());
     }
 
     @Override
     protected Map<String, String> getContext(ExecutableContext ctx) {
         return ((MethodContext) ctx).getResult();
-    }
-
-    @Override
-    protected int getRegistryType(ReferenceConfig<?> config) {
-        String service = config.getProvidedBy();
-        return service == null || service.isEmpty() ? REGISTRY_TYPE_INTERFACE : REGISTRY_TYPE_SERVICE;
     }
 }

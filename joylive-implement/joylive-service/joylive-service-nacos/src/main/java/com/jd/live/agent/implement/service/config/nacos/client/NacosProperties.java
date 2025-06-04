@@ -15,11 +15,16 @@
  */
 package com.jd.live.agent.implement.service.config.nacos.client;
 
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.option.OptionSupplier;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import lombok.Getter;
 
+import java.util.Map;
+
 @Getter
-public class NacosProperties {
+public class NacosProperties implements OptionSupplier {
 
     private final String url;
 
@@ -33,16 +38,27 @@ public class NacosProperties {
 
     private final boolean grayEnabled;
 
-    public NacosProperties(String url, String username, String password, String namespace, long timeout, boolean grayEnabled) {
+    private final Map<String, String> properties;
+
+    public NacosProperties(String url, String username, String password, String namespace, long timeout, boolean grayEnabled, Map<String, String> properties) {
         this.url = url;
         this.username = username;
         this.password = password;
         this.namespace = namespace;
         this.timeout = timeout;
         this.grayEnabled = grayEnabled;
+        this.properties = properties;
     }
 
     public NacosProperties(ConfigCenterConfig config, String namespace) {
-        this(config.getAddress(), config.getUsername(), config.getPassword(), namespace, config.getTimeout(), config.isGrayEnabled());
+        this(config.getAddress(), config.getUsername(), config.getPassword(),
+                namespace, config.getTimeout(), config.isGrayEnabled(),
+                config.getProperties());
     }
+
+    @Override
+    public Option getOption() {
+        return MapOption.of(properties);
+    }
+
 }

@@ -635,9 +635,8 @@ public class Bootstrap implements AgentLifecycle {
             LoggerFactory.setBridge(loggerBridge);
         }
         Location location = application.getLocation();
-        logger.info(String.format("Starting application name=%s, instance=%s, location=[region=%s,zone=%s,unit=%s,cell=%s,lane=%s]",
-                application.getName(), application.getInstance(), location.getRegion(), location.getZone(),
-                location.getUnit(), location.getCell(), location.getLane()));
+        logger.info("Starting application name={}, instance={}, location=[{}]",
+                application.getName(), application.getInstance(), location.toString(null, null));
     }
 
     private void setAgentVersion(Application app) {

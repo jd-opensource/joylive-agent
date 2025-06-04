@@ -21,13 +21,13 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
-import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
-import com.jd.live.agent.core.plugin.definition.PluginDefinition;
-import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ReferenceConfigInterceptor;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * ServiceConfigDefinition
@@ -36,7 +36,7 @@ import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.ReferenceConfigI
 @Extension(value = "ServiceConfigDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnDubbo27GovernanceEnabled
 @ConditionalOnClass(ReferenceConfigDefinition.TYPE_REFERENCE_CONFIG)
-public class ReferenceConfigDefinition extends PluginDefinitionAdapter {
+public class ReferenceConfigDefinition extends PluginDefinitionAdapter implements PluginImporter {
 
     protected static final String TYPE_REFERENCE_CONFIG = "org.apache.dubbo.config.ReferenceConfig";
 
@@ -59,5 +59,13 @@ public class ReferenceConfigDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_CREATE_PROXY).and(MatcherBuilder.arguments(ARGUMENT_CREATE_PROXY)),
                         () -> new ReferenceConfigInterceptor(application, registry))
         };
+    }
+
+    @Override
+    public Map<String, String> getExports() {
+        Map<String, String> exports = new HashMap<>();
+        exports.put("java.lang.Integer", TYPE_MODULE);
+        exports.put("java.math.BigDecimal", TYPE_MODULE);
+        return exports;
     }
 }

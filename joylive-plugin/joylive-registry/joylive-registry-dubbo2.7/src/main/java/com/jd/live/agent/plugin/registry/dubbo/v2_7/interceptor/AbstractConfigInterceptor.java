@@ -18,25 +18,21 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.registry.RegisterMode;
+import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
 
 import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
-import static org.apache.dubbo.common.constants.RegistryConstants.SERVICE_REGISTRY_TYPE;
 
 /**
  * AbstractConfigInterceptor
  */
 public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfig> extends InterceptorAdaptor {
-
-    protected static final int REGISTRY_TYPE_SERVICE = 2;
-
-    protected static final int REGISTRY_TYPE_INTERFACE = 1;
-
-    protected static final int REGISTRY_TYPE_ALL = REGISTRY_TYPE_SERVICE | REGISTRY_TYPE_INTERFACE;
 
     protected final Application application;
 
@@ -51,35 +47,38 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     @Override
     public void onEnter(ExecutableContext ctx) {
         T config = (T) ctx.getTarget();
-        String service = getService(config);
+        // Fix for dubbo 2.7.8
+        RegisterType info = getRegisterType(config);
         Map<String, String> map = getContext(ctx);
-        if (!isDubboSystemService(service)) {
-            subscribe(service, config, map);
+        if (!isDubboSystemService(info.getInterfaceName())) {
+            subscribe(info, map);
         }
     }
+
+    protected abstract RegisterType getRegisterType(T config);
 
     /**
      * Subscribes to a specific service with the specified configuration and context.
      *
-     * @param service the name of the service to register.
-     * @param config  the configuration object for the service, containing details such as application name and group.
-     * @param ctx     the context map to populate with the service group and registry type.
+     * @param ctx           the context map to populate with the service group and registry type.
      */
-    protected void subscribe(String service, T config, Map<String, String> ctx) {
+    protected void subscribe(RegisterType info, Map<String, String> ctx) {
         application.labelRegistry(ctx::putIfAbsent);
-        int type = getRegistryType(config);
-        switch (type) {
-            case REGISTRY_TYPE_SERVICE:
-                ctx.put(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
-                subscribe(config.getApplication().getName(), config.getGroup());
+        RegisterMode mode = info.getMode();
+        switch (mode) {
+            case INSTANCE:
+                ctx.put(REGISTRY_TYPE_KEY, mode.getName());
+                subscribe(new ServiceId(info.getService(), info.getGroup(), false));
                 break;
-            case REGISTRY_TYPE_ALL:
-                ctx.put(REGISTRY_TYPE_KEY, "all");
-                subscribe(config.getApplication().getName(), config.getGroup());
-                subscribe(service, config.getGroup());
-            case REGISTRY_TYPE_INTERFACE:
+            case ALL:
+                ctx.put(REGISTRY_TYPE_KEY, mode.getName());
+                subscribe(new ServiceId(info.getService(), info.getGroup(), false));
+                subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
+                break;
+            case INTERFACE:
             default:
-                subscribe(service, config.getGroup());
+                subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
+
         }
     }
 
@@ -87,10 +86,9 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
      * Subscribes to a specific service in the specified group.
      * This method must be implemented by subclasses to define the subscription logic.
      *
-     * @param service the name of the service to subscribe to.
-     * @param group   the group to which the service belongs.
+     * @param serviceId the id of the service to subscribe to.
      */
-    protected abstract void subscribe(String service, String group);
+    protected abstract void subscribe(ServiceId serviceId);
 
     /**
      * Gets the context map for the given executable context.
@@ -99,23 +97,5 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
      * @return the context map for the given executable context.
      */
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
-
-    /**
-     * Gets the service name from the given configuration object.
-     *
-     * @param config the configuration object for the service.
-     * @return the name of the service.
-     */
-    protected String getService(T config) {
-        return config.getInterface();
-    }
-
-    /**
-     * Gets the registry type for the given configuration object.
-     *
-     * @param config the configuration object for the service.
-     * @return the registry type for the service.
-     */
-    protected abstract int getRegistryType(T config);
 
 }

@@ -18,13 +18,16 @@ package com.jd.live.agent.implement.service.policy.nacos;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
+import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
 import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
@@ -53,6 +56,12 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
     @Config(SyncConfig.SYNC_LANE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
+    @Inject(HealthProbe.NACOS)
+    private HealthProbe probe;
+
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     private NacosClientApi client;
 
     public LaneSpaceNacosSyncer() {
@@ -62,7 +71,7 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
     @Override
     protected CompletableFuture<Void> doStart() {
         try {
-            client = NacosClientFactory.create(syncConfig.getProperties());
+            client = NacosClientFactory.create(syncConfig.getProperties(), probe, timer);
             client.connect();
         } catch (Exception e) {
             return Futures.future(e);

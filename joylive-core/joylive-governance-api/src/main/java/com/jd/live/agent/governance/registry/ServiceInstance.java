@@ -15,10 +15,12 @@
  */
 package com.jd.live.agent.governance.registry;
 
-import lombok.*;
+import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.util.FrameworkVersion;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,22 +28,15 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ServiceInstance implements Serializable {
+public class ServiceInstance extends ServiceId {
 
-    private String type;
+    private String id;
 
-    private String namespace;
-
-    private String service;
-
-    private String group;
-
-    private String instanceId;
+    private FrameworkVersion framework;
 
     private String version;
+
+    private String scheme;
 
     private String host;
 
@@ -51,6 +46,55 @@ public class ServiceInstance implements Serializable {
 
     private Map<String, String> metadata;
 
-    private List<ServiceProtocol> protocols;
+    public ServiceInstance() {
+    }
 
+    @Builder
+    public ServiceInstance(String namespace,
+                           String service,
+                           String group,
+                           boolean interfaceMode,
+                           String id,
+                           FrameworkVersion framework,
+                           String version,
+                           String scheme,
+                           String host,
+                           int port,
+                           int weight,
+                           Map<String, String> metadata) {
+        super(namespace, service, group, interfaceMode);
+        this.id = id;
+        this.framework = framework;
+        this.version = version;
+        this.scheme = scheme;
+        this.host = host;
+        this.port = port;
+        this.weight = weight;
+        this.metadata = metadata;
+    }
+
+    public String getId() {
+        if (id == null) {
+            id = getAddress();
+        }
+        return id;
+    }
+
+    public String getAddress() {
+        return URI.getAddress(getHost(), getPort());
+    }
+
+    public String getMetadata(String key) {
+        return metadata == null || key == null ? null : metadata.get(key);
+    }
+
+    public String getMetadata(String key, String defaultValue) {
+        String value = getMetadata(key);
+        return value == null || value.isEmpty() ? defaultValue : value;
+    }
+
+    public String getSchemeAddress() {
+        return URI.getAddress(getScheme(), getHost(), getPort());
+
+    }
 }

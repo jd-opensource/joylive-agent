@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util;
 
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * Utility class for executing tasks with a specific context class loader.
@@ -30,7 +31,7 @@ public class Executors {
      * @param classLoader the ClassLoader to be set as the context class loader for the execution of the Runnable (can be null)
      * @param runnable    the Runnable to be executed (can be null)
      */
-    public static void execute(ClassLoader classLoader, Runnable runnable) {
+    public static void run(ClassLoader classLoader, Runnable runnable) {
         ClassLoader old = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(classLoader);
@@ -50,11 +51,29 @@ public class Executors {
      * @return the result of the Callable's computation
      * @throws Exception if the Callable throws an exception
      */
-    public static <T> T execute(ClassLoader classLoader, Callable<T> callable) throws Exception {
+    public static <T> T call(ClassLoader classLoader, Callable<T> callable) throws Exception {
         ClassLoader old = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(classLoader);
             return callable.call();
+        } finally {
+            Thread.currentThread().setContextClassLoader(old);
+        }
+    }
+
+    /**
+     * Executes a supplier with temporary context classloader.
+     * Restores original classloader after completion.
+     *
+     * @param <T>         Return type of the supplier
+     * @param classLoader ClassLoader to temporarily set
+     * @param supplier    Operation to execute
+     */
+    public static <T> T get(ClassLoader classLoader, Supplier<T> supplier) {
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            return supplier.get();
         } finally {
             Thread.currentThread().setContextClassLoader(old);
         }

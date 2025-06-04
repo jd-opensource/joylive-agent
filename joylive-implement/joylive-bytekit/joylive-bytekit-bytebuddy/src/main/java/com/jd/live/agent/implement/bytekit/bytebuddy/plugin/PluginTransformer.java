@@ -46,6 +46,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+import static com.jd.live.agent.core.plugin.definition.PluginImporter.DEFINITION_PREDICATE;
+import static com.jd.live.agent.core.plugin.definition.PluginImporter.TYPE_PREDICATE;
 
 /**
  * A transformer that modifies the bytecode of classes loaded by the JVM, based on plugins that
@@ -121,7 +125,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         PluginImporter importer = (PluginImporter) definition;
         String[] imports = importer.getImports();
         if (imports != null && imports.length > 0) {
-            targets.computeIfAbsent("", s -> new HashSet<>(Arrays.asList(imports)));
+            targets.computeIfAbsent(PluginImporter.DEFINITION_MODULE, s -> new HashSet<>(Arrays.asList(imports)));
         }
         Map<String, String> importsTo = importer.getExports();
         if (importsTo != null) {
@@ -134,7 +138,17 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         }
         JavaModule definitionModule = JavaModule.ofType(definition.getClass());
         ClassLoader candidate = this.getClass().getClassLoader();
-        ModuleUtil.export(instrumentation, targets, definitionModule, loader, loader == candidate ? null : candidate);
+        Function<String, JavaModule> function = key -> {
+            if (DEFINITION_PREDICATE.test(key)) {
+                return definitionModule;
+            } else if (TYPE_PREDICATE.test(key)) {
+                return module;
+            } else {
+                return null;
+            }
+        };
+
+        ModuleUtil.export(instrumentation, targets, function, loader, loader == candidate ? null : candidate);
     }
 
     @Override

@@ -355,12 +355,16 @@ public interface InvocationContext {
                     invocation.onForward();
                 } else if (t instanceof RejectException) {
                     invocation.onReject((RejectException) t);
+                } else if (t.getCause() instanceof RejectException) {
+                    invocation.onReject((RejectException) t.getCause());
                 }
             });
-        } catch (RejectException e) {
-            invocation.onReject(e);
-            return Futures.future(e);
         } catch (Throwable e) {
+            if (e instanceof RejectException) {
+                invocation.onReject((RejectException) e);
+            } else if (e.getCause() instanceof RejectException) {
+                invocation.onReject((RejectException) e.getCause());
+            }
             return Futures.future(e);
         }
     }
@@ -941,11 +945,11 @@ public interface InvocationContext {
             }
             UnitAction unitAction = carrier.getAttribute(Carrier.ATTRIBUTE_FAILOVER_UNIT);
             if (unitAction != null && unitAction.getType() != UnitActionType.FORWARD) {
-                invocation.reject(FaultType.UNIT, unitAction.getMessage());
+                throw FaultType.UNIT.reject(unitAction.getMessage());
             } else {
                 CellAction cellAction = carrier.getAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL);
                 if (cellAction != null && cellAction.getType() != CellActionType.FORWARD) {
-                    invocation.reject(FaultType.CELL, cellAction.getMessage());
+                    throw FaultType.CELL.reject(cellAction.getMessage());
                 }
             }
         }

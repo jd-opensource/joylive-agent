@@ -59,11 +59,15 @@
                 <include>com.jd.live:joylive-parser-jackson</include>
                 <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
+                <include>com.jd.live:joylive-parser-jxpath</include>
+                <include>com.jd.live:joylive-probe-zookeeper</include>
+                <include>com.jd.live:joylive-probe-nacos</include>
                 <include>com.jd.live:joylive-service-file</include>
                 <include>com.jd.live:joylive-service-multilive</include>
                 <include>com.jd.live:joylive-service-microservice</include>
                 <include>com.jd.live:joylive-service-nacos</include>
                 <include>com.jd.live:joylive-service-apollo</include>
+                <include>com.jd.live:joylive-service-zookeeper</include>
                 <include>com.jd.live:joylive-service-watchdog</include>
                 <include>com.jd.live:joylive-event-logger</include>
                 <include>com.jd.live:joylive-event-opentelemetry</include>
@@ -239,7 +243,10 @@
             <outputDirectory>plugin/nacos</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-registry-nacos</include>
+                <include>com.jd.live:joylive-registry-nacos2.4</include>
+                <include>com.jd.live:joylive-registry-nacos2.3</include>
+                <include>com.jd.live:joylive-registry-nacos2.0</include>
+                <include>com.jd.live:joylive-registry-nacos1.4</include>
             </includes>
         </dependencySet>
 

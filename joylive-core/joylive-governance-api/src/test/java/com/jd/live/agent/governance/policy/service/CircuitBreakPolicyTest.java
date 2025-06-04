@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
+import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakLevel;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,13 @@ public class CircuitBreakPolicyTest {
     void testProtectMode() {
         CircuitBreakPolicy policy = new CircuitBreakPolicy();
         policy.setOutlierMaxPercent(50);
+        policy.setLevel(CircuitBreakLevel.SERVICE);
+        Assertions.assertTrue(policy.isProtectMode(1));
+        Assertions.assertTrue(policy.isProtectMode(2));
+        policy.setLevel(CircuitBreakLevel.API);
+        Assertions.assertTrue(policy.isProtectMode(1));
+        Assertions.assertTrue(policy.isProtectMode(2));
+        policy.setLevel(CircuitBreakLevel.INSTANCE);
         Assertions.assertTrue(policy.isProtectMode(1));
         Assertions.assertFalse(policy.isProtectMode(2));
         policy.setOutlierMaxPercent(100);

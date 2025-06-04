@@ -289,6 +289,7 @@ agent:
         profile: ${CONFIG_CENTER_PROFILE:${APPLICATION_SERVICE_GROUP}}
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:false}
+      registerAppServiceEnabled: ${REGISTER_APP_SERVICE_ENABLED:false}
       subscribeMode: ${CONFIG_REGISTRY_SUBSCRIBE_MODE:AUTO}
       host:
         enabled: ${CONFIG_HOST_SERVICE_ENABLED:true}
@@ -298,35 +299,42 @@ agent:
           role: ${CONFIG_REGISTRY_ROLE_FIRST:SECONDARY}
           mode: ${CONFIG_REGISTRY_MODE_FIRST:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_FIRST:${REGISTRY_EXTERNAL_HOST:${REGISTRY_INTERNAL_HOST}}:${REGISTRY_EXTERNAL_HTTP_PORT:${REGISTRY_INTERNAL_HTTP_PORT:8848}}}
-          username: ${CONFIG_REGISTRY_USERNAME_FIRST:${REGISTRY_USERNAME:guest}}
-          password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:guest}}
+          username: ${CONFIG_REGISTRY_USERNAME_FIRST:${REGISTRY_USERNAME:}}
+          password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_FIRST}
-          namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:public}
-          group: ${CONFIG_REGISTRY_GROUP_FIRST:${APPLICATION_SERVICE_GROUP}}
-          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:${REGISTRY_NAMESPACE:public}}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
           role: ${CONFIG_REGISTRY_ROLE_SECOND:SECONDARY}
           mode: ${CONFIG_REGISTRY_MODE_SECOND:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_SECOND}
-          username: ${CONFIG_REGISTRY_USERNAME_SECOND:${REGISTRY_USERNAME:guest}}
-          password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:guest}}
+          username: ${CONFIG_REGISTRY_USERNAME_SECOND:${REGISTRY_USERNAME:}}
+          password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_SECOND}
-          namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:public}
-          group: ${CONFIG_REGISTRY_GROUP_SECOND:${APPLICATION_SERVICE_GROUP}}
-          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:${REGISTRY_NAMESPACE:public}}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
           role: ${CONFIG_REGISTRY_ROLE_THIRD:SECONDARY}
           mode: ${CONFIG_REGISTRY_MODE_THIRD:FULL}
           address: ${CONFIG_REGISTRY_ADDRESS_THIRD}
-          username: ${CONFIG_REGISTRY_USERNAME_THIRD:${REGISTRY_USERNAME:guest}}
+          username: ${CONFIG_REGISTRY_USERNAME_THIRD:${REGISTRY_USERNAME:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_THIRD}
-          password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:guest}}
-          namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:public}
-          group: ${CONFIG_REGISTRY_GROUP_THIRD:${APPLICATION_SERVICE_GROUP}}
-          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:false}
+          password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:}}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:${REGISTRY_NAMESPACE:public}}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
+    probe:
+      zookeeper:
+        command: ${CONFIG_PROBE_ZOOKEEPER_COMMAND:srvr}
+        response: ${CONFIG_PROBE_ZOOKEEPER_RESPONSE:}
+      nacos:
+        path: ${CONFIG_PROBE_NACOS_PATH:/nacos/v1/console/health/liveness}
+        response: ${CONFIG_PROBE_NACOS_RESPONSE:OK}
   counter:
     gateway: true
     service: true

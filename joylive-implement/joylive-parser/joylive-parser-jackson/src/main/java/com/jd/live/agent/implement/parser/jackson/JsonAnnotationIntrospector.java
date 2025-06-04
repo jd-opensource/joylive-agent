@@ -75,6 +75,16 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public Object findSerializer(Annotated a) {
+        JsonType jsonType = a.getAnnotation(JsonType.class);
+        if (jsonType != null) {
+            return new JsonTypeSerializer(a.getType(), jsonType);
+        }
+        return super.findSerializer(a);
+    }
+
     @Override
     public Object findSerializationConverter(Annotated a) {
         JacksonConverter<?, ?> converter = getConverter(a, SerializeConverter.class, SerializeConverter::value);

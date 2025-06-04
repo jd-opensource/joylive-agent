@@ -35,10 +35,8 @@ import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LivePa
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.Place;
-import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 import lombok.Getter;
@@ -206,37 +204,6 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
         Map<String, TagMatcher> matchers = context.getTagMatchers();
         TagMatcher matcher = matchers == null ? null : matchers.get(condition.getType());
         return matcher != null && matcher.match(condition, request);
-    }
-
-    /**
-     * Rejects the request with a specified fault type and reason.
-     *
-     * @param type   The type of fault.
-     * @param reason The reason for the fault.
-     */
-    public void reject(FaultType type, String reason) {
-        request.reject(type, reason);
-    }
-
-    /**
-     * Initiates a failover for the request with a specified fault type and reason.
-     *
-     * @param type   The type of fault.
-     * @param reason The reason for the failover.
-     */
-    public void failover(FaultType type, String reason) {
-        request.failover(type, reason);
-    }
-
-    /**
-     * Initiates a degradation for the request with a specified fault type and reason.
-     *
-     * @param type   The type of fault.
-     * @param reason The reason for the failover.
-     * @param config The degrade config.
-     */
-    public void degrade(FaultType type, String reason, DegradeConfig config) {
-        request.degrade(type, reason, config);
     }
 
     /**

@@ -67,6 +67,18 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-parser-jxpath</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-probe-zookeeper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-probe-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-eventbus-jbus</artifactId>
         </dependency>
         <dependency>
@@ -99,7 +111,7 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-eureka</artifactId>
+            <artifactId>joylive-service-zookeeper</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -199,7 +211,23 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-registry-nacos</artifactId>
+            <artifactId>joylive-registry-nacos2.4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-nacos2.3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-nacos2.0</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-nacos1.4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-eureka</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

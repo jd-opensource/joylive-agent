@@ -48,7 +48,7 @@
     </scm>
 
     <properties>
-        <revision>1.6.1-SNAPSHOT</revision>
+        <revision>1.7.1-SNAPSHOT</revision>
     </properties>
 
     <dependencyManagement>
@@ -105,6 +105,21 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-parser-jxpath</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-probe-zookeeper</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-probe-nacos</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-function-bkdrhash</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -141,6 +156,11 @@
             <dependency>
                 <groupId>com.jd.live</groupId>
                 <artifactId>joylive-service-nacos</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-service-zookeeper</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -265,7 +285,22 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-registry-nacos</artifactId>
+                <artifactId>joylive-registry-nacos2.4</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-nacos2.3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-nacos2.0</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-nacos1.4</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -533,6 +568,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <failOnError>false</failOnError>
+                        </configuration>
                         <executions>
                             <execution>
                                 <phase>package</phase>

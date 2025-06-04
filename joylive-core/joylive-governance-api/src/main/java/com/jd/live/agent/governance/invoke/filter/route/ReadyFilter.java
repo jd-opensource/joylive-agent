@@ -46,7 +46,7 @@ public class ReadyFilter implements RouteFilter {
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         AppStatus status = application.getStatus();
         if (!status.outbound()) {
-            invocation.reject(FaultType.UNREADY, status.getMessage());
+            throw FaultType.UNREADY.reject(status.getMessage());
         }
         chain.filter(invocation);
     }

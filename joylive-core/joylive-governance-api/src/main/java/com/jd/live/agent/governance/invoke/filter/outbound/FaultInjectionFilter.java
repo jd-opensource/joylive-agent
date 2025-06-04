@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.governance.invoke.filter.outbound;
 
+import com.jd.live.agent.bootstrap.exception.FaultException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.fault.FaultInjection;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
@@ -54,17 +57,20 @@ public class FaultInjectionFilter implements OutboundFilter {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<FaultInjectionPolicy> faultPolicies = servicePolicy == null ? null : servicePolicy.getFaultInjectionPolicies();
         if (faultPolicies != null && !faultPolicies.isEmpty()) {
+            Permission permission;
             for (FaultInjectionPolicy faultPolicy : faultPolicies) {
                 if (faultPolicy.match(invocation)) {
                     FaultInjection injection = faultInjections.get(faultPolicy.getType());
                     if (injection != null) {
-                        injection.acquire(faultPolicy, invocation.getRandom());
+                        permission = injection.acquire(faultPolicy, invocation.getRandom());
+                        if (permission != null && !permission.isSuccess()) {
+                            return Futures.future(new FaultException(permission.getErrorCode(), permission.getMessage()));
+                        }
                     }
                 }
             }
         }
         return chain.filter(invocation, endpoint);
-
     }
 
 }

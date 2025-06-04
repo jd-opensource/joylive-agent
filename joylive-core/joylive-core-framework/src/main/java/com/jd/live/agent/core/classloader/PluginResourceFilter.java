@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.classloader;
 
+import com.jd.live.agent.bootstrap.classloader.CandidateFeature;
+import com.jd.live.agent.bootstrap.classloader.CandidateProvider;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfigFilter;
 
@@ -47,14 +49,22 @@ public class PluginResourceFilter extends ResourceConfigFilter {
         super(ResourceConfig.DEFAULT_PLUGIN_RESOURCE_CONFIG, configPath);
     }
 
-    /**
-     * Retrieves the ClassLoader to be used by the filter.
-     *
-     * @return The context classLoader to be used.
-     */
     @Override
-    public ClassLoader getCandidator() {
-        return Thread.currentThread().getContextClassLoader();
+    public ClassLoader[] getCandidates() {
+        CandidateFeature feature = CandidateProvider.getCandidateFeature();
+        if (feature == null || !feature.isContextLoaderEnabled()) {
+            return null;
+        }
+        // The thread context class loader may be inconsistent with the framework's boot class loader.
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        contextClassLoader = contextClassLoader == APP_CLASS_LOADER || !feature.test(contextClassLoader) ? null : contextClassLoader;
+        ClassLoader bootClassLoader = BOOT_CLASS_LOADER == APP_CLASS_LOADER || BOOT_CLASS_LOADER == contextClassLoader || !feature.test(BOOT_CLASS_LOADER) ? null : BOOT_CLASS_LOADER;
+        if (bootClassLoader == null) {
+            return contextClassLoader == null ? null : new ClassLoader[]{contextClassLoader};
+        } else if (contextClassLoader == null) {
+            return new ClassLoader[]{bootClassLoader};
+        }
+        return new ClassLoader[]{BOOT_CLASS_LOADER, contextClassLoader};
     }
 }
 

@@ -19,7 +19,9 @@ import com.alibaba.dubbo.config.AbstractInterfaceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceId;
 
 import java.util.Map;
 
@@ -44,12 +46,14 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     public void onSuccess(ExecutableContext ctx) {
         Map<String, String> map = getContext(ctx);
         T config = (T) ctx.getTarget();
-        String service = getService(config);
-        if (!isDubboSystemService(service)) {
+        RegisterType info = getRegisterType(config);
+        if (!isDubboSystemService(info.getInterfaceName())) {
             application.labelRegistry(map::putIfAbsent);
-            subscribe(service, getService(config));
+            subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
         }
     }
+
+    protected abstract RegisterType getRegisterType(T config);
 
     /**
      * Retrieves the context associated with the given {@link ExecutableContext}.
@@ -60,27 +64,10 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
 
     /**
-     * Retrieves the service name from the provided configuration object.
-     *
-     * @param config The configuration object from which to extract the service name.
-     * @return The name of the service.
-     */
-    protected abstract String getService(T config);
-
-    /**
-     * Retrieves the group name from the provided configuration object.
-     *
-     * @param config The configuration object from which to extract the group name.
-     * @return The name of the group.
-     */
-    protected abstract String getGroup(T config);
-
-    /**
      * Subscribes to a specific service in the specified group.
      *
-     * @param service The name of the service to subscribe to.
-     * @param group   The group to which the service belongs.
+     * @param serviceId The id of the service to subscribe to.
      */
-    protected abstract void subscribe(String service, String group);
+    protected abstract void subscribe(ServiceId serviceId);
 
 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Function;
 
 /**
  * module util
@@ -40,16 +41,15 @@ public class ModuleUtil {
      *
      * @param instrumentation the instrumentation object
      * @param targets         a map of target modules and their corresponding source types
-     * @param defaultModule   the definition module
+     * @param moduleFunction  the java module function
      * @param loaders         the class loaders
      */
     public static void export(Instrumentation instrumentation,
                               Map<String, Set<String>> targets,
-                              JavaModule defaultModule,
+                              Function<String, JavaModule> moduleFunction,
                               ClassLoader... loaders) {
         for (Map.Entry<String, Set<String>> entry : targets.entrySet()) {
-            JavaModule targetModule = entry.getKey() == null || entry.getKey().isEmpty()
-                    ? defaultModule
+            JavaModule targetModule = moduleFunction != null ? moduleFunction.apply(entry.getKey())
                     : getModule(entry.getKey(), loaders);
             if (targetModule != null) {
                 for (String sourceType : entry.getValue()) {

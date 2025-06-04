@@ -84,10 +84,7 @@ public class DegradeHttpResponse implements ClientHttpResponse {
         if (requestHeaders != null) {
             headers.putAll(requestHeaders);
         }
-        Map<String, String> attributes = degradeConfig.getAttributes();
-        if (attributes != null) {
-            attributes.forEach(headers::add);
-        }
+        degradeConfig.foreach(headers::add);
         headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
         headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
         return headers;

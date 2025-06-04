@@ -24,9 +24,12 @@ import com.jd.live.agent.governance.invoke.OutboundListener;
 import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
+import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.request.StickySession;
+import com.jd.live.agent.governance.request.StickySessionFactory;
 
 /**
  * StickyFilter is a filter that prioritizes routing to the same instance that was previously
@@ -41,15 +44,17 @@ public class StickyFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        StickyType stickyType = invocation.getServiceMetadata().getStickyType();
         T request = invocation.getRequest();
+        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        StickySessionFactory factory = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();
+        StickySession session = request.getStickySession(factory);
+        StickyType stickyType = session == null ? StickyType.NONE : session.getStickyType();
         Carrier carrier = request.getCarrier();
-        if (stickyType != StickyType.NONE) {
+        if (stickyType != null && stickyType != StickyType.NONE) {
             RouteTarget target = invocation.getRouteTarget();
             // Get the sticky ID from the request, if available
-            String id = request.getStickyId();
+            String id = session.getStickyId();
             // first remove sticky id from context
-
             String ctxId = carrier == null ? null : carrier.removeAttribute(Request.KEY_STICKY_ID);
             final String stickyId = id != null && !id.isEmpty() ? id : ctxId;
             // If a sticky ID is available, filter the targets to only include the one with the sticky ID
@@ -61,7 +66,7 @@ public class StickyFilter implements RouteFilter {
                     carrier.setAttribute(Request.KEY_STICKY_ID, stickyId);
                 }
             }
-            invocation.addListener(new StickyListener());
+            invocation.addListener(new StickyListener(session));
         } else if (carrier != null) {
             carrier.removeAttribute(Request.KEY_STICKY_ID);
         }
@@ -73,10 +78,16 @@ public class StickyFilter implements RouteFilter {
      */
     private static class StickyListener implements OutboundListener {
 
+        private final StickySession session;
+
+        StickyListener(StickySession session) {
+            this.session = session;
+        }
+
         @Override
         public void onForward(Endpoint endpoint, OutboundInvocation<?> invocation) {
             if (endpoint != null) {
-                invocation.getRequest().setStickyId(endpoint.getId());
+                session.setStickyId(endpoint.getId());
             }
         }
 

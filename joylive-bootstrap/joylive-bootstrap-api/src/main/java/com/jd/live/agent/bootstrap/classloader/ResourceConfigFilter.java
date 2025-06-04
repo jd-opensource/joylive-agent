@@ -23,6 +23,10 @@ import java.util.Enumeration;
 
 public class ResourceConfigFilter implements ResourceFilter {
 
+    public static ClassLoader BOOT_CLASS_LOADER = null;
+
+    public static ClassLoader APP_CLASS_LOADER = null;
+
     private final ResourceConfig config;
 
     private final File configPath;
@@ -33,7 +37,7 @@ public class ResourceConfigFilter implements ResourceFilter {
     }
 
     @Override
-    public ClassLoader getCandidator() {
+    public ClassLoader[] getCandidates() {
         return null;
     }
 

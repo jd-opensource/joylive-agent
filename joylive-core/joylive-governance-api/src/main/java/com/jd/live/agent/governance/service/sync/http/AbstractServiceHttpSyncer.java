@@ -58,7 +58,7 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
             K key = subscription.getKey();
             try {
                 SyncResponse<Service> response = getService(subscription, config);
-                saveConfig(response, parser, subscription.getKey().getName());
+                saveConfig(response, parser, getFileName(subscription.getKey().getName()));
                 subscription.onUpdate(response);
             } catch (IOException e) {
                 subscription.onUpdate(new SyncResponse<>(e));
@@ -67,6 +67,13 @@ public abstract class AbstractServiceHttpSyncer<K extends ServiceKey> extends Ab
                 timer.delay(getName() + "-" + key.getName(), delay, () -> addTask(key.getSubscriber()));
             }
         };
+    }
+
+    /**
+     * Get the filename for service policy.
+     */
+    protected String getFileName(String name) {
+        return name + ".json";
     }
 
     /**
