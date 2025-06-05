@@ -30,10 +30,10 @@ public class LivePropagation extends AbstractPropagation {
 
     @Override
     public void write(Carrier carrier, Location location, HeaderWriter writer) {
-        if (writer == null || carrier == null) {
+        if (writer == null) {
             return;
         }
-        Collection<Cargo> cargos = carrier.getCargos();
+        Collection<Cargo> cargos = carrier == null ? null : carrier.getCargos();
         Map<String, String> tags = location == null ? null : location.getTags();
         int tagSize = tags == null ? 0 : tags.size();
         int size = (cargos == null ? 0 : cargos.size()) + tagSize;
