@@ -1,0 +1,4 @@
+com.jd.live.agent.plugin.protection.rocketmq.v5.definition.DefaultLitePullConsumerDefinition
+com.jd.live.agent.plugin.protection.rocketmq.v5.definition.DefaultMQProducerDefinition
+com.jd.live.agent.plugin.protection.rocketmq.v5.definition.DefaultMQPushConsumerDefinition
+com.jd.live.agent.plugin.protection.rocketmq.v5.definition.DefaultMQPullConsumerDefinition

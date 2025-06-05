@@ -154,12 +154,15 @@ agent:
       virtual: ${CONFIG_VIRTUAL_ENABLED:false}
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
-      mariadb: true
-      mysql: true
-      postgresql: true
-      opengauss: true
-      mongodb: true
-      redis: false
+      db: ${CONFIG_PROTECT_DB_ENABLED:false}
+      mq: ${CONFIG_PROTECT_MQ_ENABLED:false}
+      mariadb: ${CONFIG_PROTECT_MARIADB_ENABLED:true}
+      mysql: ${CONFIG_PROTECT_MYSQL_ENABLED:true}
+      postgresql: ${CONFIG_PROTECT_POSTGRESQL_ENABLED:true}
+      opengauss: ${CONFIG_PROTECT_OPENGAUSS_ENABLED:true}
+      mongodb: ${CONFIG_PROTECT_MONGODB_ENABLED:true}
+      rocketmq: ${CONFIG_PROTECT_ROCKETMQ_ENABLED:true}
+      redis: ${CONFIG_PROTECT_REDIS_ENABLED:false}
     classloader:
       enabled: ${CONFIG_CLASSLOADER_ENABLED:true}
       springboot: true

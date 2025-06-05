@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.jdbc.definition;
+package com.jd.live.agent.plugin.protection.rocketmq.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.event.Publisher;
@@ -25,21 +25,21 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnDBProtectEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.jdbc.interceptor.DataSourceInterceptor;
+import com.jd.live.agent.plugin.protection.rocketmq.v5.condition.ConditionalOnRocketmq5ProtectEnabled;
+import com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor.DefaultLitePullConsumerInterceptor;
+import com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor.DefaultMQPushConsumerInterceptor;
 
 @Injectable
-@Extension(value = "DataSourceDefinition", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnDBProtectEnabled
-@ConditionalOnClass(DataSourceDefinition.TYPE)
-public class DataSourceDefinition extends PluginDefinitionAdapter {
+@Extension(value = "DefaultMQPushConsumerDefinition_v5", order = PluginDefinition.ORDER_PROTECT)
+@ConditionalOnRocketmq5ProtectEnabled
+@ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE)
+public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "javax.sql.DataSource";
+    protected static final String TYPE = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
 
-    private static final String METHOD = "getConnection";
+    private static final String METHOD = "start";
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
@@ -47,12 +47,12 @@ public class DataSourceDefinition extends PluginDefinitionAdapter {
     @Inject(Publisher.DATABASE)
     private Publisher<DatabaseEvent> publisher;
 
-    public DataSourceDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
+    public DefaultMQPushConsumerDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD),
-                        () -> new DataSourceInterceptor(policySupplier, publisher)
+                        () -> new DefaultMQPushConsumerInterceptor(policySupplier, publisher)
                 )
         };
     }

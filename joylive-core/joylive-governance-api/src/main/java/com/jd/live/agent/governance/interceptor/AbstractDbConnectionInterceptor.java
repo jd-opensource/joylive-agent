@@ -49,7 +49,7 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends DbConnection>
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
 
-    protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("DB connection is redirected from {} to {} ", oldAddress, newAddress);
+    protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("{} connection is redirected from {} to {} ", oldAddress.getType(), oldAddress, newAddress);
 
     protected final PolicySupplier policySupplier;
 
@@ -78,9 +78,15 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends DbConnection>
      */
     protected C createConnection(Supplier<C> supplier) {
         C conn = supplier.get();
-        ClusterAddress address = conn.getAddress().getNewAddress();
-        connections.computeIfAbsent(address, a -> new CopyOnWriteArrayList<>()).add(conn);
+        addConnection(conn);
         return conn;
+    }
+
+    protected void addConnection(C conn) {
+        if (conn != null) {
+            ClusterAddress address = conn.getAddress().getNewAddress();
+            connections.computeIfAbsent(address, a -> new CopyOnWriteArrayList<>()).add(conn);
+        }
     }
 
     /**
