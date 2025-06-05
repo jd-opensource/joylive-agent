@@ -13,26 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.policy.db;
+package com.jd.live.agent.governance.db;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
-@Getter
-@Setter
-public class Database {
+public interface DbConnection extends AutoCloseable {
 
-    private String name;
-
-    private DatabasePolicy policy;
-
-    protected void supplement(DatabasePolicy source) {
-        if (source != null) {
-            if (policy == null) {
-                policy = new DatabasePolicy();
-            }
-            policy.supplement(source);
-        }
-    }
+    ClusterRedirect getAddress();
 
 }

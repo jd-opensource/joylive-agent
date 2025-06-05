@@ -44,9 +44,4 @@ public class JedisRequest extends AbstractAttributes implements DbRequest.CacheR
     public String getDatabase() {
         return null;
     }
-
-    @Override
-    public boolean isWrite() {
-        return true;
-    }
 }
