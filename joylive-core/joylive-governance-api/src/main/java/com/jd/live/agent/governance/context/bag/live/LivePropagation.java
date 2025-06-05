@@ -30,7 +30,7 @@ public class LivePropagation extends AbstractPropagation {
 
     @Override
     public void write(Carrier carrier, Location location, HeaderWriter writer) {
-        if (writer == null) {
+        if (writer == null || carrier == null) {
             return;
         }
         Collection<Cargo> cargos = carrier.getCargos();
