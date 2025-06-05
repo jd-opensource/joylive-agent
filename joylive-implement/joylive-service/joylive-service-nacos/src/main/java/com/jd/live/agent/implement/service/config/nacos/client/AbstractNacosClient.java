@@ -56,6 +56,7 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
     protected static final String ENV_NACOS_CONNECTION_TIMEOUT = "NACOS_CONNECTION_TIMEOUT";
     protected static final String ENV_NACOS_INITIALIZATION_TIMEOUT = "NACOS_INITIALIZATION_TIMEOUT";
     protected static final int DEFAULT_CONNECTION_TIMEOUT = 5000;
+    protected static final int DEFAULT_INITIALIZATION_TIMEOUT = 30000;
 
     protected final T config;
     protected final HealthProbe probe;
@@ -148,11 +149,8 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
      * @return Timeout value (positive when requested)
      */
     protected int getInitializationTimeout(Option option, boolean positive) {
-        String value = option.getString(KEY_CONNECTION_TIMEOUT, System.getenv(ENV_NACOS_CONNECTION_TIMEOUT));
-        int connectionTimeout = Converts.getPositive(value, DEFAULT_CONNECTION_TIMEOUT);
-        value = option.getString(KEY_INITIALIZATION_TIMEOUT, System.getenv(ENV_NACOS_INITIALIZATION_TIMEOUT));
-        int def = connectionTimeout * Math.max(1, servers.size());
-        return positive ? Converts.getPositive(value, def) : Converts.getInteger(value, def);
+        String value = option.getString(KEY_INITIALIZATION_TIMEOUT, System.getenv(ENV_NACOS_INITIALIZATION_TIMEOUT));
+        return positive ? Converts.getPositive(value, DEFAULT_INITIALIZATION_TIMEOUT) : Converts.getInteger(value, DEFAULT_INITIALIZATION_TIMEOUT);
     }
 
     /**
