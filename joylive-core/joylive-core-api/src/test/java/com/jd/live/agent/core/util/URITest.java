@@ -99,5 +99,15 @@ public class URITest {
         Assertions.assertEquals(8, URI.parse("a:8?b=9").getPort());
     }
 
+    @Test
+    void testParseJdbc() {
+        URI uri = URI.parse("jdbc:mariadb://localhost:8080/book");
+        Assertions.assertNotNull(uri);
+        Assertions.assertEquals("jdbc:mariadb", uri.getSchema());
+        Assertions.assertEquals("localhost", uri.getHost());
+        Assertions.assertEquals(8080, uri.getPort());
+        Assertions.assertEquals("/book", uri.getPath());
+    }
+
 
 }

@@ -270,6 +270,7 @@
                 <include>com.jd.live:joylive-transmission-jdkhttp</include>
                 <include>com.jd.live:joylive-transmission-servlet-javax</include>
                 <include>com.jd.live:joylive-transmission-servlet-jakarta</include>
+                <include>com.jd.live:joylive-protection-jdbc</include>
             </includes>
         </dependencySet>
 

@@ -20,13 +20,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mariadb.v2.request.MariadbRequest;
-import org.mariadb.jdbc.internal.com.read.dao.Results;
-import org.mariadb.jdbc.internal.com.send.parameters.ParameterHolder;
-import org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol;
 import org.mariadb.jdbc.internal.protocol.Protocol;
 import org.mariadb.jdbc.internal.util.dao.ClientPrepareResult;
-
-import java.nio.charset.Charset;
 
 /**
  * ExecuteQueryInterceptor
@@ -37,25 +32,19 @@ public class ExecuteQueryInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     * @see AbstractQueryProtocol#executeQuery(boolean, Results, String, Charset)
-     * @see AbstractQueryProtocol#executeQuery(boolean, Results, ClientPrepareResult, ParameterHolder[])
-     * @see AbstractQueryProtocol#executeQuery(boolean, Results, ClientPrepareResult, ParameterHolder[], int)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object argument = ctx.getArguments()[2];
+        MethodContext mc = (MethodContext) ctx;
+        Protocol target = (Protocol) ctx.getTarget();
+        Object argument = ctx.getArgument(2);
         String sql = null;
         if (argument instanceof ClientPrepareResult) {
             sql = ((ClientPrepareResult) argument).getSql();
         } else {
             sql = (String) argument;
         }
-        protect((MethodContext) ctx, new MariadbRequest((Protocol) ctx.getTarget(), sql));
+
+        protect(mc, new MariadbRequest(target, sql));
     }
 
 }

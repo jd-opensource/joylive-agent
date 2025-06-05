@@ -37,6 +37,7 @@ agent:
       - jdk
       - kafka
       - mariadb
+      - mysql
       - mongodb
       - nacos
       - eureka
@@ -154,6 +155,7 @@ agent:
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
       mariadb: true
+      mysql: true
       postgresql: true
       opengauss: true
       mongodb: true
@@ -268,6 +270,7 @@ agent:
           - com.netflix.loadbalancer.PollingServerListUpdater$
           - com.netflix.hystrix.util.HystrixTimer$
           - com.netflix.servo.util.ExpiringCache$
+          - com.zaxxer.hikari.pool.HikariPool$
     configCenter:
       enabled: ${CONFIG_CENTER_ENABLED:false}
       type: ${CONFIG_CENTER_TYPE:nacos}

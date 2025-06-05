@@ -17,8 +17,8 @@ package com.jd.live.agent.plugin.protection.postgresql.v9_4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.util.type.ClassUtils;
-import com.jd.live.agent.core.util.type.FieldDesc;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.postgresql.v9_4.request.PostgresqlRequest;
@@ -27,30 +27,27 @@ import org.postgresql.core.Query;
 import org.postgresql.core.v3.QueryExecutorImpl;
 
 /**
- * SendQueryInterceptor
+ * QueryExecutorImplInterceptor
  */
 public class QueryExecutorImplInterceptor extends AbstractDbInterceptor {
 
     public static final String FIELD_PROTO_CONNECTION = "protoConnection";
-    private final FieldDesc fieldDesc;
+
+    private final UnsafeFieldAccessor accessor;
 
     public QueryExecutorImplInterceptor(PolicySupplier policySupplier) {
         super(policySupplier);
-        fieldDesc = ClassUtils.describe(QueryExecutorImpl.class).getFieldList().getField(FIELD_PROTO_CONNECTION);
+        accessor = UnsafeFieldAccessorFactory.getAccessor(QueryExecutorImpl.class, FIELD_PROTO_CONNECTION);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
+        MethodContext mc = (MethodContext) ctx;
         QueryExecutorImpl executor = (QueryExecutorImpl) ctx.getTarget();
-        if (fieldDesc != null) {
-            ProtocolConnection connection = (ProtocolConnection) fieldDesc.get(executor);
-            protect((MethodContext) ctx, new PostgresqlRequest(connection, (Query) ctx.getArguments()[0]));
+        Query query = ctx.getArgument(0);
+        if (accessor != null) {
+            ProtocolConnection connection = (ProtocolConnection) accessor.get(executor);
+            protect(mc, new PostgresqlRequest(connection, query));
         }
     }
 

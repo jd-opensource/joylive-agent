@@ -20,12 +20,13 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
+import com.jd.live.agent.core.util.map.MapBuilder;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseGroup;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * LiveSpec
@@ -74,6 +75,10 @@ public class LiveSpec {
     @Setter
     private Set<String> topics;
 
+    @Getter
+    @Setter
+    private List<LiveDatabaseGroup> databaseGroups;
+
     private final transient Cache<String, Unit> unitCache = new MapCache<>(new ListBuilder<>(() -> units, Unit::getCode));
 
     private final transient Cache<String, LiveDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LiveDomain::getHost));
@@ -109,6 +114,29 @@ public class LiveSpec {
         }
     }, UnitRule::getId));
 
+    private final transient Cache<String, LiveDatabase> databaseCache = new MapCache<>(new MapBuilder<String, LiveDatabase>() {
+        @Override
+        public Map<String, LiveDatabase> build() {
+            Map<String, LiveDatabase> result = new HashMap<>();
+            if (databaseGroups != null) {
+                for (LiveDatabaseGroup databaseGroup : databaseGroups) {
+                    List<LiveDatabase> databases = databaseGroup.getDatabases();
+                    if (databases != null) {
+                        for (LiveDatabase database : databases) {
+                            Set<String> nodes = database.getNodes();
+                            if (nodes != null && !nodes.isEmpty()) {
+                                for (String node : nodes) {
+                                    result.put(node, database);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+    });
+
     private final transient LazyObject<Unit> center = new LazyObject<>(() -> {
         for (Unit unit : units) {
             if (unit.getType() == UnitType.CENTER) {
@@ -140,6 +168,23 @@ public class LiveSpec {
         return domainCache.get(host);
     }
 
+    public LiveDatabase getDatabase(String address) {
+        return databaseCache.get(address);
+    }
+
+    public LiveDatabase getDatabase(String[] shards) {
+        if (shards == null) {
+            return null;
+        }
+        for (String shard : shards) {
+            LiveDatabase database = getDatabase(shard);
+            if (database != null) {
+                return database;
+            }
+        }
+        return null;
+    }
+
     public LiveVariable getVariable(String name) {
         return variableCache.get(name);
     }
@@ -168,12 +213,58 @@ public class LiveSpec {
         if (domains != null) {
             domains.forEach(LiveDomain::cache);
         }
+        if (databaseGroups != null) {
+            databaseGroups.forEach(LiveDatabaseGroup::cache);
+        }
         if (variables != null) {
             variables.forEach(LiveVariable::cache);
         }
         if (unitRules != null) {
             unitRules.forEach(UnitRule::cache);
         }
+        // after databaseGroups cache, databaseCache is ready
+        getDatabase("");
+    }
+
+    public static boolean isChanged(List<LiveDatabaseGroup> oldGroups, List<LiveDatabaseGroup> newGroups) {
+        if (oldGroups == null || oldGroups.isEmpty()) {
+            return newGroups != null && !newGroups.isEmpty();
+        } else if (newGroups == null || newGroups.isEmpty()) {
+            return true;
+        } else if (oldGroups.size() != newGroups.size()) {
+            return true;
+        }
+        Map<String, LiveDatabaseGroup> newGroupMap = new HashMap<>(newGroups.size());
+        newGroups.forEach(newGroup -> newGroupMap.put(newGroup.getId(), newGroup));
+        for (LiveDatabaseGroup oldGroup : oldGroups) {
+            LiveDatabaseGroup newGroup = newGroupMap.get(oldGroup.getId());
+            if (newGroup == null) {
+                return true;
+            }
+            List<LiveDatabase> oldDatabases = oldGroup.getDatabases();
+            List<LiveDatabase> newDatabases = newGroup.getDatabases();
+            if (oldDatabases == null || oldDatabases.isEmpty()) {
+                return newDatabases != null && !newDatabases.isEmpty();
+            } else if (newDatabases == null || newDatabases.isEmpty()) {
+                return true;
+            } else if (oldDatabases.size() != newDatabases.size()) {
+                return true;
+            }
+            Map<String, LiveDatabase> newDatabaseMap = new HashMap<>(newDatabases.size());
+            newDatabases.forEach(newDatabase -> newDatabaseMap.put(newDatabase.getId(), newDatabase));
+            for (LiveDatabase oldDatabase : oldDatabases) {
+                LiveDatabase newDatabase = newDatabaseMap.get(oldDatabase.getId());
+                if (newDatabase == null) {
+                    return true;
+                }
+                if (!Objects.equals(oldDatabase.getAddresses(), newDatabase.getAddresses())
+                        || oldDatabase.getRole() != newDatabase.getRole()
+                        || oldDatabase.getAccessMode() != newDatabase.getAccessMode()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }

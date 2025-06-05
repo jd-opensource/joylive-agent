@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.protection.postgresql.v42.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -27,7 +28,9 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnProtectEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_POSTGRESQL_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ConditionalOnPostgresql42ProtectEnabled.TYPE_SERVER_VERSION)
 @ConditionalComposite
-public @interface ConditionalOnPostgresqlProtectEnabled {
+public @interface ConditionalOnPostgresql42ProtectEnabled {
 
+    String TYPE_SERVER_VERSION = "org.postgresql.core.ServerVersion";
 }
