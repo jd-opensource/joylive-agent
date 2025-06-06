@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.consumer.DefaultLitePullConsumerImpl;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
@@ -31,9 +32,17 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
  */
 public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLitePullConsumer> {
 
+    private final DefaultLitePullConsumerImpl consumerImpl;
+
     public LitePullConsumerClient(DefaultLitePullConsumer consumer, ClusterRedirect address) {
         super(consumer, address);
-        this.rebalanceImpl = getQuietly(getQuietly(consumer, "defaultLitePullConsumerImpl"), "rebalanceImpl");
+        this.consumerImpl = getQuietly(consumer, "defaultLitePullConsumerImpl");
+        this.rebalanceImpl = getQuietly(consumerImpl, "rebalanceImpl");
+    }
+
+    @Override
+    protected void addMessageHook() {
+        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
     }
 
     @Override

@@ -37,6 +37,11 @@ public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPull
     }
 
     @Override
+    protected void addMessageHook() {
+        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
+    }
+
+    @Override
     protected void doClose() {
         target.shutdown();
     }

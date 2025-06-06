@@ -28,7 +28,6 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.rocketmq.v5.condition.ConditionalOnRocketmq5ProtectEnabled;
-import com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor.DefaultLitePullConsumerInterceptor;
 import com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor.DefaultMQPushConsumerInterceptor;
 
 @Injectable

@@ -25,7 +25,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnDBProtectEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.jdbc.interceptor.DriverInterceptor;

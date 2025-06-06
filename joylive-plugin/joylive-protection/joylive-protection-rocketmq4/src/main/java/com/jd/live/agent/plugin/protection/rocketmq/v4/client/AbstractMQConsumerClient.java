@@ -20,10 +20,17 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.ConsumeMessageContext;
+import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Abstract base class for MQ consumer clients.
@@ -35,20 +42,35 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQConsumerClient.class);
 
+    protected Map<String, AtomicLong> timestamps = new ConcurrentHashMap<>();
+
     protected RebalanceImpl rebalanceImpl;
 
     public AbstractMQConsumerClient(T target, ClusterRedirect address) {
         super(target, address);
+        addMessageHook();
     }
+
+    protected abstract void addMessageHook();
 
     /**
      * Seeks all subscribed topics to current time minus {@code MQ_SEEK_TIME_OFFSET}.
      */
     protected void seek() {
         long timestamp = System.currentTimeMillis() - MQ_SEEK_TIME_OFFSET;
-        rebalanceImpl.getSubscriptionInner().forEach((k, v) -> {
-            seek(k, timestamp);
-        });
+        rebalanceImpl.getSubscriptionInner().forEach((k, v) -> seek(k, getOrDefault(k, timestamp)));
+    }
+
+    /**
+     * Gets the stored timestamp for the specified topic, or returns the default value if not found.
+     *
+     * @param topic     the topic to look up
+     * @param timestamp the default timestamp to return if topic is not found
+     * @return the stored timestamp for the topic, or the default timestamp if topic is not present
+     */
+    protected long getOrDefault(String topic, long timestamp) {
+        AtomicLong value = timestamps.get(topic);
+        return value == null ? timestamp : value.get();
     }
 
     /**
@@ -58,7 +80,7 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
      * @param topic     the topic to seek
      * @param timestamp the target timestamp in milliseconds
      */
-    private void seek(String topic, long timestamp) {
+    protected void seek(String topic, long timestamp) {
         try {
             Collection<MessageQueue> queues = doFetchQueues(topic);
             for (MessageQueue queue : queues) {
@@ -102,4 +124,40 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
      * @throws MQClientException if seek operation fails
      */
     protected abstract void doSeek(MessageQueue queue, long timestamp) throws MQClientException;
+
+    /**
+     * Message consumption hook that tracks the latest message timestamp per topic.
+     */
+    protected static class TimestampHook implements ConsumeMessageHook {
+
+        private final Map<String, AtomicLong> timestamps;
+
+        TimestampHook(Map<String, AtomicLong> timestamps) {
+            this.timestamps = timestamps;
+        }
+
+        @Override
+        public String hookName() {
+            return "protection-hook";
+        }
+
+        @Override
+        public void consumeMessageBefore(ConsumeMessageContext context) {
+
+        }
+
+        @Override
+        public void consumeMessageAfter(ConsumeMessageContext context) {
+            List<MessageExt> messages = context.getMsgList();
+            if (messages != null && !messages.isEmpty()) {
+                MessageExt message = messages.get(messages.size() - 1);
+                long newTime = message.getStoreTimestamp();
+                AtomicLong last = timestamps.computeIfAbsent(message.getTopic(), k -> new AtomicLong(0));
+                long oldTime = last.get();
+                while (newTime > oldTime && !last.compareAndSet(oldTime, newTime)) {
+                    oldTime = last.get();
+                }
+            }
+        }
+    }
 }

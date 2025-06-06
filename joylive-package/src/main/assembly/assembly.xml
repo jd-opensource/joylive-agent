@@ -160,6 +160,8 @@
                 <include>com.jd.live:joylive-transmission-rocketmq5</include>
                 <include>com.jd.live:joylive-router-rocketmq4</include>
                 <include>com.jd.live:joylive-router-rocketmq5</include>
+                <include>com.jd.live:joylive-protection-rocketmq4</include>
+                <include>com.jd.live:joylive-protection-rocketmq5</include>
             </includes>
         </dependencySet>
 

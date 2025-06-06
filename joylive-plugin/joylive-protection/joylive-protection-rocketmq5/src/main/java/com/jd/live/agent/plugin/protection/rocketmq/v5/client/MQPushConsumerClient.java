@@ -19,11 +19,13 @@ import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPushConsumer> {
 
@@ -36,14 +38,25 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
     }
 
     @Override
+    protected void addMessageHook() {
+        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
+    }
+
+    @Override
     protected void doClose() {
         target.shutdown();
     }
 
     @Override
     protected void doStart() throws MQClientException {
-        target.start();
-        seek();
+        target.suspend();
+        try {
+            setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+            target.start();
+            seek();
+        } finally {
+            target.resume();
+        }
     }
 
     @Override

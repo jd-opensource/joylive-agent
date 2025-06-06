@@ -543,6 +543,16 @@
                 <artifactId>joylive-protection-redis</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-rocketmq4</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-rocketmq5</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
