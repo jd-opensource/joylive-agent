@@ -34,10 +34,6 @@ public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPull
         super(consumer, address);
         this.consumerImpl = getQuietly(consumer, "defaultMQPullConsumerImpl");
         this.rebalanceImpl = getQuietly(consumerImpl, "rebalanceImpl");
-    }
-
-    @Override
-    protected void addMessageHook() {
         consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
     }
 

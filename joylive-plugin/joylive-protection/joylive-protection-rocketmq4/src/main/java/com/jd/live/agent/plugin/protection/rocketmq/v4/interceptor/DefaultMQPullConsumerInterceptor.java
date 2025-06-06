@@ -15,13 +15,9 @@
  */
 package com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.rocketmq.v4.client.MQPullConsumerClient;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
@@ -30,26 +26,15 @@ import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
  * DefaultMQPullConsumerInterceptor
  */
 @Deprecated
-public class DefaultMQPullConsumerInterceptor extends AbstractDbConnectionInterceptor<DefaultMQPullConsumer, MQPullConsumerClient> {
+public class DefaultMQPullConsumerInterceptor extends AbstractMQInterceptor<DefaultMQPullConsumer, MQPullConsumerClient> {
 
     public DefaultMQPullConsumerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);
     }
 
     @Override
-    public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        DefaultMQPullConsumer consumer = mc.getResult();
-        String address = consumer.getNamesrvAddr();
-        if (address != null && !address.isEmpty()) {
-            addConnection(new MQPullConsumerClient(consumer, new ClusterRedirect(address)));
-        }
-    }
-
-    @Override
-    protected void redirectTo(MQPullConsumerClient client, ClusterAddress address) {
-        client.reconnect(address);
-        ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
+    protected MQPullConsumerClient createClient(DefaultMQPullConsumer target, ClusterRedirect redirect) {
+        return new MQPullConsumerClient(target, redirect);
     }
 
 }

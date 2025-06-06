@@ -40,7 +40,7 @@ import static com.jd.live.agent.core.util.StringUtils.join;
 /**
  * MongoClientsInterceptor
  */
-public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<MongoClient, LiveMongoClient> {
+public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<LiveMongoClient> {
 
     public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);

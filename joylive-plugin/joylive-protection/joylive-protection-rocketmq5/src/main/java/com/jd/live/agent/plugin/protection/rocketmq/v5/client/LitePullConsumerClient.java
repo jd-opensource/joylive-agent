@@ -38,10 +38,6 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
         super(consumer, address);
         this.consumerImpl = getQuietly(consumer, "defaultLitePullConsumerImpl");
         this.rebalanceImpl = getQuietly(consumerImpl, "rebalanceImpl");
-    }
-
-    @Override
-    protected void addMessageHook() {
         consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
     }
 

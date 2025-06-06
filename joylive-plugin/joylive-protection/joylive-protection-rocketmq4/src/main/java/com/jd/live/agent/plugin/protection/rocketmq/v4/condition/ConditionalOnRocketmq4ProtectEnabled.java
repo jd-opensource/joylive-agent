@@ -27,7 +27,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnMQProtectEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MONGODB_ENABLED, matchIfMissing = true)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ROCKETMQ_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ConditionalOnRocketmq4ProtectEnabled.TYPE_CLIENT_LOGGER)
 @ConditionalComposite
 public @interface ConditionalOnRocketmq4ProtectEnabled {

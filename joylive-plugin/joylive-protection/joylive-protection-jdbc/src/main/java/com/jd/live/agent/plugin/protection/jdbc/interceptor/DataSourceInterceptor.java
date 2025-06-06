@@ -33,7 +33,7 @@ import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect
 /**
  * DataSourceInterceptor
  */
-public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<Connection, LiveConnection> {
+public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveConnection> {
 
     public DataSourceInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);

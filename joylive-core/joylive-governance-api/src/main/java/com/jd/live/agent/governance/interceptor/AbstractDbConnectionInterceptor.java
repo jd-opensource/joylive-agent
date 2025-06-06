@@ -20,20 +20,27 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 /**
  * Abstract base class for database connection interceptors with failover support.
@@ -45,9 +52,11 @@ import java.util.function.Supplier;
  * @param <T> Raw connection type to intercept
  * @param <C> Wrapped connection type (must be AutoCloseable)
  */
-public abstract class AbstractDbConnectionInterceptor<T, C extends DbConnection> extends InterceptorAdaptor {
+public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
+
+    protected static final String ATTR_OLD_ADDRESS = "oldAddress";
 
     protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("{} connection is redirected from {} to {} ", oldAddress.getType(), oldAddress, newAddress);
 
@@ -68,6 +77,22 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends DbConnection>
         this.policySupplier = policySupplier;
         this.publisher = publisher;
         publisher.addHandler(this::onEvent);
+    }
+
+    protected DbResult getMaster(String address) {
+        GovernancePolicy policy = policySupplier.getPolicy();
+        String[] nodes = toList(toList(splitList(address), URI::parse), URI::getAddress).toArray(new String[0]);
+        LiveDatabase database = policy.getMaster(nodes);
+        return database == null ? null : new DbResult(address, nodes, database);
+    }
+
+    protected boolean isChanged(DbResult oldResult, DbResult newResult) {
+        if (oldResult == null) {
+            return newResult != null;
+        } else if (newResult == null) {
+            return true;
+        }
+        return !Objects.equals(oldResult.getMaster().getAddresses(), newResult.getMaster().getAddresses());
     }
 
     /**
@@ -110,5 +135,29 @@ public abstract class AbstractDbConnectionInterceptor<T, C extends DbConnection>
     }
 
     protected abstract void redirectTo(C connection, ClusterAddress address);
+
+    @Getter
+    protected static class DbResult {
+
+        private final String oldAddress;
+
+        private final String[] oldNodes;
+
+        private final LiveDatabase master;
+
+        @Setter
+        private String newAddress;
+
+        public DbResult(String oldAddress, String[] oldNodes, LiveDatabase master) {
+            this.oldAddress = oldAddress;
+            this.oldNodes = oldNodes;
+            this.master = master;
+        }
+
+        public boolean isMaster() {
+            return master != null && master.contains(oldNodes);
+        }
+
+    }
 
 }

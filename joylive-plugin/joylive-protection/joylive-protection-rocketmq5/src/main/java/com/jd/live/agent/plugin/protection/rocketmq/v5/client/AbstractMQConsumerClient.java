@@ -48,10 +48,7 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
 
     public AbstractMQConsumerClient(T target, ClusterRedirect address) {
         super(target, address);
-        addMessageHook();
     }
-
-    protected abstract void addMessageHook();
 
     /**
      * Seeks all subscribed topics to current time minus {@code MQ_SEEK_TIME_OFFSET}.

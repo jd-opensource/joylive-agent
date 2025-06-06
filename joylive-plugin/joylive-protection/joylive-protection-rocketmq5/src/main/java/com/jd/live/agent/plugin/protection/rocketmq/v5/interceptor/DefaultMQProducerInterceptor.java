@@ -15,13 +15,9 @@
  */
 package com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.rocketmq.v5.client.ProducerClient;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -29,26 +25,14 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 /**
  * DefaultMQProducerInterceptor
  */
-public class DefaultMQProducerInterceptor extends AbstractDbConnectionInterceptor<DefaultMQProducer, ProducerClient> {
+public class DefaultMQProducerInterceptor extends AbstractMQInterceptor<DefaultMQProducer, ProducerClient> {
 
     public DefaultMQProducerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);
     }
 
     @Override
-    public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        DefaultMQProducer producer = mc.getResult();
-        String address = producer.getNamesrvAddr();
-        if (address != null && !address.isEmpty()) {
-            addConnection(new ProducerClient(producer, new ClusterRedirect(address)));
-        }
+    protected ProducerClient createClient(DefaultMQProducer target, ClusterRedirect redirect) {
+        return new ProducerClient(target, redirect);
     }
-
-    @Override
-    protected void redirectTo(ProducerClient client, ClusterAddress address) {
-        client.reconnect(address);
-        ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
-    }
-
 }

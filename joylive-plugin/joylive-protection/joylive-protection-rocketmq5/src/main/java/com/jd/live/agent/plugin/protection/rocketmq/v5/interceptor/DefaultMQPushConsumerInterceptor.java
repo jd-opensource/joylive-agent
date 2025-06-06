@@ -15,13 +15,9 @@
  */
 package com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.rocketmq.v5.client.MQPushConsumerClient;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -29,26 +25,14 @@ import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 /**
  * DefaultMQPushConsumerInterceptor
  */
-public class DefaultMQPushConsumerInterceptor extends AbstractDbConnectionInterceptor<DefaultMQPushConsumer, MQPushConsumerClient> {
+public class DefaultMQPushConsumerInterceptor extends AbstractMQInterceptor<DefaultMQPushConsumer, MQPushConsumerClient> {
 
     public DefaultMQPushConsumerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);
     }
 
     @Override
-    public void onSuccess(ExecutableContext ctx) {
-        MethodContext mc = (MethodContext) ctx;
-        DefaultMQPushConsumer consumer = mc.getResult();
-        String address = consumer.getNamesrvAddr();
-        if (address != null && !address.isEmpty()) {
-            addConnection(new MQPushConsumerClient(consumer, new ClusterRedirect(address)));
-        }
+    protected MQPushConsumerClient createClient(DefaultMQPushConsumer config, ClusterRedirect redirect) {
+        return new MQPushConsumerClient(config, redirect);
     }
-
-    @Override
-    protected void redirectTo(MQPushConsumerClient client, ClusterAddress address) {
-        client.reconnect(address);
-        ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
-    }
-
 }
