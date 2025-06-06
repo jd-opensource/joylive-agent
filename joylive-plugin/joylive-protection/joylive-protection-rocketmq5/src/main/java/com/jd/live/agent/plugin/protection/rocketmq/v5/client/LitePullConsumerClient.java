@@ -19,10 +19,14 @@ import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultLitePullConsumerImpl;
+import org.apache.rocketmq.client.trace.TraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
+import java.util.List;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
@@ -48,6 +52,9 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
 
     @Override
     protected void doStart() throws MQClientException {
+        // remove old trace
+        removeTrace();
+        // create new trace.
         target.start();
         seek();
     }
@@ -64,6 +71,23 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
             target.seek(queue, offset);
         } else {
             target.seekToBegin(queue);
+        }
+    }
+
+    private void removeTrace() {
+        TraceDispatcher dispatcher = target.getTraceDispatcher();
+        if (dispatcher != null) {
+            List<ConsumeMessageHook> hooks = getQuietly(consumerImpl, "consumeMessageHookList");
+            for (int i = hooks.size() - 1; i >= 0; i--) {
+                ConsumeMessageHook hook = hooks.get(i);
+                if (hook instanceof ConsumeMessageTraceHookImpl) {
+                    TraceDispatcher traceDispatcher = getQuietly(hook, "traceDispatcher");
+                    if (dispatcher == traceDispatcher) {
+                        hooks.remove(i);
+                        break;
+                    }
+                }
+            }
         }
     }
 }

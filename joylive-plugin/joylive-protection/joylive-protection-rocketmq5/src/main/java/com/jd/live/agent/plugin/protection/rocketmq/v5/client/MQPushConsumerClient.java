@@ -18,11 +18,17 @@ package com.jd.live.agent.plugin.protection.rocketmq.v5.client;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.TraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.remoting.RPCHook;
 
 import java.util.Collection;
+import java.util.List;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
@@ -45,8 +51,14 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
 
     @Override
     protected void doStart() throws MQClientException {
+        // reset to restart
         target.suspend();
         try {
+            TraceDispatcher dispatcher = target.getTraceDispatcher();
+            if (dispatcher instanceof AsyncTraceDispatcher) {
+                // create new trace dispatcher
+                setValue(target, "traceDispatcher", createTraceDispatcher((AsyncTraceDispatcher) dispatcher));
+            }
             setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
             target.start();
             seek();
@@ -63,5 +75,23 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
     @Override
     protected void doSeek(MessageQueue queue, long timestamp) throws MQClientException {
         consumerImpl.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
+    }
+
+    private TraceDispatcher createTraceDispatcher(AsyncTraceDispatcher dispatcher) {
+        RPCHook rpcHook = getQuietly(consumerImpl, "rpcHook");
+        AsyncTraceDispatcher result = new AsyncTraceDispatcher(target.getConsumerGroup(), TraceDispatcher.Type.CONSUME, dispatcher.getTraceTopicName(), rpcHook);
+        result.setHostConsumer(consumerImpl);
+        List<ConsumeMessageHook> hooks = getQuietly(consumerImpl, "consumeMessageHookList");
+        for (int i = hooks.size() - 1; i >= 0; i--) {
+            ConsumeMessageHook hook = hooks.get(i);
+            if (hook instanceof ConsumeMessageTraceHookImpl) {
+                TraceDispatcher traceDispatcher = getQuietly(hook, "traceDispatcher");
+                if (dispatcher == traceDispatcher) {
+                    hooks.remove(i);
+                }
+            }
+        }
+        consumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(result));
+        return result;
     }
 }

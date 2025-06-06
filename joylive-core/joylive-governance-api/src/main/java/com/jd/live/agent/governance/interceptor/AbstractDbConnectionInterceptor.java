@@ -49,7 +49,6 @@ import static com.jd.live.agent.core.util.StringUtils.splitList;
  * topology changes (e.g., master failover). Concrete implementations must provide
  * actual connection wrapping logic.
  *
- * @param <T> Raw connection type to intercept
  * @param <C> Wrapped connection type (must be AutoCloseable)
  */
 public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> extends InterceptorAdaptor {
@@ -129,7 +128,11 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             if (master != null && !master.contains(address.getNodes())) {
                 ClusterAddress newAddress = new ClusterAddress(master.getPrimaryAddress());
                 // Close connection to reconnect to the new master address
-                cons.forEach(c -> redirectTo(c, newAddress));
+                cons.forEach(c -> {
+                    if (!c.getAddress().getNewAddress().equals(newAddress)) {
+                        redirectTo(c, newAddress);
+                    }
+                });
             }
         });
     }
