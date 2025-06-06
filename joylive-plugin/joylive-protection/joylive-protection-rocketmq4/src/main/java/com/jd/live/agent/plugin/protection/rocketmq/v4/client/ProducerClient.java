@@ -17,12 +17,23 @@ package com.jd.live.agent.plugin.protection.rocketmq.v4.client;
 
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.common.ServiceState;
+
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 public class ProducerClient extends AbstractMQClient<DefaultMQProducer> {
 
+    private final DefaultMQProducerImpl producerImpl;
+
     public ProducerClient(DefaultMQProducer producer, ClusterRedirect address) {
         super(producer, address);
+        this.producerImpl = getQuietly(producer, "defaultMQProducerImpl");
     }
 
     @Override
@@ -32,6 +43,27 @@ public class ProducerClient extends AbstractMQClient<DefaultMQProducer> {
 
     @Override
     protected void doStart() throws MQClientException {
+        // reset to restart
+        setValue(producerImpl, "serviceState", ServiceState.CREATE_JUST);
+        setValue(producerImpl, "defaultAsyncSenderExecutor", createExecutor());
         target.start();
+    }
+
+    private ExecutorService createExecutor() {
+        BlockingQueue<Runnable> queue = getQuietly(producerImpl, "asyncSenderThreadPoolQueue");
+        return new ThreadPoolExecutor(
+                Runtime.getRuntime().availableProcessors(),
+                Runtime.getRuntime().availableProcessors(),
+                1000 * 60,
+                TimeUnit.MILLISECONDS,
+                queue,
+                new ThreadFactory() {
+                    private final AtomicInteger threadIndex = new AtomicInteger(0);
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "AsyncSenderExecutor_" + threadIndex.incrementAndGet());
+                    }
+                });
     }
 }

@@ -73,6 +73,7 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
         if (closed) {
             return;
         }
+        logger.info("try reconnecting to rocketmq {}", newAddress);
         this.address = address.newAddress(newAddress);
         target.setNamesrvAddr(newAddress.getAddress());
         doClose();

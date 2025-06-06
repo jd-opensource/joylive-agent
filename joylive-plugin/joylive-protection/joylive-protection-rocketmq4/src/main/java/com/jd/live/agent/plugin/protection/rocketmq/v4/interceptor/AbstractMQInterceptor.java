@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Publisher;
@@ -35,6 +36,8 @@ import static com.jd.live.agent.core.util.StringUtils.join;
  */
 public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends AbstractMQClient<T>> extends AbstractDbConnectionInterceptor<C> {
 
+    private static final LockContext lock = new LockContext.DefaultLockContext();
+
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQInterceptor.class);
 
     public AbstractMQInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
@@ -44,31 +47,40 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        T target = (T) ctx.getTarget();
-        // Determine if a cluster failover was triggered
-        DbResult result = getMaster(target.getNamesrvAddr());
-        if (result != null && !result.isMaster()) {
-            result.setNewAddress(join(result.getMaster().getAddresses(), CHAR_SEMICOLON));
-            ctx.setAttribute(ATTR_OLD_ADDRESS, result);
-            target.setNamesrvAddr(result.getNewAddress());
-            logger.info("Try reconnecting to rocketmq {}", result.getNewAddress());
+        // TransactionMQProducer inherit from DefaultMQProducer, will call start 2 times.
+        if (ctx.tryLock(lock)) {
+            T target = (T) ctx.getTarget();
+            // Determine if a cluster failover was triggered
+            DbResult result = getMaster(target.getNamesrvAddr());
+            if (result != null && !result.isMaster()) {
+                result.setNewAddress(join(result.getMaster().getAddresses(), CHAR_SEMICOLON));
+                ctx.setAttribute(ATTR_OLD_ADDRESS, result);
+                target.setNamesrvAddr(result.getNewAddress());
+                logger.info("Try reconnecting to rocketmq {}", result.getNewAddress());
+            }
         }
-        super.onEnter(ctx);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        T target = (T) ctx.getTarget();
-        DbResult oldDb = ctx.getAttribute(ATTR_OLD_ADDRESS);
-        String oldAddress = oldDb != null ? oldDb.getOldAddress() : target.getNamesrvAddr();
-        String newAddress = oldDb != null ? oldDb.getNewAddress() : oldAddress;
-        addConnection(createClient(target, new ClusterRedirect(oldAddress, newAddress)));
-        // Avoid missing events caused by synchronous changes
-        DbResult newDb = getMaster(oldAddress);
-        if (isChanged(oldDb, newDb)) {
-            publisher.offer(new DatabaseEvent());
+        if (ctx.isLocked()) {
+            T target = (T) ctx.getTarget();
+            DbResult oldDb = ctx.getAttribute(ATTR_OLD_ADDRESS);
+            String oldAddress = oldDb != null ? oldDb.getOldAddress() : target.getNamesrvAddr();
+            String newAddress = oldDb != null ? oldDb.getNewAddress() : oldAddress;
+            addConnection(createClient(target, new ClusterRedirect(oldAddress, newAddress)));
+            // Avoid missing events caused by synchronous changes
+            DbResult newDb = getMaster(oldAddress);
+            if (isChanged(oldDb, newDb)) {
+                publisher.offer(new DatabaseEvent());
+            }
         }
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        ctx.unlock();
     }
 
     @Override
