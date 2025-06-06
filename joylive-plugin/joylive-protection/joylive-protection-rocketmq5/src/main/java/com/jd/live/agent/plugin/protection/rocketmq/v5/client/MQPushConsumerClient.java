@@ -17,9 +17,12 @@ package com.jd.live.agent.plugin.protection.rocketmq.v5.client;
 
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
@@ -54,12 +57,7 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
         // reset to restart
         target.suspend();
         try {
-            TraceDispatcher dispatcher = target.getTraceDispatcher();
-            if (dispatcher instanceof AsyncTraceDispatcher) {
-                // create new trace dispatcher
-                setValue(target, "traceDispatcher", createTraceDispatcher((AsyncTraceDispatcher) dispatcher));
-            }
-            setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+            reset();
             target.start();
             seek();
         } finally {
@@ -75,6 +73,40 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
     @Override
     protected void doSeek(MessageQueue queue, long timestamp) throws MQClientException {
         consumerImpl.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
+    }
+
+    private void reset() {
+        // reset state
+        setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+        // reset trace
+        resetTrace();
+        // reset offset store
+        resetOffsetStore();
+    }
+
+    private void resetTrace() {
+        TraceDispatcher dispatcher = target.getTraceDispatcher();
+        if (dispatcher instanceof AsyncTraceDispatcher) {
+            // create new trace dispatcher
+            setValue(target, "traceDispatcher", createTraceDispatcher((AsyncTraceDispatcher) dispatcher));
+        }
+    }
+
+    private void resetOffsetStore() {
+        // reset offset store
+        OffsetStore offsetStore = consumerImpl.getOffsetStore();
+        if (offsetStore != null) {
+            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, "mQClientFactory");
+            MQClientInstance mQClientFactory2 = consumerImpl.getmQClientFactory();
+            if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
+                // inner offset store
+                setValue(target, "offsetStore", null);
+            } else {
+                // custom offset store
+                RebalanceImpl rebalance = consumerImpl.getRebalanceImpl();
+                rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
+            }
+        }
     }
 
     private TraceDispatcher createTraceDispatcher(AsyncTraceDispatcher dispatcher) {
@@ -94,4 +126,5 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
         consumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(result));
         return result;
     }
+
 }

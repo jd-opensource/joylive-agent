@@ -17,13 +17,18 @@ package com.jd.live.agent.plugin.protection.rocketmq.v4.client;
 
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
+import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
+import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
+import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 @Deprecated
 public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPullConsumer> {
@@ -44,6 +49,7 @@ public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPull
 
     @Override
     protected void doStart() throws MQClientException {
+        reset();
         target.start();
         seek();
     }
@@ -56,5 +62,28 @@ public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPull
     @Override
     protected void doSeek(MessageQueue queue, long timestamp) throws MQClientException {
         target.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
+    }
+
+    private void reset() {
+        // reset state
+        setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+        // reset offset store
+        resetOffsetStore();
+    }
+
+    private void resetOffsetStore() {
+        OffsetStore offsetStore = consumerImpl.getOffsetStore();
+        if (offsetStore != null) {
+            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, "mQClientFactory");
+            MQClientInstance mQClientFactory2 = getQuietly(consumerImpl, "mQClientFactory");
+            if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
+                // inner offset store
+                setValue(target, "offsetStore", null);
+            } else {
+                // custom offset store
+                RebalanceImpl rebalance = consumerImpl.getRebalanceImpl();
+                rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
+            }
+        }
     }
 }

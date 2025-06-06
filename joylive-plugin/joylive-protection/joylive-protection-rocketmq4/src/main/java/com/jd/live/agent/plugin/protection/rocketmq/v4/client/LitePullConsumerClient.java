@@ -18,17 +18,22 @@ package com.jd.live.agent.plugin.protection.rocketmq.v4.client;
 import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
+import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultLitePullConsumerImpl;
+import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
+import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
 import java.util.List;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 /**
  * A lightweight RocketMQ pull consumer client implementing {@link DbConnection}.
@@ -52,9 +57,8 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
 
     @Override
     protected void doStart() throws MQClientException {
-        // remove old trace
-        removeTrace();
-        // create new trace.
+        // reset to restart
+        reset();
         target.start();
         seek();
     }
@@ -74,7 +78,16 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
         }
     }
 
-    private void removeTrace() {
+    private void reset() {
+        // reset state
+        setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+        // reset trace
+        resetTrace();
+        // reset offset store
+        resetOffsetStore();
+    }
+
+    private void resetTrace() {
         TraceDispatcher dispatcher = target.getTraceDispatcher();
         if (dispatcher != null) {
             List<ConsumeMessageHook> hooks = getQuietly(consumerImpl, "consumeMessageHookList");
@@ -87,6 +100,23 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
                         break;
                     }
                 }
+            }
+        }
+    }
+
+    private void resetOffsetStore() {
+        // reset offset store
+        OffsetStore offsetStore = consumerImpl.getOffsetStore();
+        if (offsetStore != null) {
+            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, "mQClientFactory");
+            MQClientInstance mQClientFactory2 = getQuietly(consumerImpl, "mQClientFactory");
+            if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
+                // inner offset store
+                setValue(target, "offsetStore", null);
+            } else {
+                // custom offset store
+                RebalanceImpl rebalance = getQuietly(consumerImpl, "rebalanceImpl");
+                rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
             }
         }
     }
