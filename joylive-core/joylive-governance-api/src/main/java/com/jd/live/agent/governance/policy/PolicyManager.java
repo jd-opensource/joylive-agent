@@ -494,8 +494,13 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private void warmup() {
         if (warmup.compareAndSet(false, true)) {
             ServiceConfig serviceConfig = governanceConfig.getServiceConfig();
-            Set<String> warmups = serviceConfig == null ? null : serviceConfig.getWarmups();
-            warmups = warmups == null ? new HashSet<>() : warmups;
+            Set<String> warmups = serviceConfig.getWarmups() == null ? new HashSet<>() : new HashSet<>(serviceConfig.getWarmups());
+            Map<String, String> services = governanceConfig.getRegistryConfig().getHostConfig().getServices();
+            if (services != null && !services.isEmpty()) {
+                services.forEach((k, v) -> {
+                    warmups.add(v);
+                });
+            }
             AppService service = application.getService();
             String namespace = service == null ? null : service.getNamespace();
             String name = service == null || service.getName() == null ? null : service.getName();
@@ -504,6 +509,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             }
             if (!warmups.isEmpty()) {
                 warmups.forEach(o -> subscribe(new PolicySubscription(o, namespace, TYPE_SERVICE_POLICY, serviceSyncers)));
+            }
+
+            // warm up for spring boot service mapping
+            if (services != null && !services.isEmpty()) {
+                services.forEach((k, v) -> registry.subscribe(v));
             }
         }
     }
