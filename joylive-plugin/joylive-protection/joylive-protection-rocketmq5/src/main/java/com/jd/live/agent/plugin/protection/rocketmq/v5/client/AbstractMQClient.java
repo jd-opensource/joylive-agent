@@ -78,8 +78,9 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
         doClose();
         try {
             doStart();
+            logger.info("Success reconnecting to rocketmq {}", newAddress);
         } catch (MQClientException e) {
-            logger.error("Failed to reconnect to rocketmq " + newAddress, e);
+            logger.error("Failed to reconnect to rocketmq {}", newAddress, e);
         }
     }
 }

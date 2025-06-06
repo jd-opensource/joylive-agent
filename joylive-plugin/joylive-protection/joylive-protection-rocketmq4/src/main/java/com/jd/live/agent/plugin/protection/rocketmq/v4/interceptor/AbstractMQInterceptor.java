@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
@@ -33,6 +35,8 @@ import static com.jd.live.agent.core.util.StringUtils.join;
  */
 public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends AbstractMQClient<T>> extends AbstractDbConnectionInterceptor<C> {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractMQInterceptor.class);
+
     public AbstractMQInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
         super(policySupplier, publisher);
     }
@@ -47,6 +51,7 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
             result.setNewAddress(join(result.getMaster().getAddresses(), CHAR_SEMICOLON));
             ctx.setAttribute(ATTR_OLD_ADDRESS, result);
             target.setNamesrvAddr(result.getNewAddress());
+            logger.info("Try reconnecting to rocketmq {}", result.getNewAddress());
         }
         super.onEnter(ctx);
     }
