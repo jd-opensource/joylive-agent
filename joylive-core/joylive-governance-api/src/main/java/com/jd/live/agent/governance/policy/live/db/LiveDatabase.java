@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy.live.db;
 
+import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,9 +25,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.jd.live.agent.core.util.StringUtils.SEMICOLON_COMMA;
-import static com.jd.live.agent.core.util.StringUtils.split;
-import static java.util.Collections.addAll;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.splitList;
+import static com.jd.live.agent.core.util.URI.getAddress;
 
 public class LiveDatabase {
     @Getter
@@ -91,7 +93,20 @@ public class LiveDatabase {
     public void cache() {
         if (addresses != null) {
             Set<String> lowerCases = new HashSet<>(addresses.size());
-            addresses.forEach(addr -> addAll(lowerCases, split(addr.toLowerCase(), SEMICOLON_COMMA)));
+            addresses.forEach(addr -> {
+                List<URI> uris = toList(splitList(addr), URI::parse);
+                for (URI uri : uris) {
+                    String host = uri.getHost();
+                    Integer port = uri.getPort();
+                    host = host == null ? null : host.toLowerCase();
+                    // for development environment
+                    if (Ipv4.isLocalHost(host)) {
+                        Ipv4.LOCAL_HOST.forEach(h -> lowerCases.add(getAddress(h, port)));
+                    } else {
+                        lowerCases.add(uri.getAddress());
+                    }
+                }
+            });
             this.nodes = lowerCases;
             this.primaryAddress = selectAddress();
         }

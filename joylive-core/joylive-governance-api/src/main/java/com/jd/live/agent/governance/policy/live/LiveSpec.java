@@ -16,13 +16,11 @@
 package com.jd.live.agent.governance.policy.live;
 
 import com.jd.live.agent.core.parser.json.JsonAlias;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.core.util.map.MapBuilder;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabaseGroup;
 import lombok.Getter;
@@ -129,8 +127,6 @@ public class LiveSpec {
                             if (nodes != null && !nodes.isEmpty()) {
                                 for (String node : nodes) {
                                     result.put(node, database);
-                                    // for development environment
-                                    addAlias(node, database, result);
                                 }
                             }
                         }
@@ -138,18 +134,6 @@ public class LiveSpec {
                 }
             }
             return result;
-        }
-
-        private void addAlias(String node, LiveDatabase database, Map<String, LiveDatabase> result) {
-            URI uri = URI.parse(node);
-            if (uri != null) {
-                String host = uri.getHost();
-                Integer port = uri.getPort();
-                host = host == null ? null : host.toLowerCase();
-                if (Ipv4.isLocalHost(host)) {
-                    Ipv4.LOCAL_HOST.forEach(h -> result.put(URI.getAddress(h, port), database));
-                }
-            }
         }
     });
 
