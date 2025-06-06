@@ -77,7 +77,8 @@ public class JXPathParser implements XmlPathParser {
                     });
             JXPathContext context = JXPathContext.newContext(doc);
             context.setLenient(true);
-            return expr.getValue(context).toString();
+            Object value = expr.getValue(context);
+            return value == null ? null : value.toString();
         } catch (Throwable e) {
             throw new ParseException("Failed to parse XML with JXPath, path: " + path, e);
         } finally {

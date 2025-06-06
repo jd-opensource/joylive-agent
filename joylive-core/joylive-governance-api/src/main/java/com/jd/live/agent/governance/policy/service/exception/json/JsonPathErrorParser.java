@@ -32,11 +32,13 @@ public class JsonPathErrorParser extends AbstractErrorParser {
 
     @Override
     protected String parse(String expression, String response) {
-        return parser.read(response, expression);
+        Object result = parser.read(response, expression);
+        return result == null ? null : result.toString();
     }
 
     @Override
     protected String parse(String expression, InputStream response) {
-        return parser.read(response, expression);
+        Object result = parser.read(response, expression);
+        return result == null ? null : result.toString();
     }
 }
