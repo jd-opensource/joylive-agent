@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -92,22 +93,26 @@ public class LiveDatabase {
 
     public void cache() {
         if (addresses != null) {
-            Set<String> lowerCases = new HashSet<>(addresses.size());
+            List<String> lowerAddresses = new ArrayList<>(addresses.size());
+            Set<String> lowerNodes = new HashSet<>(addresses.size());
             addresses.forEach(addr -> {
-                List<URI> uris = toList(splitList(addr.toLowerCase()), URI::parse);
+                String lowerAddr = addr.toLowerCase();
+                lowerAddresses.add(lowerAddr);
+                List<URI> uris = toList(splitList(lowerAddr), URI::parse);
                 for (URI uri : uris) {
                     String host = uri.getHost();
                     Integer port = uri.getPort();
                     host = host == null ? null : host.toLowerCase();
                     // for development environment
                     if (Ipv4.isLocalHost(host)) {
-                        Ipv4.LOCAL_HOST.forEach(h -> lowerCases.add(getAddress(h, port)));
+                        Ipv4.LOCAL_HOST.forEach(h -> lowerNodes.add(getAddress(h, port)));
                     } else {
-                        lowerCases.add(uri.getAddress());
+                        lowerNodes.add(uri.getAddress());
                     }
                 }
             });
-            this.nodes = lowerCases;
+            this.addresses = lowerAddresses;
+            this.nodes = lowerNodes;
             this.primaryAddress = selectAddress();
         }
     }
@@ -117,11 +122,10 @@ public class LiveDatabase {
         if (size == 0) {
             return null;
         } else if (size == 1) {
-            return addresses.get(0).toLowerCase();
+            return addresses.get(0);
         }
         String first = null;
         for (String addr : addresses) {
-            addr = addr.toLowerCase();
             if (first == null) {
                 first = addr;
             }
