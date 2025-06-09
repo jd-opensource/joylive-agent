@@ -2,3 +2,4 @@ com.jd.live.agent.plugin.protection.rocketmq.v4.definition.DefaultLitePullConsum
 com.jd.live.agent.plugin.protection.rocketmq.v4.definition.DefaultMQProducerDefinition
 com.jd.live.agent.plugin.protection.rocketmq.v4.definition.DefaultMQPushConsumerDefinition
 com.jd.live.agent.plugin.protection.rocketmq.v4.definition.DefaultMQPullConsumerDefinition
+com.jd.live.agent.plugin.protection.rocketmq.v4.definition.PullCallbackDefinition

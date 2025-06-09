@@ -148,9 +148,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                 // Close connection to reconnect to the new master address
                 cons.forEach(c -> {
                     if (!c.getAddress().getNewAddress().equals(newAddress)) {
-                        timer.delay("redirect-connection", getRetryInterval(100, 2000), () -> {
-                            redirectTo(c, newAddress);
-                        });
+                        timer.delay("redirect-connection", getRetryInterval(100, 2000), () -> redirectTo(c, newAddress));
                     }
                 });
             }
