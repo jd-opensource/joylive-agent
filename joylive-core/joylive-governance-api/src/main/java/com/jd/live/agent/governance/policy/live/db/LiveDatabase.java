@@ -94,7 +94,7 @@ public class LiveDatabase {
         if (addresses != null) {
             Set<String> lowerCases = new HashSet<>(addresses.size());
             addresses.forEach(addr -> {
-                List<URI> uris = toList(splitList(addr), URI::parse);
+                List<URI> uris = toList(splitList(addr.toLowerCase()), URI::parse);
                 for (URI uri : uris) {
                     String host = uri.getHost();
                     Integer port = uri.getPort();
@@ -117,15 +117,16 @@ public class LiveDatabase {
         if (size == 0) {
             return null;
         } else if (size == 1) {
-            return addresses.get(0);
+            return addresses.get(0).toLowerCase();
         }
         String first = null;
         for (String addr : addresses) {
+            addr = addr.toLowerCase();
             if (first == null) {
                 first = addr;
             }
             // k8s cluster service address
-            if (!addr.toLowerCase().contains("svc.cluster.local")) {
+            if (!addr.contains("svc.cluster.local")) {
                 return addr;
             }
         }
