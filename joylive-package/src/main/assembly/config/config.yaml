@@ -23,6 +23,8 @@ agent:
       - com.huaweicloud.sermant.core.plugin.classloader.PluginClassLoader
       - com.huaweicloud.sermant.core.plugin.classloader.ServiceClassLoader
       - com.alipay.sofa.ark.container.service.classloader.PluginClassLoader
+  timer:
+    workerThreads: ${CONFIG_TIMER_WORKER_THREADS:4}
   publisher:
     configs:
       traffic:

@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
@@ -27,8 +28,8 @@ import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
  */
 public class DefaultLitePullConsumerInterceptor extends AbstractMQInterceptor<DefaultLitePullConsumer, LitePullConsumerClient> {
 
-    public DefaultLitePullConsumerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
-        super(policySupplier, publisher);
+    public DefaultLitePullConsumerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, publisher, timer);
     }
 
     @Override

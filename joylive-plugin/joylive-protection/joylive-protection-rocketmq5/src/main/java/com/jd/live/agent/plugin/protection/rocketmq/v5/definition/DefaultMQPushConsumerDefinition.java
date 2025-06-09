@@ -25,6 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.rocketmq.v5.condition.ConditionalOnRocketmq5ProtectEnabled;
@@ -46,12 +47,15 @@ public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
     @Inject(Publisher.DATABASE)
     private Publisher<DatabaseEvent> publisher;
 
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     public DefaultMQPushConsumerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD),
-                        () -> new DefaultMQPushConsumerInterceptor(policySupplier, publisher)
+                        () -> new DefaultMQPushConsumerInterceptor(policySupplier, publisher, timer)
                 )
         };
     }

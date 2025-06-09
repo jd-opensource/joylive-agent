@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -41,8 +42,8 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQInterceptor.class);
 
-    public AbstractMQInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
-        super(policySupplier, publisher);
+    public AbstractMQInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, publisher, timer);
     }
 
     @SuppressWarnings("unchecked")

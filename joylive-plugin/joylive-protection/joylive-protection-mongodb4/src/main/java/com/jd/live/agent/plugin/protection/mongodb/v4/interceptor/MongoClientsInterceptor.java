@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.protection.mongodb.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -42,8 +43,8 @@ import static com.jd.live.agent.core.util.StringUtils.join;
  */
 public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<LiveMongoClient> {
 
-    public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
-        super(policySupplier, publisher);
+    public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, publisher, timer);
     }
 
     @Override

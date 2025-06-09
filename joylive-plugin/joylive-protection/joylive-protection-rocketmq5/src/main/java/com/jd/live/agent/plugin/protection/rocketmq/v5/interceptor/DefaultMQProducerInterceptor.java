@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor;
 
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
@@ -27,8 +28,8 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
  */
 public class DefaultMQProducerInterceptor extends AbstractMQInterceptor<DefaultMQProducer, ProducerClient> {
 
-    public DefaultMQProducerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
-        super(policySupplier, publisher);
+    public DefaultMQProducerInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, publisher, timer);
     }
 
     @Override

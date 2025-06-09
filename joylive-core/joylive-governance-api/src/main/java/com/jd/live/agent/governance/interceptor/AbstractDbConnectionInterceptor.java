@@ -21,6 +21,7 @@ import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -41,6 +42,7 @@ import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
+import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
 
 /**
  * Abstract base class for database connection interceptors with failover support.
@@ -63,6 +65,8 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
 
     protected final Publisher<DatabaseEvent> publisher;
 
+    protected final Timer timer;
+
     protected final Map<ClusterAddress, List<C>> connections = new ConcurrentHashMap<>();
 
     protected final Consumer<C> closer = c -> {
@@ -72,12 +76,19 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
         }
     };
 
-    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
+    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
         this.policySupplier = policySupplier;
         this.publisher = publisher;
+        this.timer = timer;
         publisher.addHandler(this::onEvent);
     }
 
+    /**
+     * Retrieves the master database node for the given address.
+     *
+     * @param address the target cluster address
+     * @return DbResult with master info, or null if no master available
+     */
     protected DbResult getMaster(String address) {
         GovernancePolicy policy = policySupplier.getPolicy();
         String[] nodes = toList(toList(splitList(address), URI::parse), URI::getAddress).toArray(new String[0]);
@@ -85,6 +96,13 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
         return database == null ? null : new DbResult(address, nodes, database);
     }
 
+    /**
+     * Checks if master database configuration has changed between two states.
+     *
+     * @param oldResult previous database state (may be null)
+     * @param newResult current database state (may be null)
+     * @return true if master addresses differ or state changed from/to null
+     */
     protected boolean isChanged(DbResult oldResult, DbResult newResult) {
         if (oldResult == null) {
             return newResult != null;
@@ -130,17 +148,31 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                 // Close connection to reconnect to the new master address
                 cons.forEach(c -> {
                     if (!c.getAddress().getNewAddress().equals(newAddress)) {
-                        redirectTo(c, newAddress);
+                        timer.delay("redirect-connection", getRetryInterval(100, 2000), () -> {
+                            redirectTo(c, newAddress);
+                        });
                     }
                 });
             }
         });
     }
 
+    /**
+     * Creates a new ClusterAddress from the given string representation.
+     *
+     * @param address the address string to parse
+     * @return newly created ClusterAddress (never null)
+     */
     protected ClusterAddress createAddress(String address) {
         return new ClusterAddress(address);
     }
 
+    /**
+     * Redirects the given connection to the specified cluster address.
+     *
+     * @param connection the connection to redirect
+     * @param address    the target cluster address
+     */
     protected abstract void redirectTo(C connection, ClusterAddress address);
 
     @Getter

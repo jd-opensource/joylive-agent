@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -35,8 +36,8 @@ import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect
  */
 public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveConnection> {
 
-    public DataSourceInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher) {
-        super(policySupplier, publisher);
+    public DataSourceInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, publisher, timer);
     }
 
     @Override

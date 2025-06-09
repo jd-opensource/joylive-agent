@@ -25,6 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.annotation.ConditionalOnDBProtectEnabled;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -46,12 +47,15 @@ public class DataSourceDefinition extends PluginDefinitionAdapter {
     @Inject(Publisher.DATABASE)
     private Publisher<DatabaseEvent> publisher;
 
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
     public DataSourceDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD),
-                        () -> new DataSourceInterceptor(policySupplier, publisher)
+                        () -> new DataSourceInterceptor(policySupplier, publisher, timer)
                 )
         };
     }
