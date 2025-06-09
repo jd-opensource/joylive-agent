@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.db.db2.Db2UrlParser;
 import com.jd.live.agent.governance.db.h2.H2UrlParser;
 import com.jd.live.agent.governance.db.mariadb.MariadbUrlParser;
 import com.jd.live.agent.governance.db.mysql.MysqlUrlParser;
+import com.jd.live.agent.governance.db.oceanbase.OceanBaseUrlParser;
 import com.jd.live.agent.governance.db.oracle.OracleUrlParser;
 import com.jd.live.agent.governance.db.postgresql.PostgresqlUrlParser;
 import com.jd.live.agent.governance.db.sqlserver.JtdsUrlParser;
@@ -44,6 +45,7 @@ public class DbUrlTest {
         PARSERS.put("jtds", new JtdsUrlParser());
         PARSERS.put("as400", new As400UrlParser());
         PARSERS.put("db2", new Db2UrlParser());
+        PARSERS.put("oceanbase", new OceanBaseUrlParser());
     }
 
     @Test
@@ -172,5 +174,15 @@ public class DbUrlTest {
 
         url = DbUrlParser.parse("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=127.0.0.1)(PORT=1521))(FAILOVER=on)(LOAD_BALANCE=off))(CONNECT_DATA= (SERVICE_NAME=orcl)))", PARSERS::get);
         Assertions.assertNull(url.getAddress());
+    }
+
+    @Test
+    void testOceanBase() {
+        DbUrl url = DbUrlParser.parse("jdbc:oceanbase:hamode://127.0.0.1:1001/test", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:oceanbase:hamode", url.getScheme());
+        Assertions.assertEquals("127.0.0.1:1001", url.getAddress());
+        Assertions.assertEquals("test", url.getDatabase());
+        Assertions.assertEquals("jdbc:oceanbase:hamode://127.0.0.1:1001/test", url.toString());
     }
 }

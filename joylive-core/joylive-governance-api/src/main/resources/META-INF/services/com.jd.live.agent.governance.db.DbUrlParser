@@ -7,3 +7,11 @@ com.jd.live.agent.governance.db.mariadb.MariadbUrlParser
 com.jd.live.agent.governance.db.h2.H2UrlParser
 com.jd.live.agent.governance.db.db2.Db2UrlParser
 com.jd.live.agent.governance.db.as400.As400UrlParser
+com.jd.live.agent.governance.db.polardb.PolarDBUrlParser
+com.jd.live.agent.governance.db.oceanbase.OceanBaseUrlParser
+com.jd.live.agent.governance.db.opengauss.OpenGaussUrlParser
+com.jd.live.agent.governance.db.gaussdb.GaussDBUrlParser
+com.jd.live.agent.governance.db.gbase.GBase8sUrlParser
+com.jd.live.agent.governance.db.gbase.GBase8aUrlParser
+com.jd.live.agent.governance.db.kingbase.KingBaseUrlParser
+com.jd.live.agent.governance.db.goldendb.GoldenDBUrlParser

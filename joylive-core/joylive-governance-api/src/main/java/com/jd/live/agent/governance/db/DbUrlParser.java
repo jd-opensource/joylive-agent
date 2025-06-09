@@ -19,11 +19,27 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
 
 import java.util.function.Function;
 
+/**
+ * Parser for database connection URLs with extensible protocol support.
+ * The default implementation handles JDBC-style URLs (jdbc:type:...).
+ */
 @Extensible("DbUrlParser")
 public interface DbUrlParser {
 
+    /**
+     * Parses a database URL into structured form.
+     *
+     * @param url the connection URL to parse
+     * @return parsed DbUrl object, or null if invalid format
+     */
     DbUrl parse(String url);
 
+    /**
+     * Default parser that delegates to protocol-specific implementations.
+     * @param url JDBC-style URL (jdbc:type:...)
+     * @param factory produces parsers for specific protocol types
+     * @return parsed DbUrl or null if unsupported/invalid format
+     */
     static DbUrl parse(String url, Function<String, DbUrlParser> factory) {
         if (url == null || url.isEmpty()) {
             return null;
