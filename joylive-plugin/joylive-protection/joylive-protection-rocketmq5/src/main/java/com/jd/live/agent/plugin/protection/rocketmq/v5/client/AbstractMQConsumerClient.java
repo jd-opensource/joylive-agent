@@ -22,15 +22,16 @@ import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.hook.ConsumeMessageContext;
 import org.apache.rocketmq.client.hook.ConsumeMessageHook;
-import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 /**
  * Abstract base class for MQ consumer clients.
@@ -42,85 +43,29 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQConsumerClient.class);
 
-    protected Map<String, AtomicLong> timestamps = new ConcurrentHashMap<>();
+    protected static final String FIELD_REBALANCE_IMPL = "rebalanceImpl";
+    protected static final String FIELD_HOOK_LIST = "consumeMessageHookList";
+    protected static final String FIELD_CLIENT_FACTORY = "mQClientFactory";
+    protected static final String FIELD_OFFSET_STORE = "offsetStore";
 
-    protected RebalanceImpl rebalanceImpl;
+    protected Map<String, AtomicLong> timestamps = new ConcurrentHashMap<>();
 
     public AbstractMQConsumerClient(T target, ClusterRedirect address) {
         super(target, address);
     }
 
-    /**
-     * Seeks all subscribed topics to current time minus {@code MQ_SEEK_TIME_OFFSET}.
-     */
-    protected void seek() {
-        rebalanceImpl.getSubscriptionInner().forEach((k, v) -> seek(k, getOrDefault(k, MQ_SEEK_TIME_OFFSET)));
+    @Override
+    protected String getType() {
+        return "consumer";
     }
 
-    /**
-     * Retrieves the stored timestamp for the given topic.
-     * Returns current system time minus offset if topic not found.
-     *
-     * @param topic  target topic to query (case-sensitive)
-     * @param offset value to subtract from the result (typically 0)
-     * @return stored timestamp minus offset, or current time minus offset if topic absent
-     */
-    protected long getOrDefault(String topic, long offset) {
-        AtomicLong value = timestamps.get(topic);
-        return (value == null ? System.currentTimeMillis() : value.get()) - offset;
+    protected void seek(Seeker seeker) {
+        seeker.rebalance();
+        seeker.seek(topic -> {
+            AtomicLong value = timestamps.get(topic);
+            return (value == null ? System.currentTimeMillis() : value.get()) - MQ_SEEK_TIME_OFFSET;
+        });
     }
-
-    /**
-     * Seeks to the specified timestamp for all queues of a topic.
-     * Falls back to beginning if timestamp offset is unavailable.
-     *
-     * @param topic     the topic to seek
-     * @param timestamp the target timestamp in milliseconds
-     */
-    protected void seek(String topic, long timestamp) {
-        try {
-            Collection<MessageQueue> queues = doFetchQueues(topic);
-            for (MessageQueue queue : queues) {
-                seek(queue, timestamp);
-            }
-        } catch (MQClientException e) {
-            logger.error("Failed to seek {} offset to timestamp {}", topic, timestamp, e);
-        }
-    }
-
-    /**
-     * Implementation-specific queue retrieval.
-     *
-     * @param topic target topic
-     * @return collection of message queues
-     * @throws MQClientException if queue fetch fails
-     */
-    protected abstract Collection<MessageQueue> doFetchQueues(String topic) throws MQClientException;
-
-    /**
-     * Seeks the specified message queue to the given timestamp.
-     * If no offset is found for the timestamp, falls back to the beginning of the queue.
-     *
-     * @param queue     the message queue to seek
-     * @param timestamp the target timestamp in milliseconds
-     */
-    protected void seek(MessageQueue queue, long timestamp) {
-        try {
-            doSeek(queue, timestamp);
-        } catch (MQClientException e) {
-            logger.error("Failed to seek queue {}@{}@{} offset to timestamp {}",
-                    queue.getQueueId(), queue.getTopic(), queue.getBrokerName(), timestamp, e);
-        }
-    }
-
-    /**
-     * Implementation-specific seek operation.
-     *
-     * @param queue     target message queue
-     * @param timestamp target time in milliseconds
-     * @throws MQClientException if seek operation fails
-     */
-    protected abstract void doSeek(MessageQueue queue, long timestamp) throws MQClientException;
 
     /**
      * Message consumption hook that tracks the latest message timestamp per topic.
@@ -155,6 +100,95 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
                     oldTime = last.get();
                 }
             }
+        }
+    }
+
+    /**
+     * Message queue position tracker with topic-specific operations.
+     *
+     * <p>Implementations provide queue discovery and offset adjustment capabilities.
+     */
+    protected interface Seeker {
+
+        /**
+         * Checks if the current instance is paused.
+         *
+         * @return true if paused, false otherwise
+         */
+        default boolean isPaused() {
+            return false;
+        }
+
+        /**
+         * Pauses operations of this instance.
+         */
+        default void pause() {
+
+        }
+
+        /**
+         * Resumes previously paused operations.
+         */
+        default void resume() {
+
+        }
+
+        /**
+         * Gets the network address associated with this instance.
+         *
+         * @return address string (format depends on implementation)
+         */
+        String getAddress();
+
+        /**
+         * @return comma-separated topics this seeker manages
+         */
+        Set<String> getTopics();
+
+        default void rebalance() {
+
+        }
+
+        /**
+         * Retrieves all message queues for a topic.
+         *
+         * @param topic target topic (non-null)
+         * @return active message queues (never null, may be empty)
+         * @throws MQClientException if queue discovery fails
+         */
+        Collection<MessageQueue> fetchQueues(String topic) throws MQClientException;
+
+        /**
+         * Adjusts consumption offset to specified timestamp.
+         *
+         * @param queue     target queue (non-null)
+         * @param timestamp target position (milliseconds since epoch)
+         * @throws MQClientException if offset adjustment fails
+         */
+        void seek(MessageQueue queue, long timestamp) throws MQClientException;
+
+        /**
+         * Batch adjusts offsets for all managed topics using timestamp function.
+         *
+         * @param timestampFunc function providing target timestamp per topic (non-null)
+         */
+        default void seek(Function<String, Long> timestampFunc) {
+            getTopics().forEach(topic -> {
+                long timestamp = timestampFunc.apply(topic);
+                try {
+                    Collection<MessageQueue> queues = fetchQueues(topic);
+                    for (MessageQueue queue : queues) {
+                        try {
+                            seek(queue, timestamp);
+                        } catch (MQClientException e) {
+                            logger.error("Failed to seek queue {}@{}@{} offset at {} to timestamp {}",
+                                    queue.getQueueId(), queue.getTopic(), queue.getBrokerName(), getAddress(), timestamp, e);
+                        }
+                    }
+                } catch (MQClientException e) {
+                    logger.error("Failed to seek topic {} offset at {} to timestamp {}", topic, getAddress(), timestamp, e);
+                }
+            });
         }
     }
 }

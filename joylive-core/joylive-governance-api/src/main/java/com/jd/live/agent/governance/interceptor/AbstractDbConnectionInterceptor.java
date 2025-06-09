@@ -126,7 +126,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             }
             LiveDatabase master = policy.getMaster(address.getNodes());
             if (master != null && !master.contains(address.getNodes())) {
-                ClusterAddress newAddress = new ClusterAddress(master.getPrimaryAddress());
+                ClusterAddress newAddress = createAddress(master.getPrimaryAddress());
                 // Close connection to reconnect to the new master address
                 cons.forEach(c -> {
                     if (!c.getAddress().getNewAddress().equals(newAddress)) {
@@ -135,6 +135,10 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                 });
             }
         });
+    }
+
+    protected ClusterAddress createAddress(String address) {
+        return new ClusterAddress(address);
     }
 
     protected abstract void redirectTo(C connection, ClusterAddress address);

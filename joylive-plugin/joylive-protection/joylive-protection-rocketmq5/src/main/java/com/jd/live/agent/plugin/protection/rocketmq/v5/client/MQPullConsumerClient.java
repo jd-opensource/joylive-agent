@@ -22,10 +22,11 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.remoting.RPCHook;
 
 import java.util.Collection;
+import java.util.Set;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
@@ -33,13 +34,11 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.s
 @Deprecated
 public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPullConsumer> {
 
-    private final DefaultMQPullConsumerImpl consumerImpl;
+    private static final String FIELD_CONSUMER_IMPL = "defaultMQPullConsumerImpl";
 
     public MQPullConsumerClient(DefaultMQPullConsumer consumer, ClusterRedirect address) {
         super(consumer, address);
-        this.consumerImpl = getQuietly(consumer, "defaultMQPullConsumerImpl");
-        this.rebalanceImpl = getQuietly(consumerImpl, "rebalanceImpl");
-        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
+        addMessageHook(getQuietly(consumer, FIELD_CONSUMER_IMPL));
     }
 
     @Override
@@ -49,42 +48,97 @@ public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPull
 
     @Override
     protected void doStart() throws MQClientException {
-        reset();
+        // reset to restart
+        Seeker seeker = reset();
         target.start();
-        seek();
+        seek(seeker);
+
     }
 
-    @Override
-    protected Collection<MessageQueue> doFetchQueues(String topic) throws MQClientException {
-        return target.fetchSubscribeMessageQueues(topic);
+    /**
+     * Registers timestamp tracking hook on pull consumer.
+     */
+    private void addMessageHook(DefaultMQPullConsumerImpl consumerImpl) {
+        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
     }
 
-    @Override
-    protected void doSeek(MessageQueue queue, long timestamp) throws MQClientException {
-        target.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
-    }
-
-    private void reset() {
-        // reset state
-        setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
-        setValue(consumerImpl, "pullAPIWrapper", null);
+    /**
+     * Resets pull consumer while maintaining subscriptions.
+     *
+     * @return new seeker with original subscriptions
+     */
+    private Seeker reset() {
+        // capture topics
+        DefaultMQPullConsumerImpl oldConsumerImpl = getQuietly(target, FIELD_CONSUMER_IMPL);
         // reset offset store
-        resetOffsetStore();
+        resetOffsetStore(oldConsumerImpl);
+        // recreate consumer impl
+        RPCHook oldRpcHook = getQuietly(oldConsumerImpl, FIELD_RPC_HOOK);
+        DefaultMQPullConsumerImpl newConsumerImpl = new DefaultMQPullConsumerImpl(target, oldRpcHook);
+        newConsumerImpl.getRebalanceImpl().getSubscriptionInner().putAll(oldConsumerImpl.getRebalanceImpl().getSubscriptionInner());
+        addMessageHook(newConsumerImpl);
+        setValue(target, FIELD_CONSUMER_IMPL, newConsumerImpl);
+
+        return new PullConsumerSeeker(newConsumerImpl);
     }
 
-    private void resetOffsetStore() {
+    /**
+     * Resets the offset store for the specified consumer implementation.
+     *
+     * @param consumerImpl the push consumer implementation to reset (non-null)
+     */
+    private void resetOffsetStore(DefaultMQPullConsumerImpl consumerImpl) {
+        // reset offset store
         OffsetStore offsetStore = consumerImpl.getOffsetStore();
         if (offsetStore != null) {
-            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, "mQClientFactory");
-            MQClientInstance mQClientFactory2 = getQuietly(consumerImpl, "mQClientFactory");
+            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, FIELD_CLIENT_FACTORY);
+            MQClientInstance mQClientFactory2 = getQuietly(consumerImpl, FIELD_CLIENT_FACTORY);
             if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
                 // inner offset store
-                setValue(target, "offsetStore", null);
+                setValue(target, FIELD_OFFSET_STORE, null);
             } else {
                 // custom offset store
                 RebalanceImpl rebalance = consumerImpl.getRebalanceImpl();
                 rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
             }
+        }
+    }
+
+    /**
+     * Pull consumer implementation of {@link Seeker}.
+     */
+    private static class PullConsumerSeeker implements Seeker {
+        private final DefaultMQPullConsumerImpl consumerImpl;
+        private final RebalanceImpl rebalanceImpl;
+
+        PullConsumerSeeker(DefaultMQPullConsumerImpl consumerImpl) {
+            this.consumerImpl = consumerImpl;
+            this.rebalanceImpl = consumerImpl.getRebalanceImpl();
+        }
+
+        @Override
+        public String getAddress() {
+            return consumerImpl.getDefaultMQPullConsumer().getNamesrvAddr();
+        }
+
+        @Override
+        public Set<String> getTopics() {
+            return rebalanceImpl.getSubscriptionInner().keySet();
+        }
+
+        @Override
+        public void rebalance() {
+            rebalanceImpl.doRebalance(false);
+        }
+
+        @Override
+        public Collection<MessageQueue> fetchQueues(String topic) throws MQClientException {
+            return consumerImpl.fetchSubscribeMessageQueues(topic);
+        }
+
+        @Override
+        public void seek(MessageQueue queue, long timestamp) throws MQClientException {
+            consumerImpl.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
         }
     }
 }

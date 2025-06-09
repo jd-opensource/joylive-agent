@@ -30,6 +30,7 @@ import org.apache.rocketmq.client.ClientConfig;
 
 import static com.jd.live.agent.core.util.StringUtils.CHAR_SEMICOLON;
 import static com.jd.live.agent.core.util.StringUtils.join;
+import static com.jd.live.agent.plugin.protection.rocketmq.v4.client.AbstractMQClient.TYPE_ROCKETMQ;
 
 /**
  * AbstractMQInterceptor
@@ -69,7 +70,7 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
             DbResult oldDb = ctx.getAttribute(ATTR_OLD_ADDRESS);
             String oldAddress = oldDb != null ? oldDb.getOldAddress() : target.getNamesrvAddr();
             String newAddress = oldDb != null ? oldDb.getNewAddress() : oldAddress;
-            addConnection(createClient(target, new ClusterRedirect(oldAddress, newAddress)));
+            addConnection(createClient(target, new ClusterRedirect(TYPE_ROCKETMQ, oldAddress, newAddress)));
             // Avoid missing events caused by synchronous changes
             DbResult newDb = getMaster(oldAddress);
             if (isChanged(oldDb, newDb)) {
@@ -81,6 +82,11 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     @Override
     public void onExit(ExecutableContext ctx) {
         ctx.unlock();
+    }
+
+    @Override
+    protected ClusterAddress createAddress(String address) {
+        return new ClusterAddress(TYPE_ROCKETMQ, address);
     }
 
     @Override

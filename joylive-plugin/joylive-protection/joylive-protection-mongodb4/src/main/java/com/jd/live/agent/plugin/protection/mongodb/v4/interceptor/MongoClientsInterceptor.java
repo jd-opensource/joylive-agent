@@ -78,6 +78,11 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
     }
 
     @Override
+    protected ClusterAddress createAddress(String address) {
+        return new ClusterAddress("mongodb", address);
+    }
+
+    @Override
     protected void redirectTo(LiveMongoClient client, ClusterAddress address) {
         client.reconnect(address);
         ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);

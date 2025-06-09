@@ -34,6 +34,10 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQClient.class);
 
+    protected static final String FIELD_RPC_HOOK = "rpcHook";
+    protected static final String FIELD_TRACE_DISPATCHER = "traceDispatcher";
+    public static final String TYPE_ROCKETMQ = "rocketmq";
+
     protected final T target;
 
     @Getter
@@ -51,6 +55,8 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
         closed = true;
         doClose();
     }
+
+    protected abstract String getType();
 
     /**
      * Implementation-specific resource cleanup.
@@ -73,17 +79,18 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
         if (closed) {
             return;
         }
+        logger.info("Try redirecting the rocketmq {} connection from {} to {}", getType(), address.getOldAddress(), newAddress);
         this.address = address.newAddress(newAddress);
-        logger.info("Try closing the rocketmq {}", target.getNamesrvAddr());
+        logger.info("Try closing the rocketmq {} connection {}", getType(), target.getNamesrvAddr());
         doClose();
-        logger.info("Success closing the rocketmq {}", target.getNamesrvAddr());
+        logger.info("Success closing the rocketmq {} connection {}", getType(), target.getNamesrvAddr());
         try {
-            logger.info("Try reconnecting to rocketmq {}", newAddress);
+            logger.info("Try connecting rocketmq {} to {}", getType(), newAddress);
             target.setNamesrvAddr(newAddress.getAddress());
             doStart();
-            logger.info("Success reconnecting to rocketmq {}", newAddress);
+            logger.info("Success connecting rocketmq {} to {}", getType(), newAddress);
         } catch (Throwable e) {
-            logger.error("Failed to reconnect to rocketmq {}", newAddress, e);
+            logger.error("Failed to reconnect rocketmq {} to {}", getType(), newAddress, e);
         }
     }
 }

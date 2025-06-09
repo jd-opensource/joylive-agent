@@ -20,17 +20,14 @@ import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
 import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultLitePullConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.client.trace.TraceDispatcher;
-import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
-import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.remoting.RPCHook;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Set;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
@@ -41,13 +38,11 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.s
  */
 public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLitePullConsumer> {
 
-    private final DefaultLitePullConsumerImpl consumerImpl;
+    private static final String FIELD_CONSUMER_IMPL = "defaultLitePullConsumerImpl";
 
     public LitePullConsumerClient(DefaultLitePullConsumer consumer, ClusterRedirect address) {
         super(consumer, address);
-        this.consumerImpl = getQuietly(consumer, "defaultLitePullConsumerImpl");
-        this.rebalanceImpl = getQuietly(consumerImpl, "rebalanceImpl");
-        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
+        addMessageHook(getQuietly(consumer, FIELD_CONSUMER_IMPL));
     }
 
     @Override
@@ -58,67 +53,98 @@ public class LitePullConsumerClient extends AbstractMQConsumerClient<DefaultLite
     @Override
     protected void doStart() throws MQClientException {
         // reset to restart
-        reset();
+        // reset to restart
+        Seeker seeker = reset();
         target.start();
-        seek();
+        seek(seeker);
     }
 
-    @Override
-    protected Collection<MessageQueue> doFetchQueues(String topic) throws MQClientException {
-        return target.fetchMessageQueues(topic);
+    /**
+     * Adds timestamp tracking hook to consumer.
+     */
+    private void addMessageHook(DefaultLitePullConsumerImpl consumerImpl) {
+        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
     }
 
-    @Override
-    protected void doSeek(MessageQueue queue, long timestamp) throws MQClientException {
-        Long offset = target.offsetForTimestamp(queue, timestamp);
-        if (offset != null) {
-            target.seek(queue, offset);
-        } else {
-            target.seekToBegin(queue);
-        }
-    }
-
-    private void reset() {
-        // reset state
-        setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
-        setValue(consumerImpl, "pullAPIWrapper", null);
-        // reset trace
-        resetTrace();
+    /**
+     * Recreates consumer while preserving subscriptions.
+     *
+     * @return new seeker with preserved state
+     */
+    private Seeker reset() {
+        // capture topics
+        DefaultLitePullConsumerImpl oldConsumerImpl = getQuietly(target, FIELD_CONSUMER_IMPL);
+        RebalanceImpl oldRebalanceImpl = getQuietly(oldConsumerImpl, FIELD_REBALANCE_IMPL);
         // reset offset store
-        resetOffsetStore();
+        resetOffsetStore(oldConsumerImpl, oldRebalanceImpl);
+        // recreate consumer impl
+        RPCHook oldRpcHook = getQuietly(oldConsumerImpl, FIELD_RPC_HOOK);
+        DefaultLitePullConsumerImpl newConsumerImpl = new DefaultLitePullConsumerImpl(target, oldRpcHook);
+        RebalanceImpl newRebalanceImpl = getQuietly(newConsumerImpl, FIELD_REBALANCE_IMPL);
+        newRebalanceImpl.getSubscriptionInner().putAll(oldRebalanceImpl.getSubscriptionInner());
+        addMessageHook(newConsumerImpl);
+        setValue(target, FIELD_CONSUMER_IMPL, newConsumerImpl);
+        // trace dispatcher will be recreated in start method.
+        return new LitePullConsumerSeeker(newConsumerImpl, newRebalanceImpl);
     }
 
-    private void resetTrace() {
-        TraceDispatcher dispatcher = target.getTraceDispatcher();
-        if (dispatcher != null) {
-            List<ConsumeMessageHook> hooks = getQuietly(consumerImpl, "consumeMessageHookList");
-            for (int i = hooks.size() - 1; i >= 0; i--) {
-                ConsumeMessageHook hook = hooks.get(i);
-                if (hook instanceof ConsumeMessageTraceHookImpl) {
-                    TraceDispatcher traceDispatcher = getQuietly(hook, "traceDispatcher");
-                    if (dispatcher == traceDispatcher) {
-                        hooks.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    private void resetOffsetStore() {
+    /**
+     * Resets the offset store for the specified consumer implementation.
+     *
+     * @param consumerImpl the push consumer implementation to reset (non-null)
+     */
+    private void resetOffsetStore(DefaultLitePullConsumerImpl consumerImpl, RebalanceImpl rebalanceImpl) {
         // reset offset store
         OffsetStore offsetStore = consumerImpl.getOffsetStore();
         if (offsetStore != null) {
-            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, "mQClientFactory");
-            MQClientInstance mQClientFactory2 = getQuietly(consumerImpl, "mQClientFactory");
+            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, FIELD_CLIENT_FACTORY);
+            MQClientInstance mQClientFactory2 = getQuietly(consumerImpl, FIELD_CLIENT_FACTORY);
             if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
                 // inner offset store
-                setValue(target, "offsetStore", null);
+                setValue(target, FIELD_OFFSET_STORE, null);
             } else {
                 // custom offset store
-                RebalanceImpl rebalance = getQuietly(consumerImpl, "rebalanceImpl");
-                rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
+                rebalanceImpl.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
             }
+        }
+    }
+
+    /**
+     * Seeker implementation for lite pull consumer.
+     */
+    private static class LitePullConsumerSeeker implements Seeker {
+
+        private final DefaultLitePullConsumerImpl consumerImpl;
+        private final RebalanceImpl rebalanceImpl;
+
+        LitePullConsumerSeeker(DefaultLitePullConsumerImpl consumerImpl, RebalanceImpl rebalanceImpl) {
+            this.consumerImpl = consumerImpl;
+            this.rebalanceImpl = rebalanceImpl;
+        }
+
+        @Override
+        public String getAddress() {
+            return consumerImpl.getDefaultLitePullConsumer().getNamesrvAddr();
+        }
+
+        @Override
+        public Set<String> getTopics() {
+            return rebalanceImpl.getSubscriptionInner().keySet();
+        }
+
+        @Override
+        public void rebalance() {
+            rebalanceImpl.doRebalance(false);
+        }
+
+        @Override
+        public Collection<MessageQueue> fetchQueues(String topic) throws MQClientException {
+            return consumerImpl.fetchMessageQueues(topic);
+        }
+
+        @Override
+        public void seek(MessageQueue queue, long timestamp) throws MQClientException {
+            consumerImpl.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
         }
     }
 }

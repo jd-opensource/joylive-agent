@@ -15,28 +15,33 @@
  */
 package com.jd.live.agent.plugin.protection.rocketmq.v5.client;
 
-import com.google.common.base.Optional;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
-import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
-import org.apache.rocketmq.client.latency.MQFaultStrategy;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.common.ServiceState;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.TraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.EndTransactionTraceHookImpl;
+import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
+import org.apache.rocketmq.remoting.RPCHook;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.List;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 public class ProducerClient extends AbstractMQClient<DefaultMQProducer> {
 
-    private final DefaultMQProducerImpl producerImpl;
+    private static final String FIELD_PRODUCER_IMPL = "defaultMQProducerImpl";
 
     public ProducerClient(DefaultMQProducer producer, ClusterRedirect address) {
         super(producer, address);
-        this.producerImpl = getQuietly(producer, "defaultMQProducerImpl");
+    }
+
+    @Override
+    protected String getType() {
+        return "producer";
     }
 
     @Override
@@ -47,32 +52,58 @@ public class ProducerClient extends AbstractMQClient<DefaultMQProducer> {
     @Override
     protected void doStart() throws MQClientException {
         // reset to restart
-        setValue(producerImpl, "serviceState", ServiceState.CREATE_JUST);
-        setValue(producerImpl, "mqFaultStrategy", new MQFaultStrategy(target.cloneClientConfig(), this::resolve, this::detect));
+        reset();
         target.start();
     }
 
-    private boolean detect(String endpoint, long timeoutMillis) {
-        Optional<String> candidateTopic;
-        ConcurrentMap<String, TopicPublishInfo> table = producerImpl.getTopicPublishInfoTable();
-        if (table.isEmpty()) {
-            candidateTopic = Optional.absent();
-        } else {
-            candidateTopic = Optional.of(table.keySet().iterator().next());
-        }
-        if (!candidateTopic.isPresent()) {
-            return false;
-        }
-        try {
-            MessageQueue mq = new MessageQueue(candidateTopic.get(), null, 0);
-            producerImpl.getMqClientFactory().getMQClientAPIImpl().getMaxOffset(endpoint, mq, timeoutMillis);
-            return true;
-        } catch (Exception e) {
-            return false;
+    /**
+     * Replaces producer instance while keeping RPC and tracing intact.
+     */
+    protected void reset() {
+        DefaultMQProducerImpl producerImpl = getQuietly(target, FIELD_PRODUCER_IMPL);
+        RPCHook rpcHook = getQuietly(producerImpl, FIELD_RPC_HOOK);
+        producerImpl = new DefaultMQProducerImpl(target, rpcHook);
+        setValue(target, FIELD_PRODUCER_IMPL, producerImpl);
+        resetTrace(rpcHook, producerImpl);
+    }
+
+    /**
+     * Replaces the trace dispatcher if it exists and is of type AsyncTraceDispatcher.
+     *
+     * @param rpcHook      original hook to preserve
+     * @param producerImpl new producer instance to associate
+     */
+    private void resetTrace(RPCHook rpcHook, DefaultMQProducerImpl producerImpl) {
+        TraceDispatcher dispatcher = target.getTraceDispatcher();
+        if (dispatcher instanceof AsyncTraceDispatcher) {
+            // create new trace dispatcher
+            setValue(target, FIELD_TRACE_DISPATCHER, createTraceDispatcher((AsyncTraceDispatcher) dispatcher, rpcHook, producerImpl));
         }
     }
 
-    private String resolve(String name) {
-        return producerImpl.getMqClientFactory().findBrokerAddressInPublish(name);
+    /**
+     * Creates a new trace dispatcher instance and migrates tracing hooks.
+     *
+     * @param dispatcher   old dispatcher instance (for configuration)
+     * @param rpcHook      original hook to preserve
+     * @param producerImpl new producer to associate
+     * @return new AsyncTraceDispatcher instance
+     */
+    private TraceDispatcher createTraceDispatcher(AsyncTraceDispatcher dispatcher, RPCHook rpcHook, DefaultMQProducerImpl producerImpl) {
+        AsyncTraceDispatcher result = new AsyncTraceDispatcher(target.getProducerGroup(), TraceDispatcher.Type.PRODUCE, dispatcher.getTraceTopicName(), rpcHook);
+        result.setHostProducer(producerImpl);
+        List<SendMessageHook> hooks = getQuietly(producerImpl, "sendMessageHookList");
+        for (int i = hooks.size() - 1; i >= 0; i--) {
+            SendMessageHook hook = hooks.get(i);
+            if (hook instanceof SendMessageTraceHookImpl) {
+                TraceDispatcher traceDispatcher = getQuietly(hook, FIELD_TRACE_DISPATCHER);
+                if (dispatcher == traceDispatcher) {
+                    hooks.remove(i);
+                }
+            }
+        }
+        producerImpl.registerSendMessageHook(new SendMessageTraceHookImpl(dispatcher));
+        producerImpl.registerEndTransactionHook(new EndTransactionTraceHookImpl(dispatcher));
+        return result;
     }
 }
