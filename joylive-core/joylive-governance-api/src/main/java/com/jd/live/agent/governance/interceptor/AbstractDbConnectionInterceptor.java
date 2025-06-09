@@ -31,9 +31,7 @@ import com.jd.live.agent.governance.util.network.ClusterAddress;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
@@ -69,6 +67,8 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
 
     protected final Map<ClusterAddress, List<C>> connections = new ConcurrentHashMap<>();
 
+    protected final Map<C, FailoverTask> tasks = new ConcurrentHashMap<>(128);
+
     protected final Consumer<C> closer = c -> {
         List<C> values = connections.get(c.getAddress().getNewAddress());
         if (values != null) {
@@ -90,8 +90,10 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * @return DbResult with master info, or null if no master available
      */
     protected DbResult getMaster(String address) {
+        address = address == null ? null : address.toLowerCase();
         GovernancePolicy policy = policySupplier.getPolicy();
         String[] nodes = toList(toList(splitList(address), URI::parse), URI::getAddress).toArray(new String[0]);
+        // get master is case sensitive
         LiveDatabase database = policy.getMaster(nodes);
         return database == null ? null : new DbResult(address, nodes, database);
     }
@@ -144,11 +146,21 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             }
             LiveDatabase master = policy.getMaster(address.getNodes());
             if (master != null && !master.contains(address.getNodes())) {
+                // primary address is lowercase.
                 ClusterAddress newAddress = createAddress(master.getPrimaryAddress());
                 // Close connection to reconnect to the new master address
                 cons.forEach(c -> {
                     if (!c.getAddress().getNewAddress().equals(newAddress)) {
-                        timer.delay("redirect-connection", getRetryInterval(100, 2000), () -> redirectTo(c, newAddress));
+                        // avoid async concurrently updating.
+                        while (!c.isClosed()) {
+                            FailoverTask newTask = new FailoverTask(c, newAddress);
+                            FailoverTask oldTask = tasks.putIfAbsent(c, newTask);
+                            if (oldTask == null) {
+                                timer.delay("redirect-connection", getRetryInterval(100, 2000), newTask);
+                            } else if (oldTask.add(newAddress)) {
+                                break;
+                            }
+                        }
                     }
                 });
             }
@@ -195,6 +207,56 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             return master != null && master.contains(oldNodes);
         }
 
+    }
+
+    /**
+     * A background task that handles connection failover by redirecting to alternate cluster addresses.
+     * Thread-safe operations are guarded by the internal mutex lock.
+     */
+    protected class FailoverTask implements Runnable {
+
+        protected final C connection;
+
+        protected final Deque<ClusterAddress> queue = new LinkedList<>();
+
+        protected final Object mutex = new Object();
+
+        protected volatile boolean closed;
+
+        public FailoverTask(C connection, ClusterAddress address) {
+            this.connection = connection;
+            queue.add(address);
+        }
+
+        /**
+         * Adds a new failover target address to the queue.
+         *
+         * @param address the alternate address to add
+         * @return true if added successfully, false if task was already closed
+         */
+        public boolean add(ClusterAddress address) {
+            synchronized (mutex) {
+                if (closed) {
+                    return false;
+                }
+                queue.add(address);
+            }
+            return true;
+        }
+
+        @Override
+        public void run() {
+            synchronized (mutex) {
+                ClusterAddress address = queue.getLast();
+                queue.clear();
+                try {
+                    redirectTo(connection, address);
+                } finally {
+                    closed = true;
+                    tasks.remove(connection);
+                }
+            }
+        }
     }
 
 }

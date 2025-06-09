@@ -34,4 +34,13 @@ public interface DbConnection extends AutoCloseable {
      * @return cluster redirect configuration
      */
     ClusterRedirect getAddress();
+
+    /**
+     * Checks if the connection is in a closed state.
+     *
+     * @return true if the connection is closed, false otherwise
+     */
+    default boolean isClosed() {
+        return false;
+    }
 }

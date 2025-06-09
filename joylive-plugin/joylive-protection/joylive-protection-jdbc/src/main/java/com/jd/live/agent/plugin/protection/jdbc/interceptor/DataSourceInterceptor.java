@@ -29,8 +29,6 @@ import com.jd.live.agent.plugin.protection.jdbc.sql.LiveConnection;
 
 import java.sql.Connection;
 
-import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect;
-
 /**
  * DataSourceInterceptor
  */
@@ -44,7 +42,7 @@ public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveC
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Connection connection = mc.getResult();
-        // After driver interceptor.
+        // address is set by driver interceptor.
         ClusterRedirect address = ClusterRedirect.getAndRemove();
         if (address != null) {
             mc.setResult(createConnection(() -> new LiveConnection(connection, address, closer)));
@@ -53,7 +51,8 @@ public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveC
 
     @Override
     protected void redirectTo(LiveConnection connection, ClusterAddress address) {
+        // Close and remove connection from pool.
         Close.instance().close(connection);
-        redirect(connection.getAddress().newAddress(address), consumer);
+        ClusterRedirect.redirect(connection.getAddress().newAddress(address), consumer);
     }
 }

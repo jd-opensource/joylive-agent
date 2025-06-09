@@ -17,7 +17,10 @@ package com.jd.live.agent.plugin.protection.mongodb.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
@@ -32,10 +35,12 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.connection.ClusterSettings;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.invokeOrigin;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.CHAR_SEMICOLON;
 import static com.jd.live.agent.core.util.StringUtils.join;
 
 /**
@@ -43,8 +48,36 @@ import static com.jd.live.agent.core.util.StringUtils.join;
  */
 public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<LiveMongoClient> {
 
+    private static final Logger logger = LoggerFactory.getLogger(MongoClientsInterceptor.class);
+
     public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
         super(policySupplier, publisher, timer);
+    }
+
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        // redirect to new address
+        Object[] arguments = ctx.getArguments();
+        MongoClientSettings settings = (MongoClientSettings) arguments[0];
+        ClusterSettings cluster = settings.getClusterSettings();
+        String srvHost = cluster.getSrvHost();
+        String address = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
+        DbResult result = getMaster(address);
+        if (result != null && !result.isMaster()) {
+            List<String> masterAddress = result.getMaster().getAddresses();
+            result.setNewAddress(join(masterAddress, CHAR_SEMICOLON));
+            ctx.setAttribute(ATTR_OLD_ADDRESS, result);
+            MongoClientSettings.Builder builder = MongoClientSettings.builder(settings);
+            builder.applyToClusterSettings(b -> {
+                if (srvHost != null && !srvHost.isEmpty()) {
+                    b.srvHost(result.getNewAddress());
+                } else {
+                    b.hosts(toList(masterAddress, this::toServerAddress));
+                }
+            });
+            arguments[0] = builder.build();
+            logger.info("Try reconnecting to mongodb {}", result.getNewAddress());
+        }
     }
 
     @Override
@@ -54,28 +87,34 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         MongoClientSettings settings = mc.getArgument(0);
         MongoDriverInformation driverInfo = mc.getArgument(1);
         ClusterSettings cluster = settings.getClusterSettings();
+        // source address        
         String srvHost = cluster.getSrvHost();
-        String address = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
-        if (address != null && !address.isEmpty()) {
-            ClusterRedirect redirect = new ClusterRedirect(address);
-            Method method = mc.getMethod();
-            mc.setResult(createConnection(() -> new LiveMongoClient(client, redirect, addr -> {
-                try {
-                    MongoClientSettings newSettings = MongoClientSettings.builder(settings)
-                            .applyToClusterSettings(builder -> {
-                                if (srvHost != null && !srvHost.isEmpty()) {
-                                    builder.srvHost(addr.getAddress());
-                                } else {
-                                    builder.hosts(newAddress(addr.getNodes()));
-                                }
-                            }).build();
-                    return (MongoClient) invokeOrigin(null, method, new Object[]{newSettings, driverInfo});
-                } catch (Exception ignore) {
-                    // Without exception.
-                    return null;
-                }
-            }, closer)));
-        }
+        String srcAddress = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
+        // redirected address
+        DbResult result = ctx.getAttribute(ATTR_OLD_ADDRESS);
+        String oldAddress = result != null ? result.getOldAddress() : srcAddress;
+        String newAddress = result != null ? result.getNewAddress() : oldAddress;
+
+        ClusterRedirect redirect = new ClusterRedirect(oldAddress, newAddress);
+        ClusterRedirect.redirect(redirect, consumer);
+
+        Method method = mc.getMethod();
+        mc.setResult(createConnection(() -> new LiveMongoClient(client, redirect, addr -> {
+            try {
+                MongoClientSettings newSettings = MongoClientSettings.builder(settings)
+                        .applyToClusterSettings(builder -> {
+                            if (srvHost != null && !srvHost.isEmpty()) {
+                                builder.srvHost(addr.getAddress());
+                            } else {
+                                builder.hosts(toList(Arrays.asList(addr.getNodes()), this::toServerAddress));
+                            }
+                        }).build();
+                return (MongoClient) invokeOrigin(null, method, new Object[]{newSettings, driverInfo});
+            } catch (Exception ignore) {
+                // Without exception.
+                return null;
+            }
+        }, closer)));
     }
 
     @Override
@@ -89,13 +128,8 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
     }
 
-    private List<ServerAddress> newAddress(String[] addresses) {
-        List<ServerAddress> result = new ArrayList<>(addresses.length);
-        for (String address : addresses) {
-            // the port will be parsed from the address.
-            result.add(new ServerAddress(address));
-        }
-        return result;
+    protected ServerAddress toServerAddress(String address) {
+        URI uri = URI.parse(address);
+        return new ServerAddress(uri.getHost(), uri.getPort());
     }
-
 }
