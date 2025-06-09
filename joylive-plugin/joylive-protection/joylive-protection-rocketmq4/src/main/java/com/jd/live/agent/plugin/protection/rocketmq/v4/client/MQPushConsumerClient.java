@@ -78,6 +78,7 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
     private void reset() {
         // reset state
         setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+        setValue(consumerImpl, "pullAPIWrapper", null);
         // reset trace
         resetTrace();
         // reset offset store

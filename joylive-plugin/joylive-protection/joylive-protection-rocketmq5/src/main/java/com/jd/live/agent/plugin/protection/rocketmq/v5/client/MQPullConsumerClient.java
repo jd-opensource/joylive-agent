@@ -67,6 +67,7 @@ public class MQPullConsumerClient extends AbstractMQConsumerClient<DefaultMQPull
     private void reset() {
         // reset state
         setValue(consumerImpl, "serviceState", ServiceState.CREATE_JUST);
+        setValue(consumerImpl, "pullAPIWrapper", null);
         // reset offset store
         resetOffsetStore();
     }
