@@ -26,7 +26,7 @@ public interface DbConnection extends AutoCloseable {
      * Default time offset (in milliseconds) for MQ message seeking.
      * Configurable via environment variable {@code MQ_SEEK_TIME_OFFSET}, defaults to 5 minutes.
      */
-    long MQ_SEEK_TIME_OFFSET = Converts.getLong(System.getenv("MQ_SEEK_TIME_OFFSET"), 5 * 60 * 1000L);
+    long MQ_SEEK_TIME_OFFSET = Converts.getLong(System.getenv("MQ_SEEK_TIME_OFFSET"), 60 * 1000L);
 
     /**
      * Gets the cluster address redirection information.

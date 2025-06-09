@@ -54,20 +54,20 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
      * Seeks all subscribed topics to current time minus {@code MQ_SEEK_TIME_OFFSET}.
      */
     protected void seek() {
-        long timestamp = System.currentTimeMillis() - MQ_SEEK_TIME_OFFSET;
-        rebalanceImpl.getSubscriptionInner().forEach((k, v) -> seek(k, getOrDefault(k, timestamp)));
+        rebalanceImpl.getSubscriptionInner().forEach((k, v) -> seek(k, getOrDefault(k, MQ_SEEK_TIME_OFFSET)));
     }
 
     /**
-     * Gets the stored timestamp for the specified topic, or returns the default value if not found.
+     * Retrieves the stored timestamp for the given topic.
+     * Returns current system time minus offset if topic not found.
      *
-     * @param topic     the topic to look up
-     * @param timestamp the default timestamp to return if topic is not found
-     * @return the stored timestamp for the topic, or the default timestamp if topic is not present
+     * @param topic  target topic to query (case-sensitive)
+     * @param offset value to subtract from the result (typically 0)
+     * @return stored timestamp minus offset, or current time minus offset if topic absent
      */
-    protected long getOrDefault(String topic, long timestamp) {
+    protected long getOrDefault(String topic, long offset) {
         AtomicLong value = timestamps.get(topic);
-        return value == null ? timestamp : value.get();
+        return (value == null ? System.currentTimeMillis() : value.get()) - offset;
     }
 
     /**
