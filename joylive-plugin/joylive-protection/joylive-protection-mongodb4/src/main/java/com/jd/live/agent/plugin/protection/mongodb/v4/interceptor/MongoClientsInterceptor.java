@@ -87,7 +87,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         MongoClientSettings settings = mc.getArgument(0);
         MongoDriverInformation driverInfo = mc.getArgument(1);
         ClusterSettings cluster = settings.getClusterSettings();
-        // source address        
+        // source address
         String srvHost = cluster.getSrvHost();
         String srcAddress = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
         // redirected address
