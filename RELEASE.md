@@ -3,7 +3,7 @@
 ## 1.8.0
 1. Refactored the registration module to better support multi-registration and multi-subscription
 2. Added support for Zookeeper master-slave cluster failover
-3. Added support for database master-slave cluster failover
+3. Added support for database protection and master-slave cluster failover
 4. Added support for RocketMQ master-slave cluster failover
 5. Added support for warming up dependencies when migrating traditional Spring Boot applications to microservices
 6. Added support for XMLPath and JavaPath to extract exception error codes for circuit breaking and retry
