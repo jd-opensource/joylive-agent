@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.db;
 
 import com.jd.live.agent.governance.db.as400.As400UrlParser;
+import com.jd.live.agent.governance.db.clickhouse.ClickhouselParser;
 import com.jd.live.agent.governance.db.db2.Db2UrlParser;
 import com.jd.live.agent.governance.db.dm.DMUrlParser;
 import com.jd.live.agent.governance.db.gaussdb.GaussDBUrlParser;
@@ -67,6 +68,7 @@ public class DbUrlTest {
         PARSERS.put("polardb", new PolarDBUrlParser());
         PARSERS.put("sybase", new SybaseUrlParser());
         PARSERS.put("dm", new DMUrlParser());
+        PARSERS.put("clickhouse", new ClickhouselParser());
     }
 
     @Test

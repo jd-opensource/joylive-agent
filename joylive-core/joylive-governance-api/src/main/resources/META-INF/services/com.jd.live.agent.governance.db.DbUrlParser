@@ -19,3 +19,4 @@ com.jd.live.agent.governance.db.goldendb.GoldenDBUrlParser
 com.jd.live.agent.governance.db.sqlite.SQLiteUrlParser
 com.jd.live.agent.governance.db.sybase.SybaseUrlParser
 com.jd.live.agent.governance.db.dm.DMUrlParser
+com.jd.live.agent.governance.db.clickhouse.ClickhouselParser
