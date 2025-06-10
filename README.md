@@ -8,7 +8,7 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
 
-<img src="docs/image/weixin.png" title="The QR code is valid until 2025/06/11" width="150" />
+<img src="docs/image/weixin.png" title="The QR code is valid until 2025/06/17" width="150" />
 
 English | [简体中文](./README-zh.md)
 
@@ -19,7 +19,7 @@ employs a micro-kernel extensible architecture's proxyless implementation,
 offering superior performance and resource efficiency compared to the sidecar pattern. 
 In addition to supporting conventional microservice governance features such as circuit breaking, rate limiting, and degradation, 
 it also facilitates swimlane governance and application multi-active traffic governance.
-Offers traffic governance plugins for Spring cloud hoxton/2020/2021/2022/2023/2024, Dubbo 2.6/2.7/3, SofaRpc, Rocketmq, and Kafka. 
+Offers traffic governance plugins for Spring cloud hoxton/2020/2021/2022/2023/2024/2025, Dubbo 2.6/2.7/3, SofaRpc, Rocketmq, and Kafka. 
 This enables existing java applications within enterprises to seamlessly integrate traffic governance capabilities without altering business code,
 supporting traffic scheduling in same-region, cross-region and multi-cloud multi-active scenarios, 
 thereby enhancing business stability and disaster recovery capabilities.
