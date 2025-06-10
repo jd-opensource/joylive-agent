@@ -50,6 +50,8 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
 
     private static final Logger logger = LoggerFactory.getLogger(MongoClientsInterceptor.class);
 
+    private static final String TYPE_MONGODB = "mongodb";
+
     public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
         super(policySupplier, publisher, timer);
     }
@@ -95,7 +97,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         String oldAddress = result != null ? result.getOldAddress() : srcAddress;
         String newAddress = result != null ? result.getNewAddress() : oldAddress;
 
-        ClusterRedirect redirect = new ClusterRedirect(oldAddress, newAddress);
+        ClusterRedirect redirect = new ClusterRedirect(TYPE_MONGODB, oldAddress, newAddress);
         ClusterRedirect.redirect(redirect, consumer);
 
         Method method = mc.getMethod();
@@ -119,7 +121,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
 
     @Override
     protected ClusterAddress createAddress(String address) {
-        return new ClusterAddress("mongodb", address);
+        return new ClusterAddress(TYPE_MONGODB, address);
     }
 
     @Override
