@@ -16,8 +16,20 @@
 package com.jd.live.agent.governance.db.jdts;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 import com.jd.live.agent.governance.db.sqlserver.SqlServerUrlParser;
 
 @Extension("jdts")
 public class JtdsUrlParser extends SqlServerUrlParser {
+
+    @Override
+    protected void parseType(DbUrlBuilder builder) {
+        String scheme = builder.getScheme();
+        if (scheme != null) {
+            int pos = scheme.lastIndexOf(':');
+            if (pos > 0) {
+                builder.type(scheme.substring(pos + 1).toLowerCase());
+            }
+        }
+    }
 }

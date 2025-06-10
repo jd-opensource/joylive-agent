@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.db.gbase.GBase8aUrlParser;
 import com.jd.live.agent.governance.db.gbase.GBase8sUrlParser;
 import com.jd.live.agent.governance.db.goldendb.GoldenDBUrlParser;
 import com.jd.live.agent.governance.db.h2.H2UrlParser;
+import com.jd.live.agent.governance.db.jdts.JtdsUrlParser;
 import com.jd.live.agent.governance.db.kingbase.KingBase8UrlParser;
 import com.jd.live.agent.governance.db.mariadb.MariadbUrlParser;
 import com.jd.live.agent.governance.db.mysql.MysqlUrlParser;
@@ -32,7 +33,6 @@ import com.jd.live.agent.governance.db.oracle.OracleUrlParser;
 import com.jd.live.agent.governance.db.polardb.PolarDBUrlParser;
 import com.jd.live.agent.governance.db.postgresql.PostgresqlUrlParser;
 import com.jd.live.agent.governance.db.sqlite.SQLiteUrlParser;
-import com.jd.live.agent.governance.db.jdts.JtdsUrlParser;
 import com.jd.live.agent.governance.db.sqlserver.SqlServerUrlParser;
 import com.jd.live.agent.governance.db.sybase.SybaseUrlParser;
 import org.junit.jupiter.api.Assertions;
@@ -74,6 +74,7 @@ public class DbUrlTest {
         DbUrl url = DbUrlParser.parse("jdbc:mysql://a:b@127.0.0.1:3306/test", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:mysql", url.getScheme());
+        Assertions.assertEquals("mysql", url.getType());
         Assertions.assertEquals("127.0.0.1:3306", url.getAddress());
         Assertions.assertEquals("test", url.getDatabase());
         Assertions.assertEquals("a", url.getUser());
@@ -94,6 +95,7 @@ public class DbUrlTest {
         DbUrl url = DbUrlParser.parse("jdbc:postgresql://127.0.0.1:1111/database", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:postgresql", url.getScheme());
+        Assertions.assertEquals("postgresql", url.getType());
         Assertions.assertEquals("127.0.0.1:1111", url.getAddress());
         Assertions.assertEquals("database", url.getDatabase());
         Assertions.assertEquals("jdbc:postgresql://127.0.0.1:1111/database", url.toString());
@@ -215,6 +217,7 @@ public class DbUrlTest {
         DbUrl url = DbUrlParser.parse("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433/database1", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:jtds:sqlserver", url.getScheme());
+        Assertions.assertEquals("sqlserver", url.getType());
         Assertions.assertEquals("[2001:db8:85a3::8a2e:370:7334]:1433", url.getAddress());
         Assertions.assertEquals("database1", url.getDatabase());
         Assertions.assertEquals("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433/database1", url.toString());
@@ -222,6 +225,7 @@ public class DbUrlTest {
         url = DbUrlParser.parse("jdbc:jtds:sybase://127.0.0.1:1001;databaseName=database1;ssl=request", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:jtds:sybase", url.getScheme());
+        Assertions.assertEquals("sybase", url.getType());
         Assertions.assertEquals("127.0.0.1:1001", url.getAddress());
         Assertions.assertEquals("database1", url.getDatabase());
         Assertions.assertEquals("jdbc:jtds:sybase://127.0.0.1:1001;databaseName=database1;ssl=request", url.toString());

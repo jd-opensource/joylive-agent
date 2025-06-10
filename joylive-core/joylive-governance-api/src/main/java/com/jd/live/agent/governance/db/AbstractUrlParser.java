@@ -31,11 +31,11 @@ import static com.jd.live.agent.core.util.StringUtils.split;
 public abstract class AbstractUrlParser implements DbUrlParser {
 
     @Override
-    public DbUrl parse(String url) {
+    public DbUrl parse(String type, String url) {
         if (url == null || url.isEmpty()) {
             return null;
         }
-        DbUrlBuilder builder = DbUrl.builder();
+        DbUrlBuilder builder = DbUrl.builder().type(type);
         parse(url, builder);
         return builder.build();
     }
@@ -57,6 +57,8 @@ public abstract class AbstractUrlParser implements DbUrlParser {
     protected void parse(String url, DbUrlBuilder builder) {
         url = parserParameter(url, builder);
         url = parserScheme(url, builder);
+        // fix type
+        parseType(builder);
         if (builder.getScheme() != null) {
             // Support for JDBC URL
             url = parsePath(url, builder);
@@ -140,6 +142,10 @@ public abstract class AbstractUrlParser implements DbUrlParser {
             url = url.substring(pos + 3);
         }
         return url;
+    }
+
+    protected void parseType(DbUrlBuilder builder) {
+
     }
 
     /**

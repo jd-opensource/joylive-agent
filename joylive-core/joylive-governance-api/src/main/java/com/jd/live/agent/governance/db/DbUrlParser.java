@@ -30,12 +30,13 @@ public interface DbUrlParser {
     String JDBC = "jdbc";
 
     /**
-     * Parses a database URL into structured form.
+     * Parses a database URL of specified type into structured form.
      *
+     * @param type database type/protocol (e.g., "mysql", "postgresql")
      * @param url the connection URL to parse
      * @return parsed DbUrl object, or null if invalid format
      */
-    DbUrl parse(String url);
+    DbUrl parse(String type, String url);
 
     /**
      * Default parser that delegates to protocol-specific implementations.
@@ -58,6 +59,6 @@ public interface DbUrlParser {
         String type = url.substring(pos1 + 1, pos2).toLowerCase();
         DbUrlParser parser = factory.apply(type);
         parser = parser == null ? factory.apply(TYPE_DEFAULT) : parser;
-        return parser == null ? null : parser.parse(url);
+        return parser == null ? null : parser.parse(type, url);
     }
 }

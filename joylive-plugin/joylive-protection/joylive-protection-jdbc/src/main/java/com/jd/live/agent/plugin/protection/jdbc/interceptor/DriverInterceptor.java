@@ -36,7 +36,9 @@ public class DriverInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DriverInterceptor.class);
 
-    private static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("Jdbc connection is redirected from {} to {} ", oldAddress, newAddress);
+    private static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) ->
+            logger.info("{} connection is redirected from {} to {} ",
+                    oldAddress.getType() == null ? "jdbc" : oldAddress.getType(), oldAddress, newAddress);
 
     private final PolicySupplier policySupplier;
 
@@ -64,7 +66,7 @@ public class DriverInterceptor extends InterceptorAdaptor {
                 dbUrl = dbUrl.address(newAddress);
                 arguments[0] = dbUrl.toString();
             }
-            redirect = new ClusterRedirect(oldAddress, newAddress);
+            redirect = new ClusterRedirect(dbUrl.getType(), oldAddress, newAddress);
             ClusterRedirect.redirect(redirect, consumer);
             // put it in thread local for datasource interceptor
             ClusterRedirect.setAddress(redirect);
