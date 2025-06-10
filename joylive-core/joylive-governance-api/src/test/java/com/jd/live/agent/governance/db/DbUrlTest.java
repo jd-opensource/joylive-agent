@@ -16,14 +16,26 @@
 package com.jd.live.agent.governance.db;
 
 import com.jd.live.agent.governance.db.as400.As400UrlParser;
+import com.jd.live.agent.governance.db.clickhouse.ClickhouselParser;
 import com.jd.live.agent.governance.db.db2.Db2UrlParser;
+import com.jd.live.agent.governance.db.dm.DMUrlParser;
+import com.jd.live.agent.governance.db.gaussdb.GaussDBUrlParser;
+import com.jd.live.agent.governance.db.gbase.GBase8aUrlParser;
+import com.jd.live.agent.governance.db.gbase.GBase8sUrlParser;
+import com.jd.live.agent.governance.db.goldendb.GoldenDBUrlParser;
 import com.jd.live.agent.governance.db.h2.H2UrlParser;
+import com.jd.live.agent.governance.db.jdts.JtdsUrlParser;
+import com.jd.live.agent.governance.db.kingbase.KingBase8UrlParser;
 import com.jd.live.agent.governance.db.mariadb.MariadbUrlParser;
 import com.jd.live.agent.governance.db.mysql.MysqlUrlParser;
+import com.jd.live.agent.governance.db.oceanbase.OceanBaseUrlParser;
+import com.jd.live.agent.governance.db.opengauss.OpenGaussUrlParser;
 import com.jd.live.agent.governance.db.oracle.OracleUrlParser;
+import com.jd.live.agent.governance.db.polardb.PolarDBUrlParser;
 import com.jd.live.agent.governance.db.postgresql.PostgresqlUrlParser;
-import com.jd.live.agent.governance.db.sqlserver.JtdsUrlParser;
+import com.jd.live.agent.governance.db.sqlite.SQLiteUrlParser;
 import com.jd.live.agent.governance.db.sqlserver.SqlServerUrlParser;
+import com.jd.live.agent.governance.db.sybase.SybaseUrlParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +47,7 @@ public class DbUrlTest {
     private static final Map<String, DbUrlParser> PARSERS = new HashMap<>();
 
     static {
+        PARSERS.put("default", new DefaultUrlParser());
         PARSERS.put("mysql", new MysqlUrlParser());
         PARSERS.put("mariadb", new MariadbUrlParser());
         PARSERS.put("postgresql", new PostgresqlUrlParser());
@@ -44,6 +57,18 @@ public class DbUrlTest {
         PARSERS.put("jtds", new JtdsUrlParser());
         PARSERS.put("as400", new As400UrlParser());
         PARSERS.put("db2", new Db2UrlParser());
+        PARSERS.put("oceanbase", new OceanBaseUrlParser());
+        PARSERS.put("sqlite", new SQLiteUrlParser());
+        PARSERS.put("gaussdb", new GaussDBUrlParser());
+        PARSERS.put("gbase", new GBase8aUrlParser());
+        PARSERS.put("gbasedbt-sqli", new GBase8sUrlParser());
+        PARSERS.put("goldendb", new GoldenDBUrlParser());
+        PARSERS.put("kingbase8", new KingBase8UrlParser());
+        PARSERS.put("opengauss", new OpenGaussUrlParser());
+        PARSERS.put("polardb", new PolarDBUrlParser());
+        PARSERS.put("sybase", new SybaseUrlParser());
+        PARSERS.put("dm", new DMUrlParser());
+        PARSERS.put("clickhouse", new ClickhouselParser());
     }
 
     @Test
@@ -51,6 +76,7 @@ public class DbUrlTest {
         DbUrl url = DbUrlParser.parse("jdbc:mysql://a:b@127.0.0.1:3306/test", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:mysql", url.getScheme());
+        Assertions.assertEquals("mysql", url.getType());
         Assertions.assertEquals("127.0.0.1:3306", url.getAddress());
         Assertions.assertEquals("test", url.getDatabase());
         Assertions.assertEquals("a", url.getUser());
@@ -71,6 +97,7 @@ public class DbUrlTest {
         DbUrl url = DbUrlParser.parse("jdbc:postgresql://127.0.0.1:1111/database", PARSERS::get);
         Assertions.assertNotNull(url);
         Assertions.assertEquals("jdbc:postgresql", url.getScheme());
+        Assertions.assertEquals("postgresql", url.getType());
         Assertions.assertEquals("127.0.0.1:1111", url.getAddress());
         Assertions.assertEquals("database", url.getDatabase());
         Assertions.assertEquals("jdbc:postgresql://127.0.0.1:1111/database", url.toString());
@@ -97,13 +124,6 @@ public class DbUrlTest {
         Assertions.assertEquals("[2001:db8:85a3::8a2e:370:7334]:1433", url.getAddress());
         Assertions.assertEquals("database1", url.getDatabase());
         Assertions.assertEquals("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433;DatabaseName=database1", url.toString());
-
-        url = DbUrlParser.parse("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433/database1", PARSERS::get);
-        Assertions.assertNotNull(url);
-        Assertions.assertEquals("jdbc:jtds:sqlserver", url.getScheme());
-        Assertions.assertEquals("[2001:db8:85a3::8a2e:370:7334]:1433", url.getAddress());
-        Assertions.assertEquals("database1", url.getDatabase());
-        Assertions.assertEquals("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433/database1", url.toString());
 
         url = DbUrlParser.parse("jdbc:sqlserver://localhost;encrypt=true;databaseName=AdventureWorks;integratedSecurity=true", PARSERS::get);
         Assertions.assertNotNull(url);
@@ -172,5 +192,54 @@ public class DbUrlTest {
 
         url = DbUrlParser.parse("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=127.0.0.1)(PORT=1521))(FAILOVER=on)(LOAD_BALANCE=off))(CONNECT_DATA= (SERVICE_NAME=orcl)))", PARSERS::get);
         Assertions.assertNull(url.getAddress());
+    }
+
+    @Test
+    void testOceanBase() {
+        DbUrl url = DbUrlParser.parse("jdbc:oceanbase:hamode://127.0.0.1:1001/test", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:oceanbase:hamode", url.getScheme());
+        Assertions.assertEquals("127.0.0.1:1001", url.getAddress());
+        Assertions.assertEquals("test", url.getDatabase());
+        Assertions.assertEquals("jdbc:oceanbase:hamode://127.0.0.1:1001/test", url.toString());
+    }
+
+    @Test
+    void testSQLite() {
+        DbUrl url = DbUrlParser.parse("jdbc:sqlite:C:/sqlite/db/chinook.db", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertNull(url.getAddress());
+        Assertions.assertEquals("chinook.db", url.getDatabase());
+        Assertions.assertEquals("C:/sqlite/db/chinook.db", url.getPath());
+        Assertions.assertEquals("jdbc:sqlite:C:/sqlite/db/chinook.db", url.toString());
+    }
+
+    @Test
+    void testJdts() {
+        DbUrl url = DbUrlParser.parse("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433/database1", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:jtds:sqlserver", url.getScheme());
+        Assertions.assertEquals("sqlserver", url.getType());
+        Assertions.assertEquals("[2001:db8:85a3::8a2e:370:7334]:1433", url.getAddress());
+        Assertions.assertEquals("database1", url.getDatabase());
+        Assertions.assertEquals("jdbc:jtds:sqlserver://[2001:db8:85a3::8a2e:370:7334]:1433/database1", url.toString());
+
+        url = DbUrlParser.parse("jdbc:jtds:sybase://127.0.0.1:1001;databaseName=database1;ssl=request", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:jtds:sybase", url.getScheme());
+        Assertions.assertEquals("sybase", url.getType());
+        Assertions.assertEquals("127.0.0.1:1001", url.getAddress());
+        Assertions.assertEquals("database1", url.getDatabase());
+        Assertions.assertEquals("jdbc:jtds:sybase://127.0.0.1:1001;databaseName=database1;ssl=request", url.toString());
+    }
+
+    @Test
+    void testSybase() {
+        DbUrl url = DbUrlParser.parse("jdbc:sybase:Tds:127.0.0.1:1001/database1?property_name=value", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:sybase:Tds", url.getScheme());
+        Assertions.assertEquals("127.0.0.1:1001", url.getAddress());
+        Assertions.assertEquals("database1", url.getDatabase());
+        Assertions.assertEquals("jdbc:sybase:Tds:127.0.0.1:1001/database1?property_name=value", url.toString());
     }
 }

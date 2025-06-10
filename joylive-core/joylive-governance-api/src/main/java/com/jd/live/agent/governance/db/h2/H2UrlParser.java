@@ -49,13 +49,7 @@ public class H2UrlParser extends AbstractUrlParser {
 
     @Override
     protected void parseDatabase(DbUrlBuilder builder) {
-        String path = builder.getPath();
-        int pos = path.lastIndexOf('/');
-        if (pos >= 0) {
-            builder.database(path.substring(pos + 1));
-        } else {
-            builder.database(path);
-        }
+       parseFileDatabase(builder);
     }
 
     @Override

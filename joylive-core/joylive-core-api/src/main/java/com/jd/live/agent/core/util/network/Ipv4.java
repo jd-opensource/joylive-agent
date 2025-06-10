@@ -83,7 +83,7 @@ public class Ipv4 {
     /**
      * Local host names
      */
-    protected static Set<String> LOCAL_HOST = new HashSet<>(5);
+    public static Set<String> LOCAL_HOST = new HashSet<>(5);
     /**
      * Preferred local IP
      */

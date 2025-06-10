@@ -70,6 +70,11 @@ public class LiveMongoClient implements MongoClient, DbConnection {
     }
 
     @Override
+    public boolean isClosed() {
+        return closed;
+    }
+
+    @Override
     public synchronized void close() {
         closed = true;
         delegate.close();
@@ -168,6 +173,13 @@ public class LiveMongoClient implements MongoClient, DbConnection {
         return delegate.getClusterDescription();
     }
 
+    /**
+     * Reconnects to a new cluster address.
+     * Synchronously replaces the current connection with a new one.
+     * Does nothing if the client is already closed.
+     *
+     * @param newAddress the target cluster address to connect to
+     */
     public synchronized void reconnect(ClusterAddress newAddress) {
         if (closed) {
             return;

@@ -27,11 +27,20 @@ import static com.jd.live.agent.core.util.StringUtils.split;
 @Getter
 public class ClusterAddress {
 
+    public static final String TYPE_DB = "DB";
+
+    private final String type;
+
     private final String address;
 
     private final String[] nodes;
 
     public ClusterAddress(String address) {
+        this(TYPE_DB, address);
+    }
+
+    public ClusterAddress(String type, String address) {
+        this.type = type;
         this.address = address;
         this.nodes = split(address);
     }

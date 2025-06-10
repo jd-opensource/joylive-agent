@@ -87,18 +87,18 @@ public class LiveConnection implements Connection, DbConnection {
     @Override
     public void close() throws SQLException {
         closed = true;
-        delegate.close();
-        if (onClose != null) {
-            onClose.accept(this);
+        try {
+            delegate.close();
+        } finally {
+            if (onClose != null) {
+                onClose.accept(this);
+            }
         }
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
-        if (closed) {
-            return true;
-        }
-        return delegate.isClosed();
+    public boolean isClosed() {
+        return closed;
     }
 
     @Override

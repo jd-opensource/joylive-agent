@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.db;
 import com.jd.live.agent.core.util.network.Address;
 import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,18 +31,34 @@ import static com.jd.live.agent.core.util.StringUtils.split;
 public abstract class AbstractUrlParser implements DbUrlParser {
 
     @Override
-    public DbUrl parse(String url) {
+    public DbUrl parse(String type, String url) {
         if (url == null || url.isEmpty()) {
             return null;
         }
-        DbUrlBuilder builder = DbUrl.builder();
+        DbUrlBuilder builder = DbUrl.builder().type(type);
         parse(url, builder);
         return builder.build();
     }
 
+    /**
+     * Parses a database URL into structured components.
+     * <p>
+     * Processing order:
+     * 1. Parameters
+     * 2. Scheme/protocol
+     * 3. Path (if scheme exists)
+     * 4. Security options
+     * 5. Host addresses
+     * 6. Database name
+     *
+     * @param url     the connection URL to parse
+     * @param builder receives the parsed URL components
+     */
     protected void parse(String url, DbUrlBuilder builder) {
         url = parserParameter(url, builder);
         url = parserScheme(url, builder);
+        // fix type
+        parseType(builder);
         if (builder.getScheme() != null) {
             // Support for JDBC URL
             url = parsePath(url, builder);
@@ -61,6 +78,30 @@ public abstract class AbstractUrlParser implements DbUrlParser {
         if (pos >= 0) {
             builder.database(path.substring(pos + 1));
         }
+    }
+
+    /**
+     * Extracts database name from file path.
+     * <p>
+     * Uses last segment of path (after last '/' or system file separator)
+     * as the database name.
+     *
+     * @param builder the URL builder to update with database name
+     */
+    protected void parseFileDatabase(DbUrlBuilder builder) {
+        String path = builder.getPath();
+        int pos = path.lastIndexOf('/');
+        if (pos >= 0) {
+            builder.database(path.substring(pos + 1));
+            return;
+        } else if (File.separatorChar != '/') {
+            pos = path.lastIndexOf(File.separatorChar);
+            if (pos >= 0) {
+                builder.database(path.substring(pos + 1));
+                return;
+            }
+        }
+        builder.database(path);
     }
 
     /**
@@ -101,6 +142,10 @@ public abstract class AbstractUrlParser implements DbUrlParser {
             url = url.substring(pos + 3);
         }
         return url;
+    }
+
+    protected void parseType(DbUrlBuilder builder) {
+
     }
 
     /**

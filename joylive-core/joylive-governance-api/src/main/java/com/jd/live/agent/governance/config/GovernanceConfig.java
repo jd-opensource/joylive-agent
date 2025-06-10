@@ -85,11 +85,14 @@ public class GovernanceConfig {
     public static final String CONFIG_VIRTUAL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtual";
 
     public static final String CONFIG_PROTECT_ENABLED = CONFIG_SWITCH_PROTECT + ENABLED;
+    public static final String CONFIG_PROTECT_DB_ENABLED = CONFIG_SWITCH_PROTECT + ".db";
+    public static final String CONFIG_PROTECT_MQ_ENABLED = CONFIG_SWITCH_PROTECT + ".mq";
     public static final String CONFIG_PROTECT_MARIADB_ENABLED = CONFIG_SWITCH_PROTECT + ".mariadb";
     public static final String CONFIG_PROTECT_POSTGRESQL_ENABLED = CONFIG_SWITCH_PROTECT + ".postgresql";
     public static final String CONFIG_PROTECT_OPENGAUSS_ENABLED = CONFIG_SWITCH_PROTECT + ".opengauss";
     public static final String CONFIG_PROTECT_MYSQL_ENABLED = CONFIG_SWITCH_PROTECT + ".mysql";
     public static final String CONFIG_PROTECT_MONGODB_ENABLED = CONFIG_SWITCH_PROTECT + ".mongodb";
+    public static final String CONFIG_PROTECT_ROCKETMQ_ENABLED = CONFIG_SWITCH_PROTECT + ".rocketmq";
     public static final String CONFIG_PROTECT_REDIS_ENABLED = CONFIG_SWITCH_PROTECT + ".redis";
 
     public static final String CONFIG_COUNTER_ENABLED = CONFIG_SWITCH_COUNTER + ENABLED;

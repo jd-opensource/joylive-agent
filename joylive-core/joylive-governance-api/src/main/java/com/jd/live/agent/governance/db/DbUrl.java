@@ -28,6 +28,8 @@ import static com.jd.live.agent.core.util.StringUtils.split;
 @AllArgsConstructor
 public class DbUrl {
 
+    private String type;
+
     private String scheme;
 
     private String schemePart;
@@ -71,7 +73,7 @@ public class DbUrl {
     }
 
     public DbUrl address(String address) {
-        return new DbUrl(scheme, schemePart, user, password, userPart, address, parseNodes(address),
+        return new DbUrl(type, scheme, schemePart, user, password, userPart, address, parseNodes(address),
                 path, database, parameter, parameterPart);
     }
 
@@ -97,6 +99,7 @@ public class DbUrl {
 
     @Getter
     public static class DbUrlBuilder {
+        private String type;
         private String scheme;
         private String schemePart;
         private String user;
@@ -108,6 +111,11 @@ public class DbUrl {
         private String database;
         private String parameter;
         private String parameterPart;
+
+        public DbUrlBuilder type(String type) {
+            this.type = type;
+            return this;
+        }
 
         public DbUrlBuilder scheme(String scheme) {
             this.scheme = scheme;
@@ -165,7 +173,7 @@ public class DbUrl {
         }
 
         public DbUrl build() {
-            return new DbUrl(scheme, schemePart, user, password, userPart, address, nodes, path, database, parameter, parameterPart);
+            return new DbUrl(type, scheme, schemePart, user, password, userPart, address, nodes, path, database, parameter, parameterPart);
         }
     }
 

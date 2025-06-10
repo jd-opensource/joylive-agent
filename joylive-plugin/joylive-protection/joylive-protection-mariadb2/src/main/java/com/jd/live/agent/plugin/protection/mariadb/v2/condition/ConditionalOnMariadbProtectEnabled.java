@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.protection.mariadb.v2.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnProtectDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
@@ -25,7 +25,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProtectEnabled
+@ConditionalOnProtectDBEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MARIADB_ENABLED, matchIfMissing = true)
 @ConditionalComposite
 public @interface ConditionalOnMariadbProtectEnabled {

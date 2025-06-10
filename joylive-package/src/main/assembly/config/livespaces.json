@@ -196,11 +196,12 @@
       "databaseGroups": [
         {
           "id": "1",
+          "type": "mariadb",
           "name": "mariadb-group-1",
           "databases": [
             {
               "id": "1",
-              "name": "db-1",
+              "name": "mariadb-1",
               "addresses": [
                 "127.0.0.1:3307"
               ],
@@ -211,7 +212,7 @@
             },
             {
               "id": "2",
-              "name": "db-2",
+              "name": "mariadb-2",
               "addresses": [
                 "127.0.0.1:3308"
               ],
@@ -224,11 +225,12 @@
         },
         {
           "id": "2",
+          "type": "postgresql",
           "name": "postgresql-group-2",
           "databases": [
             {
               "id": "3",
-              "name": "db-3",
+              "name": "postgresql-1",
               "addresses": [
                 "127.0.0.1:5432"
               ],
@@ -239,7 +241,7 @@
             },
             {
               "id": "4",
-              "name": "db-4",
+              "name": "postgresql-2",
               "addresses": [
                 "127.0.0.1:5433"
               ],
@@ -252,11 +254,12 @@
         },
         {
           "id": "3",
+          "type": "mongodb",
           "name": "mongo-group-2",
           "databases": [
             {
-              "id": "3",
-              "name": "db-3",
+              "id": "5",
+              "name": "mongo-1",
               "addresses": [
                 "127.0.0.1:27017"
               ],
@@ -266,10 +269,39 @@
               "accessMode": "READ_WRITE"
             },
             {
-              "id": "4",
-              "name": "db-4",
+              "id": "6",
+              "name": "mongo-2",
               "addresses": [
                 "127.0.0.1:27018"
+              ],
+              "unit": "unit1",
+              "cell": "cell2",
+              "role": "SLAVE",
+              "accessMode": "NONE"
+            }
+          ]
+        },
+        {
+          "id": "4",
+          "type": "rocketmq",
+          "name": "rocketmq-group-1",
+          "databases": [
+            {
+              "id": "7",
+              "name": "rocketmq-1",
+              "addresses": [
+                "127.0.0.1:8876"
+              ],
+              "unit": "unit1",
+              "cell": "cell1",
+              "role": "MASTER",
+              "accessMode": "READ_WRITE"
+            },
+            {
+              "id": "8",
+              "name": "rocketmq-2",
+              "addresses": [
+                "127.0.0.1:8976"
               ],
               "unit": "unit1",
               "cell": "cell2",

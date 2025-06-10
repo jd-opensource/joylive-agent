@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static com.jd.live.agent.governance.util.network.ClusterAddress.TYPE_DB;
+
 /**
  * Thread-safe utility for managing database address redirections.
  *
@@ -35,26 +37,36 @@ public class ClusterRedirect {
 
     private static final Map<ClusterAddress, AtomicReference<ClusterAddress>> REDIRECTS = new ConcurrentHashMap<>();
 
+    private final String type;
+
     private final ClusterAddress oldAddress;
 
     private final ClusterAddress newAddress;
 
     public ClusterRedirect(String address) {
-        this(address, address);
+        this(TYPE_DB, new ClusterAddress(TYPE_DB, address), new ClusterAddress(TYPE_DB, address));
     }
 
     public ClusterRedirect(String oldAddress, String newAddress) {
-        this.oldAddress = new ClusterAddress(oldAddress);
-        this.newAddress = new ClusterAddress(newAddress);
+        this(TYPE_DB, new ClusterAddress(TYPE_DB, oldAddress), new ClusterAddress(TYPE_DB, newAddress));
+    }
+
+    public ClusterRedirect(String type, String oldAddress, String newAddress) {
+        this(type, new ClusterAddress(type, oldAddress), new ClusterAddress(type, newAddress));
     }
 
     public ClusterRedirect(ClusterAddress oldAddress, ClusterAddress newAddress) {
+        this(null, oldAddress, newAddress);
+    }
+
+    public ClusterRedirect(String type, ClusterAddress oldAddress, ClusterAddress newAddress) {
+        this.type = type == null && newAddress != null ? newAddress.getType() : TYPE_DB;
         this.oldAddress = oldAddress;
         this.newAddress = newAddress;
     }
 
     public ClusterRedirect newAddress(ClusterAddress newAddress) {
-        return new ClusterRedirect(oldAddress, newAddress);
+        return new ClusterRedirect(type, oldAddress, newAddress);
     }
 
     /**

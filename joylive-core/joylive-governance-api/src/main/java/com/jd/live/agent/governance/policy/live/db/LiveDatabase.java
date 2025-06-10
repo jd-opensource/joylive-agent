@@ -15,17 +15,20 @@
  */
 package com.jd.live.agent.governance.policy.live.db;
 
+import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.jd.live.agent.core.util.StringUtils.SEMICOLON_COMMA;
-import static com.jd.live.agent.core.util.StringUtils.split;
-import static java.util.Collections.addAll;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.splitList;
+import static com.jd.live.agent.core.util.URI.getAddress;
 
 public class LiveDatabase {
     @Getter
@@ -90,9 +93,26 @@ public class LiveDatabase {
 
     public void cache() {
         if (addresses != null) {
-            Set<String> lowerCases = new HashSet<>(addresses.size());
-            addresses.forEach(addr -> addAll(lowerCases, split(addr.toLowerCase(), SEMICOLON_COMMA)));
-            this.nodes = lowerCases;
+            List<String> lowerAddresses = new ArrayList<>(addresses.size());
+            Set<String> lowerNodes = new HashSet<>(addresses.size());
+            addresses.forEach(addr -> {
+                String lowerAddr = addr.toLowerCase();
+                lowerAddresses.add(lowerAddr);
+                List<URI> uris = toList(splitList(lowerAddr), URI::parse);
+                for (URI uri : uris) {
+                    String host = uri.getHost();
+                    Integer port = uri.getPort();
+                    host = host == null ? null : host.toLowerCase();
+                    // for development environment
+                    if (Ipv4.isLocalHost(host)) {
+                        Ipv4.LOCAL_HOST.forEach(h -> lowerNodes.add(getAddress(h, port)));
+                    } else {
+                        lowerNodes.add(uri.getAddress());
+                    }
+                }
+            });
+            this.addresses = lowerAddresses;
+            this.nodes = lowerNodes;
             this.primaryAddress = selectAddress();
         }
     }
@@ -110,7 +130,7 @@ public class LiveDatabase {
                 first = addr;
             }
             // k8s cluster service address
-            if (!addr.toLowerCase().contains("svc.cluster.local")) {
+            if (!addr.contains("svc.cluster.local")) {
                 return addr;
             }
         }

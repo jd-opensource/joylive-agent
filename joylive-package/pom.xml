@@ -417,6 +417,14 @@
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-protection-redis</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-rocketmq4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-rocketmq5</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

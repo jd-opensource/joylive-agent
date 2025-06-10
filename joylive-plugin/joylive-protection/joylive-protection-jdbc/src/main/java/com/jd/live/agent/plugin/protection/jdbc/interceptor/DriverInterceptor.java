@@ -29,9 +29,6 @@ import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import static com.jd.live.agent.governance.util.network.ClusterRedirect.redirect;
-import static com.jd.live.agent.governance.util.network.ClusterRedirect.setAddress;
-
 /**
  * DriverConnectInterceptor
  */
@@ -39,7 +36,9 @@ public class DriverInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DriverInterceptor.class);
 
-    private static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("Jdbc connection is redirected from {} to {} ", oldAddress, newAddress);
+    private static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) ->
+            logger.info("{} connection is redirected from {} to {} ",
+                    oldAddress.getType() == null ? "jdbc" : oldAddress.getType(), oldAddress, newAddress);
 
     private final PolicySupplier policySupplier;
 
@@ -56,21 +55,21 @@ public class DriverInterceptor extends InterceptorAdaptor {
         DbUrl dbUrl = DbUrlParser.parse((String) arguments[0], parser::get);
         // none tcp address, such as jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
         if (dbUrl.hasAddress()) {
+            // lowercase address
             String oldAddress = dbUrl.getAddress().toLowerCase();
             LiveDatabase master = policySupplier.getPolicy().getMaster(oldAddress);
             String newAddress = master == null ? oldAddress : master.getPrimaryAddress();
+            newAddress = newAddress == null || newAddress.isEmpty() ? oldAddress : newAddress;
+            // redirect new address
             ClusterRedirect redirect;
-            if (newAddress != null && !oldAddress.equals(newAddress)) {
-                redirect = new ClusterRedirect(oldAddress, newAddress);
-                setAddress(redirect);
-                redirect(redirect, consumer);
+            if (!oldAddress.equals(newAddress)) {
                 dbUrl = dbUrl.address(newAddress);
                 arguments[0] = dbUrl.toString();
-            } else {
-                redirect = new ClusterRedirect(oldAddress, oldAddress);
-                setAddress(redirect);
-                redirect(redirect, consumer);
             }
+            redirect = new ClusterRedirect(dbUrl.getType(), oldAddress, newAddress);
+            ClusterRedirect.redirect(redirect, consumer);
+            // put it in thread local for datasource interceptor
+            ClusterRedirect.setAddress(redirect);
         }
     }
 
