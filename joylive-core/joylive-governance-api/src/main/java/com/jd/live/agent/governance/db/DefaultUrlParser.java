@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.db.sqlserver;
+package com.jd.live.agent.governance.db;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 
-@Extension("jdts")
-public class JtdsUrlParser extends SqlServerUrlParser {
+@Extension(value = DbUrlParser.TYPE_DEFAULT, order = 100)
+public class DefaultUrlParser extends AbstractUrlParser {
 }

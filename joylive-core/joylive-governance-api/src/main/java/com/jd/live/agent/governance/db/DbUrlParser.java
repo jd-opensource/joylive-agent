@@ -26,6 +26,9 @@ import java.util.function.Function;
 @Extensible("DbUrlParser")
 public interface DbUrlParser {
 
+    String TYPE_DEFAULT = "default";
+    String JDBC = "jdbc";
+
     /**
      * Parses a database URL into structured form.
      *
@@ -45,7 +48,7 @@ public interface DbUrlParser {
             return null;
         }
         int pos1 = url.indexOf(':');
-        if (pos1 < 0 || !"jdbc".equalsIgnoreCase(url.substring(0, pos1))) {
+        if (pos1 < 0 || !JDBC.equalsIgnoreCase(url.substring(0, pos1))) {
             return null;
         }
         int pos2 = url.indexOf(':', pos1 + 1);
@@ -54,6 +57,7 @@ public interface DbUrlParser {
         }
         String type = url.substring(pos1 + 1, pos2).toLowerCase();
         DbUrlParser parser = factory.apply(type);
+        parser = parser == null ? factory.apply(TYPE_DEFAULT) : parser;
         return parser == null ? null : parser.parse(url);
     }
 }

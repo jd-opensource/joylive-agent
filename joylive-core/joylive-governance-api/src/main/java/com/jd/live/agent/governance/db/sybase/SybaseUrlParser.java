@@ -13,11 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.db.kingbase;
+package com.jd.live.agent.governance.db.sybase;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.db.AbstractUrlParser;
+import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
-@Extension("kingbase8")
-public class KingBaseUrlParser extends AbstractUrlParser {
+@Extension("sybase")
+public class SybaseUrlParser extends AbstractUrlParser {
+
+    private static final String JDBC_SQLITE = "jdbc:sybase:Tds";
+    private static final String JDBC_SQLITE_PREFIX = JDBC_SQLITE + ":";
+
+    @Override
+    protected String parserScheme(String url, DbUrlBuilder builder) {
+        builder.schemePart(JDBC_SQLITE_PREFIX).scheme("jdbc:sybase:Tds");
+        return url.substring(JDBC_SQLITE_PREFIX.length());
+    }
 }
