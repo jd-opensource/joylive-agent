@@ -1,5 +1,16 @@
 # Release History
 
+## 1.8.0
+1. Refactored the registration module to better support multi-registration and multi-subscription
+2. Added support for Zookeeper master-slave cluster failover
+3. Added support for database master-slave cluster failover
+4. Added support for RocketMQ master-slave cluster failover
+5. Added support for warming up dependencies when migrating traditional Spring Boot applications to microservices
+6. Added support for XMLPath and JavaPath to extract exception error codes for circuit breaking and retry
+7. Improved Dubbo compatibility
+8. Enhanced multi-active routing for messages
+9. Fixed other issues
+
 ## 1.7.0
 
 1. Added support for Spring Cloud Greenwich, currently supporting Spring Cloud Greenwich/Hoxton/2020/2021/2022/2023/2024.
