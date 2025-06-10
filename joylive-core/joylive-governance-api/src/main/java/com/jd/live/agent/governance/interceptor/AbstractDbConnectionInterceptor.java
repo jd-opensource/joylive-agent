@@ -148,7 +148,6 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             if (master != null && !master.contains(address.getNodes())) {
                 // primary address is lowercase.
                 ClusterAddress newAddress = createAddress(master.getPrimaryAddress());
-                // Close connection to reconnect to the new master address
                 cons.forEach(c -> {
                     if (!c.getAddress().getNewAddress().equals(newAddress)) {
                         // avoid async concurrently updating.
