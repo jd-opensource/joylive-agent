@@ -1,0 +1,6 @@
+com.jd.live.agent.plugin.registry.nacos.v3_0.definition.NacosServiceDiscoveryDefinition
+com.jd.live.agent.plugin.registry.nacos.v3_0.definition.NacosInstancesChangeNotifierDefinition
+com.jd.live.agent.plugin.registry.nacos.v3_0.definition.NacosNamingServiceDefinition
+com.jd.live.agent.plugin.registry.nacos.v3_0.definition.NacosDiscoveryPropertiesDefinition
+com.jd.live.agent.plugin.registry.nacos.v3_0.definition.NacosNamingClientProxyDelegateDefinition
+com.jd.live.agent.plugin.registry.nacos.v3_0.definition.NacosNotifyCenterDefinition

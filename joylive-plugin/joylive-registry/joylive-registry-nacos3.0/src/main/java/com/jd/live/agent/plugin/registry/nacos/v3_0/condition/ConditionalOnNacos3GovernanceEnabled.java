@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.nacos.v2_4.condition;
+package com.jd.live.agent.plugin.registry.nacos.v3_0.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnClass(ConditionalOnNacos24Enabled.TYPE_SELECTOR_MANAGER)
-@ConditionalOnMissingClass(ConditionalOnNacos24Enabled.TYPE_LOCK_SERVICE)
+@ConditionalOnNacos3Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnNacos24Enabled {
-    // 2.4+
-    String TYPE_SELECTOR_MANAGER = "com.alibaba.nacos.client.selector.SelectorManager";
-    // 3.0+
-    String TYPE_LOCK_SERVICE = "com.alibaba.nacos.api.lock.LockService";
+public @interface ConditionalOnNacos3GovernanceEnabled {
 
 }

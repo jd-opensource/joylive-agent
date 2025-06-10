@@ -285,6 +285,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-registry-nacos3.0</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-registry-nacos2.4</artifactId>
                 <version>${revision}</version>
             </dependency>

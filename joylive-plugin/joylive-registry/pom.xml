@@ -26,6 +26,7 @@
         <module>joylive-registry-springgateway3</module>
         <module>joylive-registry-springgateway4</module>
         <module>joylive-registry-zuul</module>
+        <module>joylive-registry-nacos3.0</module>
         <module>joylive-registry-nacos2.4</module>
         <module>joylive-registry-nacos2.3</module>
         <module>joylive-registry-nacos2.0</module>
