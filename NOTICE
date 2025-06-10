@@ -85,6 +85,8 @@ joylive-event-opentelemetry
     javax.annotation -> com.jd.live.agent.shaded.javax.annotation
     org.codehaus -> com.jd.live.agent.shaded.org.codehaus
     org.checkerframework -> com.jd.live.agent.shaded.org.checkerframework
+    org.intellij -> com.jd.live.agent.shaded.org.intellij
+    org.jetbrains -> com.jd.live.agent.shaded.org.jetbrains
     okhttp3 -> com.jd.live.agent.shaded.okhttp3
     okio -> com.jd.live.agent.shaded.okio
     kotlin -> com.jd.live.agent.shaded.kotlin

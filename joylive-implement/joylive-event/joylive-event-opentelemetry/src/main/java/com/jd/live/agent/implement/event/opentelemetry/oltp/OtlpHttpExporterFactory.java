@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.implement.event.opentelemetry.oltp;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalOnJava;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.implement.event.opentelemetry.ExporterFactory;
 import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
@@ -28,7 +27,6 @@ import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 
 import java.time.Duration;
 
-@ConditionalOnJava("[11,)")
 @Extension("otlp.http")
 public class OtlpHttpExporterFactory implements ExporterFactory {
 
