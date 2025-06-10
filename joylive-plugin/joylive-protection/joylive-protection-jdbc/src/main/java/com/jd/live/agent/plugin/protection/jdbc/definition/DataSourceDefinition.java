@@ -26,14 +26,14 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.annotation.ConditionalOnDBProtectEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnProtectDBEnabled;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.jdbc.interceptor.DataSourceInterceptor;
 
 @Injectable
 @Extension(value = "DataSourceDefinition", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnDBProtectEnabled
+@ConditionalOnProtectDBEnabled
 @ConditionalOnClass(DataSourceDefinition.TYPE)
 public class DataSourceDefinition extends PluginDefinitionAdapter {
 

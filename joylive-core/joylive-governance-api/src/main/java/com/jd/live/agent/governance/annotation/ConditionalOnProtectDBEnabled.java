@@ -31,6 +31,6 @@ import java.lang.annotation.*;
 @ConditionalOnProtectEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_DB_ENABLED)
 @ConditionalComposite
-public @interface ConditionalOnDBProtectEnabled {
+public @interface ConditionalOnProtectDBEnabled {
 
 }
