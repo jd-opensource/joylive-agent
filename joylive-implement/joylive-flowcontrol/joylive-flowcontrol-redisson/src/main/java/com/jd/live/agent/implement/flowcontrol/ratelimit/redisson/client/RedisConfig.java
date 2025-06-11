@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.Option;
 import lombok.Getter;
 import org.redisson.config.ReadMode;
+import org.redisson.config.TransportMode;
 
 import java.util.Objects;
 
@@ -46,6 +47,7 @@ public class RedisConfig {
     private static final String KEY_SENTINEL_PASSWORD = "sentinelPassword";
     private static final String KEY_DATABASE = "database";
     private static final String KEY_READ_MODE = "readMode";
+    private static final String KEY_TRANSPORT_MODE = "transportMode";
     private static final String KEY_TIMEOUT = "timeout";
     private static final String KEY_EXPIRE_TIME = "expireTime";
     private static final String KEY_RETRY_ATTEMPTS = "retryAttempts";
@@ -75,6 +77,8 @@ public class RedisConfig {
     protected final String sentinelPassword;
 
     protected final int database;
+
+    protected final TransportMode transportMode;
 
     protected final ReadMode readMode;
 
@@ -116,6 +120,7 @@ public class RedisConfig {
         sentinelUser = option.getTrimmed(KEY_SENTINEL_USER);
         sentinelPassword = option.getTrimmed(KEY_SENTINEL_PASSWORD);
         readMode = getReadMode(option);
+        transportMode = getTransportMode(option);
         timeout = option.getPositive(KEY_TIMEOUT, 5000);
         expireTime = option.getPositive(KEY_EXPIRE_TIME, 60000);
         keepAlive = option.getBoolean(KEY_RETRY_ATTEMPTS, false);
@@ -228,6 +233,15 @@ public class RedisConfig {
             return ReadMode.valueOf(option.getTrimmed(KEY_READ_MODE, ReadMode.MASTER.name()).toUpperCase());
         } catch (Throwable e) {
             return ReadMode.MASTER;
+        }
+    }
+
+    protected static TransportMode getTransportMode(Option option) {
+        String transportMode = option.getTrimmed(KEY_TRANSPORT_MODE);
+        try {
+            return transportMode == null || transportMode.isEmpty() ? null : TransportMode.valueOf(transportMode.toUpperCase());
+        } catch (Throwable e) {
+            return null;
         }
     }
 

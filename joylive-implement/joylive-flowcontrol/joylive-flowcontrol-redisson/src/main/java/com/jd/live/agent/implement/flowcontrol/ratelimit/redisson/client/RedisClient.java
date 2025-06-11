@@ -24,6 +24,7 @@ import org.redisson.Redisson;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.redisson.config.TransportMode;
 import org.redisson.connection.ConnectionListener;
 
 import java.net.InetSocketAddress;
@@ -139,6 +140,8 @@ public class RedisClient implements AutoCloseable {
         if (config.validate()) {
             try {
                 Config cfg = new Config();
+                RedisType redisType = RedisType.parse(config.type);
+                redisType.configure(cfg, config);
                 cfg.setConnectionListener(new ConnectionListener() {
                     @Override
                     public void onConnect(InetSocketAddress addr) {
@@ -152,8 +155,17 @@ public class RedisClient implements AutoCloseable {
                         logger.info("Redis client is disconnected from {}", addr);
                     }
                 });
-                RedisType redisType = RedisType.parse(config.type);
-                redisType.configure(cfg, config);
+                if (config.transportMode != null) {
+                    cfg.setTransportMode(config.transportMode);
+                } else if (NativeDetector.isIoUringAvailable()) {
+                    cfg.setTransportMode(TransportMode.IO_URING);
+                } else if (NativeDetector.isEpollAvailable()) {
+                    cfg.setTransportMode(TransportMode.EPOLL);
+                } else if (NativeDetector.isKqueueAvailable()) {
+                    cfg.setTransportMode(TransportMode.KQUEUE);
+                } else {
+                    cfg.setTransportMode(TransportMode.NIO);
+                }
                 result = Redisson.create(cfg);
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
