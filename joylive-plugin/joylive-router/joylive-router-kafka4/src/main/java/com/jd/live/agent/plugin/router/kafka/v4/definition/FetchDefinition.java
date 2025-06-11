@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.kafka.v3.definition;
+package com.jd.live.agent.plugin.router.kafka.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -24,31 +24,40 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v3.condition.ConditionalOnKafka3AnyRouteEnabled;
-import com.jd.live.agent.plugin.router.kafka.v3.interceptor.GroupInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v4.condition.ConditionalOnKafka4AnyRouteEnabled;
+import com.jd.live.agent.plugin.router.kafka.v4.interceptor.FetchInterceptor;
 
 /**
- * ConsumerConfigDefinition
+ * FetchDefinition
  *
- * @since 1.0.0
+ * @since 1.8.0
  */
 @Injectable
-@Extension(value = "ConsumerConfigDefinition_v3")
-@ConditionalOnKafka3AnyRouteEnabled
-@ConditionalOnClass(ConsumerConfigDefinition.TYPE_CONSUMER_CONFIG)
-public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
+@Extension(value = "FetchDefinition_v4")
+@ConditionalOnKafka4AnyRouteEnabled
+@ConditionalOnClass(FetchDefinition.TYPE_FETCH)
+public class FetchDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_CONSUMER_CONFIG = "org.apache.kafka.clients.consumer.ConsumerConfig";
+    protected static final String TYPE_FETCH = "org.apache.kafka.clients.consumer.internals.Fetch";
+
+    private static final String METHOD_FOR_PARTITION = "forPartition";
+
+    private static final String[] ARGUMENT_FOR_PARTITION = new String[]{
+            "org.apache.kafka.common.TopicPartition",
+            "java.util.List",
+            "boolean"
+    };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public ConsumerConfigDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONFIG);
+    public FetchDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_FETCH);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new GroupInterceptor(context)
+                        MatcherBuilder.named(METHOD_FOR_PARTITION)
+                                .and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
+                        () -> new FetchInterceptor(context)
                 )
         };
     }

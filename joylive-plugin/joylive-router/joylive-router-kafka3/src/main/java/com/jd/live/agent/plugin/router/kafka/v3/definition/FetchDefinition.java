@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v3.condition.ConditionalOnKafkaAnyRouteEnabled;
+import com.jd.live.agent.plugin.router.kafka.v3.condition.ConditionalOnKafka3AnyRouteEnabled;
 import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetchInterceptor;
 
 /**
@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetchInterceptor;
  */
 @Injectable
 @Extension(value = "FetchDefinition_v3")
-@ConditionalOnKafkaAnyRouteEnabled
+@ConditionalOnKafka3AnyRouteEnabled
 @ConditionalOnClass(FetchDefinition.TYPE_FETCH)
 public class FetchDefinition extends PluginDefinitionAdapter {
 

@@ -295,6 +295,14 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-router-kafka3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-router-kafka4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-router-rocketmq5</artifactId>
         </dependency>
         <dependency>

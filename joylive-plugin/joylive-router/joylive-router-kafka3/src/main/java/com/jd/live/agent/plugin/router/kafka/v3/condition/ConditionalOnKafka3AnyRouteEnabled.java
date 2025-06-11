@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.kafka.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.annotation.ConditionalOnMqEnabled;
 import com.jd.live.agent.governance.annotation.ConditionalOnOnlyRouteEnabled;
@@ -28,9 +29,12 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnOnlyRouteEnabled
 @ConditionalOnMqEnabled
+@ConditionalOnMissingClass(ConditionalOnKafka3AnyRouteEnabled.TYPE_GROUP_PROTOCOL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_KAFKA_ENABLED, matchIfMissing = true)
 @ConditionalComposite
-public @interface ConditionalOnKafkaAnyRouteEnabled {
+public @interface ConditionalOnKafka3AnyRouteEnabled {
 
+    // kafka client 4.0.0+
+    String TYPE_GROUP_PROTOCOL = "org.apache.kafka.clients.consumer.GroupProtocol";
 }
 
