@@ -91,6 +91,7 @@ public class GovernanceConfig {
     public static final String CONFIG_PROTECT_POSTGRESQL_ENABLED = CONFIG_SWITCH_PROTECT + ".postgresql";
     public static final String CONFIG_PROTECT_OPENGAUSS_ENABLED = CONFIG_SWITCH_PROTECT + ".opengauss";
     public static final String CONFIG_PROTECT_MYSQL_ENABLED = CONFIG_SWITCH_PROTECT + ".mysql";
+    public static final String CONFIG_PROTECT_DMDB_ENABLED = CONFIG_SWITCH_PROTECT + ".dmdb";
     public static final String CONFIG_PROTECT_MONGODB_ENABLED = CONFIG_SWITCH_PROTECT + ".mongodb";
     public static final String CONFIG_PROTECT_ROCKETMQ_ENABLED = CONFIG_SWITCH_PROTECT + ".rocketmq";
     public static final String CONFIG_PROTECT_REDIS_ENABLED = CONFIG_SWITCH_PROTECT + ".redis";
