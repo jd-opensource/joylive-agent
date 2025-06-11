@@ -18,11 +18,15 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.RedissonRateLimiter;
+import lombok.Getter;
+import lombok.Setter;
 import org.redisson.Redisson;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.redisson.connection.ConnectionListener;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -39,9 +43,14 @@ public class RedisClient implements AutoCloseable {
 
     private volatile RedissonClient delegate;
 
+    @Getter
+    @Setter
     private long lastAccessTime;
 
     private final AtomicLong counter = new AtomicLong(0);
+
+    @Getter
+    private volatile boolean connected;
 
     public RedisClient(RedisConfig config, Consumer<RedisClient> consumer) {
         this.config = config;
@@ -62,14 +71,6 @@ public class RedisClient implements AutoCloseable {
         return delegate == null ? null : delegate.getRateLimiter(key);
     }
 
-    public long getLastAccessTime() {
-        return lastAccessTime;
-    }
-
-    public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastAccessTime;
-    }
-
     /**
      * Checks if the Redis client has expired based on the specified timeout.
      *
@@ -78,6 +79,15 @@ public class RedisClient implements AutoCloseable {
      */
     public boolean isExpired(long timeout) {
         return isUseless() && System.currentTimeMillis() - lastAccessTime >= timeout;
+    }
+
+    /**
+     * Checks if the endpoint is considered useless based on the counter value.
+     *
+     * @return true if the counter is zero, indicating the endpoint is useless; false otherwise
+     */
+    public boolean isUseless() {
+        return counter.get() == 0;
     }
 
     /**
@@ -105,15 +115,6 @@ public class RedisClient implements AutoCloseable {
         }
     }
 
-    /**
-     * Checks if the endpoint is considered useless based on the counter value.
-     *
-     * @return true if the counter is zero, indicating the endpoint is useless; false otherwise
-     */
-    public boolean isUseless() {
-        return counter.get() == 0;
-    }
-
     protected RedisConfig getConfig() {
         return config;
     }
@@ -138,6 +139,19 @@ public class RedisClient implements AutoCloseable {
         if (config.validate()) {
             try {
                 Config cfg = new Config();
+                cfg.setConnectionListener(new ConnectionListener() {
+                    @Override
+                    public void onConnect(InetSocketAddress addr) {
+                        connected = true;
+                        logger.info("Redis client is connected to {}", addr);
+                    }
+
+                    @Override
+                    public void onDisconnect(InetSocketAddress addr) {
+                        connected = false;
+                        logger.info("Redis client is disconnected from {}", addr);
+                    }
+                });
                 RedisType redisType = RedisType.parse(config.type);
                 redisType.configure(cfg, config);
                 result = Redisson.create(cfg);

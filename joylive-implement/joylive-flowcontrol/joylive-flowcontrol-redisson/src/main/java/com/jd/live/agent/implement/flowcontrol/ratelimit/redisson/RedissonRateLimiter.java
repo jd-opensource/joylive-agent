@@ -64,7 +64,7 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
     protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
         client.setLastAccessTime(System.currentTimeMillis());
         try {
-            return limiter == null || limiter.tryAcquire(permits, Duration.ofNanos(timeUnit.toNanos(timeout)));
+            return limiter == null || !client.isConnected() || limiter.tryAcquire(permits, Duration.ofNanos(timeUnit.toNanos(timeout)));
         } catch (Throwable e) {
             logger.error(e.getMessage(), e);
             return true;
