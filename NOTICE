@@ -99,9 +99,10 @@ joylive-flowcontrol-redisson
     org.redisson -> com.jd.live.agent.shaded.org.redisson
     io.netty -> com.jd.live.agent.shaded.io.netty
     javax.cache -> com.jd.live.agent.shaded.javax.cache
-    rx -> com.jd.live.agent.shaded.rx
+    io.reactivex.rxjava3 -> com.jd.live.agent.shaded.io.reactivex.rxjava3
     reactor -> com.jd.live.agent.shaded.reactor
     org.reactivestreams -> com.jd.live.agent.shaded.org.reactivestreams
+    jodd -> com.jd.live.agent.shaded.jodd
     org.objenesis -> com.jd.live.agent.shaded.org.objenesis
     com.esotericsoftware -> com.jd.live.agent.shaded.com.esotericsoftware
     com.fasterxml -> com.jd.live.agent.shaded.com.fasterxml depend on joylive-parser-jackson

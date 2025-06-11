@@ -137,8 +137,8 @@
                                     <shadedPattern>com.jd.live.agent.shaded.javax.cache</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>rx</pattern>
-                                    <shadedPattern>com.jd.live.agent.shaded.rx</shadedPattern>
+                                    <pattern>io.reactivex.rxjava3</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.io.reactivex.rxjava3</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>reactor</pattern>
@@ -147,6 +147,10 @@
                                 <relocation>
                                     <pattern>org.reactivestreams</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.org.reactivestreams</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>jodd</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.jodd</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.objenesis</pattern>
