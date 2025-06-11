@@ -192,6 +192,7 @@
             <unpack>false</unpack>
             <includes>
                 <include>com.jd.live:joylive-transmission-kafka3</include>
+                <include>com.jd.live:joylive-transmission-kafka4</include>
             </includes>
         </dependencySet>
 

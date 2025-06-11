@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.kafka.v3.definition;
+package com.jd.live.agent.plugin.transmission.kafka.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -25,12 +25,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.transmission.kafka.v3.condition.ConditionalOnKafka3TransmissionEnabled;
-import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaProducerInterceptor;
+import com.jd.live.agent.plugin.transmission.kafka.v4.condition.ConditionalOnKafka4TransmissionEnabled;
+import com.jd.live.agent.plugin.transmission.kafka.v4.interceptor.KafkaProducerInterceptor;
 
 @Injectable
 @Extension(value = "KafkaProducerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnKafka3TransmissionEnabled
+@ConditionalOnKafka4TransmissionEnabled
 @ConditionalOnClass(KafkaProducerDefinition.TYPE_KAFKA_PRODUCER)
 public class KafkaProducerDefinition extends PluginDefinitionAdapter {
     public static final String TYPE_KAFKA_PRODUCER = "org.apache.kafka.clients.producer.KafkaProducer";

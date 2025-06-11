@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.kafka.v3.definition;
+package com.jd.live.agent.plugin.transmission.kafka.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -25,12 +25,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.kafka.v3.condition.ConditionalOnKafka3TransmissionEnabled;
-import com.jd.live.agent.plugin.transmission.kafka.v3.interceptor.KafkaConsumerRecordInterceptor;
+import com.jd.live.agent.plugin.transmission.kafka.v4.condition.ConditionalOnKafka4TransmissionEnabled;
+import com.jd.live.agent.plugin.transmission.kafka.v4.interceptor.KafkaConsumerRecordInterceptor;
 
 @Injectable
 @Extension(value = "KafkaConsumerRecordDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnKafka3TransmissionEnabled
+@ConditionalOnKafka4TransmissionEnabled
 @ConditionalOnClass(KafkaConsumerRecordDefinition.TYPE_CONSUMER_RECORD)
 public class KafkaConsumerRecordDefinition extends PluginDefinitionAdapter {
     public static final String TYPE_CONSUMER_RECORD = "org.apache.kafka.clients.consumer.ConsumerRecord";
