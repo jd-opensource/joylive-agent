@@ -52,8 +52,11 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
         this.client = manager.getOrCreateClient(config);
         this.limiter = client.getRateLimiter("LiveAgent-limiter-" + policy.getId());
         if (limiter != null) {
-            limiter.trySetRate(RateType.OVERALL, window.getThreshold(), Duration.ofMillis(window.getTimeWindowInMs()));
-            limiter.expire(Duration.ofMillis(config.getExpireTime()));
+            long expireTime = config.getExpireTime();
+            if (expireTime > 0 && expireTime < window.getTimeWindowInMs()) {
+                expireTime = window.getTimeWindowInMs();
+            }
+            limiter.trySetRate(RateType.OVERALL, window.getThreshold(), Duration.ofMillis(window.getTimeWindowInMs()), Duration.ofMillis(expireTime));
         }
     }
 
