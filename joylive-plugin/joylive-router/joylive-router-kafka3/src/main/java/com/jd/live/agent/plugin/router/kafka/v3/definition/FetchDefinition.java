@@ -55,8 +55,7 @@ public class FetchDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_FETCH);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FOR_PARTITION)
-                                .and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
+                        MatcherBuilder.named(METHOD_FOR_PARTITION).and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
                         () -> new FetchInterceptor(context)
                 )
         };

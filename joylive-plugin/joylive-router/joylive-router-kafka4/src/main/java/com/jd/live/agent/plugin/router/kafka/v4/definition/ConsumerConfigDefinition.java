@@ -46,10 +46,7 @@ public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
     public ConsumerConfigDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONFIG);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(1)),
-                        () -> new GroupInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), () -> new GroupInterceptor(context))
         };
     }
 }

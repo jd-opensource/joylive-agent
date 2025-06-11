@@ -30,6 +30,7 @@
         <module>joylive-router-grpc</module>
         <module>joylive-router-rocketmq5</module>
         <module>joylive-router-rocketmq4</module>
+        <module>joylive-router-kafka2</module>
         <module>joylive-router-kafka3</module>
         <module>joylive-router-kafka4</module>
     </modules>

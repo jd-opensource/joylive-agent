@@ -32,13 +32,11 @@ public class FetchInterceptor extends AbstractMessageInterceptor {
         super(context);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object[] arguments = ctx.getArguments();
-        TopicPartition topicPartition = (TopicPartition) arguments[0];
-        if (isEnabled(topicPartition.topic())) {
-            List<ConsumerRecord<?, ?>> records = (List<ConsumerRecord<?, ?>>) arguments[1];
+        TopicPartition partition = ctx.getArgument(0);
+        if (isEnabled(partition.topic())) {
+            List<ConsumerRecord<?, ?>> records = ctx.getArgument(1);
             filter(records, message -> consume(new KafkaMessage(message)) == MessageAction.CONSUME);
         }
     }

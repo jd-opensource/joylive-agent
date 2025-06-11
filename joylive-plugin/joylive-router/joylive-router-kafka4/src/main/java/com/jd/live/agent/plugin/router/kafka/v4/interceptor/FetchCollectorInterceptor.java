@@ -13,31 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.kafka.v3.interceptor;
+package com.jd.live.agent.plugin.router.kafka.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v3.message.KafkaMessage;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.internals.Fetch;
 import org.apache.kafka.common.TopicPartition;
 
-import java.util.List;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
-import static com.jd.live.agent.core.util.CollectionUtils.filter;
+public class FetchCollectorInterceptor extends AbstractMessageInterceptor {
 
-public class FetchInterceptor extends AbstractMessageInterceptor {
+    private static final String FIELD_PARTITION = "partition";
 
-    public FetchInterceptor(InvocationContext context) {
+    public FetchCollectorInterceptor(InvocationContext context) {
         super(context);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        TopicPartition partition = ctx.getArgument(0);
-        if (isEnabled(partition.topic())) {
-            List<ConsumerRecord<?, ?>> records = ctx.getArgument(1);
-            filter(records, message -> consume(new KafkaMessage(message)) == MessageAction.CONSUME);
+        TopicPartition partition = getQuietly(ctx.getArgument(0), FIELD_PARTITION);
+        if (partition != null && !isConsumeReady(partition.topic())) {
+            MethodContext mc = (MethodContext) ctx;
+            mc.setResult(Fetch.empty());
+            mc.setSkip(true);
         }
     }
 }

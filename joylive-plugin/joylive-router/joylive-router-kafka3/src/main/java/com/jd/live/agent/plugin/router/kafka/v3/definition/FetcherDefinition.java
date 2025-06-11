@@ -42,11 +42,6 @@ public class FetcherDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_FETCH_RECORDS = "fetchRecords";
 
-    private static final String[] ARGUMENT_FETCH_RECORDS = new String[]{
-            "org.apache.kafka.clients.consumer.internals.Fetcher.CompletedFetch",
-            "int"
-    };
-
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
@@ -54,8 +49,8 @@ public class FetcherDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE_FETCHER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FETCH_RECORDS)
-                                .and(MatcherBuilder.arguments(ARGUMENT_FETCH_RECORDS)),
+                        // Backward compatible with version 1.0
+                        MatcherBuilder.named(METHOD_FETCH_RECORDS).and(MatcherBuilder.arguments(2)),
                         () -> new FetcherInterceptor(context)
                 )
         };

@@ -193,6 +193,7 @@
             <includes>
                 <include>com.jd.live:joylive-transmission-kafka3</include>
                 <include>com.jd.live:joylive-transmission-kafka4</include>
+                <include>com.jd.live:joylive-router-kafka2</include>
                 <include>com.jd.live:joylive-router-kafka3</include>
                 <include>com.jd.live:joylive-router-kafka4</include>
             </includes>

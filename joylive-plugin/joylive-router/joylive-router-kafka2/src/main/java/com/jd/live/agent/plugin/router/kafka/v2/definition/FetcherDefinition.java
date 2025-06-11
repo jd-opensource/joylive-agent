@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.kafka.v4.definition;
+package com.jd.live.agent.plugin.router.kafka.v2.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -24,41 +24,33 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v4.condition.ConditionalOnKafka4AnyRouteEnabled;
-import com.jd.live.agent.plugin.router.kafka.v4.interceptor.FetchInterceptor;
+import com.jd.live.agent.plugin.router.kafka.v2.condition.ConditionalOnKafka1AnyRouteEnabled;
+import com.jd.live.agent.plugin.router.kafka.v2.interceptor.FetcherInterceptor;
 
 /**
- * FetchDefinition
+ * FetcherDefinition
  *
  * @since 1.8.0
  */
 @Injectable
-@Extension(value = "FetchDefinition_v4")
-@ConditionalOnKafka4AnyRouteEnabled
-@ConditionalOnClass(FetchDefinition.TYPE_FETCH)
-public class FetchDefinition extends PluginDefinitionAdapter {
+@Extension(value = "FetcherDefinition_v2")
+@ConditionalOnKafka1AnyRouteEnabled
+@ConditionalOnClass(FetcherDefinition.TYPE_FETCHER)
+public class FetcherDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FETCH = "org.apache.kafka.clients.consumer.internals.Fetch";
+    protected static final String TYPE_FETCHER = "org.apache.kafka.clients.consumer.internals.Fetcher";
 
-    private static final String METHOD_FOR_PARTITION = "forPartition";
-
-    private static final String[] ARGUMENT_FOR_PARTITION = new String[]{
-            "org.apache.kafka.common.TopicPartition",
-            "java.util.List",
-            "boolean",
-            "org.apache.kafka.clients.consumer.OffsetAndMetadata"
-    };
+    private static final String METHOD_FETCH_RECORDS = "fetchRecords";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FetchDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FETCH);
+    public FetcherDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_FETCHER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FOR_PARTITION)
-                                .and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
-                        () -> new FetchInterceptor(context)
+                        MatcherBuilder.named(METHOD_FETCH_RECORDS).and(MatcherBuilder.arguments(2)),
+                        () -> new FetcherInterceptor(context)
                 )
         };
     }
