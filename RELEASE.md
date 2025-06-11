@@ -1,15 +1,17 @@
 # Release History
 
 ## 1.8.0
-1. Refactored the registration module to enhance multi-registration and multi-subscription support
-2. Added support for active-standby cluster failover of Zookeeper in multi-active scenarios
-3. Added support for database protection with az fault tolerance and active-standby cluster failover in multi-active scenarios
-4. Added support for active-standby cluster failover of RocketMQ in multi-active scenarios
-5. Added dependency service warm-up support when migrating traditional Spring Boot applications to microservices
-6. Added support for XMLPath and JavaPath to extract exception error codes for exception determination in circuit breaking and retry mechanisms
-7. Enhanced Dubbo framework compatibility and support
-8. Improved message routing in multi-active scenarios
-9. Fixed miscellaneous issues
+1. Added support for Spring Cloud 2025
+2. Added support for Nacos 3.0
+3. Refactored the registration module to enhance multi-registration and multi-subscription support
+4. Added support for active-standby cluster failover of Zookeeper in multi-active scenarios
+5. Added support for database protection with az fault tolerance and active-standby cluster failover in multi-active scenarios
+6. Added support for active-standby cluster failover of RocketMQ in multi-active scenarios
+7. Added dependency service warm-up support when migrating traditional Spring Boot applications to microservices
+8. Added support for XMLPath and JavaPath to extract exception error codes for exception determination in circuit breaking and retry mechanisms
+9. Enhanced Dubbo framework compatibility and support
+10. Improved message routing in multi-active scenarios
+11. Fixed miscellaneous issues
 
 ## 1.7.0
 
