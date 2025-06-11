@@ -42,11 +42,11 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
     @Override
     @SuppressWarnings("unchecked")
     public void onEnter(ExecutableContext ctx) {
-        Object[] arguments = ctx.getArguments();
-        if (arguments[0] instanceof Properties) {
-            configure((Properties) arguments[0]);
-        } else if (arguments[0] instanceof Map) {
-            configure((Map<String, Object>) arguments[0]);
+        Object arg = ctx.getArgument(0);
+        if (arg instanceof Properties) {
+            configure((Properties) arg);
+        } else if (arg instanceof Map) {
+            configure((Map<String, Object>) arg);
         }
     }
 
