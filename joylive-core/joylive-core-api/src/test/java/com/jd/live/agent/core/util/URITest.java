@@ -109,5 +109,12 @@ public class URITest {
         Assertions.assertEquals("/book", uri.getPath());
     }
 
+    @Test
+    void testLb() {
+        URI uri = URI.parse("lb://com.jd.live.agent.demo.service.SleepService:DEFAULT");
+        Assertions.assertEquals("lb", uri.getSchema());
+        Assertions.assertEquals("com.jd.live.agent.demo.service.SleepService:DEFAULT", uri.getHost());
+    }
+
 
 }

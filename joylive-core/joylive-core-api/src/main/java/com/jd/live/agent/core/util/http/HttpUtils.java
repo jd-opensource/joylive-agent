@@ -16,7 +16,6 @@
 package com.jd.live.agent.core.util.http;
 
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectReader;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
@@ -38,6 +37,8 @@ import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
 
 /**
  * Utility class for handling HTTP requests with support for gzip and deflate compression.
@@ -453,6 +454,43 @@ public abstract class HttpUtils {
     /**
      * Creates a new URI object with the specified components, using the original URI as a template.
      *
+     * @param uri      the original URI object
+     * @param scheme   the scheme component of the new URI, or null to use the original scheme
+     * @param userInfo the user info component of the new URI, or null to use the original user info
+     * @param host     the host component of the new URI, or null to use the original host
+     * @param port     the port component of the new URI, or null to use the original port
+     * @param path     the path component of the new URI, or null to use the original path
+     * @param query    the query component of the new URI, or null to use the original query
+     * @param fragment the fragment component of the new URI, or null to use the original fragment
+     * @param string   the string component of the new URI
+     * @return a new URI object with the specified components, or null if an error occurs
+     */
+    public static URI newURI(URI uri, String scheme, String userInfo, String host, Integer port,
+                             String path, String query, String fragment, String string) {
+        int p = port != null ? port : (uri != null ? uri.getPort() : -1);
+        String s = (scheme == null || scheme.isEmpty()) && uri != null ? uri.getScheme() : scheme;
+        String h = (host == null || host.isEmpty()) && uri != null ? uri.getHost() : host;
+        String t = (path == null || path.isEmpty()) && uri != null ? uri.getRawPath() : path;
+        String u = (userInfo == null || userInfo.isEmpty()) && uri != null ? uri.getUserInfo() : userInfo;
+        String q = (query == null || query.isEmpty()) && uri != null ? uri.getQuery() : query;
+        String f = (fragment == null || fragment.isEmpty()) && uri != null ? uri.getFragment() : fragment;
+        URIConstructor constructor = cache.get();
+        if (constructor != null) {
+            try {
+                return constructor.create(s, u, h, p, t, q, f, string);
+            } catch (Throwable ignored) {
+            }
+        }
+        try {
+            return new URI(s, u, h, p, t, q, f);
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Creates a new URI object with the specified components, using the original URI as a template.
+     *
      * @param uri    the original URI object
      * @param scheme the scheme component of the new URI, or null to use the original scheme
      * @param host   the host component of the new URI, or null to use the original host
@@ -461,22 +499,7 @@ public abstract class HttpUtils {
      * @return a new URI object with the specified components, or null if an error occurs
      */
     public static URI newURI(URI uri, String scheme, String host, Integer port, String path) {
-        int p = port != null ? port : uri.getPort();
-        String s = scheme == null || scheme.isEmpty() ? uri.getScheme() : scheme;
-        String h = host == null || host.isEmpty() ? uri.getHost() : host;
-        String t = path == null || path.isEmpty() ? uri.getRawPath() : path;
-        URIConstructor constructor = cache.get();
-        if (constructor != null) {
-            try {
-                return constructor.create(s, uri.getRawUserInfo(), h, p, t, uri.getRawQuery(), uri.getRawFragment());
-            } catch (Throwable ignored) {
-            }
-        }
-        try {
-            return new URI(s, uri.getRawUserInfo(), h, p, t, uri.getRawQuery(), uri.getRawFragment());
-        } catch (URISyntaxException e) {
-            return null;
-        }
+        return newURI(uri, scheme, null, host, port, path, null, null, null);
     }
 
     /**
@@ -489,7 +512,7 @@ public abstract class HttpUtils {
      * @return a new URI object with the specified components
      */
     public static URI newURI(URI uri, String scheme, String host, Integer port) {
-        return newURI(uri, scheme, host, port, null);
+        return newURI(uri, scheme, null, host, port, null, null, null, null);
     }
 
     /**
@@ -501,7 +524,7 @@ public abstract class HttpUtils {
      * @return a new URI object with the specified components
      */
     public static URI newURI(URI uri, String host, Integer port) {
-        return newURI(uri, null, host, port, null);
+        return newURI(uri, null, null, host, port, null, null, null, null);
     }
 
     /**
@@ -512,7 +535,7 @@ public abstract class HttpUtils {
      * @return a new URI object with the specified components
      */
     public static URI newURI(URI uri, String host) {
-        return newURI(uri, null, host, null, null);
+        return newURI(uri, null, null, host, null, null, null, null, null);
     }
 
     /**
@@ -521,36 +544,30 @@ public abstract class HttpUtils {
     private static class URIConstructor {
 
         private final Constructor<URI> constructor;
-
         private final UnsafeFieldAccessor schemeField;
-
-        private final UnsafeFieldAccessor fragmentField;
-
         private final UnsafeFieldAccessor authorityField;
-
         private final UnsafeFieldAccessor userInfoField;
-
         private final UnsafeFieldAccessor hostField;
-
         private final UnsafeFieldAccessor portField;
-
         private final UnsafeFieldAccessor pathField;
-
         private final UnsafeFieldAccessor queryField;
+        private final UnsafeFieldAccessor fragmentField;
+        private final UnsafeFieldAccessor stringField;
 
         @SuppressWarnings("unchecked")
         URIConstructor() throws NoSuchFieldException, NoSuchMethodException {
             Class<?> uriClass = URI.class;
             constructor = (Constructor<URI>) uriClass.getDeclaredConstructor();
             constructor.setAccessible(true);
-            schemeField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "scheme");
-            fragmentField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "fragment");
-            authorityField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "authority");
-            userInfoField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "userInfo");
-            hostField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "host");
-            portField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "port");
-            pathField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "path");
-            queryField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "query");
+            schemeField = getAccessor(uriClass, "scheme");
+            authorityField = getAccessor(uriClass, "authority");
+            userInfoField = getAccessor(uriClass, "userInfo");
+            hostField = getAccessor(uriClass, "host");
+            portField = getAccessor(uriClass, "port");
+            pathField = getAccessor(uriClass, "path");
+            queryField = getAccessor(uriClass, "query");
+            fragmentField = getAccessor(uriClass, "fragment");
+            stringField = getAccessor(uriClass, "string");
         }
 
         /**
@@ -567,6 +584,24 @@ public abstract class HttpUtils {
          * @throws Exception if an error occurs while constructing the URI
          */
         public URI create(String scheme, String userInfo, String host, int port, String path, String query, String fragment) throws Exception {
+            return create(scheme, userInfo, host, port, path, query, fragment, null);
+        }
+
+        /**
+         * Creates a new URI object with the specified components.
+         *
+         * @param scheme   the scheme component of the new URI
+         * @param userInfo the user info component of the new URI
+         * @param host     the host component of the new URI
+         * @param port     the port component of the new URI
+         * @param path     the path component of the new URI
+         * @param query    the query component of the new URI
+         * @param fragment the fragment component of the new URI
+         * @param string   the string component of the new URI
+         * @return a new URI object with the specified components
+         * @throws Exception if an error occurs while constructing the URI
+         */
+        public URI create(String scheme, String userInfo, String host, int port, String path, String query, String fragment, String string) throws Exception {
             URI result = constructor.newInstance();
             schemeField.set(result, scheme);
             userInfoField.set(result, userInfo);
@@ -576,6 +611,9 @@ public abstract class HttpUtils {
             queryField.set(result, query);
             fragmentField.set(result, fragment);
             authorityField.set(result, authority(userInfo, host, port));
+            if (string != null) {
+                stringField.set(result, string);
+            }
             return result;
         }
 

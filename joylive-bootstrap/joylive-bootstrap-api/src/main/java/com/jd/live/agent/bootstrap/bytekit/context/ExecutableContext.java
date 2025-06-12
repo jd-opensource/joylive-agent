@@ -101,6 +101,12 @@ public abstract class ExecutableContext extends AbstractAttributes {
         return arguments == null || index < 0 || index >= arguments.length ? null : (T) arguments[index];
     }
 
+    public void setArgument(final int index, final Object value) {
+        if (index >= 0 && index < arguments.length) {
+            arguments[index] = value;
+        }
+    }
+
     /**
      * Attempts to acquire a lock using the provided lock context.
      *
