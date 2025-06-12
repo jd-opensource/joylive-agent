@@ -70,6 +70,7 @@ public interface DubboResponse {
                             ? new ServiceError(response.getException(), true)
                             : null,
                     retryPredicate);
+            // TODO async invocation
         }
 
     }

@@ -19,6 +19,8 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 
+import java.util.concurrent.CompletionStage;
+
 /**
  * ServiceResponse
  *
@@ -96,5 +98,22 @@ public interface ServiceResponse extends Response {
     interface OutboundResponse extends ServiceResponse {
 
 
+    }
+
+    /**
+     * Marks a component as supporting asynchronous operations via {@link CompletionStage}.
+     *
+     * <p>The attached future completes when the asynchronous operation finishes,
+     * either with a result or an exception.</p>
+     */
+    interface Asyncable {
+
+        /**
+         * Returns the future representing the asynchronous operation's outcome.
+         *
+         * @return a {@link CompletionStage} that completes when the operation finishes,
+         * containing either the result or the failure exception
+         */
+        CompletionStage<Object> getFuture();
     }
 }

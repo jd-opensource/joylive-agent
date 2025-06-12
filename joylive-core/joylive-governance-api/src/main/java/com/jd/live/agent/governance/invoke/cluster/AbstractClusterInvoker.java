@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.RoutedRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse.Asyncable;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
@@ -92,6 +93,20 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
                             ServiceError error = o.getError();
                             if (error != null && error.hasException()) {
                                 onException(cluster, invocation, o, error, instance, result);
+                            } else if (o instanceof Asyncable) {
+                                // for dubbo async result, we need to wait for the future to complete
+                                Asyncable async = (Asyncable) o;
+                                CompletionStage<Object> future = async.getFuture();
+                                if (future == null) {
+                                    onSuccess(cluster, invocation, o, request, instance, result);
+                                } else future.whenComplete((o1, r1) -> {
+                                    // keep original response
+                                    if (r1 != null) {
+                                        onException(cluster, invocation, o, new ServiceError(r1, true), instance, result);
+                                    } else {
+                                        onSuccess(cluster, invocation, o, request, instance, result);
+                                    }
+                                });
                             } else {
                                 onSuccess(cluster, invocation, o, request, instance, result);
                             }

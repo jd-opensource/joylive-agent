@@ -18,7 +18,12 @@ package com.jd.live.agent.plugin.router.dubbo.v3.response;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import com.jd.live.agent.governance.response.ServiceResponse.Asyncable;
+import org.apache.dubbo.rpc.AsyncRpcResult;
 import org.apache.dubbo.rpc.Result;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Represents a generic response in the Dubbo RPC framework. This interface serves as a marker
@@ -33,7 +38,7 @@ public interface DubboResponse {
      * the result of an RPC call, potentially including a result object, an exception, and a predicate
      * for response filtering or processing.
      */
-    class DubboOutboundResponse extends AbstractRpcOutboundResponse<Result> implements DubboResponse {
+    class DubboOutboundResponse extends AbstractRpcOutboundResponse<Result> implements DubboResponse, Asyncable {
 
         public DubboOutboundResponse(Result response) {
             this(response, null);
@@ -49,6 +54,25 @@ public interface DubboResponse {
                             ? new ServiceError(response.getException(), true)
                             : null,
                     predicate);
+        }
+
+        @Override
+        public CompletionStage<Object> getFuture() {
+            if (response instanceof AsyncRpcResult) {
+                AsyncRpcResult asyncResult = (AsyncRpcResult) response;
+                CompletableFuture<Object> future = new CompletableFuture<>();
+                asyncResult.getResponseFuture().whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        future.completeExceptionally(throwable);
+                    } else if (result.hasException()) {
+                        future.completeExceptionally(result.getException());
+                    } else {
+                        future.complete(result);
+                    }
+                });
+                return future;
+            }
+            return null;
         }
     }
 }
