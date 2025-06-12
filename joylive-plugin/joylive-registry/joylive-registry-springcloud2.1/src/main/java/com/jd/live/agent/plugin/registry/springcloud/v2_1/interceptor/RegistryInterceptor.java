@@ -35,6 +35,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
 public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistryInterceptor.class);
+    private static final String REGISTRATION = "registration";
 
     public RegistryInterceptor(Application application, Registry registry) {
         super(application, registry);
@@ -44,14 +45,14 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     protected void beforeRegister(MethodContext ctx) {
         Object[] arguments = ctx.getArguments();
         LiveRegistration registration = new LiveRegistration((Registration) arguments[0], application);
-        arguments[0] = registration;
+        ctx.setAttribute(REGISTRATION, registration);
         registry.register(registration.getServiceId());
         logger.info("Found spring cloud provider, service:{}, metadata:{}", registration.getServiceId(), registration.getMetadata());
     }
 
     @Override
     protected List<ServiceInstance> getInstances(MethodContext ctx) {
-        LiveRegistration registration = ctx.getArgument(0);
+        LiveRegistration registration = ctx.getAttribute(REGISTRATION);
         return toList(registration.toInstance());
     }
 }
