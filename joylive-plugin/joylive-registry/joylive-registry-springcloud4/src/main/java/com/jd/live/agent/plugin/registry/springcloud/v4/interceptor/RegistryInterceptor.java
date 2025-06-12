@@ -18,17 +18,12 @@ package com.jd.live.agent.plugin.registry.springcloud.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
-import com.jd.live.agent.governance.util.FrameworkVersion;
-import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties;
+import com.jd.live.agent.plugin.registry.springcloud.v4.registry.LiveRegistration;
 import org.springframework.cloud.client.serviceregistry.Registration;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * RegistryInterceptor
@@ -43,41 +38,16 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
     @Override
     protected void beforeRegister(MethodContext ctx) {
-        Registration registration = (Registration) ctx.getArguments()[0];
-        Map<String, String> metadata = registration.getMetadata();
-        if (metadata != null) {
-            application.labelRegistry(metadata::putIfAbsent, true);
-            if (registration.isSecure()) {
-                metadata.put(Constants.LABEL_SECURE, String.valueOf(registration.isSecure()));
-            }
-        }
-        String serviceId = registration.getServiceId();
-        registry.register(serviceId);
-        logger.info("Found spring cloud provider, service: {}", serviceId);
+        Object[] arguments = ctx.getArguments();
+        LiveRegistration registration = new LiveRegistration((Registration) arguments[0], application);
+        arguments[0] = registration;
+        registry.register(registration.getServiceId());
+        logger.info("Found spring cloud provider, service:{}, metadata:{}", registration.getServiceId(), registration.getMetadata());
     }
 
     @Override
     protected ServiceInstance getInstance(MethodContext ctx) {
-        Registration registration = (Registration) ctx.getArguments()[0];
-        Map<String, String> metadata = registration.getMetadata();
-        metadata = metadata == null ? new HashMap<>() : new HashMap<>(metadata);
-        FrameworkVersion version = getFrameworkVersion();
-        metadata.put(Constants.LABEL_FRAMEWORK, version.toString());
-        return ServiceInstance.builder()
-                .interfaceMode(false)
-                .framework(version)
-                .service(registration.getServiceId())
-                .group(metadata.get(Constants.LABEL_SERVICE_GROUP))
-                .scheme(registration.getScheme())
-                .host(registration.getHost())
-                .port(registration.getPort())
-                .metadata(metadata)
-                .build();
-    }
-
-    private FrameworkVersion getFrameworkVersion() {
-        String version = AutoServiceRegistrationProperties.class.getPackage().getImplementationVersion();
-        version = version == null || version.isEmpty() ? "4" : version;
-        return new FrameworkVersion("spring-cloud", version);
+        LiveRegistration registration = ctx.getArgument(0);
+        return registration.toInstance();
     }
 }
