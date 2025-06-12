@@ -15,10 +15,21 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v2_6.response;
 
+import com.alibaba.dubbo.remoting.exchange.ResponseCallback;
+import com.alibaba.dubbo.remoting.exchange.ResponseFuture;
 import com.alibaba.dubbo.rpc.Result;
+import com.alibaba.dubbo.rpc.RpcContext;
+import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import com.jd.live.agent.governance.response.ServiceResponse.Asyncable;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * Represents a response in the Dubbo RPC system. This interface serves as a marker
@@ -33,7 +44,7 @@ public interface DubboResponse {
      * an RPC call within Dubbo's system. It extends {@link AbstractRpcOutboundResponse} to
      * provide additional context and handling for Dubbo-specific responses.
      */
-    class DubboOutboundResponse extends AbstractRpcOutboundResponse<Result> implements DubboResponse {
+    class DubboOutboundResponse extends AbstractRpcOutboundResponse<Result> implements DubboResponse, Asyncable {
 
         /**
          * Constructs a new {@link DubboOutboundResponse} with the given result.
@@ -70,9 +81,36 @@ public interface DubboResponse {
                             ? new ServiceError(response.getException(), true)
                             : null,
                     retryPredicate);
-            // TODO async invocation
         }
 
+        @Override
+        public CompletionStage<Object> getFuture() {
+            Future<?> future = RpcContext.getContext().getFuture();
+            if (future instanceof FutureAdapter) {
+                CompletableFuture<Object> result = new CompletableFuture<>();
+                ResponseFuture responseFuture = ((FutureAdapter<?>) future).getFuture();
+                ResponseCallback callback = getQuietly(responseFuture, "callback");
+                responseFuture.setCallback(new ResponseCallback() {
+                    @Override
+                    public void done(Object response) {
+                        result.complete(response);
+                        if (callback != null) {
+                            callback.done(response);
+                        }
+                    }
+
+                    @Override
+                    public void caught(Throwable exception) {
+                        result.completeExceptionally(exception);
+                        if (callback != null) {
+                            callback.caught(exception);
+                        }
+                    }
+                });
+                return result;
+            }
+            return null;
+        }
     }
 }
 
