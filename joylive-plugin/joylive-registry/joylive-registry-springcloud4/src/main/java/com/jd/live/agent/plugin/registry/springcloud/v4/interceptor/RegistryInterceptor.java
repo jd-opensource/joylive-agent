@@ -23,7 +23,6 @@ import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.registry.springcloud.v4.registry.LiveRegistration;
-import org.springframework.cloud.client.serviceregistry.Registration;
 
 import java.util.List;
 
@@ -43,8 +42,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
     @Override
     protected void beforeRegister(MethodContext ctx) {
-        Object[] arguments = ctx.getArguments();
-        LiveRegistration registration = new LiveRegistration((Registration) arguments[0], application);
+        LiveRegistration registration = new LiveRegistration(ctx.getArgument(0), application);
         ctx.setAttribute(REGISTRATION, registration);
         registry.register(registration.getServiceId());
         logger.info("Found spring cloud provider, service:{}, metadata:{}", registration.getServiceId(), registration.getMetadata());
