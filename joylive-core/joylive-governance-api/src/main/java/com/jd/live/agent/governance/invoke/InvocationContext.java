@@ -458,7 +458,6 @@ public interface InvocationContext {
      * @throws RejectNoProviderException if no provider is found for the invocation.
      * @throws RejectException           if the request is rejected during filtering.
      */
-    @SuppressWarnings("unchecked")
     default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
         return route(invocation, (ServiceRegistry) null);
     }
@@ -476,13 +475,41 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest, E extends ServiceEndpoint> E route(OutboundInvocation<R> invocation, ServiceRegistry system) {
+    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, ServiceRegistry system) {
         try {
             Registry registry = getRegistry();
             R request = invocation.getRequest();
             CompletionStage<List<ServiceEndpoint>> stage = registry.getEndpoints(request.getService(), request.getGroup(), system);
             List<ServiceEndpoint> instances = stage.toCompletableFuture().get();
             return (E) route(invocation, instances, (RouteFilter[]) null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            return route(invocation, null, (RouteFilter[]) null);
+        }
+    }
+
+    /**
+     * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
+     *
+     * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed.
+     * @param <E>        the type parameter extending {@link Endpoint}, representing the specific type of endpoint.
+     * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
+     *                   its initially considered endpoints.
+     * @param system     the system registry provider.
+     * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
+     * @throws RejectNoProviderException if no provider is found for the invocation.
+     * @throws RejectException           if the request is rejected during filtering.
+     */
+    @SuppressWarnings("unchecked")
+    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(OutboundInvocation<R> invocation, ServiceRegistry system) {
+        try {
+            Registry registry = getRegistry();
+            R request = invocation.getRequest();
+            CompletionStage<List<ServiceEndpoint>> stage = registry.getEndpoints(request.getService(), request.getGroup(), system);
+            List<ServiceEndpoint> instances = stage.toCompletableFuture().get();
+            return (List<E>) routes(invocation, instances, (RouteFilter[]) null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -560,6 +587,39 @@ public interface InvocationContext {
             } else {
                 throw new RejectNoProviderException("There is no provider for invocation " + invocation.getRequest().getService());
             }
+        } catch (RejectException e) {
+            invocation.onReject(e);
+            throw e;
+        }
+    }
+
+    /**
+     * Routes an outbound request through a series of {@link RouteFilter}s to determine the appropriate
+     * {@link Endpoint}s for the request. This method applies the provided filters (or the default
+     * filters if none are provided) to the given list of instances (endpoints), modifying the
+     * invocation's endpoints based on the filtering logic.
+     *
+     * @param <R>        The type of the outbound request, extending {@link OutboundRequest}.
+     * @param <E>        The type of the endpoints, extending {@link Endpoint}.
+     * @param invocation The {@link OutboundInvocation} representing the outbound request and
+     *                   containing information necessary for routing.
+     * @param instances  A list of initial {@link Endpoint} instances to be considered for the request.
+     * @param filters    A collection of {@link RouteFilter} instances to apply to the endpoints. If
+     *                   {@code null} or empty, the default set of route filters is used.
+     * @return An {@link Endpoint} instance that has been filtered according to the
+     * specified (or default) filters and is deemed suitable for the outbound request.
+     * @throws RejectNoProviderException if no provider is found for the invocation.
+     * @throws RejectException           if the request is rejected during filtering.
+     */
+    @SuppressWarnings("unchecked")
+    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+        if (instances != null && !instances.isEmpty()) {
+            invocation.setInstances(instances);
+        }
+        try {
+            RouteFilterChain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
+            chain.filter(invocation);
+            return (List<E>) invocation.getEndpoints();
         } catch (RejectException e) {
             invocation.onReject(e);
             throw e;

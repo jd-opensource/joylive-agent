@@ -32,6 +32,7 @@ import com.jd.live.agent.governance.registry.SimpleServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.EndpointInstance;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.BlockingCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignCloudOutboundRequest;
@@ -99,9 +100,13 @@ public class ServiceInstanceSupplierInterceptor extends InterceptorAdaptor {
     private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> system) {
         try {
             String service = invocation.getRequest().getService();
-            ServiceEndpoint endpoint = context.route(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
-            ServiceInstance instance = convert(endpoint);
-            return singletonList(instance);
+            if (context.isFlowControlEnabled()) {
+                ServiceEndpoint endpoint = context.route(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
+                return singletonList(convert(endpoint));
+            } else {
+                List<ServiceEndpoint> endpoints = context.routes(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
+                return toList(endpoints, EndpointInstance::convert);
+            }
         } catch (Throwable e) {
             logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
             Throwable throwable = thrower.createException(e, invocation.getRequest());
