@@ -2,3 +2,4 @@ com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationD
 com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationRunListenersDefinition
 com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationContextDefinition
 com.jd.live.agent.plugin.application.springboot.v2.definition.NacosRegistrationDefinition
+com.jd.live.agent.plugin.application.springboot.v2.definition.SofaBootstrapRunListenerDefinition

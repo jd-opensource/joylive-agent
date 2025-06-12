@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class AppLifecycle {
 
+    public static ThreadLocal<Boolean> IGNORED = new ThreadLocal<>();
+
     /**
      * Event key representing the application loading event.
      */
@@ -117,7 +119,12 @@ public class AppLifecycle {
      * {@code false}
      */
     private static boolean load() {
-        return incrementAndGet(EVENT_LOAD) == 1;
+        // fix for sofa boot
+        Boolean ignored = IGNORED.get();
+        if (ignored == null || !ignored) {
+            return incrementAndGet(EVENT_LOAD) == 1;
+        }
+        return false;
     }
 
     /**
