@@ -83,8 +83,12 @@ public class PolicyPreparation extends AppListenerAdapter {
     public void onReady(AppContext context) {
         printLocation();
         printFeatures();
-        validateLiveConfig(policySupervisor.getPolicy(), application.getLocation());
-        validateLaneConfig(policySupervisor.getPolicy(), application.getLocation());
+        if (liveEnabled) {
+            validateLiveConfig(policySupervisor.getPolicy(), application.getLocation());
+        }
+        if (laneEnabled) {
+            validateLaneConfig(policySupervisor.getPolicy(), application.getLocation());
+        }
     }
 
     /**

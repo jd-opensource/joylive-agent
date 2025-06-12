@@ -60,6 +60,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                                 .metadata(RegistryUtils.convertProviderToMap(config, serverConfig))
                                 .build());
             }
+            return instances;
         }
         return null;
     }
