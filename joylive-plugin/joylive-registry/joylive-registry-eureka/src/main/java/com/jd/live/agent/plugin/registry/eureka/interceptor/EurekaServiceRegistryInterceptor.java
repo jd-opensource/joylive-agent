@@ -26,7 +26,7 @@ import org.springframework.cloud.netflix.eureka.serviceregistry.EurekaRegistrati
 public class EurekaServiceRegistryInterceptor extends InterceptorAdaptor {
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
+    public void onSuccess(ExecutableContext ctx) {
         EurekaRegistration registration = ctx.getArgument(0);
         // info is used to register
         InstanceInfo info = registration.getApplicationInfoManager().getInfo();

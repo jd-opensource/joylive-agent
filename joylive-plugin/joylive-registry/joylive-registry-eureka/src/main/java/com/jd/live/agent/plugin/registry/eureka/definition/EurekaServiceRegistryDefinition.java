@@ -35,7 +35,7 @@ public class EurekaServiceRegistryDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "org.springframework.cloud.netflix.eureka.serviceregistry.EurekaServiceRegistry";
 
-    private static final String METHOD = "register";
+    private static final String METHOD = "maybeInitializeClient";
 
     private static final String[] ARGUMENTS = new String[]{
             "org.springframework.cloud.netflix.eureka.serviceregistry.EurekaRegistration"
