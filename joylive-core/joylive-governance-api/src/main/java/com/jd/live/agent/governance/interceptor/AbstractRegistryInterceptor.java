@@ -23,6 +23,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 
+import java.util.List;
+
 /**
  * AbstractRegistryInterceptor
  */
@@ -47,9 +49,9 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
     }
 
     protected void doRegister(MethodContext mc) {
-        ServiceInstance instance = getInstance(mc);
-        if (instance != null) {
-            registry.register(instance, () -> {
+        List<ServiceInstance> instances = getInstances(mc);
+        if (instances != null && !instances.isEmpty()) {
+            registry.register(instances, () -> {
                 mc.invokeOrigin();
                 return null;
             });
@@ -67,14 +69,13 @@ public abstract class AbstractRegistryInterceptor extends InterceptorAdaptor {
 
     }
 
-
     /**
      * Retrieves a service instance associated with the provided method context.
      *
      * @param ctx the {@link MethodContext} for which to retrieve the service instance
      * @return the {@link ServiceInstance} associated with the method context
      */
-    protected ServiceInstance getInstance(MethodContext ctx) {
+    protected List<ServiceInstance> getInstances(MethodContext ctx) {
         return null;
     }
 

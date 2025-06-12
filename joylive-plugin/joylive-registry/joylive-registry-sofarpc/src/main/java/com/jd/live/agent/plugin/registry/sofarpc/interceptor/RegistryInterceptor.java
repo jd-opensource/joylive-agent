@@ -40,24 +40,7 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     }
 
     @Override
-    protected void doRegister(MethodContext mc) {
-        List<ServiceInstance> instances = getInstances(mc);
-        if (instances != null) {
-            registry.register(instances, () -> {
-                mc.invokeOrigin();
-                return null;
-            });
-            mc.setSkip(true);
-        }
-    }
-
-    /**
-     * Converts provider configuration into service instances.
-     *
-     * @param ctx the method context containing provider configuration
-     * @return list of service instances, or null if registration should be skipped
-     */
-    private List<ServiceInstance> getInstances(MethodContext ctx) {
+    protected List<ServiceInstance> getInstances(MethodContext ctx) {
         List<ServiceInstance> instances = null;
         ProviderConfig<?> config  = ctx.getArgument(0);
         List<ServerConfig> serverConfigs = config.getServer();

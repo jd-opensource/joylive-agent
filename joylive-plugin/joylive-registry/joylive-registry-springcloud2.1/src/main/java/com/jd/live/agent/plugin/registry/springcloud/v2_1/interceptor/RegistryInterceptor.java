@@ -25,6 +25,10 @@ import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.registry.springcloud.v2_1.registry.LiveRegistration;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
+import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
+
 /**
  * RegistryInterceptor
  */
@@ -46,8 +50,8 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
     }
 
     @Override
-    protected ServiceInstance getInstance(MethodContext ctx) {
+    protected List<ServiceInstance> getInstances(MethodContext ctx) {
         LiveRegistration registration = ctx.getArgument(0);
-        return registration.toInstance();
+        return toList(registration.toInstance());
     }
 }
