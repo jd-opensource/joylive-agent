@@ -22,6 +22,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.Constants.LABEL_EXCEPTION_MESSAGE;
@@ -58,7 +59,7 @@ public class ServiceError {
 
     public ServiceError(String error, Throwable throwable, Set<String> exceptions, boolean serverError) {
         this.error = error;
-        this.throwable = throwable;
+        this.throwable = throwable instanceof CompletionException ? throwable.getCause() : throwable;
         this.exceptions = exceptions;
         this.serverError = serverError;
     }

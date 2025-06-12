@@ -63,7 +63,7 @@ public interface DubboResponse {
                     } else if (result.hasException()) {
                         future.completeExceptionally(result.getException());
                     } else {
-                        future.complete(result);
+                        future.complete(result.getValue());
                     }
                 });
                 return future;
