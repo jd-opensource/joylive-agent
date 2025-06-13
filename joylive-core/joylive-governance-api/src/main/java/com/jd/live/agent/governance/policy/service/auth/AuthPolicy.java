@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.governance.invoke.auth.Authenticate.KEY_AUTH;
 import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN;
 import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN_KEY;
@@ -47,6 +48,8 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
     private Map<String, String> params;
 
     private volatile transient TokenPolicy tokenPolicy;
+
+    private volatile transient JWTPolicy jwtPolicy;
 
     public AuthPolicy() {
     }
@@ -74,11 +77,7 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
     }
 
     public String getParameter(String key, String defaultValue) {
-        if (params == null || key == null) {
-            return defaultValue;
-        }
-        String value = params.get(key);
-        return value == null || value.isEmpty() ? defaultValue : value;
+        return choose(getParameter(key), defaultValue);
     }
 
     public TokenPolicy getTokenPolicy() {
@@ -92,5 +91,24 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
             }
         }
         return tokenPolicy;
+    }
+
+    public JWTPolicy getJwtPolicy() {
+        if (jwtPolicy == null) {
+            synchronized (this) {
+                if (jwtPolicy == null) {
+                    JWTPolicy jwtPolicy = new JWTPolicy();
+                    jwtPolicy.setAlgorithm(getParameter("algorithm"));
+                    jwtPolicy.setIssuer(getParameter("issuer"));
+                    jwtPolicy.setAudience(getParameter("audience"));
+                    jwtPolicy.setAudience(getParameter("audience"));
+                    jwtPolicy.setPrivateKey(getParameter("privateKey"));
+                    jwtPolicy.setPublicKey(getParameter("publicKey"));
+                    jwtPolicy.setSecret(getParameter("secret"));
+                    this.jwtPolicy = jwtPolicy;
+                }
+            }
+        }
+        return jwtPolicy;
     }
 }

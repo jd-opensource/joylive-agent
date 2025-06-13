@@ -24,6 +24,7 @@
         <module>joylive-flowcontrol</module>
         <module>joylive-expression</module>
         <module>joylive-probe</module>
+        <module>joylive-auth</module>
     </modules>
 
     <dependencies>

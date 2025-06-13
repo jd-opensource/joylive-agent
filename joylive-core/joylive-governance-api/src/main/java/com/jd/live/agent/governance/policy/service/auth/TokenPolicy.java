@@ -46,7 +46,7 @@ public class TokenPolicy {
     }
 
     public boolean isValid() {
-        return key != null && !key.isEmpty() && token != null && !token.isEmpty();
+        return token != null && !token.isEmpty();
     }
 
     public String getBase64Token() {

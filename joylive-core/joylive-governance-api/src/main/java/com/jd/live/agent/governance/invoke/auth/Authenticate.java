@@ -30,6 +30,8 @@ public interface Authenticate {
 
     String BASIC_PREFIX = "Basic ";
 
+    String BEARER_PREFIX = "Bearer ";
+
     /**
      * Authenticates a user based on the given policy and service request.
      *
