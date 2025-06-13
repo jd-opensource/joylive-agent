@@ -32,7 +32,7 @@ import java.nio.file.Paths;
  * @implNote Returns {@code null} if the key file does not exist
  * @throws IOException If the key file cannot be read
  */
-@Extension("file")
+@Extension(value = KeyStore.TYPE_FILE, order = KeyStore.ORDER_FILE)
 public class FileKeyStore implements KeyStore {
 
     @Override

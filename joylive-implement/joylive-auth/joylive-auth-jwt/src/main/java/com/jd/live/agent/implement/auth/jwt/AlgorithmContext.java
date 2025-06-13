@@ -19,19 +19,31 @@ import com.jd.live.agent.governance.policy.service.auth.JWTPolicy;
 import com.jd.live.agent.governance.security.KeyStore;
 import lombok.Getter;
 
+import static com.jd.live.agent.governance.security.KeyLoader.loadKey;
+
 @Getter
 public class AlgorithmContext {
+    private final AlgorithmRole role;
     private final JWTPolicy policy;
     private final KeyStore keyStore;
     private final String consumer;
     private final String provider;
     private final String service;
 
-    public AlgorithmContext(JWTPolicy policy, KeyStore keyStore, String consumer, String provider, String service) {
+    public AlgorithmContext(AlgorithmRole role, JWTPolicy policy, KeyStore keyStore, String consumer, String provider, String service) {
+        this.role = role;
         this.policy = policy;
         this.keyStore = keyStore;
         this.consumer = consumer;
         this.provider = provider;
         this.service = service;
+    }
+
+    public byte[] loadPublicKey() throws Exception {
+        return loadKey(keyStore.getPublicKey(policy.getPublicKey()));
+    }
+
+    public byte[] loadPrivateKey() throws Exception {
+        return loadKey(keyStore.getPrivateKey(policy.getPrivateKey()));
     }
 }

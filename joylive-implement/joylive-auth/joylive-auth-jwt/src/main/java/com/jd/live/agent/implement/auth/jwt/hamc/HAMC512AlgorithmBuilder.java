@@ -16,16 +16,14 @@
 package com.jd.live.agent.implement.auth.jwt.hamc;
 
 import com.auth0.jwt.algorithms.Algorithm;
-import com.jd.live.agent.implement.auth.jwt.AlgorithmBuilder;
-import com.jd.live.agent.implement.auth.jwt.AlgorithmContext;
 
 /**
  * Factory for creating HMAC512 algorithm instances using keys from a KeyStore.
  */
-public class HAMC512AlgorithmBuilder implements AlgorithmBuilder {
+public class HAMC512AlgorithmBuilder extends HAMCAlgorithmBuilder {
 
     @Override
-    public Algorithm create(AlgorithmContext context) throws Exception {
-        return Algorithm.HMAC512(context.getPolicy().getSecret());
+    protected Algorithm doCreate(String secret) throws Exception {
+        return Algorithm.HMAC512(secret);
     }
 }

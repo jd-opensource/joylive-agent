@@ -15,10 +15,14 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * JWT policy
@@ -29,13 +33,25 @@ import java.io.Serializable;
 @Setter
 public class JWTPolicy implements Serializable {
 
-    public static final long DEFAULT_EXPIRE_TIME = 5 * 60 * 1000L;
+    private static final long DEFAULT_EXPIRE_TIME = 5 * 60 * 1000L;
+    private static final String DEFAULT_KEY_STORE = "file";
+    private static final String DEFAULT_ALGORITHM = "HMAC256";
+
+    private static final String KEY_JWT_KEY = "jwt.key";
+    private static final String KEY_JWT_ALGORITHM = "jwt.algorithm";
+    private static final String KEY_JWT_KEY_STORE = "jwt.keyStore";
+    private static final String KEY_JWT_ISSUER = "jwt.issuer";
+    private static final String KEY_JWT_AUDIENCE = "jwt.audience";
+    private static final String KEY_JWT_PRIVATE_KEY = "jwt.privateKey";
+    private static final String KEY_JWT_PUBLIC_KEY = "jwt.publicKey";
+    private static final String KEY_JWT_SECRET = "jwt.secret";
+    private static final String KEY_EXPIRE_TIME = "jwt.expireTime";
 
     private String key;
 
-    private String algorithm;
+    private String algorithm = DEFAULT_ALGORITHM;
 
-    private String keyStore = "local";
+    private String keyStore = DEFAULT_KEY_STORE;
 
     private String privateKey;
 
@@ -49,4 +65,19 @@ public class JWTPolicy implements Serializable {
 
     private long expireTime = DEFAULT_EXPIRE_TIME;
 
+    public JWTPolicy() {
+    }
+
+    public JWTPolicy(Map<String, String> map) {
+        Option option = MapOption.of(map);
+        this.key = option.getString(KEY_JWT_KEY, Authenticate.KEY_AUTH);
+        this.algorithm = option.getString(KEY_JWT_ALGORITHM, DEFAULT_ALGORITHM);
+        this.keyStore = option.getString(KEY_JWT_KEY_STORE, DEFAULT_KEY_STORE);
+        this.issuer = option.getString(KEY_JWT_ISSUER);
+        this.audience = option.getString(KEY_JWT_AUDIENCE);
+        this.privateKey = option.getString(KEY_JWT_PRIVATE_KEY);
+        this.publicKey = option.getString(KEY_JWT_PUBLIC_KEY);
+        this.secret = option.getString(KEY_JWT_SECRET);
+        this.expireTime = option.getPositive(KEY_EXPIRE_TIME, DEFAULT_EXPIRE_TIME);
+    }
 }

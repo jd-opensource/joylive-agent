@@ -23,6 +23,7 @@ import com.jd.live.agent.implement.auth.jwt.hamc.HAMC384AlgorithmBuilder;
 import com.jd.live.agent.implement.auth.jwt.hamc.HAMC512AlgorithmBuilder;
 import com.jd.live.agent.implement.auth.jwt.rsa.RSA256AlgorithmBuilder;
 import com.jd.live.agent.implement.auth.jwt.rsa.RSA384AlgorithmBuilder;
+import com.jd.live.agent.implement.auth.jwt.rsa.RSA512AlgorithmBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,26 +39,35 @@ public class AlgorithmBuilderFactory {
     private static final Map<String, AlgorithmBuilder> factories = new HashMap<>();
 
     static {
-        factories.put("RSA256", new RSA256AlgorithmBuilder());
-        factories.put("SHA256withRSA", new RSA256AlgorithmBuilder());
-        factories.put("RSA384", new RSA384AlgorithmBuilder());
-        factories.put("SHA384withRSA", new RSA384AlgorithmBuilder());
-        factories.put("RSA512", new RSA384AlgorithmBuilder());
-        factories.put("SHA512withRSA", new RSA384AlgorithmBuilder());
+        AlgorithmBuilder builder = new RSA256AlgorithmBuilder();
+        factories.put("RSA256", builder);
+        factories.put("SHA256withRSA", builder);
+        builder = new RSA384AlgorithmBuilder();
+        factories.put("RSA384", builder);
+        factories.put("SHA384withRSA", builder);
+        builder = new RSA512AlgorithmBuilder();
+        factories.put("RSA512", builder);
+        factories.put("SHA512withRSA", builder);
 
-        factories.put("ECDSA256", new EC256AlgorithmBuilder());
-        factories.put("SHA256withECDSA", new EC256AlgorithmBuilder());
-        factories.put("ECDSA384", new EC384AlgorithmBuilder());
-        factories.put("SHA384withECDSA", new EC384AlgorithmBuilder());
-        factories.put("ECDSA512", new EC512AlgorithmBuilder());
-        factories.put("SHA512withECDSA", new EC512AlgorithmBuilder());
+        builder = new EC256AlgorithmBuilder();
+        factories.put("ECDSA256", builder);
+        factories.put("SHA256withECDSA", builder);
+        builder = new EC384AlgorithmBuilder();
+        factories.put("ECDSA384", builder);
+        factories.put("SHA384withECDSA", builder);
+        builder = new EC512AlgorithmBuilder();
+        factories.put("ECDSA512", builder);
+        factories.put("SHA512withECDSA", builder);
 
-        factories.put("HMAC256", new HAMC256AlgorithmBuilder());
-        factories.put("HmacSHA256", new HAMC256AlgorithmBuilder());
-        factories.put("HMAC384", new HAMC384AlgorithmBuilder());
-        factories.put("HmacSHA384", new HAMC384AlgorithmBuilder());
-        factories.put("HMAC512", new HAMC512AlgorithmBuilder());
-        factories.put("HmacSHA512", new HAMC512AlgorithmBuilder());
+        builder = new HAMC256AlgorithmBuilder();
+        factories.put("HMAC256", builder);
+        factories.put("HmacSHA256", builder);
+        builder = new HAMC384AlgorithmBuilder();
+        factories.put("HMAC384", builder);
+        factories.put("HmacSHA384", builder);
+        builder = new HAMC512AlgorithmBuilder();
+        factories.put("HMAC512", builder);
+        factories.put("HmacSHA512", builder);
     }
 
     /**

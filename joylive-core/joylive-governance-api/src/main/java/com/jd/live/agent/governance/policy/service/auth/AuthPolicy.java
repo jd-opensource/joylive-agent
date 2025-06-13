@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.policy.service.auth;
 
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,17 +25,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.StringUtils.choose;
-import static com.jd.live.agent.governance.invoke.auth.Authenticate.KEY_AUTH;
-import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN;
-import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN_KEY;
 
 /**
  * Auth policy
  *
  * @since 1.2.0
  */
-public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithId<AuthPolicy>, Serializable {
-
+public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPolicy>, Serializable {
     /**
      * The type of the auth policy.
      */
@@ -84,9 +80,7 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
         if (tokenPolicy == null) {
             synchronized (this) {
                 if (tokenPolicy == null) {
-                    String key = getParameter(KEY_TOKEN_KEY, KEY_AUTH);
-                    String token = getParameter(KEY_TOKEN);
-                    tokenPolicy = new TokenPolicy(key, token);
+                    tokenPolicy = new TokenPolicy(params);
                 }
             }
         }
@@ -97,15 +91,7 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
         if (jwtPolicy == null) {
             synchronized (this) {
                 if (jwtPolicy == null) {
-                    JWTPolicy jwtPolicy = new JWTPolicy();
-                    jwtPolicy.setAlgorithm(getParameter("algorithm"));
-                    jwtPolicy.setIssuer(getParameter("issuer"));
-                    jwtPolicy.setAudience(getParameter("audience"));
-                    jwtPolicy.setAudience(getParameter("audience"));
-                    jwtPolicy.setPrivateKey(getParameter("privateKey"));
-                    jwtPolicy.setPublicKey(getParameter("publicKey"));
-                    jwtPolicy.setSecret(getParameter("secret"));
-                    this.jwtPolicy = jwtPolicy;
+                    this.jwtPolicy = new JWTPolicy(params);
                 }
             }
         }

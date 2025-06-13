@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.auth.jwt.ec;
+package com.jd.live.agent.implement.auth.jwt;
 
-import com.jd.live.agent.implement.auth.jwt.AsymmetricAlgorithmBuilder;
+public enum AlgorithmRole {
 
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
+    SIGNATURE,
 
-/**
- * Factory for creating EC algorithm instances using keys from a KeyStore.
- */
-public abstract class ECPAlgorithmBuilder extends AsymmetricAlgorithmBuilder<ECPublicKey, ECPrivateKey> {
-
-    public ECPAlgorithmBuilder() {
-        super("EC");
-    }
+    VERIFY,
 }

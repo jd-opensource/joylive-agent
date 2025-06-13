@@ -49,7 +49,7 @@ public class KeyLoader {
      * @return true if the data starts with PEM prefix ("-----BEGIN"), false otherwise
      */
     private static boolean isPEMFormat(byte[] data) {
-        if (data.length < PEM_PREFIX.length) return false;
+        if (data == null || data.length < PEM_PREFIX.length) return false;
         for (int i = 0; i < PEM_PREFIX.length; i++) {
             if (data[i] != PEM_PREFIX[i]) return false;
         }

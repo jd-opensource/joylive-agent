@@ -66,7 +66,8 @@ public class JWTAuthenticate implements Authenticate {
             String provider = application.getName();
             String service = request.getService();
             KeyStore keyStore = keyStores.get(choose(jwtPolicy.getKeyStore(), KeyStore.TYPE_CLASSPATH));
-            AlgorithmContext context = new AlgorithmContext(jwtPolicy, keyStore, consumer, provider, service);
+            AlgorithmContext context = new AlgorithmContext(AlgorithmRole.VERIFY, jwtPolicy, keyStore, consumer, provider, service);
+            // TODO cache algorithm
             Algorithm algorithm = factory == null ? null : factory.create(context);
             if (algorithm == null) {
                 return Permission.success();
@@ -138,7 +139,7 @@ public class JWTAuthenticate implements Authenticate {
         String consumer = application.getName();
         String service = request.getService();
         KeyStore keyStore = keyStores.get(store);
-        AlgorithmContext context = new AlgorithmContext(jwtPolicy, keyStore, consumer, null, service);
+        AlgorithmContext context = new AlgorithmContext(AlgorithmRole.SIGNATURE, jwtPolicy, keyStore, consumer, null, service);
         Algorithm algorithm = factory == null ? null : factory.create(context);
         if (algorithm != null) {
             Instant now = Instant.now();

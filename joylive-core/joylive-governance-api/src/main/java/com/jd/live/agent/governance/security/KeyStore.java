@@ -33,9 +33,9 @@ public interface KeyStore {
 
     String TYPE_CLASSPATH = "classpath";
 
-    int ORDER_CLASSPATH = 100;
+    int ORDER_FILE = 100;
 
-    int ORDER_FILE = ORDER_CLASSPATH + 10;
+    int ORDER_CLASSPATH = ORDER_FILE + 100;
 
     /**
      * Retrieves encoded private key bytes.
