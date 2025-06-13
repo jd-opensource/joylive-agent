@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.rpc.cluster.support;
+package com.jd.live.agent.plugin.router.dubbo.v3.cluster;
 
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
@@ -36,6 +36,7 @@ import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v3.response.DubboResponse.DubboOutboundResponse;
 import org.apache.dubbo.rpc.*;
+import org.apache.dubbo.rpc.cluster.support.*;
 
 import java.io.StringReader;
 import java.lang.reflect.Type;
@@ -64,6 +65,7 @@ import static org.apache.dubbo.rpc.cluster.Constants.DEFAULT_CLUSTER_STICKY;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
+@SuppressWarnings("rawtypes")
 public class Dubbo3Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>> {
 
     private static final ErrorPredicate RETRY_PREDICATE = new ErrorPredicate.DefaultErrorPredicate(

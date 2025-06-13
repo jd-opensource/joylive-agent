@@ -21,6 +21,7 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.cluster.Dubbo27Cluster;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboOutboundInvocation;
@@ -28,13 +29,11 @@ import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOu
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
-import org.apache.dubbo.rpc.cluster.support.Dubbo27Cluster;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 
 /**
  * ClusterInterceptor

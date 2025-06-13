@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.dubbo.rpc.cluster.support;
+package com.jd.live.agent.plugin.router.dubbo.v2_7.cluster;
 
 
-import com.alibaba.dubbo.common.Constants;
-import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -35,11 +32,12 @@ import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.loadbalance.StickyType;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.StickySession;
-import com.jd.live.agent.governance.request.StickySession.DefaultStickySession;
-import com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26OutboundThrower;
-import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
-import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
-import com.jd.live.agent.plugin.router.dubbo.v2_6.response.DubboResponse.DubboOutboundResponse;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27OutboundThrower;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
+import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOutboundResponse;
+import org.apache.dubbo.rpc.*;
+import org.apache.dubbo.rpc.cluster.support.*;
 
 import java.io.StringReader;
 import java.lang.reflect.Type;
@@ -50,11 +48,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.alibaba.dubbo.common.Constants.CLUSTER_STICKY_KEY;
 import static com.alibaba.dubbo.common.Constants.DEFAULT_CLUSTER_STICKY;
+import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_RETRIES;
+import static org.apache.dubbo.common.constants.CommonConstants.RETRIES_KEY;
 
 
 /**
@@ -67,7 +66,8 @@ import static com.alibaba.dubbo.common.Constants.DEFAULT_CLUSTER_STICKY;
  * clustering mechanism for routing and invoking RPC requests.
  * </p>
  */
-public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>> {
+@SuppressWarnings("rawtypes")
+public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, DubboOutboundResponse, DubboEndpoint<?>> {
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(
             throwable -> throwable instanceof RpcException && (
@@ -78,24 +78,21 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
 
     private final ObjectParser parser;
 
-    private final Dubbo26OutboundThrower thrower;
-
-    private final AtomicBoolean destroyed;
+    private final Dubbo27OutboundThrower thrower;
 
     private final Map<String, StickySession> sessions = new ConcurrentHashMap<>();
 
-    public Dubbo26Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
+    public Dubbo27Cluster(AbstractClusterInvoker cluster, ObjectParser parser) {
         this.cluster = cluster;
         this.parser = parser;
-        this.thrower = new Dubbo26OutboundThrower(cluster);
-        this.destroyed = UnsafeFieldAccessorFactory.getQuietly(cluster, "destroyed");
+        this.thrower = new Dubbo27OutboundThrower(cluster);
     }
 
     @Override
     public StickySession getStickySession(ServiceRequest request) {
         return sessions.computeIfAbsent(request.getMethod(), m -> {
             StickyType stickyType = cluster.getUrl().getMethodParameter(m, CLUSTER_STICKY_KEY, DEFAULT_CLUSTER_STICKY) ? StickyType.PREFERRED : StickyType.NONE;
-            return new DefaultStickySession(stickyType);
+            return new StickySession.DefaultStickySession(stickyType);
         });
     }
 
@@ -103,7 +100,7 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
     public ClusterPolicy getDefaultPolicy(DubboOutboundRequest request) {
         ClusterPolicy policy = new ClusterPolicy();
         if (cluster instanceof FailoverClusterInvoker) {
-            // no retry interval in com.alibaba.dubbo.rpc.cluster.support.FailoverClusterInvoker
+            // no retry interval in org.apache.dubbo.rpc.cluster.support.FailoverClusterInvoker
             RetryPolicy retryPolicy = new RetryPolicy();
             retryPolicy.setRetry(getRetries(RpcUtils.getMethodName(request.getRequest())));
             policy.setType(ClusterInvoker.TYPE_FAILOVER);
@@ -128,7 +125,7 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
     @Override
     public CompletionStage<List<DubboEndpoint<?>>> route(DubboOutboundRequest request) {
         try {
-            List<Invoker<?>> invokers = cluster.list(request.getRequest());
+            List<Invoker<?>> invokers = cluster.getDirectory().list(request.getRequest());
             return CompletableFuture.completedFuture(invokers == null
                     ? new ArrayList<>()
                     : invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList()));
@@ -155,7 +152,7 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
 
     @Override
     public boolean isDestroyed() {
-        return destroyed != null && destroyed.get();
+        return cluster.isDestroyed();
     }
 
     @Override
@@ -181,24 +178,31 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
      * configured value is less than or equal to 0.
      */
     private int getRetries(String methodName) {
-        int len = cluster.getUrl().getMethodParameter(methodName, Constants.RETRIES_KEY, Constants.DEFAULT_RETRIES);
+        int len = cluster.getUrl().getMethodParameter(methodName, RETRIES_KEY, DEFAULT_RETRIES) + 1;
+        RpcContext rpcContext = RpcContext.getContext();
+        Object retry = rpcContext.getObjectAttachment(RETRIES_KEY);
+        if (retry instanceof Number) {
+            len = ((Number) retry).intValue() + 1;
+            rpcContext.removeAttachment(RETRIES_KEY);
+        }
         if (len <= 0) {
             len = 1;
         }
+
         return len;
     }
 
     @Override
     protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
-        return new DubboOutboundResponse(new RpcResult());
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
     }
 
     @Override
     protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
         RpcInvocation invocation = (RpcInvocation) request.getRequest();
         String body = degradeConfig.getResponseBody();
-        RpcResult result = new RpcResult();
-        result.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
+        AppResponse response = new AppResponse();
+        response.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
         if (body != null) {
             Object value;
             if (request.isGeneric()) {
@@ -217,16 +221,15 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
                     value = parser.read(new StringReader(body), types[1]);
                 }
             }
-            result.setValue(value);
+            response.setValue(value);
         }
 
-        return new DubboOutboundResponse(result);
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(response, invocation));
     }
 
     @Override
     protected DubboOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new DubboOutboundResponse(error, predicate);
     }
-
 }
 
