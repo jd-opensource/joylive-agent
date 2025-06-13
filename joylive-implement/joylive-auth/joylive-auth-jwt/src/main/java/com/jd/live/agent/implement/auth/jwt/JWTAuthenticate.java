@@ -28,6 +28,7 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
+import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.JWTPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
@@ -107,11 +108,11 @@ public class JWTAuthenticate implements Authenticate {
                     }
                 }
             } else {
-                logger.warn("Failed to create JWT token, algorithm: {}, keyStore: {}", jwtPolicy.getAlgorithm(), keyStore);
+                logger.warn("Failed to create jwt token for {}", policy.getUri());
             }
         } catch (Exception e) {
             // Invalid Signing configuration / Couldn't convert Claims.
-            logger.error("Failed to create JWT token", e);
+            logger.error("Failed to create jwt token for {}", policy.getUri(), e);
         }
     }
 
@@ -166,7 +167,7 @@ public class JWTAuthenticate implements Authenticate {
         // cache token to improve performance
         JWTToken jwtToken = tokens.get(policy.getId());
         if (jwtToken == null || jwtToken.isExpired() || !context.equals(jwtToken.getContext())) {
-            jwtToken = new JWTToken(policy.getId(), context, algorithm, store);
+            jwtToken = new JWTToken(policy, context, algorithm);
             jwtToken.build();
             addRefreshTask(jwtToken);
             tokens.put(policy.getId(), jwtToken);
@@ -213,14 +214,12 @@ public class JWTAuthenticate implements Authenticate {
     private static class JWTToken {
 
         @Getter
-        private final long id;
+        private final PolicyId id;
 
         @Getter
         private final AlgorithmContext context;
 
         private final Algorithm algorithm;
-
-        private final String keyStore;
 
         @Getter
         private String token;
@@ -230,21 +229,35 @@ public class JWTAuthenticate implements Authenticate {
         @Getter
         private long refreshAt;
 
-        public JWTToken(long id, AlgorithmContext context, Algorithm algorithm, String keyStore) {
+        private long counter;
+
+        public JWTToken(PolicyId id, AlgorithmContext context, Algorithm algorithm) {
             this.id = id;
             this.context = context;
             this.algorithm = algorithm;
-            this.keyStore = keyStore;
         }
 
+        /**
+         * Checks if the token has expired based on its expiration time.
+         *
+         * @return true if token has an expiration time and it's before current time
+         */
         public boolean isExpired() {
             return expireAt != null && expireAt.isBefore(Instant.now());
         }
 
+        /**
+         * Validates basic token existence.
+         *
+         * @return true if the token string exists (non-null)
+         */
         public boolean validate() {
             return token != null;
         }
 
+        /**
+         * Builds or refreshes the JWT token with current timestamp and configured expiration.
+         */
         public void build() {
             try {
                 Instant now = Instant.now();
@@ -252,9 +265,13 @@ public class JWTAuthenticate implements Authenticate {
                 this.token = JWT.create().withIssuer(context.getIssuer()).withAudience(context.getAudience())
                         .withIssuedAt(now).withExpiresAt(expireAt).sign(algorithm);
                 this.expireAt = expireAt;
-                this.refreshAt = expireAt.toEpochMilli() - Timer.getRetryInterval(5000, 10000);
+                this.refreshAt = expireAt.toEpochMilli() - Timer.getRetryInterval(5000, 15000);
+                if (counter++ > 0) {
+                    logger.info("Success refreshing jwt token for {}", id.getUri());
+                }
+
             } catch (Throwable e) {
-                logger.error("Failed to build JWTToken, algorithm: {}, keyStore: {}", context.getAlgorithm(), keyStore, e);
+                logger.error("Failed to build jwt token for {}", id.getUri(), e);
             }
         }
 

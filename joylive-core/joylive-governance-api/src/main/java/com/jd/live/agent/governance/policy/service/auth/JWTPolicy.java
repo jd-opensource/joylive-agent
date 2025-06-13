@@ -33,7 +33,9 @@ import java.util.Map;
 @Setter
 public class JWTPolicy implements Serializable {
 
-    private static final long DEFAULT_EXPIRE_TIME = 5 * 60 * 1000L;
+    private static final long ONE_MINUTE = 60 * 1000L;
+    private static final long FILE_MINUTE = 5 * ONE_MINUTE;
+    private static final long DEFAULT_EXPIRE_TIME = 15 * ONE_MINUTE;
     private static final String DEFAULT_KEY_STORE = "file";
     private static final String DEFAULT_ALGORITHM = "HMAC256";
 
@@ -71,5 +73,6 @@ public class JWTPolicy implements Serializable {
         this.publicKey = option.getString(KEY_JWT_PUBLIC_KEY);
         this.secretKey = option.getString(KEY_JWT_SECRET_KEY);
         this.expireTime = option.getPositive(KEY_EXPIRE_TIME, DEFAULT_EXPIRE_TIME);
+        this.expireTime = expireTime < FILE_MINUTE ? DEFAULT_EXPIRE_TIME : expireTime;
     }
 }
