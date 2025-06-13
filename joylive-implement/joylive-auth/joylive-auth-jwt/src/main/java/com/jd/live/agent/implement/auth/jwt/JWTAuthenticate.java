@@ -25,6 +25,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
@@ -34,6 +35,7 @@ import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.security.KeyStore;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -54,7 +56,10 @@ public class JWTAuthenticate implements Authenticate {
     @Inject
     private Map<String, KeyStore> keyStores;
 
-    private final Map<String, JWTToken> tokens = new ConcurrentHashMap<>();
+    @Inject(Timer.COMPONENT_TIMER)
+    private Timer timer;
+
+    private final Map<Long, JWTToken> tokens = new ConcurrentHashMap<>();
 
     @Override
     public Permission authenticate(ServiceRequest request, AuthPolicy policy) {
@@ -62,11 +67,16 @@ public class JWTAuthenticate implements Authenticate {
         String token = decode(request, jwtPolicy);
         try {
             AlgorithmBuilder factory = AlgorithmBuilderFactory.getBuilder(jwtPolicy.getAlgorithm());
-            String consumer = request.getHeader(Constants.LABEL_APPLICATION);
-            String provider = application.getName();
-            String service = request.getService();
+            String issue = request.getHeader(Constants.LABEL_APPLICATION);
             KeyStore keyStore = keyStores.get(choose(jwtPolicy.getKeyStore(), KeyStore.TYPE_CLASSPATH));
-            AlgorithmContext context = new AlgorithmContext(AlgorithmRole.VERIFY, jwtPolicy, keyStore, consumer, provider, service);
+            AlgorithmContext context = AlgorithmContext.builder()
+                    .role(AlgorithmRole.VERIFY)
+                    .keyStore(keyStore)
+                    .privateKey(jwtPolicy.getPrivateKey())
+                    .publicKey(jwtPolicy.getPublicKey())
+                    .issuer(issue)
+                    .audience(request.getService())
+                    .build();
             // TODO cache algorithm
             Algorithm algorithm = factory == null ? null : factory.create(context);
             if (algorithm == null) {
@@ -87,15 +97,17 @@ public class JWTAuthenticate implements Authenticate {
     public void inject(OutboundRequest request, AuthPolicy policy) {
         try {
             JWTPolicy jwtPolicy = policy.getJwtPolicy();
-            String store = choose(jwtPolicy.getKeyStore(), KeyStore.TYPE_CLASSPATH);
-            JWTToken jwtToken = getJwtToken(request, jwtPolicy, store);
+            String keyStore = choose(jwtPolicy.getKeyStore(), KeyStore.TYPE_CLASSPATH);
+            JWTToken jwtToken = getOrCreateToken(request, policy, keyStore);
             if (jwtToken != null) {
-                String key = jwtPolicy.getKey();
-                if (request.getHeader(key) == null) {
-                    request.setHeader(key, decorate(request, key, jwtToken.getToken()));
+                if (jwtToken.validate()) {
+                    String key = jwtPolicy.getKey();
+                    if (request.getHeader(key) == null) {
+                        request.setHeader(key, decorate(request, key, jwtToken.getToken()));
+                    }
                 }
             } else {
-                logger.warn("Failed to create JWT token, algorithm: {}, keyStore: {}", jwtPolicy.getAlgorithm(), store);
+                logger.warn("Failed to create JWT token, algorithm: {}, keyStore: {}", jwtPolicy.getAlgorithm(), keyStore);
             }
         } catch (Exception e) {
             // Invalid Signing configuration / Couldn't convert Claims.
@@ -113,10 +125,7 @@ public class JWTAuthenticate implements Authenticate {
     private String decode(ServiceRequest request, JWTPolicy policy) {
         String key = policy.getKey();
         String token = request.getHeader(key);
-        if (token != null
-                && request instanceof HttpRequest
-                && KEY_AUTH.equalsIgnoreCase(key)
-                && token.startsWith(BEARER_PREFIX)) {
+        if (token != null && request instanceof HttpRequest && KEY_AUTH.equalsIgnoreCase(key) && token.startsWith(BEARER_PREFIX)) {
             // bear auth
             return token.substring(BEARER_PREFIX.length());
         }
@@ -124,42 +133,60 @@ public class JWTAuthenticate implements Authenticate {
     }
 
     /**
-     * Creates or reuses a JWT token based on request and policy.
-     * <p>
-     * Tokens are cached by issuer+audience and reused until expired.
+     * Generates or retrieves a cached JWT token for the given request.
      *
-     * @param request   Target service request (for audience fallback)
-     * @param jwtPolicy Configuration for token generation
-     * @param store     Key store identifier for signing
-     * @return Valid JWT token or null if algorithm unavailable
+     * @param request Service request containing audience details
+     * @param policy  Authentication policy with JWT configuration
+     * @param store   KeyStore identifier for cryptographic operations
+     * @return Valid JWT token, or null if algorithm creation fails
+     * @throws Exception if token generation or cryptographic operations fail
      */
-    private JWTToken getJwtToken(ServiceRequest request, JWTPolicy jwtPolicy, String store) throws Exception {
-        JWTToken jwtToken = null;
+    private JWTToken getOrCreateToken(ServiceRequest request, AuthPolicy policy, String store) throws Exception {
+        JWTPolicy jwtPolicy = policy.getJwtPolicy();
         AlgorithmBuilder factory = AlgorithmBuilderFactory.getBuilder(jwtPolicy.getAlgorithm());
-        String consumer = application.getName();
-        String service = request.getService();
-        KeyStore keyStore = keyStores.get(store);
-        AlgorithmContext context = new AlgorithmContext(AlgorithmRole.SIGNATURE, jwtPolicy, keyStore, consumer, null, service);
-        Algorithm algorithm = factory == null ? null : factory.create(context);
-        if (algorithm != null) {
-            Instant now = Instant.now();
-            String issuer = choose(jwtPolicy.getIssuer(), application.getName());
-            String audience = choose(jwtPolicy.getAudience(), request.getService());
-            String tokenKey = issuer + "@" + audience;
-            jwtToken = tokens.get(tokenKey);
-            if (jwtToken == null || jwtToken.isExpired()) {
-                Instant expiresAt = now.plus(jwtPolicy.getExpireTime(), ChronoUnit.MILLIS);
-                String token = JWT.create()
-                        .withIssuer(issuer)
-                        .withAudience(audience)
-                        .withIssuedAt(now)
-                        .withExpiresAt(expiresAt)
-                        .sign(algorithm);
-                jwtToken = new JWTToken(token, issuer, audience, expiresAt);
-                tokens.put(tokenKey, jwtToken);
-            }
+        if (factory == null) {
+            return null;
+        }
+        KeyStore keyStore = store == null ? null : keyStores.get(store);
+        AlgorithmContext context = AlgorithmContext.builder()
+                .role(AlgorithmRole.VERIFY)
+                .keyStore(keyStore)
+                .algorithm(jwtPolicy.getAlgorithm())
+                .privateKey(jwtPolicy.getPrivateKey())
+                .publicKey(jwtPolicy.getPublicKey())
+                .issuer(application.getName())
+                .audience(request.getService())
+                .expireTime(jwtPolicy.getExpireTime())
+                .build();
+        Algorithm algorithm = factory.create(context);
+        if (algorithm == null) {
+            return null;
+        }
+        // cache token to improve performance
+        JWTToken jwtToken = tokens.get(policy.getId());
+        if (jwtToken == null || jwtToken.isExpired() || !context.equals(jwtToken.getContext())) {
+            jwtToken = new JWTToken(policy.getId(), context, algorithm, store);
+            jwtToken.build();
+            addRefreshTask(jwtToken);
+            tokens.put(policy.getId(), jwtToken);
         }
         return jwtToken;
+    }
+
+    /**
+     * Schedules a task to automatically refresh a JWT token before it expires.
+     *
+     * @param token The JWT token to refresh, must provide refresh timing via {@link JWTToken#getRefreshAt()}
+     */
+    private void addRefreshTask(JWTToken token) {
+        timer.add("jwt-token-refresher", token.getRefreshAt(), () -> {
+            if (token.isExpired()) {
+                tokens.remove(token.getId());
+            } else {
+                token.build();
+                addRefreshTask(token);
+            }
+        });
     }
 
     /**
@@ -184,35 +211,51 @@ public class JWTAuthenticate implements Authenticate {
      */
     private static class JWTToken {
 
-        private final String token;
+        @Getter
+        private final long id;
 
-        private final String issuer;
+        @Getter
+        private final AlgorithmContext context;
 
-        private final String audience;
+        private final Algorithm algorithm;
 
-        private final Instant expireTime;
+        private final String keyStore;
 
-        public JWTToken(String token, String issuer, String audience, Instant expireTime) {
-            this.token = token;
-            this.issuer = issuer;
-            this.audience = audience;
-            this.expireTime = expireTime;
+        @Getter
+        private String token;
+
+        private Instant expireAt;
+
+        @Getter
+        private long refreshAt;
+
+        public JWTToken(long id, AlgorithmContext context, Algorithm algorithm, String keyStore) {
+            this.id = id;
+            this.context = context;
+            this.algorithm = algorithm;
+            this.keyStore = keyStore;
         }
 
         public boolean isExpired() {
-            return expireTime.isBefore(Instant.now());
+            return expireAt != null && expireAt.isBefore(Instant.now());
         }
 
-        public String getToken() {
-            return token;
+        public boolean validate() {
+            return token != null;
         }
 
-        public String getIssuer() {
-            return issuer;
+        public void build() {
+            try {
+                Instant now = Instant.now();
+                Instant expireAt = now.plus(context.getExpireTime(), ChronoUnit.MILLIS);
+                this.token = JWT.create().withIssuer(context.getIssuer()).withAudience(context.getAudience())
+                        .withIssuedAt(now).withExpiresAt(expireAt).sign(algorithm);
+                this.expireAt = expireAt;
+                this.refreshAt = expireAt.toEpochMilli() - Timer.getRetryInterval(5000, 10000);
+            } catch (Throwable e) {
+                logger.error("Failed to build JWTToken, algorithm: {}, keyStore: {}", context.getAlgorithm(), keyStore, e);
+            }
         }
 
-        public String getAudience() {
-            return audience;
-        }
     }
 }

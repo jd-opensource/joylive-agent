@@ -40,8 +40,6 @@ public class JWTPolicy implements Serializable {
     private static final String KEY_JWT_KEY = "jwt.key";
     private static final String KEY_JWT_ALGORITHM = "jwt.algorithm";
     private static final String KEY_JWT_KEY_STORE = "jwt.keyStore";
-    private static final String KEY_JWT_ISSUER = "jwt.issuer";
-    private static final String KEY_JWT_AUDIENCE = "jwt.audience";
     private static final String KEY_JWT_PRIVATE_KEY = "jwt.privateKey";
     private static final String KEY_JWT_PUBLIC_KEY = "jwt.publicKey";
     private static final String KEY_JWT_SECRET = "jwt.secret";
@@ -59,10 +57,6 @@ public class JWTPolicy implements Serializable {
 
     private String secret;
 
-    private String issuer;
-
-    private String audience;
-
     private long expireTime = DEFAULT_EXPIRE_TIME;
 
     public JWTPolicy() {
@@ -73,8 +67,6 @@ public class JWTPolicy implements Serializable {
         this.key = option.getString(KEY_JWT_KEY, Authenticate.KEY_AUTH);
         this.algorithm = option.getString(KEY_JWT_ALGORITHM, DEFAULT_ALGORITHM);
         this.keyStore = option.getString(KEY_JWT_KEY_STORE, DEFAULT_KEY_STORE);
-        this.issuer = option.getString(KEY_JWT_ISSUER);
-        this.audience = option.getString(KEY_JWT_AUDIENCE);
         this.privateKey = option.getString(KEY_JWT_PRIVATE_KEY);
         this.publicKey = option.getString(KEY_JWT_PUBLIC_KEY);
         this.secret = option.getString(KEY_JWT_SECRET);

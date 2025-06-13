@@ -15,35 +15,52 @@
  */
 package com.jd.live.agent.implement.auth.jwt;
 
-import com.jd.live.agent.governance.policy.service.auth.JWTPolicy;
 import com.jd.live.agent.governance.security.KeyStore;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+
+import java.util.Objects;
 
 import static com.jd.live.agent.governance.security.KeyLoader.loadKey;
 
 @Getter
+@AllArgsConstructor
+@Builder
 public class AlgorithmContext {
-    private final AlgorithmRole role;
-    private final JWTPolicy policy;
-    private final KeyStore keyStore;
-    private final String consumer;
-    private final String provider;
-    private final String service;
-
-    public AlgorithmContext(AlgorithmRole role, JWTPolicy policy, KeyStore keyStore, String consumer, String provider, String service) {
-        this.role = role;
-        this.policy = policy;
-        this.keyStore = keyStore;
-        this.consumer = consumer;
-        this.provider = provider;
-        this.service = service;
-    }
+    private AlgorithmRole role;
+    private String algorithm;
+    private String privateKey;
+    private String publicKey;
+    private KeyStore keyStore;
+    private String issuer;
+    private String audience;
+    private long expireTime;
 
     public byte[] loadPublicKey() throws Exception {
-        return loadKey(keyStore.getPublicKey(policy.getPublicKey()));
+        return loadKey(keyStore.getPublicKey(publicKey));
     }
 
     public byte[] loadPrivateKey() throws Exception {
-        return loadKey(keyStore.getPrivateKey(policy.getPrivateKey()));
+        return loadKey(keyStore.getPrivateKey(privateKey));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof AlgorithmContext)) return false;
+        AlgorithmContext target = (AlgorithmContext) o;
+        return role == target.role
+                && expireTime == target.expireTime
+                && Objects.equals(algorithm, target.algorithm)
+                && Objects.equals(privateKey, target.privateKey)
+                && Objects.equals(publicKey, target.publicKey)
+                && Objects.equals(keyStore, target.keyStore)
+                && Objects.equals(issuer, target.issuer)
+                && Objects.equals(audience, target.audience);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(role, algorithm, privateKey, publicKey, keyStore, issuer, audience, expireTime);
     }
 }
