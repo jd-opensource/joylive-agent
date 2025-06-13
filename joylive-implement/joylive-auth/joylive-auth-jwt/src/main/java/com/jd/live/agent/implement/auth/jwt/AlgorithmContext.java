@@ -32,6 +32,7 @@ public class AlgorithmContext {
     private String algorithm;
     private String privateKey;
     private String publicKey;
+    private String secretKey;
     private KeyStore keyStore;
     private String issuer;
     private String audience;

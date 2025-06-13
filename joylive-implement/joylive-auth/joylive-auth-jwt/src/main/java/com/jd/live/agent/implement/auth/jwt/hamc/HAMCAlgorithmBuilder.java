@@ -28,9 +28,9 @@ public abstract class HAMCAlgorithmBuilder implements AlgorithmBuilder {
 
     @Override
     public Algorithm create(AlgorithmContext context) throws Exception {
-        String secret = context.getPolicy().getSecret();
-        return isEmpty(secret) ? null : doCreate(secret);
+        String secretKey = context.getSecretKey();
+        return isEmpty(secretKey) ? null : doCreate(secretKey);
     }
 
-    protected abstract Algorithm doCreate(String secret) throws Exception;
+    protected abstract Algorithm doCreate(String secretKey) throws Exception;
 }

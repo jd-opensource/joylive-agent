@@ -42,7 +42,7 @@ public class JWTPolicy implements Serializable {
     private static final String KEY_JWT_KEY_STORE = "jwt.keyStore";
     private static final String KEY_JWT_PRIVATE_KEY = "jwt.privateKey";
     private static final String KEY_JWT_PUBLIC_KEY = "jwt.publicKey";
-    private static final String KEY_JWT_SECRET = "jwt.secret";
+    private static final String KEY_JWT_SECRET_KEY = "jwt.secretKey";
     private static final String KEY_EXPIRE_TIME = "jwt.expireTime";
 
     private String key;
@@ -55,7 +55,7 @@ public class JWTPolicy implements Serializable {
 
     private String publicKey;
 
-    private String secret;
+    private String secretKey;
 
     private long expireTime = DEFAULT_EXPIRE_TIME;
 
@@ -69,7 +69,7 @@ public class JWTPolicy implements Serializable {
         this.keyStore = option.getString(KEY_JWT_KEY_STORE, DEFAULT_KEY_STORE);
         this.privateKey = option.getString(KEY_JWT_PRIVATE_KEY);
         this.publicKey = option.getString(KEY_JWT_PUBLIC_KEY);
-        this.secret = option.getString(KEY_JWT_SECRET);
+        this.secretKey = option.getString(KEY_JWT_SECRET_KEY);
         this.expireTime = option.getPositive(KEY_EXPIRE_TIME, DEFAULT_EXPIRE_TIME);
     }
 }

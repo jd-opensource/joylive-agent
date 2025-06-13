@@ -23,7 +23,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 public class HAMC256AlgorithmBuilder extends HAMCAlgorithmBuilder {
 
     @Override
-    protected Algorithm doCreate(String secret) throws Exception {
-        return Algorithm.HMAC256(secret);
+    protected Algorithm doCreate(String secretKey) throws Exception {
+        return Algorithm.HMAC256(secretKey);
     }
 }

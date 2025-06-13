@@ -154,6 +154,7 @@ public class JWTAuthenticate implements Authenticate {
                 .algorithm(jwtPolicy.getAlgorithm())
                 .privateKey(jwtPolicy.getPrivateKey())
                 .publicKey(jwtPolicy.getPublicKey())
+                .secretKey(jwtPolicy.getSecretKey())
                 .issuer(application.getName())
                 .audience(request.getService())
                 .expireTime(jwtPolicy.getExpireTime())
