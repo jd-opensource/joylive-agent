@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+import com.jd.live.agent.governance.response.ServiceResponse.Asyncable;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.concurrent.CompletionStage;
@@ -52,17 +53,30 @@ public class CounterFilter implements OutboundFilter {
             long startTime = System.currentTimeMillis();
             CompletionStage<O> stage = chain.filter(invocation, endpoint);
             return stage.whenComplete((o, r) -> {
-                long elapsed = System.currentTimeMillis() - startTime;
                 if (r == null) {
-                    counter.success(elapsed);
+                    if (o instanceof Asyncable) {
+                        // fix for async rpc invoke, such as dubbo & sofarpc.
+                        ((Asyncable) o).getFuture().whenComplete((o1, r1) -> {
+                            if (r1 == null) {
+                                counter.success(getElapsed(startTime));
+                            } else {
+                                counter.fail(getElapsed(startTime));
+                            }
+                        });
+                    } else {
+                        counter.success(getElapsed(startTime));
+                    }
                 } else {
-                    counter.fail(elapsed);
+                    counter.fail(getElapsed(startTime));
                 }
             });
         } else {
             return chain.filter(invocation, endpoint);
         }
+    }
 
+    private long getElapsed(final long startTime) {
+        return System.currentTimeMillis() - startTime;
     }
 
 }
