@@ -24,11 +24,11 @@ import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.context.RpcInvokeContext;
 import com.alipay.sofa.rpc.core.exception.RpcErrorType;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
+import com.alipay.sofa.rpc.core.invoke.SofaResponseCallback;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -48,6 +48,7 @@ import com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcOutboundThrower;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.GenericType;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
+import com.jd.live.agent.plugin.router.sofarpc.response.SofaLiveCallback;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
 
 import java.io.StringReader;
@@ -61,6 +62,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 
 /**
  * Represents a live cluster specifically designed for managing Sofa RPC communications.
@@ -104,10 +107,10 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
         this.cluster = cluster;
         this.parser = parser;
         this.thrower = new SofaRpcOutboundThrower(cluster);
-        this.config = UnsafeFieldAccessorFactory.getQuietly(cluster, "consumerConfig");
+        this.config = getQuietly(cluster, "consumerConfig");
         this.stickySession = config.isSticky() ? new DefaultStickySession(StickyType.PREFERRED) : null;
-        this.connectionHolder = UnsafeFieldAccessorFactory.getQuietly(cluster, "connectionHolder");
-        this.destroyed = UnsafeFieldAccessorFactory.getAccessor(cluster.getClass(), "destroyed");
+        this.connectionHolder = getQuietly(cluster, "connectionHolder");
+        this.destroyed = getAccessor(cluster.getClass(), "destroyed");
         this.filterChainMethod = ClassUtils.describe(cluster.getClass()).getMethodList().getMethods("filterChain").get(0);
         filterChainMethod.setAccessible(true);
     }
@@ -154,11 +157,15 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
 
     @Override
     public CompletionStage<SofaRpcOutboundResponse> invoke(SofaRpcOutboundRequest request, SofaRpcEndpoint endpoint) {
+        SofaRequest sofaRequest = request.getRequest();
+        CompletionStage<Object> future = getFuture(sofaRequest);
         try {
-            SofaResponse response = (SofaResponse) filterChainMethod.invoke(cluster, endpoint.getProvider(), request.getRequest());
-            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response));
+            SofaResponse response = (SofaResponse) filterChainMethod.invoke(cluster, endpoint.getProvider(), sofaRequest);
+            return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(response, future));
         } catch (Throwable e) {
             return CompletableFuture.completedFuture(new SofaRpcOutboundResponse(new ServiceError(e, false), getRetryPredicate()));
+        } finally {
+            SofaLiveCallback.FUTURE.remove();
         }
     }
 
@@ -240,6 +247,34 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     }
 
     /**
+     * Registers asynchronous callback for SOFA RPC request.
+     *
+     * <p>Creates and attaches a {@link CompletionStage} to the request based on invocation type:
+     * <ul>
+     *   <li>For callback-type: wraps callback with {@link SofaLiveCallback}</li>
+     *   <li>For future-type: binds new future to thread local.</li>
+     * </ul>
+     *
+     * @param sofaRequest the RPC request to register
+     * @return CompletionStage for async result, or null if not applicable
+     */
+    private CompletionStage<Object> getFuture(SofaRequest sofaRequest) {
+        CompletableFuture<Object> future = null;
+        String invokeType = sofaRequest.getInvokeType();
+        if (RpcConstants.INVOKER_TYPE_CALLBACK.equals(invokeType)) {
+            SofaResponseCallback<?> callback = sofaRequest.getSofaResponseCallback();
+            callback = callback != null ? callback : cluster.getConsumerConfig().getMethodOnreturn(sofaRequest.getMethodName());
+            future = new CompletableFuture<>();
+            callback = new SofaLiveCallback(callback, future);
+            sofaRequest.setSofaResponseCallback(callback);
+        } else if (RpcConstants.INVOKER_TYPE_FUTURE.equals(invokeType)) {
+            future = new CompletableFuture<>();
+            SofaLiveCallback.FUTURE.set(future);
+        }
+        return future;
+    }
+
+    /**
      * Attempts to retrieve a direct {@link ProviderInfo} instance based on a target IP address specified
      * in the {@link RpcInternalContext}. This method is particularly useful for scenarios requiring direct
      * routing to a specific service provider, bypassing the usual load balancing mechanisms.
@@ -281,5 +316,6 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
             return value;
         }
     }
+
 }
 

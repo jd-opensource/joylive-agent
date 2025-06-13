@@ -19,6 +19,9 @@ import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.response.AbstractRpcResponse.AbstractRpcOutboundResponse;
+import com.jd.live.agent.governance.response.ServiceResponse.Asyncable;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Represents a response in the SOFA RPC framework.
@@ -37,7 +40,9 @@ public interface SofaRpcResponse {
      * of a SOFA RPC call. This class extends {@code AbstractRpcOutboundResponse<SofaResponse>} to
      * provide specific handling for SOFA RPC responses, including success and error states.
      */
-    class SofaRpcOutboundResponse extends AbstractRpcOutboundResponse<SofaResponse> implements SofaRpcResponse {
+    class SofaRpcOutboundResponse extends AbstractRpcOutboundResponse<SofaResponse> implements SofaRpcResponse, Asyncable {
+
+        private CompletionStage<Object> future;
 
         /**
          * Constructs a new {@code SofaRpcOutboundResponse} for a successful SOFA RPC call.
@@ -45,19 +50,18 @@ public interface SofaRpcResponse {
          * @param response The {@link SofaResponse} object containing the data returned by the successful RPC call.
          */
         public SofaRpcOutboundResponse(SofaResponse response) {
-            this(response, null);
+            super(response, getError(response), null);
         }
 
         /**
          * Constructs a new {@code SofaRpcOutboundResponse} for a successful SOFA RPC call.
          *
-         * @param response  The {@link SofaResponse} object containing the data returned by the successful RPC call.
-         * @param predicate An optional {@code Predicate<Response>} that can be used to evaluate
-         *                  whether the call should be retried based on the response. Can be {@code null}
-         *                  if retry logic is not applicable.
+         * @param response The {@link SofaResponse} object containing the data returned by the successful RPC call.
+         * @param future   The {@link CompletionStage} object that represents the future result of the RPC call.
          */
-        public SofaRpcOutboundResponse(SofaResponse response, ErrorPredicate predicate) {
-            super(response, getError(response), predicate);
+        public SofaRpcOutboundResponse(SofaResponse response, CompletionStage<Object> future) {
+            super(response, getError(response), null);
+            this.future = future;
         }
 
         /**
@@ -70,6 +74,11 @@ public interface SofaRpcResponse {
          */
         public SofaRpcOutboundResponse(ServiceError error, ErrorPredicate predicate) {
             super(null, error, predicate);
+        }
+
+        @Override
+        public CompletionStage<Object> getFuture() {
+            return future;
         }
 
         /**
