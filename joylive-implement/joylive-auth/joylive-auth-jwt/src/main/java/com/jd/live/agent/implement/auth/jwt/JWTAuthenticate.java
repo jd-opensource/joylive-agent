@@ -183,7 +183,7 @@ public class JWTAuthenticate implements Authenticate {
     private void addRefreshTask(JWTToken token) {
         timer.add("jwt-token-refresher", token.getRefreshAt(), () -> {
             if (token.isExpired()) {
-                tokens.remove(token.getId());
+                tokens.remove(token.getId().getId());
             } else {
                 token.build();
                 addRefreshTask(token);
