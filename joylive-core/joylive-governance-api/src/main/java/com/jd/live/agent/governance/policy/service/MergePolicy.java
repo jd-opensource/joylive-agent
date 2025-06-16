@@ -31,36 +31,38 @@ public enum MergePolicy implements PolicyMerger {
         @Override
         public void onDelete(ServicePolicy oldPolicy) {
             if (oldPolicy != null) {
-                oldPolicy.setClusterPolicy(null);
-                oldPolicy.setLanePolicies(null);
-                oldPolicy.setRoutePolicies(null);
                 oldPolicy.setLoadBalancePolicy(null);
-                oldPolicy.setConcurrencyLimitPolicies(null);
+                oldPolicy.setClusterPolicy(null);
+                oldPolicy.setHealthPolicy(null);
                 oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setLoadLimitPolicies(null);
+                oldPolicy.setRoutePolicies(null);
+                oldPolicy.setLivePolicy(null);
+                oldPolicy.setLanePolicies(null);
                 oldPolicy.setCircuitBreakPolicies(null);
                 oldPolicy.setPermissionPolicies(null);
                 oldPolicy.setAuthPolicy(null);
                 oldPolicy.setFaultInjectionPolicies(null);
-                oldPolicy.setLivePolicy(null);
             }
         }
 
         @Override
         public void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy) {
             if (oldPolicy != null && newPolicy != null) {
-                oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
-                oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
-                oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
                 oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
-                oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
+                oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
+                oldPolicy.setHealthPolicy(newPolicy.getHealthPolicy());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+                oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setLoadLimitPolicies(newPolicy.getLoadLimitPolicies());
+                oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
+                oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
+                oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
                 oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
                 oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
                 oldPolicy.setAuthPolicy(newPolicy.getAuthPolicy());
                 oldPolicy.setFaultInjectionPolicies(newPolicy.getFaultInjectionPolicies());
-                oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
             }
         }
     },
@@ -80,13 +82,14 @@ public enum MergePolicy implements PolicyMerger {
         @Override
         public void onDelete(ServicePolicy oldPolicy) {
             if (oldPolicy != null) {
-                oldPolicy.setClusterPolicy(null);
-                oldPolicy.setLanePolicies(null);
-                oldPolicy.setRoutePolicies(null);
                 oldPolicy.setLoadBalancePolicy(null);
-                oldPolicy.setConcurrencyLimitPolicies(null);
+                oldPolicy.setClusterPolicy(null);
+                oldPolicy.setHealthPolicy(null);
                 oldPolicy.setRateLimitPolicies(null);
+                oldPolicy.setConcurrencyLimitPolicies(null);
                 oldPolicy.setLoadLimitPolicies(null);
+                oldPolicy.setRoutePolicies(null);
+                oldPolicy.setLanePolicies(null);
                 oldPolicy.setCircuitBreakPolicies(null);
                 oldPolicy.setPermissionPolicies(null);
                 oldPolicy.setAuthPolicy(null);
@@ -97,13 +100,14 @@ public enum MergePolicy implements PolicyMerger {
         @Override
         public void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy) {
             if (oldPolicy != null && newPolicy != null) {
-                oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
-                oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
-                oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
                 oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
-                oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
+                oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
+                oldPolicy.setHealthPolicy(newPolicy.getHealthPolicy());
                 oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
+                oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
                 oldPolicy.setLoadLimitPolicies(newPolicy.getLoadLimitPolicies());
+                oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
+                oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
                 oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
                 oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
                 oldPolicy.setAuthPolicy(newPolicy.getAuthPolicy());
@@ -119,12 +123,13 @@ public enum MergePolicy implements PolicyMerger {
         @Override
         public void onAdd(ServicePolicy newPolicy) {
             newPolicy.setClusterPolicy(null);
-            newPolicy.setLanePolicies(null);
-            newPolicy.setRoutePolicies(null);
             newPolicy.setLoadBalancePolicy(null);
-            newPolicy.setConcurrencyLimitPolicies(null);
+            newPolicy.setHealthPolicy(null);
             newPolicy.setRateLimitPolicies(null);
+            newPolicy.setConcurrencyLimitPolicies(null);
             newPolicy.setLoadLimitPolicies(null);
+            newPolicy.setRoutePolicies(null);
+            newPolicy.setLanePolicies(null);
             newPolicy.setCircuitBreakPolicies(null);
             newPolicy.setPermissionPolicies(null);
             newPolicy.setAuthPolicy(null);
