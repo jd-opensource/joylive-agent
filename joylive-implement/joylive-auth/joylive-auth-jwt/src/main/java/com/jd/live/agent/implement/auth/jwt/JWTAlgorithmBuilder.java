@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.auth.jwt;
 
 import com.auth0.jwt.algorithms.Algorithm;
+import com.jd.live.agent.governance.policy.service.auth.JWTAlgorithmContext;
 
 /**
  * Builder interface for JWT signing algorithms.
@@ -23,7 +24,7 @@ import com.auth0.jwt.algorithms.Algorithm;
  * Provides a standard way to construct Algorithm instances for JWT signing operations.
  * Implementations handle specific algorithm types and their configuration requirements.
  */
-public interface AlgorithmBuilder {
+public interface JWTAlgorithmBuilder {
     /**
      * Creates a configured Algorithm instance for JWT signing/verification.
      *
@@ -32,5 +33,5 @@ public interface AlgorithmBuilder {
      * @throws Exception if algorithm creation fails (e.g., invalid parameters,
      *                   unsupported configuration, or key material issues)
      */
-    Algorithm create(AlgorithmContext context) throws Exception;
+    Algorithm create(JWTAlgorithmContext context) throws Exception;
 }

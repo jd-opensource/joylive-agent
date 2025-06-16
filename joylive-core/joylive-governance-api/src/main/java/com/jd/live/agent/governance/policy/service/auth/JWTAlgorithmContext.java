@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.auth.jwt;
+package com.jd.live.agent.governance.policy.service.auth;
 
 import com.jd.live.agent.governance.security.KeyStore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.Objects;
-
 import static com.jd.live.agent.governance.security.KeyLoader.loadKey;
 
 @Getter
 @AllArgsConstructor
 @Builder
-public class AlgorithmContext {
-    private AlgorithmRole role;
+public class JWTAlgorithmContext {
+    private JWTAlgorithmRole role;
     private String algorithm;
     private String privateKey;
     private String publicKey;
@@ -44,24 +42,5 @@ public class AlgorithmContext {
 
     public byte[] loadPrivateKey() throws Exception {
         return loadKey(keyStore.getPrivateKey(privateKey));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof AlgorithmContext)) return false;
-        AlgorithmContext target = (AlgorithmContext) o;
-        return role == target.role
-                && expireTime == target.expireTime
-                && Objects.equals(algorithm, target.algorithm)
-                && Objects.equals(privateKey, target.privateKey)
-                && Objects.equals(publicKey, target.publicKey)
-                && Objects.equals(keyStore, target.keyStore)
-                && Objects.equals(issuer, target.issuer)
-                && Objects.equals(audience, target.audience);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(role, algorithm, privateKey, publicKey, keyStore, issuer, audience, expireTime);
     }
 }

@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.auth.jwt;
+package com.jd.live.agent.governance.policy.service.auth;
 
-public enum AlgorithmRole {
+/**
+ * Defines the operational role for JWT cryptographic algorithms.
+ */
+public enum JWTAlgorithmRole {
 
+    /**
+     * Algorithm used for signing/creating JWT tokens
+     */
     SIGNATURE,
 
+    /** Algorithm used for verifying JWT token signatures */
     VERIFY,
 }

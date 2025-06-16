@@ -16,18 +16,18 @@
 package com.jd.live.agent.implement.auth.jwt.hamc;
 
 import com.auth0.jwt.algorithms.Algorithm;
-import com.jd.live.agent.implement.auth.jwt.AlgorithmBuilder;
-import com.jd.live.agent.implement.auth.jwt.AlgorithmContext;
+import com.jd.live.agent.implement.auth.jwt.JWTAlgorithmBuilder;
+import com.jd.live.agent.governance.policy.service.auth.JWTAlgorithmContext;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * Factory for creating HMAC algorithm instances using keys from a KeyStore.
  */
-public abstract class HAMCAlgorithmBuilder implements AlgorithmBuilder {
+public abstract class HAMCAlgorithmBuilder implements JWTAlgorithmBuilder {
 
     @Override
-    public Algorithm create(AlgorithmContext context) throws Exception {
+    public Algorithm create(JWTAlgorithmContext context) throws Exception {
         String secretKey = context.getSecretKey();
         return isEmpty(secretKey) ? null : doCreate(secretKey);
     }

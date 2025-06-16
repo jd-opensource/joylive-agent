@@ -34,12 +34,12 @@ import java.util.Map;
  * Maintains a static registry of supported algorithms and their corresponding builders.
  * </p>
  */
-public class AlgorithmBuilderFactory {
+public class JWTAlgorithmBuilderFactory {
 
-    private static final Map<String, AlgorithmBuilder> factories = new HashMap<>();
+    private static final Map<String, JWTAlgorithmBuilder> factories = new HashMap<>();
 
     static {
-        AlgorithmBuilder builder = new RSA256AlgorithmBuilder();
+        JWTAlgorithmBuilder builder = new RSA256AlgorithmBuilder();
         factories.put("RSA256", builder);
         factories.put("SHA256withRSA", builder);
         builder = new RSA384AlgorithmBuilder();
@@ -76,7 +76,7 @@ public class AlgorithmBuilderFactory {
      * @param algorithm the name of the algorithm (e.g., "RSA256", "HMAC384")
      * @return the corresponding AlgorithmBuilder, or null if not found
      */
-    public static AlgorithmBuilder getBuilder(String algorithm) {
+    public static JWTAlgorithmBuilder getBuilder(String algorithm) {
         return factories.get(algorithm);
     }
 

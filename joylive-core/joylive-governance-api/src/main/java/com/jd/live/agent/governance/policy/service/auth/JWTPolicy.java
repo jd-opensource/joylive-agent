@@ -19,18 +19,16 @@ import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * JWT policy
  *
  * @since 1.8.0
  */
-@Getter
-@Setter
 public class JWTPolicy implements Serializable {
 
     private static final long ONE_MINUTE = 60 * 1000L;
@@ -47,22 +45,30 @@ public class JWTPolicy implements Serializable {
     private static final String KEY_JWT_SECRET_KEY = "jwt.secretKey";
     private static final String KEY_EXPIRE_TIME = "jwt.expireTime";
 
-    private String key;
+    @Getter
+    private final String key;
 
-    private String algorithm = DEFAULT_ALGORITHM;
+    @Getter
+    private final String algorithm;
 
-    private String keyStore = DEFAULT_KEY_STORE;
+    @Getter
+    private final String keyStore;
 
-    private String privateKey;
+    @Getter
+    private final String privateKey;
 
-    private String publicKey;
+    @Getter
+    private final String publicKey;
 
-    private String secretKey;
+    @Getter
+    private final String secretKey;
 
-    private long expireTime = DEFAULT_EXPIRE_TIME;
+    @Getter
+    private long expireTime;
 
-    public JWTPolicy() {
-    }
+    private transient volatile JWTAlgorithmContext signatureContext;
+
+    private transient volatile JWTAlgorithmContext verifyContext;
 
     public JWTPolicy(Map<String, String> map) {
         Option option = MapOption.of(map);
@@ -74,5 +80,27 @@ public class JWTPolicy implements Serializable {
         this.secretKey = option.getString(KEY_JWT_SECRET_KEY);
         this.expireTime = option.getPositive(KEY_EXPIRE_TIME, DEFAULT_EXPIRE_TIME);
         this.expireTime = expireTime < FILE_MINUTE ? DEFAULT_EXPIRE_TIME : expireTime;
+    }
+
+    public JWTAlgorithmContext getSignatureContext(Supplier<JWTAlgorithmContext> supplier) {
+        if (signatureContext == null) {
+            synchronized (this) {
+                if (signatureContext == null) {
+                    signatureContext = supplier.get();
+                }
+            }
+        }
+        return signatureContext;
+    }
+
+    public JWTAlgorithmContext getVerifyContext(Supplier<JWTAlgorithmContext> supplier) {
+        if (verifyContext != null) {
+            synchronized (this) {
+                if (verifyContext == null) {
+                    verifyContext = supplier.get();
+                }
+            }
+        }
+        return verifyContext;
     }
 }

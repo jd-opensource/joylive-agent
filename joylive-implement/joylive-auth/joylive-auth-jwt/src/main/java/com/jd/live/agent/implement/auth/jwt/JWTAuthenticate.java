@@ -30,6 +30,8 @@ import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
+import com.jd.live.agent.governance.policy.service.auth.JWTAlgorithmContext;
+import com.jd.live.agent.governance.policy.service.auth.JWTAlgorithmRole;
 import com.jd.live.agent.governance.policy.service.auth.JWTPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
@@ -42,6 +44,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.choose;
 
@@ -60,30 +63,22 @@ public class JWTAuthenticate implements Authenticate {
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
+    // jwt algorithm cache
+    private final Map<Long, JWTAlgorithm> algorithms = new ConcurrentHashMap<>();
+
+    // jwt token cache
     private final Map<Long, JWTToken> tokens = new ConcurrentHashMap<>();
 
     @Override
     public Permission authenticate(ServiceRequest request, AuthPolicy policy) {
-        JWTPolicy jwtPolicy = policy.getJwtPolicy();
-        String token = decode(request, jwtPolicy);
+        String issue = request.getHeader(Constants.LABEL_APPLICATION);
+        String token = decode(request, policy);
         try {
-            AlgorithmBuilder factory = AlgorithmBuilderFactory.getBuilder(jwtPolicy.getAlgorithm());
-            String issue = request.getHeader(Constants.LABEL_APPLICATION);
-            KeyStore keyStore = keyStores.get(choose(jwtPolicy.getKeyStore(), KeyStore.TYPE_CLASSPATH));
-            AlgorithmContext context = AlgorithmContext.builder()
-                    .role(AlgorithmRole.VERIFY)
-                    .keyStore(keyStore)
-                    .privateKey(jwtPolicy.getPrivateKey())
-                    .publicKey(jwtPolicy.getPublicKey())
-                    .issuer(issue)
-                    .audience(request.getService())
-                    .build();
-            // TODO cache algorithm
-            Algorithm algorithm = factory == null ? null : factory.create(context);
+            JWTAlgorithm algorithm = getOrCreateAlgorithm(policy, () -> getVerifyContext(policy.getJwtPolicy()));
             if (algorithm == null) {
                 return Permission.success();
             }
-            JWT.require(algorithm).build().verify(token);
+            JWT.require(algorithm.getAlgorithm()).withIssuer(issue).withAudience(request.getService()).build().verify(token);
             return Permission.success();
         } catch (JWTVerificationException e) {
             return Permission.failure("Failed to verify JWT token " + token);
@@ -98,8 +93,7 @@ public class JWTAuthenticate implements Authenticate {
     public void inject(OutboundRequest request, AuthPolicy policy) {
         try {
             JWTPolicy jwtPolicy = policy.getJwtPolicy();
-            String keyStore = choose(jwtPolicy.getKeyStore(), KeyStore.TYPE_CLASSPATH);
-            JWTToken jwtToken = getOrCreateToken(request, policy, keyStore);
+            JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, application.getName(), request.getService()));
             if (jwtToken != null) {
                 if (jwtToken.validate()) {
                     String key = jwtPolicy.getKey();
@@ -120,11 +114,11 @@ public class JWTAuthenticate implements Authenticate {
      * Retrieves a token from the specified service request using the given key.
      *
      * @param request the service request
-     * @param policy  the token policy
+     * @param policy  the auth policy
      * @return the token value, or null if not found
      */
-    private String decode(ServiceRequest request, JWTPolicy policy) {
-        String key = policy.getKey();
+    private String decode(ServiceRequest request, AuthPolicy policy) {
+        String key = policy.getJwtPolicy().getKey();
         String token = request.getHeader(key);
         if (token != null && request instanceof HttpRequest && KEY_AUTH.equalsIgnoreCase(key) && token.startsWith(BEARER_PREFIX)) {
             // bear auth
@@ -134,40 +128,94 @@ public class JWTAuthenticate implements Authenticate {
     }
 
     /**
+     * Get or create verification context from JWT policy configuration.
+     *
+     * @param policy The JWT policy containing key material and algorithm
+     * @return Context configured for signature verification
+     */
+    private JWTAlgorithmContext getVerifyContext(JWTPolicy policy) {
+        return policy.getVerifyContext(() -> JWTAlgorithmContext.builder()
+                .role(JWTAlgorithmRole.VERIFY)
+                .keyStore(getKeyStore(policy))
+                .privateKey(policy.getPrivateKey())
+                .publicKey(policy.getPublicKey())
+                .algorithm(policy.getAlgorithm())
+                .build());
+    }
+
+    /**
+     * Get or create JWT signing context with identity and crypto configuration.
+     *
+     * @param policy   JWT security policy with keys and algorithm
+     * @param issuer   Token issuer identifier
+     * @param audience Intended token recipient
+     * @return Configured signing context
+     */
+    private JWTAlgorithmContext getSignatureContext(JWTPolicy policy, String issuer, String audience) {
+        return policy.getSignatureContext(() -> JWTAlgorithmContext.builder()
+                .role(JWTAlgorithmRole.SIGNATURE)
+                .keyStore(getKeyStore(policy))
+                .algorithm(policy.getAlgorithm())
+                .privateKey(policy.getPrivateKey())
+                .publicKey(policy.getPublicKey())
+                .secretKey(policy.getSecretKey())
+                .expireTime(policy.getExpireTime())
+                .issuer(issuer)
+                .audience(audience)
+                .build());
+    }
+
+    /**
+     * Gets the keystore configured in the JWT policy (falling back to default classpath keystore).
+     *
+     * @param policy JWT policy containing keystore configuration
+     * @return Configured keystore instance, or null if not found
+     */
+    private KeyStore getKeyStore(JWTPolicy policy) {
+        return keyStores.get(choose(policy.getKeyStore(), KeyStore.TYPE_CLASSPATH));
+    }
+
+    /**
+     * Gets cached algorithm instance or creates new one if needed.
+     *
+     * @param policy   Authentication policy containing JWT configuration
+     * @param supplier Context factory for algorithm creation
+     * @return Initialized algorithm instance, or null if unsupported
+     * @throws Exception If algorithm initialization fails
+     */
+    private JWTAlgorithm getOrCreateAlgorithm(AuthPolicy policy, Supplier<JWTAlgorithmContext> supplier) throws Exception {
+        JWTAlgorithmContext context = supplier.get();
+        JWTAlgorithm jwtAlgorithm = algorithms.get(policy.getId());
+        if (jwtAlgorithm == null || jwtAlgorithm.getContext() != context) {
+            JWTAlgorithmBuilder factory = JWTAlgorithmBuilderFactory.getBuilder(policy.getJwtPolicy().getAlgorithm());
+            if (factory == null) {
+                return null;
+            }
+            jwtAlgorithm = new JWTAlgorithm(policy, context, factory.create(context));
+            algorithms.put(policy.getId(), jwtAlgorithm);
+        }
+        return jwtAlgorithm;
+    }
+
+    /**
      * Generates or retrieves a cached JWT token for the given request.
      *
-     * @param request Service request containing audience details
      * @param policy  Authentication policy with JWT configuration
-     * @param store   KeyStore identifier for cryptographic operations
      * @return Valid JWT token, or null if algorithm creation fails
      * @throws Exception if token generation or cryptographic operations fail
      */
-    private JWTToken getOrCreateToken(ServiceRequest request, AuthPolicy policy, String store) throws Exception {
-        JWTPolicy jwtPolicy = policy.getJwtPolicy();
-        AlgorithmBuilder factory = AlgorithmBuilderFactory.getBuilder(jwtPolicy.getAlgorithm());
-        if (factory == null) {
-            return null;
-        }
-        KeyStore keyStore = store == null ? null : keyStores.get(store);
-        AlgorithmContext context = AlgorithmContext.builder()
-                .role(AlgorithmRole.VERIFY)
-                .keyStore(keyStore)
-                .algorithm(jwtPolicy.getAlgorithm())
-                .privateKey(jwtPolicy.getPrivateKey())
-                .publicKey(jwtPolicy.getPublicKey())
-                .secretKey(jwtPolicy.getSecretKey())
-                .issuer(application.getName())
-                .audience(request.getService())
-                .expireTime(jwtPolicy.getExpireTime())
-                .build();
-        Algorithm algorithm = factory.create(context);
-        if (algorithm == null) {
+    private JWTToken getOrCreateToken(AuthPolicy policy, Supplier<JWTAlgorithmContext> supplier) throws Exception {
+        JWTAlgorithm jwtAlgorithm = getOrCreateAlgorithm(policy, supplier);
+        if (jwtAlgorithm == null) {
             return null;
         }
         // cache token to improve performance
         JWTToken jwtToken = tokens.get(policy.getId());
-        if (jwtToken == null || jwtToken.isExpired() || !context.equals(jwtToken.getContext())) {
-            jwtToken = new JWTToken(policy, context, algorithm);
+        if (jwtToken == null
+                || jwtToken.isExpired()
+                || jwtToken.getContext() != jwtAlgorithm.getContext()) {
+            // new token
+            jwtToken = new JWTToken(jwtAlgorithm);
             jwtToken.build();
             addRefreshTask(jwtToken);
             tokens.put(policy.getId(), jwtToken);
@@ -206,20 +254,28 @@ public class JWTAuthenticate implements Authenticate {
         return token;
     }
 
+    @Getter
+    private static class JWTAlgorithm {
+
+        protected final PolicyId id;
+
+        protected final JWTAlgorithmContext context;
+
+        protected final Algorithm algorithm;
+
+        public JWTAlgorithm(PolicyId id, JWTAlgorithmContext context, Algorithm algorithm) {
+            this.id = id;
+            this.context = context;
+            this.algorithm = algorithm;
+        }
+    }
+
     /**
      * Immutable holder for JWT token and its metadata.
      * <p>
      * Tracks issuer, audience and expiration time for cached JWT tokens.
      */
-    private static class JWTToken {
-
-        @Getter
-        private final PolicyId id;
-
-        @Getter
-        private final AlgorithmContext context;
-
-        private final Algorithm algorithm;
+    private static class JWTToken extends JWTAlgorithm {
 
         @Getter
         private String token;
@@ -231,10 +287,12 @@ public class JWTAuthenticate implements Authenticate {
 
         private long counter;
 
-        public JWTToken(PolicyId id, AlgorithmContext context, Algorithm algorithm) {
-            this.id = id;
-            this.context = context;
-            this.algorithm = algorithm;
+        public JWTToken(PolicyId id, JWTAlgorithmContext context, Algorithm algorithm) {
+            super(id, context, algorithm);
+        }
+
+        public JWTToken(JWTAlgorithm algorithm) {
+            this(algorithm.getId(), algorithm.getContext(), algorithm.getAlgorithm());
         }
 
         /**
