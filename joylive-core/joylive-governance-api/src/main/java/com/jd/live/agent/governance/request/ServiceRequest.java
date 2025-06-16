@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.context.bag.Cargo;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.exception.ErrorName;
@@ -214,6 +215,10 @@ public interface ServiceRequest extends Request {
          */
         default String getClientIp() {
             return "";
+        }
+
+        default String getConsumer() {
+            return getHeader(Constants.LABEL_SERVICE_CONSUMER);
         }
 
     }

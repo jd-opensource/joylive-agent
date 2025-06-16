@@ -33,22 +33,25 @@ public interface Authenticate {
     String BEARER_PREFIX = "Bearer ";
 
     /**
-     * Authenticates a user based on the given policy and service request.
+     * Authenticates a request using given policy.
      *
-     * @param request the service request to authenticate
-     * @param policy  the authentication policy to use
-     * @return the result of the authentication attempt
+     * @param request Service request to authenticate
+     * @param policy Authentication policy to apply
+     * @param service Target service name
+     * @param consumer Requesting consumer identity
+     * @return Authentication permission result
      */
-    Permission authenticate(ServiceRequest request, AuthPolicy policy);
+    Permission authenticate(ServiceRequest request, AuthPolicy policy, String service, String consumer);
 
     /**
-     * Injects the given authentication policy into the outbound request.
+     * Applies authentication policy to outbound request.
      *
-     * @param request the service request to inject the policy into
-     * @param policy  the authentication policy to inject
+     * @param request Outbound request to modify
+     * @param policy Authentication policy to inject
+     * @param service Target service name
+     * @param consumer Requesting consumer identity
      */
-    default void inject(OutboundRequest request, AuthPolicy policy) {
-
+    default void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
     }
 }
 

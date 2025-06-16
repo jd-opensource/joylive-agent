@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
+import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
@@ -48,12 +49,14 @@ public class AuthFilter implements InboundFilter {
 
     @Override
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        ServiceMetadata metadata = invocation.getServiceMetadata();
+        ServicePolicy servicePolicy = metadata.getServicePolicy();
         AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
         if (authPolicy != null && authPolicy.getType() != null) {
             Authenticate authenticate = authenticates.get(authPolicy.getType());
             if (authenticate != null) {
-                Permission permission = authenticate.authenticate(invocation.getRequest(), authPolicy);
+                Permission permission = authenticate.authenticate(invocation.getRequest(), authPolicy,
+                        metadata.getServiceName(), metadata.getConsumer());
                 if (permission != null && !permission.isSuccess()) {
                     return Futures.future(FaultType.UNAUTHORIZED.reject(permission.getMessage()));
                 }

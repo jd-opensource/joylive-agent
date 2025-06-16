@@ -94,7 +94,7 @@ public class JWTPolicy implements Serializable {
     }
 
     public JWTAlgorithmContext getVerifyContext(Supplier<JWTAlgorithmContext> supplier) {
-        if (verifyContext != null) {
+        if (verifyContext == null) {
             synchronized (this) {
                 if (verifyContext == null) {
                     verifyContext = supplier.get();

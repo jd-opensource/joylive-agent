@@ -131,10 +131,10 @@
             }
           ],
           "authPolicy": {
-            "type": "token",
+            "type": "jwt",
             "params": {
-              "token": "1234567890",
-              "token.key": "Authorization"
+              "jwt.algorithm": "HMAC256",
+              "jwt.secretKey": "szo8E2NYIpxPYRmHWFNtt55sslji0eAi"
             }
           },
           "faultInjectionPolicies": [

@@ -17,13 +17,13 @@ package com.jd.live.agent.governance.invoke.auth.token;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.TokenPolicy;
 import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.invoke.auth.Permission;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -33,7 +33,7 @@ import java.util.Objects;
 public class TokenAuthenticate implements Authenticate {
 
     @Override
-    public Permission authenticate(ServiceRequest request, AuthPolicy policy) {
+    public Permission authenticate(ServiceRequest request, AuthPolicy policy, String service, String consumer) {
         TokenPolicy tokenPolicy = policy.getTokenPolicy();
         if (tokenPolicy != null && tokenPolicy.isValid() && !decodeAndCompare(request, tokenPolicy)) {
             return Permission.failure("Token is not correct.");
@@ -42,7 +42,7 @@ public class TokenAuthenticate implements Authenticate {
     }
 
     @Override
-    public void inject(OutboundRequest request, AuthPolicy policy) {
+    public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
         TokenPolicy tokenPolicy = policy.getTokenPolicy();
         if (tokenPolicy != null && tokenPolicy.isValid()) {
             String key = tokenPolicy.getKey();

@@ -20,11 +20,9 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
@@ -54,9 +52,6 @@ public class JWTAuthenticate implements Authenticate {
 
     private static final Logger logger = LoggerFactory.getLogger(JWTAuthenticate.class);
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
     @Inject
     private Map<String, KeyStore> keyStores;
 
@@ -70,15 +65,14 @@ public class JWTAuthenticate implements Authenticate {
     private final Map<Long, JWTToken> tokens = new ConcurrentHashMap<>();
 
     @Override
-    public Permission authenticate(ServiceRequest request, AuthPolicy policy) {
-        String issue = request.getHeader(Constants.LABEL_APPLICATION);
+    public Permission authenticate(ServiceRequest request, AuthPolicy policy, String service, String consumer) {
         String token = decode(request, policy);
         try {
             JWTAlgorithm algorithm = getOrCreateAlgorithm(policy, () -> getVerifyContext(policy.getJwtPolicy()));
             if (algorithm == null) {
                 return Permission.success();
             }
-            JWT.require(algorithm.getAlgorithm()).withIssuer(issue).withAudience(request.getService()).build().verify(token);
+            JWT.require(algorithm.getAlgorithm()).withIssuer(consumer).withAudience(service).build().verify(token);
             return Permission.success();
         } catch (JWTVerificationException e) {
             return Permission.failure("Failed to verify JWT token " + token);
@@ -90,10 +84,10 @@ public class JWTAuthenticate implements Authenticate {
     }
 
     @Override
-    public void inject(OutboundRequest request, AuthPolicy policy) {
+    public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
         try {
             JWTPolicy jwtPolicy = policy.getJwtPolicy();
-            JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, application.getName(), request.getService()));
+            JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, consumer, service));
             if (jwtToken != null) {
                 if (jwtToken.validate()) {
                     String key = jwtPolicy.getKey();
@@ -137,9 +131,11 @@ public class JWTAuthenticate implements Authenticate {
         return policy.getVerifyContext(() -> JWTAlgorithmContext.builder()
                 .role(JWTAlgorithmRole.VERIFY)
                 .keyStore(getKeyStore(policy))
+                .algorithm(policy.getAlgorithm())
                 .privateKey(policy.getPrivateKey())
                 .publicKey(policy.getPublicKey())
-                .algorithm(policy.getAlgorithm())
+                .secretKey(policy.getSecretKey())
+                .expireTime(policy.getExpireTime())
                 .build());
     }
 
@@ -323,7 +319,7 @@ public class JWTAuthenticate implements Authenticate {
                 this.token = JWT.create().withIssuer(context.getIssuer()).withAudience(context.getAudience())
                         .withIssuedAt(now).withExpiresAt(expireAt).sign(algorithm);
                 this.expireAt = expireAt;
-                this.refreshAt = expireAt.toEpochMilli() - Timer.getRetryInterval(5000, 15000);
+                this.refreshAt = expireAt.toEpochMilli() - Timer.getRetryInterval(10000, 30000);
                 if (counter++ > 0) {
                     logger.info("Success refreshing jwt token for {}", id.getUri());
                 }

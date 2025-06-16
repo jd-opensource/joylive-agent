@@ -40,32 +40,41 @@ public class JWTAlgorithmBuilderFactory {
 
     static {
         JWTAlgorithmBuilder builder = new RSA256AlgorithmBuilder();
+        factories.put("RS256", builder);
         factories.put("RSA256", builder);
         factories.put("SHA256withRSA", builder);
         builder = new RSA384AlgorithmBuilder();
+        factories.put("RS384", builder);
         factories.put("RSA384", builder);
         factories.put("SHA384withRSA", builder);
         builder = new RSA512AlgorithmBuilder();
+        factories.put("RS512", builder);
         factories.put("RSA512", builder);
         factories.put("SHA512withRSA", builder);
 
         builder = new EC256AlgorithmBuilder();
+        factories.put("ES256", builder);
         factories.put("ECDSA256", builder);
         factories.put("SHA256withECDSA", builder);
         builder = new EC384AlgorithmBuilder();
+        factories.put("ES384", builder);
         factories.put("ECDSA384", builder);
         factories.put("SHA384withECDSA", builder);
         builder = new EC512AlgorithmBuilder();
+        factories.put("ES512", builder);
         factories.put("ECDSA512", builder);
         factories.put("SHA512withECDSA", builder);
 
         builder = new HAMC256AlgorithmBuilder();
+        factories.put("HS256", builder);
         factories.put("HMAC256", builder);
         factories.put("HmacSHA256", builder);
         builder = new HAMC384AlgorithmBuilder();
+        factories.put("HS384", builder);
         factories.put("HMAC384", builder);
         factories.put("HmacSHA384", builder);
         builder = new HAMC512AlgorithmBuilder();
+        factories.put("HS512", builder);
         factories.put("HMAC512", builder);
         factories.put("HmacSHA512", builder);
     }
