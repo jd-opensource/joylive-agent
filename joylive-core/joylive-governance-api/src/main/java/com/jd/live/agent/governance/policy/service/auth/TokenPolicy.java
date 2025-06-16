@@ -15,11 +15,15 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 public class TokenPolicy {
 
@@ -45,8 +49,14 @@ public class TokenPolicy {
         this.token = token;
     }
 
+    public TokenPolicy(Map<String, String> map) {
+        Option option = MapOption.of(map);
+        this.key = option.getString(KEY_TOKEN_KEY, Authenticate.KEY_AUTH);
+        this.token = option.getString(KEY_TOKEN);
+    }
+
     public boolean isValid() {
-        return key != null && !key.isEmpty() && token != null && !token.isEmpty();
+        return token != null && !token.isEmpty();
     }
 
     public String getBase64Token() {

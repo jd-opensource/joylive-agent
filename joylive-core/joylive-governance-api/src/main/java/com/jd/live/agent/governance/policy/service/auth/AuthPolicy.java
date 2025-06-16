@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.policy.service.auth;
 
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.PolicyInherit;
+import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,17 +24,14 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jd.live.agent.governance.invoke.auth.Authenticate.KEY_AUTH;
-import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN;
-import static com.jd.live.agent.governance.policy.service.auth.TokenPolicy.KEY_TOKEN_KEY;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 
 /**
  * Auth policy
  *
  * @since 1.2.0
  */
-public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritWithId<AuthPolicy>, Serializable {
-
+public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPolicy>, Serializable {
     /**
      * The type of the auth policy.
      */
@@ -47,6 +44,8 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
     private Map<String, String> params;
 
     private volatile transient TokenPolicy tokenPolicy;
+
+    private volatile transient JWTPolicy jwtPolicy;
 
     public AuthPolicy() {
     }
@@ -74,23 +73,28 @@ public class AuthPolicy extends PolicyId implements PolicyInherit.PolicyInheritW
     }
 
     public String getParameter(String key, String defaultValue) {
-        if (params == null || key == null) {
-            return defaultValue;
-        }
-        String value = params.get(key);
-        return value == null || value.isEmpty() ? defaultValue : value;
+        return choose(getParameter(key), defaultValue);
     }
 
     public TokenPolicy getTokenPolicy() {
         if (tokenPolicy == null) {
             synchronized (this) {
                 if (tokenPolicy == null) {
-                    String key = getParameter(KEY_TOKEN_KEY, KEY_AUTH);
-                    String token = getParameter(KEY_TOKEN);
-                    tokenPolicy = new TokenPolicy(key, token);
+                    tokenPolicy = new TokenPolicy(params);
                 }
             }
         }
         return tokenPolicy;
+    }
+
+    public JWTPolicy getJwtPolicy() {
+        if (jwtPolicy == null) {
+            synchronized (this) {
+                if (jwtPolicy == null) {
+                    this.jwtPolicy = new JWTPolicy(params);
+                }
+            }
+        }
+        return jwtPolicy;
     }
 }

@@ -356,7 +356,7 @@ public class URI {
     }
 
     private static boolean isIpv6(String host) {
-        return host.indexOf(':') >= 0;
+        return host != null && host.indexOf(':') >= 0;
     }
 
     /**

@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
+import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -52,12 +53,17 @@ public class AuthFilter implements OutboundFilter {
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
-        ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
+        ServiceMetadata metadata = invocation.getServiceMetadata();
+        ServicePolicy servicePolicy = metadata.getServicePolicy();
         AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
         if (authPolicy != null && authPolicy.getType() != null) {
             Authenticate authenticate = authenticates.get(authPolicy.getType());
             if (authenticate != null) {
-                authenticate.inject(invocation.getRequest(), authPolicy);
+                authenticate.inject(
+                        invocation.getRequest(),
+                        authPolicy,
+                        metadata.getServiceName(),
+                        invocation.getContext().getApplication().getName());
             }
         }
         return chain.filter(invocation, endpoint);

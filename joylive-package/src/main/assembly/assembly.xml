@@ -56,6 +56,7 @@
                 <include>com.jd.live:joylive-eventbus-disruptor</include>
                 <include>com.jd.live:joylive-function-bkdrhash</include>
                 <include>com.jd.live:joylive-logger-slf4j</include>
+                <include>com.jd.live:joylive-auth-jwt</include>
                 <include>com.jd.live:joylive-parser-jackson</include>
                 <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
