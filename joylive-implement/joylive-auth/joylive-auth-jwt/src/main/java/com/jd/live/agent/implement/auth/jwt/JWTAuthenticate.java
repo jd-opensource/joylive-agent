@@ -263,7 +263,7 @@ public class JWTAuthenticate implements Authenticate {
 
         protected final Algorithm algorithm;
 
-        public JWTAlgorithm(PolicyId id, JWTAlgorithmContext context, Algorithm algorithm) {
+        JWTAlgorithm(PolicyId id, JWTAlgorithmContext context, Algorithm algorithm) {
             this.id = id;
             this.context = context;
             this.algorithm = algorithm;
@@ -287,11 +287,11 @@ public class JWTAuthenticate implements Authenticate {
 
         private long counter;
 
-        public JWTToken(PolicyId id, JWTAlgorithmContext context, Algorithm algorithm) {
+        JWTToken(PolicyId id, JWTAlgorithmContext context, Algorithm algorithm) {
             super(id, context, algorithm);
         }
 
-        public JWTToken(JWTAlgorithm algorithm) {
+        JWTToken(JWTAlgorithm algorithm) {
             this(algorithm.getId(), algorithm.getContext(), algorithm.getAlgorithm());
         }
 

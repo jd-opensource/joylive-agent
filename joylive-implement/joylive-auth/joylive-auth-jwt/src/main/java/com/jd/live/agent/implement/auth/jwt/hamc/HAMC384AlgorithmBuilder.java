@@ -21,7 +21,6 @@ import com.auth0.jwt.algorithms.Algorithm;
  * Factory for creating HMAC384 algorithm instances using keys from a KeyStore.
  */
 public class HAMC384AlgorithmBuilder extends HAMCAlgorithmBuilder {
-    
     @Override
     protected Algorithm doCreate(String secretKey) throws Exception {
         return Algorithm.HMAC384(secretKey);
