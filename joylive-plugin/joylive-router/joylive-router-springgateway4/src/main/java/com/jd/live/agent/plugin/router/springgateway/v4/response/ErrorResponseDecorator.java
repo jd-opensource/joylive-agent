@@ -56,7 +56,7 @@ public class ErrorResponseDecorator extends ServerHttpResponseDecorator {
     @NonNull
     @Override
     public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-        final HttpHeaders headers = exchange.getResponse().getHeaders();
+        final HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
         ServiceError error = ServiceError.build(key -> {
             List<String> values = headers.remove(key);
             return values == null || values.isEmpty() ? null : values.get(0);
