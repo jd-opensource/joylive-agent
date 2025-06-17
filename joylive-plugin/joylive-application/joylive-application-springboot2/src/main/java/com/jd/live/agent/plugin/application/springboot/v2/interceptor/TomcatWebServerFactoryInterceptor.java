@@ -23,12 +23,10 @@ import org.apache.catalina.connector.Connector;
 import org.apache.coyote.ProtocolHandler;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.plugin.application.springboot.v2.util.ThreadUtils.ofVirtualExecutor;
 
 /**
  * TomcatWebServerFactoryInterceptor
@@ -45,18 +43,7 @@ public class TomcatWebServerFactoryInterceptor extends InterceptorAdaptor {
         Object factory = getQuietly(executor, "factory");
         if (factory == null || !factory.getClass().getName().equals("java.lang.ThreadBuilders$VirtualThreadFactory")) {
             try {
-                Method method = Thread.class.getDeclaredMethod("ofVirtual");
-                Object ofVirtual = method.invoke(null);
-                Class<?> ofVirtualClass = ofVirtual.getClass();
-                Method nameMethod = ofVirtualClass.getDeclaredMethod("name", String.class, long.class);
-                nameMethod.setAccessible(true);
-                ofVirtual = nameMethod.invoke(ofVirtual, "tomcat-vt-", 1);
-                Method factoryMethod = ofVirtualClass.getDeclaredMethod("factory");
-                factoryMethod.setAccessible(true);
-                factory = factoryMethod.invoke(ofVirtual);
-                Method executorMethod = Executors.class.getDeclaredMethod("newThreadPerTaskExecutor", ThreadFactory.class);
-                executor = (Executor) executorMethod.invoke(null, (ThreadFactory) factory);
-                protocolHandler.setExecutor(executor);
+                protocolHandler.setExecutor(ofVirtualExecutor("tomcat-vt-1"));
             } catch (InvocationTargetException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 logger.error("Failed to set tomcat virtual thread, caused by {}", cause.getMessage(), cause);
