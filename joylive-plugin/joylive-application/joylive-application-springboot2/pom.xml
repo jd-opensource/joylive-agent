@@ -17,6 +17,7 @@
         <spring-cloud-context.version>3.1.9</spring-cloud-context.version>
         <nacos-discovery.version>2023.0.3.2</nacos-discovery.version>
         <sofa-boot.version>4.3.0</sofa-boot.version>
+        <tomcat-embed-core.version>10.1.41</tomcat-embed-core.version>
     </properties>
 
     <dependencies>
@@ -50,6 +51,11 @@
             <artifactId>sofa-boot</artifactId>
             <version>${sofa-boot.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>${tomcat-embed-core.version}</version>
         </dependency>
     </dependencies>
 

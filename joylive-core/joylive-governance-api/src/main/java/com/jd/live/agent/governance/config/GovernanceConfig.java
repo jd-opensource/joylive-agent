@@ -82,7 +82,7 @@ public class GovernanceConfig {
 
     public static final String CONFIG_FLOW_CONTROL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ENABLED;
     public static final String CONFIG_LOCALHOST_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".localhost";
-    public static final String CONFIG_VIRTUAL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtual";
+    public static final String CONFIG_VIRTUAL_THREAD_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtualthread";
 
     public static final String CONFIG_PROTECT_ENABLED = CONFIG_SWITCH_PROTECT + ENABLED;
     public static final String CONFIG_PROTECT_DB_ENABLED = CONFIG_SWITCH_PROTECT + ".db";
