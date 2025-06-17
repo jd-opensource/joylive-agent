@@ -100,7 +100,7 @@ agent:
     flowcontrol:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
-      virtual: ${CONFIG_VIRTUAL_ENABLED:false}
+      virtualthread: ${CONFIG_VIRTUAL_THREAD_ENABLED:false}
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
       mariadb: true
@@ -139,7 +139,6 @@ agent:
       topics: ${CONFIG_LANE_TOPICS}
       modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:true}
     router:
-      virtual: ${CONFIG_VIRTUAL_SIZE:500}
       spring:
         discovery:
           disables: ${CONFIG_SPRING_DISCOVERY_DISABLES}

@@ -3,3 +3,5 @@ com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationR
 com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationContextDefinition
 com.jd.live.agent.plugin.application.springboot.v2.definition.NacosRegistrationDefinition
 com.jd.live.agent.plugin.application.springboot.v2.definition.SofaBootstrapRunListenerDefinition
+com.jd.live.agent.plugin.application.springboot.v2.definition.TomcatReactiveWebServerFactoryDefinition
+com.jd.live.agent.plugin.application.springboot.v2.definition.TomcatServletWebServerFactoryDefinition
