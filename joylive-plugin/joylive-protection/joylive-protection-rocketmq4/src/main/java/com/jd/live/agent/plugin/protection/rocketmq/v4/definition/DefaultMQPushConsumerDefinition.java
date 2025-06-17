@@ -28,12 +28,12 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.rocketmq.v4.condition.ConditionalOnRocketmq4ProtectEnabled;
+import com.jd.live.agent.plugin.protection.rocketmq.v4.condition.ConditionalOnFailoverRocketmq4Enabled;
 import com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor.DefaultMQPushConsumerInterceptor;
 
 @Injectable
 @Extension(value = "DefaultMQPushConsumerDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnRocketmq4ProtectEnabled
+@ConditionalOnFailoverRocketmq4Enabled
 @ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE)
 public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {
 

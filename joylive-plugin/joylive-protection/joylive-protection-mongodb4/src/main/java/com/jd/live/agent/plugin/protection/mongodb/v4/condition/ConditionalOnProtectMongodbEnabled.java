@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.rocketmq.v5.condition;
+package com.jd.live.agent.plugin.protection.mongodb.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnMQProtectEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnProtectDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
@@ -26,12 +25,9 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnMQProtectEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ConditionalOnRocketmq5ProtectEnabled.TYPE_ACK_CALLBACK)
+@ConditionalOnProtectDBEnabled
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MONGODB_ENABLED, matchIfMissing = true)
 @ConditionalComposite
-public @interface ConditionalOnRocketmq5ProtectEnabled {
-
-    String TYPE_ACK_CALLBACK = "org.apache.rocketmq.client.consumer.AckCallback";
+public @interface ConditionalOnProtectMongodbEnabled {
 
 }

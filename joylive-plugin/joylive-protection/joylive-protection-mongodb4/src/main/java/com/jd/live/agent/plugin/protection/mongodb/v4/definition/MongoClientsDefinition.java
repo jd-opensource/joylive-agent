@@ -28,12 +28,12 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnMongodbProtectEnabled;
+import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnFailoverMongodbEnabled;
 import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.MongoClientsInterceptor;
 
 @Injectable
 @Extension(value = "MongoClientsDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnMongodbProtectEnabled
+@ConditionalOnFailoverMongodbEnabled
 @ConditionalOnClass(MongoClientsDefinition.TYPE)
 public class MongoClientsDefinition extends PluginDefinitionAdapter {
 

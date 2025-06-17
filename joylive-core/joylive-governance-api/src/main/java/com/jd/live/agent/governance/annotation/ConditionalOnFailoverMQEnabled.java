@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.mongodb.v4.condition;
+package com.jd.live.agent.governance.annotation;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnProtectDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
 
+/**
+ * Enables component when failover is active and mq failover feature is enabled.
+ * Requires both general failover and specific mq failover to be enabled.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProtectDBEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MONGODB_ENABLED, matchIfMissing = true)
+@ConditionalOnFailoverEnabled
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_MQ_ENABLED)
 @ConditionalComposite
-public @interface ConditionalOnMongodbProtectEnabled {
+public @interface ConditionalOnFailoverMQEnabled {
 
 }

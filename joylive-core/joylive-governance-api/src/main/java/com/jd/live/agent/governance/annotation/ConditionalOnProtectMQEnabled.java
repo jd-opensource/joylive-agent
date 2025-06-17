@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.rocketmq.v4.condition;
+package com.jd.live.agent.governance.annotation;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnMQProtectEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
 
+/**
+ * An annotation used to mark a type as requiring either the protect mq feature to be enabled, and the flow control
+ * feature to be disabled.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnMQProtectEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ConditionalOnRocketmq4ProtectEnabled.TYPE_CLIENT_LOGGER)
+@ConditionalOnProtectEnabled
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MQ_ENABLED)
 @ConditionalComposite
-public @interface ConditionalOnRocketmq4ProtectEnabled {
-
-    String TYPE_CLIENT_LOGGER = "org.apache.rocketmq.client.log.ClientLogger";
+public @interface ConditionalOnProtectMQEnabled {
 
 }

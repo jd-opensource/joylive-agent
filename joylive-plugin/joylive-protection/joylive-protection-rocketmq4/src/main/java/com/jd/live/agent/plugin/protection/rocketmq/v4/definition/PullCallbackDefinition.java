@@ -22,11 +22,11 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.protection.rocketmq.v4.condition.ConditionalOnRocketmq4ProtectEnabled;
+import com.jd.live.agent.plugin.protection.rocketmq.v4.condition.ConditionalOnFailoverRocketmq4Enabled;
 import com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor.PullCallbackInterceptor;
 
 @Extension(value = "PullCallbackDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnRocketmq4ProtectEnabled
+@ConditionalOnFailoverRocketmq4Enabled
 @ConditionalOnClass(PullCallbackDefinition.TYPE)
 public class PullCallbackDefinition extends PluginDefinitionAdapter {
 

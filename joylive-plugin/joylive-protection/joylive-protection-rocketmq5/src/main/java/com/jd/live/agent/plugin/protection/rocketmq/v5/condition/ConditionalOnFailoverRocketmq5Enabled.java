@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.plugin.protection.rocketmq.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.governance.annotation.ConditionalOnFailoverMQEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
 
-/**
- * An annotation used to mark a type as requiring either the protect mq feature to be enabled, and the flow control
- * feature to be disabled.
- */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProtectEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_MQ_ENABLED)
+@ConditionalOnFailoverMQEnabled
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_ROCKETMQ_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ConditionalOnFailoverRocketmq5Enabled.TYPE_ACK_CALLBACK)
 @ConditionalComposite
-public @interface ConditionalOnMQProtectEnabled {
+public @interface ConditionalOnFailoverRocketmq5Enabled {
+
+    String TYPE_ACK_CALLBACK = "org.apache.rocketmq.client.consumer.AckCallback";
 
 }
