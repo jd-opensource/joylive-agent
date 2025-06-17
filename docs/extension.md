@@ -134,18 +134,18 @@ private Application application;
 ```
 Common system components include:
 
-| Name                                             | Type               | Description              |
-|--------------------------------------------------|--------------------|--------------------------|
-| AgentConfig.COMPONENT_AGENT_CONFIG               | AgentConfig        | Agent configuration      |
-| EnhanceConfig.COMPONENT_ENHANCE_CONFIG           | EnhanceConfig      | Enhancement configuration |
-| AgentPath.COMPONENT_AGENT_PATH                   | AgentPath          | Agent path               |
-| Application.COMPONENT_APPLICATION                | Application        | Application instance     |
-| Timer.COMPONENT_TIMER                            | Timer              | Timer wheel              |
-| ClassLoaderConfig.COMPONENT_CLASSLOADER_CONFIG   | ClassLoaderConfig  | Class loader configuration |
-| AgentLifecycle.COMPONENT_AGENT_LIFECYCLE         | AgentLifecycle     | Agent lifecycle management |
-| ConditionMatcher.COMPONENT_CONDITION_MATCHER     | ConditionMatcher   | Condition matcher        |
-| PolicySupervisor.COMPONENT_POLICY_SUPERVISOR     | PolicySupervisor   | Policy supervisor        |
-| InvocationContext.COMPONENT_INVOCATION_CONTEXT   | InvocationContext  | Flow control intercept context |
+| Name                                           | Type              | Description                    |
+|------------------------------------------------|-------------------|--------------------------------|
+| AgentConfig.COMPONENT_AGENT_CONFIG             | AgentConfig       | Agent configuration            |
+| EnhanceConfig.COMPONENT_ENHANCE_CONFIG         | EnhanceConfig     | Enhancement configuration      |
+| AgentPath.COMPONENT_AGENT_PATH                 | AgentPath         | Agent path                     |
+| Application.COMPONENT_APPLICATION              | Application       | Application instance           |
+| Timer.COMPONENT_TIMER                          | Timer             | Timer wheel                    |
+| ClassLoaderConfig.COMPONENT_CLASSLOADER_CONFIG | ClassLoaderConfig | Class loader configuration     |
+| AgentLifecycle.COMPONENT_AGENT_LIFECYCLE       | AgentLifecycle    | Agent lifecycle management     |
+| Registry.COMPONENT_REGISTRY                    | Registry          | Registry                       |
+| PolicySupervisor.COMPONENT_POLICY_SUPERVISOR   | PolicySupervisor  | Policy supervisor              |
+| InvocationContext.COMPONENT_INVOCATION_CONTEXT | InvocationContext | Flow control intercept context |
 
 ##### 4.4.1.2 Injecting Extension Implementations
 

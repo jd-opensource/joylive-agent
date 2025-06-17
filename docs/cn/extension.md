@@ -72,43 +72,101 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 | order | int     | Short.MAX_VALUE | 优先级，值越小优先级越高 |
 | singleton | boolean | ture| 是否单例         |
 
-
-### 4.3 启用条件
-在扩展实现上可以配置条件开关
+### 4.3 Enablement Conditions
+Extension implementations can configure conditional switches
 
 #### 4.3.1 `@ConditionalOnProperty`
-该注解声明启用的配置项开关，可以配置多个`@ConditionalOnProperty`，每个之间是`AND`的关系
+This annotation declares configuration property switches for enablement. Multiple `@ConditionalOnProperty` can be configured with AND relationship between them.
 
-| 参数             | 类型                  | 默认值   | 说明                                   |
-|----------------|---------------------|-------|--------------------------------------|
-| value          | String              |       | 配置值                                  |
-| name           | String[]            |       | 配置名称数组                               |
-| matchIfMissing | boolean             | true  | 没有配置的时候是否匹配                          |
-| relation       | ConditionalRelation | OR    | 关系<br/>OR 或者<br/>AND 并且              |
-| caseSensitive       | boolean             | false | 大小写敏感                                |
-| comparison       | enum                | EQUAL | 比较 <br/>EQUAL 等于 <br/> NOT_EQAUL 不等于 |
+| Parameter       | Type                  | Default | Description                                   |
+|-----------------|-----------------------|---------|-----------------------------------------------|
+| value           | String                |         | Configuration value                          |
+| name            | String[]              |         | Configuration name array                     |
+| matchIfMissing  | boolean               | true    | Whether to match when configuration is missing |
+| relation        | ConditionalRelation   | OR      | Relationship<br/>OR or<br/>AND and           |
+| caseSensitive   | boolean               | false   | Case sensitivity                             |
+| comparison      | enum                  | EQUAL   | Comparison<br/>EQUAL equals<br/>NOT_EQUAL not equals |
 
 #### 4.3.2 `@ConditionalOnProperties`
-该注解声明启用多个配置项开关，由多个`@ConditionalOnProperty`组成，并且每个之间的关系
+This annotation declares multiple configuration property switches, composed of multiple `@ConditionalOnProperty` with defined relationships.
 
-| 参数             | 类型                      | 默认值 | 说明                      |
-|----------------|-------------------------|-----|-------------------------|
-| value          | ConditionalOnProperty[] |     | 配置项数组                   |
-| relation       | ConditionalRelation     | AND | 关系<br/>OR 或者<br/>AND 并且 |
+| Parameter | Type                      | Default | Description                      |
+|-----------|---------------------------|---------|----------------------------------|
+| value     | ConditionalOnProperty[]    |         | Configuration item array         |
+| relation  | ConditionalRelation        | AND     | Relationship<br/>OR or<br/>AND and |
 
 #### 4.3.3 `@ConditionalOnClass`
-该注解声明启用的类型条件，如果类型存在则匹配，可以配置多个`@ConditionalOnClass`，每个之间是`AND`的关系
+This annotation declares type conditions for enablement. Matches if the type exists. Multiple `@ConditionalOnClass` can be configured with AND relationship.
 
-| 参数     | 类型      | 默认值   | 说明    |
-|--------|---------|-------|-------|
-| value  | String  |       | 全路径类名 |
+| Parameter | Type      | Default | Description       |
+|-----------|-----------|---------|-------------------|
+| value     | String    |         | Fully-qualified class name |
 
-#### 4.3.4 `@ConditionalOnMissingClass`
-该注解声明启用的类型条件，如果类型不存在则匹配，可以配置多个`@ConditionalOnMissingClass`，每个之间是`AND`的关系
+#### 4.3.4 `@ConditionalOnClasses`
+This annotation declares multiple type conditions, composed of multiple `@ConditionalOnClass` with AND relationship.
 
-| 参数     | 类型      | 默认值   | 说明    |
-|--------|---------|-------|-------|
-| value  | String  |       | 全路径类名 |
+| Parameter | Type                   | Default | Description       |
+|-----------|------------------------|---------|-------------------|
+| value     | ConditionalOnClass[]   |         | Type condition array |
+
+#### 4.3.5 `@ConditionalOnMissingClass`
+This annotation declares type conditions for enablement. Matches if the type doesn't exist. Multiple `@ConditionalOnMissingClass` can be configured with AND relationship.
+
+| Parameter | Type      | Default | Description       |
+|-----------|-----------|---------|-------------------|
+| value     | String    |         | Fully-qualified class name |
+
+#### 4.3.6 `@ConditionalOnMissingClasses`
+This annotation declares multiple type conditions, composed of multiple `@ConditionalOnMissingClass` with AND relationship.
+
+| Parameter | Type                          | Default | Description       |
+|-----------|-------------------------------|---------|-------------------|
+| value     | ConditionalOnMissingClass[]   |         | Type condition array |
+
+#### 4.3.7 `@ConditionalOnJava`
+This annotation declares Java version range conditions.
+
+| Parameter | Type      | Default | Description              |
+|-----------|-----------|---------|--------------------------|
+| value     | String    |         | Java version range, e.g. [1.8,) means version 1.8 or higher |
+
+#### 4.3.8 `@Conditional`
+This annotation represents custom annotation conditions.
+
+| Parameter       | Type      | Default | Description                                                                                     |
+|-----------------|-----------|---------|-------------------------------------------------------------------------------------------------|
+| value           | String    |         | Implementation class for annotation matching. If empty, defaults to generating from annotation name.<br/>E.g. `ConditionalOnJava` annotation corresponds to `OnJavaCondition` in the same package. |
+| dependOnLoader  | boolean   | false   | Indicates this condition depends on the application's class loader                              |
+
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Repeatable(ConditionalOnClasses.class)
+@Documented
+@Conditional(dependOnLoader = true)
+public @interface ConditionalOnClass {
+    
+    String value();
+
+}
+```
+
+#### 4.3.8 `@ConditionalComposite`
+This meta-annotation indicates the annotation is a composite annotation containing multiple basic conditions, used to simplify configuration.
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@ConditionalOnProperty(name = {
+        GovernanceConfig.CONFIG_LIVE_ENABLED,
+        GovernanceConfig.CONFIG_LANE_ENABLED
+}, matchIfMissing = true, relation = ConditionalRelation.OR)
+@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, value = "false")
+@ConditionalComposite
+public @interface ConditionalOnOnlyRouteEnabled {
+
+}
+```
 
 ### 4.4 `@Injectable`
 该注解声明在扩展实现上，其配置参数如下
@@ -143,7 +201,7 @@ private Application application;
 | Timer.COMPONENT_TIMER                          | Timer | 时钟轮      |
 | ClassLoaderConfig.COMPONENT_CLASSLOADER_CONFIG | ClassLoaderConfig | 类加载器配置   |
 | AgentLifecycle.COMPONENT_AGENT_LIFECYCLE       | AgentLifecycle | 代理声明周期管理 |
-| ConditionMatcher.COMPONENT_CONDITION_MATCHER   | ConditionMatcher | 条件匹配     |
+| Registry.COMPONENT_REGISTRY                    | Registry | 注册中心     |
 | PolicySupervisor.COMPONENT_POLICY_SUPERVISOR   | PolicySupervisor | 策略管理器    |
 | InvocationContext.COMPONENT_INVOCATION_CONTEXT | InvocationContext | 流控拦截上下文  |
 
