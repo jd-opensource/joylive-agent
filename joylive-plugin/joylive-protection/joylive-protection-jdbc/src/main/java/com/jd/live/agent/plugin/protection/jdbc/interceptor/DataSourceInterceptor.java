@@ -40,6 +40,14 @@ public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveC
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // TODO Handle read slave connections
+        // dataSource name
+        // HikariDataSource.getPoolName
+        // DruidDataSource.getName
+        // org.apache.tomcat.jdbc.pool.DataSource.getPoolProperties().getName()
+        // HikariDataSource.getDataSourceProperties().getProperty()
+        // BasicDataSource.getConnectionPoolName()
+        // URL
         MethodContext mc = (MethodContext) ctx;
         Connection connection = mc.getResult();
         // address is set by driver interceptor.
