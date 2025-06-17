@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -40,8 +41,17 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
             // org.springframework.web.servlet.DispatcherServlet.processHandlerException
             HttpServletResponse response = ctx.getArgument(1);
             Exception ex = ctx.getArgument(3);
-            labelHeaders(ex, response::setHeader);
+            labelHeaders(ex, this::getErrorMessage, response::setHeader);
         }
+    }
+
+    private String getErrorMessage(Throwable e) {
+        String errorMessage = null;
+        if (e instanceof WebClientResponseException) {
+            WebClientResponseException webError = (WebClientResponseException) e;
+            errorMessage = webError.getResponseBodyAsString();
+        }
+        return errorMessage != null && !errorMessage.isEmpty() ? errorMessage : e.getMessage();
     }
 
 }

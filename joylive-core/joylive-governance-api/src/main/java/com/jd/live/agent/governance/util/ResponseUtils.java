@@ -22,6 +22,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.Constants.LABEL_EXCEPTION_MESSAGE;
@@ -71,9 +72,24 @@ public class ResponseUtils {
      * @param consumer  a BiConsumer to accept the exception names and message
      */
     private static void describe(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
+        describe(e, null, predicate, consumer);
+    }
+
+    /**
+     * Processes a Throwable, extracting exception names and message for consumer.
+     *
+     * @param e           Throwable to process (nullable)
+     * @param messageFunc generates message from Throwable (falls back to getMessage() if null)
+     * @param predicate   filters which exceptions to include (nullable)
+     * @param consumer    receives formatted names and message (truncated if exceeding limit)
+     */
+    private static void describe(Throwable e,
+                                 Function<Throwable, String> messageFunc,
+                                 Predicate<Throwable> predicate,
+                                 BiConsumer<String, String> consumer) {
         if (consumer != null && e != null) {
             String name = join(getExceptions(e, predicate));
-            String message = e.getMessage();
+            String message = messageFunc != null ? messageFunc.apply(e) : e.getMessage();
             if (message != null && message.length() > HEADER_SIZE_LIMIT) {
                 message = message.substring(0, HEADER_SIZE_LIMIT);
             }
@@ -90,7 +106,18 @@ public class ResponseUtils {
      * @param consumer a BiConsumer to accept the generated headers
      */
     public static void labelHeaders(Throwable e, BiConsumer<String, String> consumer) {
-        labelHeaders(e, null, consumer);
+        labelHeaders(e, null, null, consumer);
+    }
+
+    /**
+     * Generates exception-related HTTP headers from a Throwable object.
+     *
+     * @param e           the Throwable object to generate headers from
+     * @param messageFunc message generator (uses getMessage() if null)
+     * @param consumer    a BiConsumer to accept the generated headers
+     */
+    public static void labelHeaders(Throwable e, Function<Throwable, String> messageFunc, BiConsumer<String, String> consumer) {
+        labelHeaders(e, messageFunc, null, consumer);
     }
 
     /**
@@ -101,7 +128,22 @@ public class ResponseUtils {
      * @param consumer  a BiConsumer to accept the generated headers
      */
     public static void labelHeaders(Throwable e, Predicate<Throwable> predicate, BiConsumer<String, String> consumer) {
-        describe(e, predicate == null ? ExceptionUtils::isNoneWrapped : predicate, (name, message) -> {
+        labelHeaders(e, null, predicate, consumer);
+    }
+
+    /**
+     * Generates HTTP headers from a Throwable with URL-encoded message.
+     *
+     * @param e           Throwable source (nullable)
+     * @param messageFunc message generator (uses getMessage() if null)
+     * @param predicate   exception filter (defaults to non-wrapped)
+     * @param consumer    receives headers: names and encoded message
+     */
+    public static void labelHeaders(Throwable e,
+                                    Function<Throwable, String> messageFunc,
+                                    Predicate<Throwable> predicate,
+                                    BiConsumer<String, String> consumer) {
+        describe(e, messageFunc, predicate == null ? ExceptionUtils::isNoneWrapped : predicate, (name, message) -> {
             if (name != null && !name.isEmpty()) {
                 consumer.accept(LABEL_EXCEPTION_NAMES, name);
             }

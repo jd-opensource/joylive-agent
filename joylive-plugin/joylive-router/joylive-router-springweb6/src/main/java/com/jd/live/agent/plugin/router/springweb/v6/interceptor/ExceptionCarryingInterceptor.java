@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
@@ -39,8 +40,17 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
         if (config.isResponseException()) {
             HttpServletResponse response = ctx.getArgument(1);
             Exception ex = ctx.getArgument(3);
-            labelHeaders(ex, response::setHeader);
+            labelHeaders(ex, this::getErrorMessage, response::setHeader);
         }
+    }
+
+    private String getErrorMessage(Throwable e) {
+        String errorMessage = null;
+        if (e instanceof WebClientResponseException) {
+            WebClientResponseException webError = (WebClientResponseException) e;
+            errorMessage = webError.getResponseBodyAsString();
+        }
+        return errorMessage != null && !errorMessage.isEmpty() ? errorMessage : e.getMessage();
     }
 
 }
