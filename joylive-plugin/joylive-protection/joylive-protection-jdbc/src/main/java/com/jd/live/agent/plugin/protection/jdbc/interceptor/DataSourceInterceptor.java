@@ -67,8 +67,10 @@ public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveC
 
     @Override
     public void onExit(ExecutableContext ctx) {
-        ctx.unlock();
-        DbContext.clear();
+        if (ctx.isLocked()) {
+            ctx.unlock();
+            DbContext.clear();
+        }
     }
 
     @Override
