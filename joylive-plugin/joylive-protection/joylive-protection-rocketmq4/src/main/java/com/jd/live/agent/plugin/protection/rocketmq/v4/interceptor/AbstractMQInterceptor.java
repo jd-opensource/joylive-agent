@@ -32,8 +32,6 @@ import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.rocketmq.v4.client.AbstractMQClient;
 import org.apache.rocketmq.client.ClientConfig;
 
-import static com.jd.live.agent.core.util.StringUtils.CHAR_SEMICOLON;
-import static com.jd.live.agent.core.util.StringUtils.join;
 import static com.jd.live.agent.plugin.protection.rocketmq.v4.client.AbstractMQClient.TYPE_ROCKETMQ;
 
 /**
@@ -94,8 +92,7 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     }
 
     protected DbCandidate getCandidate(String address) {
-        return getCandidate(TYPE_ROCKETMQ, address, AccessMode.READ_WRITE,
-                database -> (join(database.getAddresses(), CHAR_SEMICOLON)));
+        return getCandidate(TYPE_ROCKETMQ, address, AccessMode.READ_WRITE, MULTI_ADDRESS_SEMICOLON_RESOLVER);
     }
 
     protected abstract C createClient(T target, ClusterRedirect redirect);

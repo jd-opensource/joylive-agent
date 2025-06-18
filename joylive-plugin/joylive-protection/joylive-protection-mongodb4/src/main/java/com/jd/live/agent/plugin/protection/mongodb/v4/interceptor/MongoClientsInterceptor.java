@@ -45,7 +45,6 @@ import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.invokeOrigin;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.CHAR_SEMICOLON;
 import static com.jd.live.agent.core.util.StringUtils.join;
 import static com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.ConnectionStringInterceptor.CONNECTION_STRING;
 
@@ -74,7 +73,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         DbUrl dbUrl = DbUrlParser.parse(CONNECTION_STRING.get(), parsers::get);
         // Check whether read-write separation is configured
         AccessMode accessMode = getAccessMode(settings.getApplicationName(), dbUrl, null);
-        DbCandidate candidate = getCandidate(TYPE_MONGODB, address, accessMode, database -> join(database.getAddresses(), CHAR_SEMICOLON));
+        DbCandidate candidate = getCandidate(TYPE_MONGODB, address, accessMode, MULTI_ADDRESS_SEMICOLON_RESOLVER);
         ctx.setAttribute(ATTR_OLD_ADDRESS, candidate);
         if (candidate.isRedirected()) {
             MongoClientSettings.Builder builder = MongoClientSettings.builder(settings);

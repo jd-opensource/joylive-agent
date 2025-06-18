@@ -71,7 +71,7 @@ public class DriverInterceptor extends AbstractDbFailoverInterceptor {
             // none tcp address, such as jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
             if (dbUrl.hasAddress()) {
                 AccessMode accessMode = getAccessMode(getDatasourceName(dataSource), dbUrl, ctx.getArgument(1));
-                DbCandidate candidate = getCandidate(dbUrl.getType(), dbUrl.getAddress(), accessMode);
+                DbCandidate candidate = getCandidate(dbUrl.getType(), dbUrl.getAddress(), accessMode, PRIMARY_ADDRESS_RESOLVER);
                 String newAddress = candidate.getNewAddress();
                 // redirect new address
                 if (candidate.isRedirected()) {

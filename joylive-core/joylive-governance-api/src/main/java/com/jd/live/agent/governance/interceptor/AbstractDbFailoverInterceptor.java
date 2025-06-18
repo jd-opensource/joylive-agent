@@ -35,7 +35,7 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.splitList;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * Base interceptor for database failover scenarios.
@@ -50,6 +50,10 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     protected static final String READ = "read";
 
     protected static final String ATTR_OLD_ADDRESS = "oldAddress";
+
+    protected static final Function<LiveDatabase, String> MULTI_ADDRESS_SEMICOLON_RESOLVER = database -> join(database.getAddresses(), CHAR_SEMICOLON);
+
+    protected static final Function<LiveDatabase, String> PRIMARY_ADDRESS_RESOLVER = LiveDatabase::getPrimaryAddress;
 
     protected final PolicySupplier policySupplier;
 
@@ -66,18 +70,6 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
         this.application = application;
         this.location = application.getLocation();
         this.governanceConfig = governanceConfig;
-    }
-
-    /**
-     * Retrieves the appropriate database node (master or replica) based on access mode.
-     *
-     * @param type       database type/category identifier
-     * @param address    Target cluster address (converted to lowercase)
-     * @param accessMode Determines whether to get writable master or readable replica
-     * @return DbResult with node info, or null if no suitable node available
-     */
-    protected DbCandidate getCandidate(String type, String address, AccessMode accessMode) {
-        return getCandidate(type, address, accessMode, null);
     }
 
     /**
