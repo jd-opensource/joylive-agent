@@ -22,7 +22,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.StringUtils.split;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * Abstract base class for parsing database connection URLs.
@@ -124,7 +124,9 @@ public abstract class AbstractUrlParser implements DbUrlParser {
         // query
         int pos = url == null ? -1 : url.indexOf(getParameterDelimiter());
         if (pos >= 0) {
-            builder.parameter(url.substring(pos + 1));
+            String parameter = url.substring(pos + 1);
+            builder.parameter(parameter);
+            builder.parameters(splitMap(parameter, QUERY));
             builder.parameterPart(url.substring(pos));
             url = url.substring(0, pos);
         }

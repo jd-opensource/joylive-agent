@@ -20,11 +20,14 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.db.DataSourceDescriptorFactory;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.jdbc.interceptor.DriverInterceptor;
@@ -46,8 +49,17 @@ public class DriverDefinition extends PluginDefinitionAdapter {
             "java.util.Properties"
     };
 
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
+
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
+
+    @Inject
+    private Map<String, DataSourceDescriptorFactory> descriptorFactories;
 
     @Inject
     private Map<String, DbUrlParser> parsers;
@@ -56,9 +68,8 @@ public class DriverDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).
-                                and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new DriverInterceptor(policySupplier, parsers)
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new DriverInterceptor(policySupplier, application, governanceConfig, parsers, descriptorFactories)
                 )
         };
     }

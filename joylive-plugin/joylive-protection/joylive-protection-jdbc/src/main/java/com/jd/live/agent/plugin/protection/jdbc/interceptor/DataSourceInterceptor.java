@@ -16,17 +16,22 @@
 package com.jd.live.agent.plugin.protection.jdbc.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.plugin.protection.jdbc.context.DbContext;
 import com.jd.live.agent.plugin.protection.jdbc.sql.LiveConnection;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 
 /**
@@ -34,33 +39,43 @@ import java.sql.Connection;
  */
 public class DataSourceInterceptor extends AbstractDbConnectionInterceptor<LiveConnection> {
 
-    public DataSourceInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
-        super(policySupplier, publisher, timer);
+    private static final LockContext lock = new LockContext.DefaultLockContext();
+
+    public DataSourceInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig,
+                                 Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, application, governanceConfig, publisher, timer);
+    }
+
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        // Inject the final data source for driver, not in lock block.
+        DbContext.setDataSource((DataSource) ctx.getTarget());
+        ctx.tryLock(lock);
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        // TODO Handle read slave connections
-        // dataSource name
-        // HikariDataSource.getPoolName
-        // DruidDataSource.getName
-        // org.apache.tomcat.jdbc.pool.DataSource.getPoolProperties().getName()
-        // HikariDataSource.getDataSourceProperties().getProperty()
-        // BasicDataSource.getConnectionPoolName()
-        // URL
-        MethodContext mc = (MethodContext) ctx;
-        Connection connection = mc.getResult();
-        // address is set by driver interceptor.
-        ClusterRedirect address = ClusterRedirect.getAndRemove();
-        if (address != null) {
-            mc.setResult(createConnection(() -> new LiveConnection(connection, address, closer)));
+        if (ctx.isLocked()) {
+            MethodContext mc = (MethodContext) ctx;
+            Connection connection = mc.getResult();
+            ClusterRedirect redirect = DbContext.getClusterRedirect();
+            if (redirect != null) {
+                mc.setResult(createConnection(() -> new LiveConnection(connection, redirect, closer)));
+            }
         }
     }
 
     @Override
+    public void onExit(ExecutableContext ctx) {
+        ctx.unlock();
+        DbContext.clear();
+    }
+
+    @Override
     protected void redirectTo(LiveConnection connection, ClusterAddress address) {
-        // Close and remove connection from pool.
+        // Close connection
         Close.instance().close(connection);
         ClusterRedirect.redirect(connection.getAddress().newAddress(address), consumer);
     }
+
 }

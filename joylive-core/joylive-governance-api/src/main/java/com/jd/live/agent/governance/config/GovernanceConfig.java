@@ -140,6 +140,9 @@ public class GovernanceConfig {
     @Config("configCenter")
     private ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
 
+    @Config("db")
+    private DbConfig dbConfig = new DbConfig();
+
     @Config
     private int initializeTimeout = 10 * 1000;
 

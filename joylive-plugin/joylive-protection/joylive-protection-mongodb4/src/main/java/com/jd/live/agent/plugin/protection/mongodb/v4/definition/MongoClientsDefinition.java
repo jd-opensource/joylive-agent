@@ -21,11 +21,13 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnFailoverMongodbEnabled;
@@ -49,6 +51,12 @@ public class MongoClientsDefinition extends PluginDefinitionAdapter {
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
+
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
     @Inject(Publisher.DATABASE)
     private Publisher<DatabaseEvent> publisher;
 
@@ -60,7 +68,7 @@ public class MongoClientsDefinition extends PluginDefinitionAdapter {
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.isStatic()).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new MongoClientsInterceptor(policySupplier, publisher, timer)
+                        () -> new MongoClientsInterceptor(policySupplier, application, governanceConfig, publisher, timer)
                 )
         };
     }

@@ -20,9 +20,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
+import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
@@ -42,8 +45,8 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQInterceptor.class);
 
-    public AbstractMQInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
-        super(policySupplier, publisher, timer);
+    public AbstractMQInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig, Publisher<DatabaseEvent> publisher, Timer timer) {
+        super(policySupplier, application, governanceConfig, publisher, timer);
     }
 
     @SuppressWarnings("unchecked")
@@ -52,13 +55,12 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
         // TransactionMQProducer inherit from DefaultMQProducer, will call start 2 times.
         if (ctx.tryLock(lock)) {
             T target = (T) ctx.getTarget();
-            // Determine if a cluster failover was triggered
-            DbResult result = getMaster(target.getNamesrvAddr());
-            if (result != null && !result.isMaster()) {
-                result.setNewAddress(join(result.getMaster().getAddresses(), CHAR_SEMICOLON));
-                ctx.setAttribute(ATTR_OLD_ADDRESS, result);
-                target.setNamesrvAddr(result.getNewAddress());
-                logger.info("Try reconnecting to rocketmq {}", result.getNewAddress());
+            DbCandidate candidate = getCandidate(target.getNamesrvAddr());
+            ctx.setAttribute(ATTR_OLD_ADDRESS, candidate);
+            if (candidate.isRedirected()) {
+                // Determine if a cluster failover was triggered
+                target.setNamesrvAddr(candidate.getNewAddress());
+                logger.info("Try reconnecting to rocketmq {}", candidate.getNewAddress());
             }
         }
     }
@@ -68,12 +70,12 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     public void onSuccess(ExecutableContext ctx) {
         if (ctx.isLocked()) {
             T target = (T) ctx.getTarget();
-            DbResult oldDb = ctx.getAttribute(ATTR_OLD_ADDRESS);
-            String oldAddress = oldDb != null ? oldDb.getOldAddress() : target.getNamesrvAddr();
-            String newAddress = oldDb != null ? oldDb.getNewAddress() : oldAddress;
-            addConnection(createClient(target, new ClusterRedirect(TYPE_ROCKETMQ, oldAddress, newAddress)));
+            DbCandidate oldDb = ctx.getAttribute(ATTR_OLD_ADDRESS);
+            ClusterRedirect redirect = toClusterRedirect(oldDb);
+            ClusterRedirect.redirect(redirect, oldDb.isRedirected() ? consumer : null);
+            addConnection(createClient(target, redirect));
             // Avoid missing events caused by synchronous changes
-            DbResult newDb = getMaster(oldAddress);
+            DbCandidate newDb = getCandidate(oldDb.getOldAddress());
             if (isChanged(oldDb, newDb)) {
                 publisher.offer(new DatabaseEvent());
             }
@@ -86,14 +88,14 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     }
 
     @Override
-    protected ClusterAddress createAddress(String address) {
-        return new ClusterAddress(TYPE_ROCKETMQ, address);
-    }
-
-    @Override
     protected void redirectTo(C client, ClusterAddress address) {
         client.reconnect(address);
         ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
+    }
+
+    protected DbCandidate getCandidate(String address) {
+        return getCandidate(TYPE_ROCKETMQ, address, AccessMode.READ_WRITE,
+                database -> (join(database.getAddresses(), CHAR_SEMICOLON)));
     }
 
     protected abstract C createClient(T target, ClusterRedirect redirect);

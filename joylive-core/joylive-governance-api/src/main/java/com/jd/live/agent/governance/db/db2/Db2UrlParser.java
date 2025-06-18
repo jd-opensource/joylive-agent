@@ -19,6 +19,9 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.db.AbstractUrlParser;
 import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
+import static com.jd.live.agent.core.util.StringUtils.QUERY;
+import static com.jd.live.agent.core.util.StringUtils.splitMap;
+
 @Extension("db2")
 public class Db2UrlParser extends AbstractUrlParser {
 
@@ -28,7 +31,9 @@ public class Db2UrlParser extends AbstractUrlParser {
         if (pos > 0) {
             pos = url.indexOf(':', pos + 1);
             if (pos > 0) {
-                builder.parameter(url.substring(pos + 1));
+                String parameter = url.substring(pos + 1);
+                builder.parameter(parameter);
+                builder.parameters(splitMap(parameter, QUERY));
                 builder.parameterPart(url.substring(pos));
                 url = url.substring(0, pos);
             }

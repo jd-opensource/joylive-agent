@@ -49,14 +49,22 @@ public interface DbUrlParser {
             return null;
         }
         int pos1 = url.indexOf(':');
-        if (pos1 < 0 || !JDBC.equalsIgnoreCase(url.substring(0, pos1))) {
+        if (pos1 < 0) {
             return null;
         }
-        int pos2 = url.indexOf(':', pos1 + 1);
-        if (pos2 < 0) {
-            return null;
+        String type = url.substring(0, pos1);
+        if (!JDBC.equalsIgnoreCase(type)) {
+            // mongodb://
+            if (url.length() < pos1 + 2 || url.charAt(pos1 + 1) != '/' || url.charAt(pos1 + 2) != '/') {
+                return null;
+            }
+        } else {
+            int pos2 = url.indexOf(':', pos1 + 1);
+            if (pos2 < 0) {
+                return null;
+            }
+            type = url.substring(pos1 + 1, pos2).toLowerCase();
         }
-        String type = url.substring(pos1 + 1, pos2).toLowerCase();
         DbUrlParser parser = factory.apply(type);
         parser = parser == null ? factory.apply(TYPE_DEFAULT) : parser;
         return parser == null ? null : parser.parse(type, url);

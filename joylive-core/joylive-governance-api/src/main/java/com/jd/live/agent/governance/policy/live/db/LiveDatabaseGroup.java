@@ -41,7 +41,7 @@ public class LiveDatabaseGroup {
     @Setter
     private List<LiveDatabase> databases;
 
-    public LiveDatabase getMaster(LiveDatabase database) {
+    public LiveDatabase getWriteDatabase(LiveDatabase database) {
         if (database != null && database.getRole() == LiveDatabaseRole.MASTER) {
             return database;
         }
@@ -51,6 +51,27 @@ public class LiveDatabaseGroup {
             }
         }
         return null;
+    }
+
+    public LiveDatabase getReadDatabase(LiveDatabase database, String unit, String cell) {
+        if (database != null && database.getAccessMode().isReadable()) {
+            return database;
+        }
+        int priority;
+        int max = -1;
+        LiveDatabase result = null;
+        for (LiveDatabase db : databases) {
+            if (db.getAccessMode().isReadable()) {
+                priority = 100;
+                priority += db.isLocation(unit, cell) ? 10 : 0;
+                priority += db.getRole() == LiveDatabaseRole.MASTER ? 1 : 0;
+                if (priority > max) {
+                    max = priority;
+                    result = db;
+                }
+            }
+        }
+        return result;
     }
 
     public void cache() {
