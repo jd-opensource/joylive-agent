@@ -63,7 +63,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
 
     protected final Timer timer;
 
-    protected final Map<String, DbUrlParser> parser;
+    protected final Map<String, DbUrlParser> parsers;
 
     protected final Map<ClusterAddress, List<C>> connections = new ConcurrentHashMap<>();
 
@@ -89,11 +89,11 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                                            GovernanceConfig governanceConfig,
                                            Publisher<DatabaseEvent> publisher,
                                            Timer timer,
-                                           Map<String, DbUrlParser> parser) {
+                                           Map<String, DbUrlParser> parsers) {
         super(policySupplier, application, governanceConfig);
         this.publisher = publisher;
         this.timer = timer;
-        this.parser = parser;
+        this.parsers = parsers;
         publisher.addHandler(this::onEvent);
     }
 

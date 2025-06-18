@@ -41,6 +41,7 @@ import com.mongodb.connection.ClusterSettings;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.invokeOrigin;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
@@ -57,8 +58,9 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
 
     private static final String TYPE_MONGODB = "mongodb";
 
-    public MongoClientsInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig, Publisher<DatabaseEvent> publisher, Timer timer) {
-        super(policySupplier, application, governanceConfig, publisher, timer);
+    public MongoClientsInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig,
+                                   Publisher<DatabaseEvent> publisher, Timer timer, Map<String, DbUrlParser> parsers) {
+        super(policySupplier, application, governanceConfig, publisher, timer, parsers);
     }
 
     @Override
@@ -69,7 +71,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         ClusterSettings cluster = settings.getClusterSettings();
         String srvHost = cluster.getSrvHost();
         String address = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
-        DbUrl dbUrl = DbUrlParser.parse(CONNECTION_STRING.get(), parser::get);
+        DbUrl dbUrl = DbUrlParser.parse(CONNECTION_STRING.get(), parsers::get);
         // Check whether read-write separation is configured
         AccessMode accessMode = getAccessMode(settings.getApplicationName(), dbUrl, null);
         DbCandidate candidate = getCandidate(TYPE_MONGODB, address, accessMode, database -> join(database.getAddresses(), CHAR_SEMICOLON));

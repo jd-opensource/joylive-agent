@@ -144,9 +144,9 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     protected AccessMode getAccessMode(String name, DbUrl url, Properties properties) {
         if (name != null && name.toLowerCase().endsWith(READ)) {
             return AccessMode.READ;
-        } else if (url.getParameter(ACCESS_MODE).equalsIgnoreCase(READ)) {
+        } else if (READ.equalsIgnoreCase(url.getParameter(ACCESS_MODE))) {
             return AccessMode.READ;
-        } else if (properties != null && properties.getProperty(ACCESS_MODE).equalsIgnoreCase(READ)) {
+        } else if (properties != null && READ.equalsIgnoreCase(properties.getProperty(ACCESS_MODE))) {
             return AccessMode.READ;
         } else {
             AccessMode accessMode = governanceConfig.getDbConfig().getAccessMode();

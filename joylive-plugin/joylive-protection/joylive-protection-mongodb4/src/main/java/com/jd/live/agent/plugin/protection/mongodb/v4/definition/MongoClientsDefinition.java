@@ -28,10 +28,13 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnFailoverMongodbEnabled;
 import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.MongoClientsInterceptor;
+
+import java.util.Map;
 
 @Injectable
 @Extension(value = "MongoClientsDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
@@ -63,12 +66,15 @@ public class MongoClientsDefinition extends PluginDefinitionAdapter {
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
+    @Inject
+    private Map<String, DbUrlParser> parsers;
+
     public MongoClientsDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.isStatic()).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new MongoClientsInterceptor(policySupplier, application, governanceConfig, publisher, timer)
+                        () -> new MongoClientsInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers)
                 )
         };
     }
