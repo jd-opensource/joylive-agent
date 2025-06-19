@@ -22,7 +22,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrl;
-import com.jd.live.agent.governance.interceptor.AbstractCreateConnectionInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
 import com.jd.live.agent.governance.interceptor.AbstractDbFailoverInterceptor;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -36,7 +36,7 @@ import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
  */
 public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractCreateConnectionInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractJdbcConnectionInterceptor.class);
 
     public DriverConnectInterceptor(PolicySupplier policySupplier,
                                     Application application,

@@ -22,7 +22,7 @@ import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.interceptor.AbstractCreateConnectionInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.hikaricp.connection.HikariPooledConnection;
@@ -41,14 +41,14 @@ import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.g
 /**
  * HikariCreateConnectionInterceptor
  */
-public class HikariCreateConnectionInterceptor extends AbstractCreateConnectionInterceptor<HikariPooledConnection> {
+public class HikariJdbcConnectionInterceptor extends AbstractJdbcConnectionInterceptor<HikariPooledConnection> {
 
-    public HikariCreateConnectionInterceptor(PolicySupplier policySupplier,
-                                             Application application,
-                                             GovernanceConfig governanceConfig,
-                                             Publisher<DatabaseEvent> publisher,
-                                             Timer timer,
-                                             Map<String, DbUrlParser> parsers) {
+    public HikariJdbcConnectionInterceptor(PolicySupplier policySupplier,
+                                           Application application,
+                                           GovernanceConfig governanceConfig,
+                                           Publisher<DatabaseEvent> publisher,
+                                           Timer timer,
+                                           Map<String, DbUrlParser> parsers) {
         super(policySupplier, application, governanceConfig, publisher, timer, parsers);
     }
 

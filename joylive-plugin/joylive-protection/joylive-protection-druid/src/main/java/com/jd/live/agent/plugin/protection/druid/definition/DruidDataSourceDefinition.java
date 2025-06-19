@@ -32,7 +32,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.druid.interceptor.DruidCreateConnectionInterceptor;
+import com.jd.live.agent.plugin.protection.druid.interceptor.DruidJdbcConnectionInterceptor;
 
 import java.util.Map;
 
@@ -73,7 +73,7 @@ public class DruidDataSourceDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new DruidCreateConnectionInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers)),
+                        () -> new DruidJdbcConnectionInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers)),
         };
     }
 }

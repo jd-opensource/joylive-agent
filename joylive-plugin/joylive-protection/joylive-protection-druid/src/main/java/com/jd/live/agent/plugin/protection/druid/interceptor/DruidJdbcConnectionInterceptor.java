@@ -23,7 +23,7 @@ import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.interceptor.AbstractCreateConnectionInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.druid.connection.DruidPooledConnection;
@@ -38,14 +38,14 @@ import java.util.Map;
 /**
  * DruidCreateConnectionInterceptor
  */
-public class DruidCreateConnectionInterceptor extends AbstractCreateConnectionInterceptor<DruidPooledConnection> {
+public class DruidJdbcConnectionInterceptor extends AbstractJdbcConnectionInterceptor<DruidPooledConnection> {
 
-    public DruidCreateConnectionInterceptor(PolicySupplier policySupplier,
-                                            Application application,
-                                            GovernanceConfig governanceConfig,
-                                            Publisher<DatabaseEvent> publisher,
-                                            Timer timer,
-                                            Map<String, DbUrlParser> parsers) {
+    public DruidJdbcConnectionInterceptor(PolicySupplier policySupplier,
+                                          Application application,
+                                          GovernanceConfig governanceConfig,
+                                          Publisher<DatabaseEvent> publisher,
+                                          Timer timer,
+                                          Map<String, DbUrlParser> parsers) {
         super(policySupplier, application, governanceConfig, publisher, timer, parsers);
     }
 

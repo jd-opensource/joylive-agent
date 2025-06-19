@@ -38,18 +38,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AbstractCreateConnectionInterceptor
+ * AbstractJdbcConnectionInterceptor
  */
-public abstract class AbstractCreateConnectionInterceptor<T extends PooledConnection> extends AbstractDbConnectionInterceptor<T> {
+public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnection> extends AbstractDbConnectionInterceptor<T> {
 
     private static final Map<DataSource, LiveDataSource> DATASOURCE = new ConcurrentHashMap<>();
 
-    public AbstractCreateConnectionInterceptor(PolicySupplier policySupplier,
-                                               Application application,
-                                               GovernanceConfig governanceConfig,
-                                               Publisher<DatabaseEvent> publisher,
-                                               Timer timer,
-                                               Map<String, DbUrlParser> parsers) {
+    public AbstractJdbcConnectionInterceptor(PolicySupplier policySupplier,
+                                             Application application,
+                                             GovernanceConfig governanceConfig,
+                                             Publisher<DatabaseEvent> publisher,
+                                             Timer timer,
+                                             Map<String, DbUrlParser> parsers) {
         super(policySupplier, application, governanceConfig, publisher, timer, parsers);
     }
 
@@ -68,7 +68,6 @@ public abstract class AbstractCreateConnectionInterceptor<T extends PooledConnec
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        // Sourced from the connection pool
         Connection connection = mc.getResult();
         DriverConnection driver = unwrap(connection);
         if (driver != null) {

@@ -32,7 +32,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.hikaricp.interceptor.HikariCreateConnectionInterceptor;
+import com.jd.live.agent.plugin.protection.hikaricp.interceptor.HikariJdbcConnectionInterceptor;
 
 import java.util.Map;
 
@@ -68,7 +68,7 @@ public class HikariDataSourceDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new HikariCreateConnectionInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers))
+                        () -> new HikariJdbcConnectionInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers))
         };
     }
 }
