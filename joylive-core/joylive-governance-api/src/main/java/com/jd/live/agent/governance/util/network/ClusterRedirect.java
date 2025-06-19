@@ -94,6 +94,17 @@ public class ClusterRedirect {
     }
 
     /**
+     * Gets the redirected address for a given cluster address if one exists.
+     *
+     * @param address the original cluster address to check
+     * @return the redirected address, or null if no redirect exists
+     */
+    public static ClusterAddress getRedirect(ClusterAddress address) {
+        AtomicReference<ClusterAddress> reference = REDIRECTS.get(address);
+        return reference == null ? null : reference.get();
+    }
+
+    /**
      * Atomically updates global redirect mapping
      *
      * @param address  Original database address

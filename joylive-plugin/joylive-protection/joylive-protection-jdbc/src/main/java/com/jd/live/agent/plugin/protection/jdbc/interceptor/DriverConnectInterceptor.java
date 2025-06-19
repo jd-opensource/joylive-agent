@@ -22,14 +22,17 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrl;
-import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
-import com.jd.live.agent.governance.interceptor.AbstractDbFailoverInterceptor;
-import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.context.DriverContext;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
+import com.jd.live.agent.governance.interceptor.AbstractDbFailoverInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
+import com.jd.live.agent.governance.policy.AccessMode;
+import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.util.network.ClusterAddress;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
+
+import static com.jd.live.agent.governance.util.network.ClusterRedirect.getRedirect;
 
 /**
  * DriverInterceptor
@@ -60,7 +63,11 @@ public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
         if (candidate.isRedirected()) {
             dbUrl = dbUrl.address(newAddress);
             ctx.setArgument(0, dbUrl.toString());
-            logger.info("Try reconnecting to {} {}", dbUrl.getType(), candidate.getNewAddress());
+            // log once.
+            ClusterAddress target = getRedirect(new ClusterAddress(candidate.getType(), candidate.getOldAddress()));
+            if (target == null || !target.getAddress().equals(candidate.getNewAddress())) {
+                logger.info("Try reconnecting to {} {}", dbUrl.getType(), candidate.getNewAddress());
+            }
         }
         ctx.setAttribute(ATTR_OLD_ADDRESS, candidate);
     }
