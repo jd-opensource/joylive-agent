@@ -34,15 +34,16 @@ agent:
       - system
     statics:
       - dubbo
+      - eureka
       - grpc
       - httpclient
+      - jdbc
       - jdk
       - kafka
       - mariadb
       - mysql
       - mongodb
       - nacos
-      - eureka
       - netty
       - okhttp
       - opengauss

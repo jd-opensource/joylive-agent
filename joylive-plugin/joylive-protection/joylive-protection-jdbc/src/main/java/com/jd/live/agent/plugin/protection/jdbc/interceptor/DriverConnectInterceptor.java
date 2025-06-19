@@ -22,13 +22,14 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.interceptor.AbstractCreateConnectionInterceptor;
 import com.jd.live.agent.governance.interceptor.AbstractDbFailoverInterceptor;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
-import com.jd.live.agent.plugin.protection.jdbc.connection.LiveDriverConnection;
-import com.jd.live.agent.plugin.protection.jdbc.context.DriverContext;
-import com.jd.live.agent.plugin.protection.jdbc.datasource.LiveDataSource;
+import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
+import com.jd.live.agent.governance.db.jdbc.context.DriverContext;
+import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
 
 /**
  * DriverInterceptor
@@ -73,6 +74,6 @@ public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
         }
         ClusterRedirect redirect = toClusterRedirect(candidate);
         ClusterRedirect.redirect(redirect, candidate.isRedirected() ? consumer : null);
-        mc.setResult(new LiveDriverConnection(mc.getResult(), redirect, DriverContext.get()));
+        mc.setResult(new DriverConnection(mc.getResult(), redirect, DriverContext.get()));
     }
 }

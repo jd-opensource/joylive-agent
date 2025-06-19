@@ -23,6 +23,8 @@
         <module>joylive-protection-redis</module>
         <module>joylive-protection-rocketmq5</module>
         <module>joylive-protection-rocketmq4</module>
+        <module>joylive-protection-druid</module>
+        <module>joylive-protection-hikaricp</module>
     </modules>
 
 </project>
