@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.datasource.druid;
+package com.jd.live.agent.plugin.protection.jdbc.context;
 
-import com.alibaba.druid.pool.DruidDataSource;
-import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.db.DataSourceDescriptor;
-import com.jd.live.agent.governance.db.DataSourceDescriptorFactory;
+import com.jd.live.agent.plugin.protection.jdbc.datasource.LiveDataSource;
 
-import javax.sql.DataSource;
+public class DriverContext {
 
-@Extension({"druid", "DruidDataSource"})
-public class DruidDescriptorFactory implements DataSourceDescriptorFactory {
+    private static final ThreadLocal<LiveDataSource> POOL_LOCAL = new ThreadLocal<>();
 
-    @Override
-    public DataSourceDescriptor getDescriptor(DataSource dataSource) {
-        return new DruidDescriptor((DruidDataSource) dataSource);
+    public static LiveDataSource get() {
+        return POOL_LOCAL.get();
     }
+
+    public static void set(LiveDataSource dataSource) {
+        POOL_LOCAL.set(dataSource);
+    }
+
+    public static void remove() {
+        POOL_LOCAL.remove();
+    }
+
 }

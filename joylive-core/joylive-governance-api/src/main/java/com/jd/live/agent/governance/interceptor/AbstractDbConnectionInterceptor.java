@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.Application;
@@ -32,13 +30,9 @@ import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -55,22 +49,18 @@ import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
  */
 public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> extends AbstractDbFailoverInterceptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
-
-    protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("{} connection is redirected from {} to {} ", oldAddress.getType(), oldAddress, newAddress);
-
     protected final Publisher<DatabaseEvent> publisher;
 
     protected final Timer timer;
 
     protected final Map<String, DbUrlParser> parsers;
 
-    protected final Map<ClusterAddress, List<C>> connections = new ConcurrentHashMap<>();
+    protected final Map<ClusterAddress, Set<C>> connections = new ConcurrentHashMap<>();
 
     protected final Map<C, FailoverTask> tasks = new ConcurrentHashMap<>(128);
 
     protected final Consumer<C> closer = c -> {
-        List<C> values = connections.get(c.getAddress().getNewAddress());
+        Set<C> values = connections.get(c.getAddress().getNewAddress());
         if (values != null) {
             values.remove(c);
         }
@@ -112,7 +102,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
     protected void addConnection(C conn) {
         if (conn != null) {
             ClusterAddress address = conn.getAddress().getNewAddress();
-            connections.computeIfAbsent(address, a -> new CopyOnWriteArrayList<>()).add(conn);
+            connections.computeIfAbsent(address, a -> new CopyOnWriteArraySet<>()).add(conn);
         }
     }
 

@@ -29,19 +29,22 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.jdbc.interceptor.DataSourceInterceptor;
+import com.jd.live.agent.plugin.protection.jdbc.interceptor.HikariCreateConnectionInterceptor;
+
+import java.util.Map;
 
 @Injectable
-@Extension(value = "DataSourceDefinition", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "HikariPoolBaseDefinition", order = PluginDefinition.ORDER_PROTECT)
 @ConditionalOnFailoverDBEnabled
-@ConditionalOnClass(DataSourceDefinition.TYPE)
-public class DataSourceDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(HikariDataSourceDefinition.TYPE)
+public class HikariDataSourceDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "javax.sql.DataSource";
+    protected static final String TYPE = "com.zaxxer.hikari.pool.PoolBase";
 
-    private static final String METHOD = "getConnection";
+    private static final String METHOD = "newConnection";
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
@@ -58,11 +61,14 @@ public class DataSourceDefinition extends PluginDefinitionAdapter {
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
 
-    public DataSourceDefinition() {
+    @Inject
+    private Map<String, DbUrlParser> parsers;
+
+    public HikariDataSourceDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new DataSourceInterceptor(policySupplier, application, governanceConfig, publisher, timer))
+                        () -> new HikariCreateConnectionInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers))
         };
     }
 }

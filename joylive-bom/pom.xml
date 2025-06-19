@@ -195,16 +195,6 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-datasource-druid</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
-                <artifactId>joylive-datasource-hikaricp</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-flowcontrol-resilience4j</artifactId>
                 <version>${revision}</version>
             </dependency>

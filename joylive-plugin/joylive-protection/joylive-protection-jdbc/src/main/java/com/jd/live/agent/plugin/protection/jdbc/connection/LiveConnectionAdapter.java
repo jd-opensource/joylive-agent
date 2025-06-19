@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.jdbc.sql;
+package com.jd.live.agent.plugin.protection.jdbc.connection;
 
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.db.DbConnection;
@@ -25,23 +25,23 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
-public class LiveConnection implements Connection, DbConnection {
+/**
+ * Adapter implementing both standard {@link Connection} and custom {@link DbConnection} interfaces.
+ * Enables unified database access while maintaining compatibility with existing connection APIs.
+ */
+public abstract class LiveConnectionAdapter implements Connection, DbConnection {
 
-    private final Connection delegate;
+    protected final Connection delegate;
 
     @Getter
-    private final ClusterRedirect address;
+    protected final ClusterRedirect address;
 
-    private final Consumer<LiveConnection> onClose;
+    protected volatile boolean closed;
 
-    private volatile boolean closed;
-
-    public LiveConnection(Connection delegate, ClusterRedirect address, Consumer<LiveConnection> onClose) {
+    public LiveConnectionAdapter(Connection delegate, ClusterRedirect address) {
         this.address = address;
         this.delegate = delegate;
-        this.onClose = onClose;
     }
 
     @Override
@@ -86,19 +86,16 @@ public class LiveConnection implements Connection, DbConnection {
 
     @Override
     public void close() throws SQLException {
-        closed = true;
-        try {
-            delegate.close();
-        } finally {
-            if (onClose != null) {
-                onClose.accept(this);
-            }
-        }
+        delegate.close();
     }
 
     @Override
     public boolean isClosed() {
-        return closed;
+        try {
+            return delegate.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     @Override
@@ -322,8 +319,14 @@ public class LiveConnection implements Connection, DbConnection {
         return delegate.getNetworkTimeout();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
+        if (iface.isInstance(this)) {
+            return (T) this;
+        } else if (iface.isInstance(delegate)) {
+            return (T) delegate;
+        }
         return delegate.unwrap(iface);
     }
 

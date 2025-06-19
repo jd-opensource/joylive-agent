@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
@@ -32,6 +34,7 @@ import lombok.Getter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
@@ -45,11 +48,15 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  */
 public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
+
     protected static final String ACCESS_MODE = "accessMode";
 
     protected static final String READ = "read";
 
     protected static final String ATTR_OLD_ADDRESS = "oldAddress";
+
+    protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("{} connection is redirected from {} to {} ", oldAddress.getType(), oldAddress, newAddress);
 
     protected static final Function<LiveDatabase, String> MULTI_ADDRESS_SEMICOLON_RESOLVER = database -> join(database.getAddresses(), CHAR_SEMICOLON);
 

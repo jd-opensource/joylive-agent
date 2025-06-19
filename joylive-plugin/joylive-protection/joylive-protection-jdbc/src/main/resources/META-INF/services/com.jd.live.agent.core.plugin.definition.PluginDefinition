@@ -1,2 +1,3 @@
-com.jd.live.agent.plugin.protection.jdbc.definition.DataSourceDefinition
+com.jd.live.agent.plugin.protection.jdbc.definition.DruidDataSourceDefinition
+com.jd.live.agent.plugin.protection.jdbc.definition.HikariDataSourceDefinition
 com.jd.live.agent.plugin.protection.jdbc.definition.DriverDefinition

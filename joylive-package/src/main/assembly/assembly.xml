@@ -75,8 +75,6 @@
                 <include>com.jd.live:joylive-expression-jexl</include>
                 <include>com.jd.live:joylive-flowcontrol-resilience4j</include>
                 <include>com.jd.live:joylive-flowcontrol-redisson</include>
-                <include>com.jd.live:joylive-datasource-druid</include>
-                <include>com.jd.live:joylive-datasource-hikaricp</include>
             </includes>
         </dependencySet>
 
