@@ -15,31 +15,27 @@
  */
 package com.jd.live.agent.governance.interceptor;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbConnection;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
+import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
-import lombok.Getter;
-import lombok.Setter;
+import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.splitList;
 import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
 
 /**
@@ -51,67 +47,44 @@ import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
  *
  * @param <C> Wrapped connection type (must be AutoCloseable)
  */
-public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> extends InterceptorAdaptor {
-
-    private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
-
-    protected static final String ATTR_OLD_ADDRESS = "oldAddress";
-
-    protected static final BiConsumer<ClusterAddress, ClusterAddress> consumer = (oldAddress, newAddress) -> logger.info("{} connection is redirected from {} to {} ", oldAddress.getType(), oldAddress, newAddress);
-
-    protected final PolicySupplier policySupplier;
+public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> extends AbstractDbFailoverInterceptor {
 
     protected final Publisher<DatabaseEvent> publisher;
 
     protected final Timer timer;
 
-    protected final Map<ClusterAddress, List<C>> connections = new ConcurrentHashMap<>();
+    protected final Map<String, DbUrlParser> parsers;
+
+    protected final Map<ClusterAddress, Set<C>> connections = new ConcurrentHashMap<>();
 
     protected final Map<C, FailoverTask> tasks = new ConcurrentHashMap<>(128);
 
     protected final Consumer<C> closer = c -> {
-        List<C> values = connections.get(c.getAddress().getNewAddress());
+        Set<C> values = connections.get(c.getAddress().getNewAddress());
         if (values != null) {
             values.remove(c);
         }
     };
 
-    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
-        this.policySupplier = policySupplier;
+    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier,
+                                           Application application,
+                                           GovernanceConfig governanceConfig,
+                                           Publisher<DatabaseEvent> publisher,
+                                           Timer timer) {
+        this(policySupplier, application, governanceConfig, publisher, timer, null);
+    }
+
+    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier,
+                                           Application application,
+                                           GovernanceConfig governanceConfig,
+                                           Publisher<DatabaseEvent> publisher,
+                                           Timer timer,
+                                           Map<String, DbUrlParser> parsers) {
+        super(policySupplier, application, governanceConfig);
         this.publisher = publisher;
         this.timer = timer;
+        this.parsers = parsers;
         publisher.addHandler(this::onEvent);
-    }
-
-    /**
-     * Retrieves the master database node for the given address.
-     *
-     * @param address the target cluster address
-     * @return DbResult with master info, or null if no master available
-     */
-    protected DbResult getMaster(String address) {
-        address = address == null ? null : address.toLowerCase();
-        GovernancePolicy policy = policySupplier.getPolicy();
-        String[] nodes = toList(toList(splitList(address), URI::parse), URI::getAddress).toArray(new String[0]);
-        // get master is case sensitive
-        LiveDatabase database = policy.getMaster(nodes);
-        return database == null ? null : new DbResult(address, nodes, database);
-    }
-
-    /**
-     * Checks if master database configuration has changed between two states.
-     *
-     * @param oldResult previous database state (may be null)
-     * @param newResult current database state (may be null)
-     * @return true if master addresses differ or state changed from/to null
-     */
-    protected boolean isChanged(DbResult oldResult, DbResult newResult) {
-        if (oldResult == null) {
-            return newResult != null;
-        } else if (newResult == null) {
-            return true;
-        }
-        return !Objects.equals(oldResult.getMaster().getAddresses(), newResult.getMaster().getAddresses());
     }
 
     /**
@@ -129,7 +102,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
     protected void addConnection(C conn) {
         if (conn != null) {
             ClusterAddress address = conn.getAddress().getNewAddress();
-            connections.computeIfAbsent(address, a -> new CopyOnWriteArrayList<>()).add(conn);
+            connections.computeIfAbsent(address, a -> new CopyOnWriteArraySet<>()).add(conn);
         }
     }
 
@@ -144,36 +117,44 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             if (cons.isEmpty()) {
                 return;
             }
-            LiveDatabase master = policy.getMaster(address.getNodes());
-            if (master != null && !master.contains(address.getNodes())) {
-                // primary address is lowercase.
-                ClusterAddress newAddress = createAddress(master.getPrimaryAddress());
-                cons.forEach(c -> {
-                    if (!c.getAddress().getNewAddress().equals(newAddress)) {
-                        // avoid async concurrently updating.
-                        while (!c.isClosed()) {
-                            FailoverTask newTask = new FailoverTask(c, newAddress);
-                            FailoverTask oldTask = tasks.putIfAbsent(c, newTask);
-                            if (oldTask == null) {
-                                timer.delay("redirect-connection", getRetryInterval(100, 2000), newTask);
-                            } else if (oldTask.add(newAddress)) {
-                                break;
-                            }
-                        }
-                    }
-                });
-            }
+            LiveDatabase oldDatabase = policy.getDatabase(address.getNodes());
+            LiveDatabase newDatabase = oldDatabase.getReadDatabase(location.getUnit(), location.getCell());
+            LiveDatabase master = oldDatabase.getWriteDatabase();
+            cons.forEach(c -> {
+                ClusterRedirect redirect = c.getAddress();
+                String[] nodes = redirect.getNewAddress().getNodes();
+                AccessMode accessMode = redirect.getAccessMode();
+                if (accessMode.isWriteable() && master != null && master != oldDatabase && !master.contains(nodes)) {
+                    // redirect when master is changed.
+                    addTask(c, master);
+                } else if (!accessMode.isWriteable() && newDatabase != null && newDatabase != oldDatabase && !newDatabase.contains(nodes)) {
+                    // redirect when slave is changed.
+                    addTask(c, newDatabase);
+                }
+            });
         });
     }
 
     /**
-     * Creates a new ClusterAddress from the given string representation.
+     * Adds a failover task for connection redirection with collision handling.
      *
-     * @param address the address string to parse
-     * @return newly created ClusterAddress (never null)
+     * @param conn     the connection needing redirection
+     * @param database target database with new connection details
      */
-    protected ClusterAddress createAddress(String address) {
-        return new ClusterAddress(address);
+    protected void addTask(C conn, LiveDatabase database) {
+        // avoid async concurrently updating.
+        ClusterRedirect redirect = conn.getAddress();
+        ClusterAddress newAddress = redirect.getAddressResolver().apply(database);
+        while (!conn.isClosed()) {
+            FailoverTask newTask = new FailoverTask(conn, newAddress);
+            FailoverTask oldTask = tasks.putIfAbsent(conn, newTask);
+            if (oldTask == null) {
+                timer.delay("redirect-connection", getRetryInterval(100, 2000), newTask);
+                return;
+            } else if (oldTask.add(newAddress)) {
+                break;
+            }
+        }
     }
 
     /**
@@ -183,30 +164,6 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * @param address    the target cluster address
      */
     protected abstract void redirectTo(C connection, ClusterAddress address);
-
-    @Getter
-    protected static class DbResult {
-
-        private final String oldAddress;
-
-        private final String[] oldNodes;
-
-        private final LiveDatabase master;
-
-        @Setter
-        private String newAddress;
-
-        public DbResult(String oldAddress, String[] oldNodes, LiveDatabase master) {
-            this.oldAddress = oldAddress;
-            this.oldNodes = oldNodes;
-            this.master = master;
-        }
-
-        public boolean isMaster() {
-            return master != null && master.contains(oldNodes);
-        }
-
-    }
 
     /**
      * A background task that handles connection failover by redirecting to alternate cluster addresses.

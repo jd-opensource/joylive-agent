@@ -52,6 +52,8 @@ public class StringUtils {
      */
     public static final char CHAR_AMPERSAND = '|';
 
+    public static final Predicate<Character> QUERY = c -> c == '&';
+
     /**
      * A predicate that tests if a character is a comma.
      */

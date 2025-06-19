@@ -69,11 +69,15 @@ public class LiveDatabase {
     @Getter
     private transient Set<String> nodes;
 
-    public LiveDatabase getMaster() {
+    public LiveDatabase getWriteDatabase() {
         if (role == LiveDatabaseRole.MASTER) {
             return this;
         }
-        return group == null ? null : group.getMaster(this);
+        return group == null ? null : group.getWriteDatabase(this);
+    }
+
+    public LiveDatabase getReadDatabase(String unit, String cell) {
+        return group == null ? null : group.getReadDatabase(this, unit, cell);
     }
 
     public boolean contains(String address) {
@@ -117,6 +121,10 @@ public class LiveDatabase {
         }
     }
 
+    public boolean isLocation(String unit, String cell) {
+        return isLocationEqual(this.unit, unit) && isLocationEqual(this.cell, cell);
+    }
+
     private String selectAddress() {
         int size = addresses == null ? 0 : addresses.size();
         if (size == 0) {
@@ -135,6 +143,13 @@ public class LiveDatabase {
             }
         }
         return first;
+    }
+
+    private boolean isLocationEqual(String source, String target) {
+        if (source == null || source.isEmpty()) {
+            return target == null || target.isEmpty();
+        }
+        return source.equals(target);
     }
 
 }

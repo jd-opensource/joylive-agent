@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
 
+    private static final Map<String, Set<String>> PARENT_TYPES = new ConcurrentHashMap<>(8192);
+
     private final Class<?> type;
 
     private final boolean implement;
@@ -48,9 +50,43 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
         return target != null && type != null && target.isAssignableTo(type) && !(implement && target.isInterface());
     }
 
-    public static class SubNameMatcher<T extends TypeDesc> extends AbstractJunction<T> {
+    private static <T extends TypeDesc> Set<String> getParentTypes(T target) {
+        return PARENT_TYPES.computeIfAbsent(target.getActualName(), k -> loadParentTypes(target));
+    }
 
-        private static final Map<String, Set<String>> TYPES = new ConcurrentHashMap<>(8192);
+    /**
+     * Loads all the types that are part of the inheritance hierarchy of the given type definition.
+     *
+     * @param typeDef The type definition to start from.
+     * @return A set of strings representing the names of all the types in the inheritance hierarchy.
+     */
+    private static Set<String> loadParentTypes(TypeDesc typeDef) {
+        Set<String> result = new HashSet<>();
+        Queue<TypeDesc> queue = new ArrayDeque<>();
+        result.add(typeDef.getActualName());
+        queue.add(typeDef);
+        TypeDef current;
+        TypeDesc desc;
+        while (!queue.isEmpty()) {
+            current = queue.poll();
+            for (TypeDesc.Generic generic : current.getInterfaces()) {
+                desc = generic.asErasure();
+                if (result.add(desc.getActualName())) {
+                    queue.add(desc);
+                }
+            }
+            TypeDesc.Generic parent = current.getSuperClass();
+            if (parent != null) {
+                desc = parent.asErasure();
+                if (result.add(desc.getActualName())) {
+                    queue.add(desc);
+                }
+            }
+        }
+        return result;
+    }
+
+    public static class SubNameMatcher<T extends TypeDesc> extends AbstractJunction<T> {
 
         private final String type;
 
@@ -70,40 +106,40 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
             if (target == null || type == null || type.isEmpty() || implement && target.isInterface()) {
                 return false;
             }
-            return TYPES.computeIfAbsent(target.getActualName(), k -> loadTypes(target)).contains(type);
+            return getParentTypes(target).contains(type);
         }
 
-        /**
-         * Loads all the types that are part of the inheritance hierarchy of the given type definition.
-         *
-         * @param typeDef The type definition to start from.
-         * @return A set of strings representing the names of all the types in the inheritance hierarchy.
-         */
-        private Set<String> loadTypes(TypeDesc typeDef) {
-            Set<String> result = new HashSet<>();
-            Queue<TypeDesc> queue = new ArrayDeque<>();
-            result.add(typeDef.getActualName());
-            queue.add(typeDef);
-            TypeDef current;
-            TypeDesc desc;
-            while (!queue.isEmpty()) {
-                current = queue.poll();
-                for (TypeDesc.Generic generic : current.getInterfaces()) {
-                    desc = generic.asErasure();
-                    if (result.add(desc.getActualName())) {
-                        queue.add(desc);
-                    }
-                }
-                TypeDesc.Generic parent = current.getSuperClass();
-                if (parent != null) {
-                    desc = parent.asErasure();
-                    if (result.add(desc.getActualName())) {
-                        queue.add(desc);
-                    }
+    }
+
+    public static class SubNamesMatcher<T extends TypeDesc> extends AbstractJunction<T> {
+
+        private final Set<String> types;
+
+        private final boolean implement;
+
+        public SubNamesMatcher(Set<String> types) {
+            this(types, false);
+        }
+
+        public SubNamesMatcher(Set<String> types, boolean implement) {
+            this.types = types;
+            this.implement = implement;
+        }
+
+        @Override
+        public boolean match(T target) {
+            if (target == null || types == null || types.isEmpty() || implement && target.isInterface()) {
+                return false;
+            }
+            Set<String> parentTypes = getParentTypes(target);
+            for (String type : types) {
+                if (parentTypes.contains(type)) {
+                    return true;
                 }
             }
-            return result;
+            return false;
         }
+
     }
 
 }

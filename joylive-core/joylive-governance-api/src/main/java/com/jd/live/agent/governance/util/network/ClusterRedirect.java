@@ -15,12 +15,15 @@
  */
 package com.jd.live.agent.governance.util.network;
 
+import com.jd.live.agent.governance.policy.AccessMode;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import lombok.Getter;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static com.jd.live.agent.governance.util.network.ClusterAddress.TYPE_DB;
 
@@ -33,60 +36,72 @@ import static com.jd.live.agent.governance.util.network.ClusterAddress.TYPE_DB;
 @Getter
 public class ClusterRedirect {
 
-    private static final ThreadLocal<ClusterRedirect> ADDRESS = new ThreadLocal<>();
-
     private static final Map<ClusterAddress, AtomicReference<ClusterAddress>> REDIRECTS = new ConcurrentHashMap<>();
 
+    public static final Function<LiveDatabase, ClusterAddress> DB_ADDRESS_RESOLVER = database -> new ClusterAddress(TYPE_DB, database.getPrimaryAddress());
+
     private final String type;
+
+    private final AccessMode accessMode;
 
     private final ClusterAddress oldAddress;
 
     private final ClusterAddress newAddress;
 
+    private final Function<LiveDatabase, ClusterAddress> addressResolver;
+
     public ClusterRedirect(String address) {
-        this(TYPE_DB, new ClusterAddress(TYPE_DB, address), new ClusterAddress(TYPE_DB, address));
+        this(TYPE_DB, AccessMode.READ_WRITE, new ClusterAddress(TYPE_DB, address), new ClusterAddress(TYPE_DB, address), DB_ADDRESS_RESOLVER);
     }
 
     public ClusterRedirect(String oldAddress, String newAddress) {
-        this(TYPE_DB, new ClusterAddress(TYPE_DB, oldAddress), new ClusterAddress(TYPE_DB, newAddress));
+        this(TYPE_DB, AccessMode.READ_WRITE, new ClusterAddress(TYPE_DB, oldAddress), new ClusterAddress(TYPE_DB, newAddress), DB_ADDRESS_RESOLVER);
     }
 
-    public ClusterRedirect(String type, String oldAddress, String newAddress) {
-        this(type, new ClusterAddress(type, oldAddress), new ClusterAddress(type, newAddress));
+    public ClusterRedirect(String type, String oldAddress, String newAddress, Function<LiveDatabase, ClusterAddress> addressResolver) {
+        this(type, AccessMode.READ_WRITE, new ClusterAddress(type, oldAddress), new ClusterAddress(type, newAddress), addressResolver);
     }
 
-    public ClusterRedirect(ClusterAddress oldAddress, ClusterAddress newAddress) {
-        this(null, oldAddress, newAddress);
+    public ClusterRedirect(String type,
+                           AccessMode accessMode,
+                           String oldAddress,
+                           String newAddress,
+                           Function<LiveDatabase, ClusterAddress> addressResolver) {
+        this(type, accessMode, new ClusterAddress(type, oldAddress), new ClusterAddress(type, newAddress), addressResolver);
     }
 
-    public ClusterRedirect(String type, ClusterAddress oldAddress, ClusterAddress newAddress) {
+    public ClusterRedirect(String type,
+                           ClusterAddress oldAddress,
+                           ClusterAddress newAddress,
+                           Function<LiveDatabase, ClusterAddress> addressResolver) {
+        this(type, AccessMode.READ_WRITE, oldAddress, newAddress, addressResolver);
+    }
+
+    public ClusterRedirect(String type,
+                           AccessMode accessMode,
+                           ClusterAddress oldAddress,
+                           ClusterAddress newAddress,
+                           Function<LiveDatabase, ClusterAddress> addressResolver) {
         this.type = type == null && newAddress != null ? newAddress.getType() : TYPE_DB;
+        this.accessMode = accessMode == null ? AccessMode.READ_WRITE : accessMode;
         this.oldAddress = oldAddress;
         this.newAddress = newAddress;
+        this.addressResolver = addressResolver;
     }
 
     public ClusterRedirect newAddress(ClusterAddress newAddress) {
-        return new ClusterRedirect(type, oldAddress, newAddress);
+        return new ClusterRedirect(type, accessMode, oldAddress, newAddress, addressResolver);
     }
 
     /**
-     * Retrieves and clears the thread-local redirect address
+     * Gets the redirected address for a given cluster address if one exists.
      *
-     * @return Current redirect address or null
+     * @param address the original cluster address to check
+     * @return the redirected address, or null if no redirect exists
      */
-    public static ClusterRedirect getAndRemove() {
-        ClusterRedirect address = ADDRESS.get();
-        ADDRESS.remove();
-        return address;
-    }
-
-    /**
-     * Sets a thread-local redirect address
-     *
-     * @param address Contains old/new address pair
-     */
-    public static void setAddress(ClusterRedirect address) {
-        ADDRESS.set(address);
+    public static ClusterAddress getRedirect(ClusterAddress address) {
+        AtomicReference<ClusterAddress> reference = REDIRECTS.get(address);
+        return reference == null ? null : reference.get();
     }
 
     /**
@@ -100,7 +115,9 @@ public class ClusterRedirect {
         ClusterAddress oldRedirect = reference.get();
         ClusterAddress newRedirect = address.getNewAddress();
         if (!newRedirect.equals(oldRedirect) && reference.compareAndSet(oldRedirect, newRedirect)) {
-            callback.accept(oldRedirect, newRedirect);
+            if (callback != null) {
+                callback.accept(oldRedirect, newRedirect);
+            }
         }
     }
 

@@ -278,7 +278,18 @@
                 <include>com.jd.live:joylive-transmission-jdkhttp</include>
                 <include>com.jd.live:joylive-transmission-servlet-javax</include>
                 <include>com.jd.live:joylive-transmission-servlet-jakarta</include>
+            </includes>
+        </dependencySet>
+
+        <!-- plugin/jdbc -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/jdbc</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
                 <include>com.jd.live:joylive-protection-jdbc</include>
+                <include>com.jd.live:joylive-protection-druid</include>
+                <include>com.jd.live:joylive-protection-hikaricp</include>
             </includes>
         </dependencySet>
 

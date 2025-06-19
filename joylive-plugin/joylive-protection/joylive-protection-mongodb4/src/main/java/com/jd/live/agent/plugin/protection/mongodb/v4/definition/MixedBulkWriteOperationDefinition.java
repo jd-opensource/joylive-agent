@@ -25,12 +25,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnMongodbProtectEnabled;
+import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnProtectMongodbEnabled;
 import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.MixedBulkWriteOperationInterceptor;
 
 @Injectable
 @Extension(value = "MixedBulkWriteOperationDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnMongodbProtectEnabled
+@ConditionalOnProtectMongodbEnabled
 @ConditionalOnClass(MixedBulkWriteOperationDefinition.TYPE_COMMAND_OPERATION_HELPER)
 public class MixedBulkWriteOperationDefinition extends PluginDefinitionAdapter {
 

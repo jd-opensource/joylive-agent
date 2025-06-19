@@ -20,10 +20,15 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.time.Timer;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
+import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
@@ -36,12 +41,12 @@ import com.mongodb.connection.ClusterSettings;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.invokeOrigin;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.CHAR_SEMICOLON;
 import static com.jd.live.agent.core.util.StringUtils.join;
+import static com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.ConnectionStringInterceptor.CONNECTION_STRING;
 
 /**
  * MongoClientsInterceptor
@@ -52,8 +57,9 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
 
     private static final String TYPE_MONGODB = "mongodb";
 
-    public MongoClientsInterceptor(PolicySupplier policySupplier, Publisher<DatabaseEvent> publisher, Timer timer) {
-        super(policySupplier, publisher, timer);
+    public MongoClientsInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig,
+                                   Publisher<DatabaseEvent> publisher, Timer timer, Map<String, DbUrlParser> parsers) {
+        super(policySupplier, application, governanceConfig, publisher, timer, parsers);
     }
 
     @Override
@@ -64,21 +70,22 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         ClusterSettings cluster = settings.getClusterSettings();
         String srvHost = cluster.getSrvHost();
         String address = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
-        DbResult result = getMaster(address);
-        if (result != null && !result.isMaster()) {
-            List<String> masterAddress = result.getMaster().getAddresses();
-            result.setNewAddress(join(masterAddress, CHAR_SEMICOLON));
-            ctx.setAttribute(ATTR_OLD_ADDRESS, result);
+        DbUrl dbUrl = DbUrlParser.parse(CONNECTION_STRING.get(), parsers::get);
+        // Check whether read-write separation is configured
+        AccessMode accessMode = getAccessMode(settings.getApplicationName(), dbUrl, null);
+        DbCandidate candidate = getCandidate(TYPE_MONGODB, address, accessMode, MULTI_ADDRESS_SEMICOLON_RESOLVER);
+        ctx.setAttribute(ATTR_OLD_ADDRESS, candidate);
+        if (candidate.isRedirected()) {
             MongoClientSettings.Builder builder = MongoClientSettings.builder(settings);
             builder.applyToClusterSettings(b -> {
                 if (srvHost != null && !srvHost.isEmpty()) {
-                    b.srvHost(result.getNewAddress());
+                    b.srvHost(candidate.getNewAddress());
                 } else {
-                    b.hosts(toList(masterAddress, this::toServerAddress));
+                    b.hosts(toList(candidate.getDatabase().getAddresses(), this::toServerAddress));
                 }
             });
             arguments[0] = builder.build();
-            logger.info("Try reconnecting to mongodb {}", result.getNewAddress());
+            logger.info("Try reconnecting to mongodb {}", candidate.getNewAddress());
         }
     }
 
@@ -89,16 +96,11 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         MongoClientSettings settings = mc.getArgument(0);
         MongoDriverInformation driverInfo = mc.getArgument(1);
         ClusterSettings cluster = settings.getClusterSettings();
-        // source address
         String srvHost = cluster.getSrvHost();
-        String srcAddress = srvHost == null || srvHost.isEmpty() ? join(cluster.getHosts()) : srvHost;
         // redirected address
-        DbResult result = ctx.getAttribute(ATTR_OLD_ADDRESS);
-        String oldAddress = result != null ? result.getOldAddress() : srcAddress;
-        String newAddress = result != null ? result.getNewAddress() : oldAddress;
-
-        ClusterRedirect redirect = new ClusterRedirect(TYPE_MONGODB, oldAddress, newAddress);
-        ClusterRedirect.redirect(redirect, consumer);
+        DbCandidate candidate = ctx.getAttribute(ATTR_OLD_ADDRESS);
+        ClusterRedirect redirect = toClusterRedirect(candidate);
+        ClusterRedirect.redirect(redirect, candidate.isRedirected() ? consumer : null);
 
         Method method = mc.getMethod();
         mc.setResult(createConnection(() -> new LiveMongoClient(client, redirect, addr -> {
@@ -120,8 +122,8 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
     }
 
     @Override
-    protected ClusterAddress createAddress(String address) {
-        return new ClusterAddress(TYPE_MONGODB, address);
+    public void onExit(ExecutableContext ctx) {
+        CONNECTION_STRING.remove();
     }
 
     @Override

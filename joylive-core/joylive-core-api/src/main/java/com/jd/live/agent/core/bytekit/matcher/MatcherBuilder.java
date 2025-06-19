@@ -18,6 +18,8 @@ package com.jd.live.agent.core.bytekit.matcher;
 import com.jd.live.agent.core.bytekit.matcher.MethodTypeMatcher.MethodType;
 import com.jd.live.agent.core.bytekit.matcher.ModifierMatcher.Mode;
 import com.jd.live.agent.core.bytekit.matcher.StringMatcher.OperationMode;
+import com.jd.live.agent.core.bytekit.matcher.SubTypeMatcher.SubNameMatcher;
+import com.jd.live.agent.core.bytekit.matcher.SubTypeMatcher.SubNamesMatcher;
 import com.jd.live.agent.core.bytekit.type.*;
 
 import java.util.ArrayList;
@@ -122,7 +124,6 @@ public class MatcherBuilder {
         return new ExistMatcher<>(types);
     }
 
-
     /**
      * Creates a matcher that matches elements that are subtypes of the specified type.
      *
@@ -131,7 +132,18 @@ public class MatcherBuilder {
      * @return A matcher that matches elements that are subtypes of the specified type.
      */
     public static <T extends TypeDesc> Junction<T> isSubTypeOf(String type) {
-        return new SubTypeMatcher.SubNameMatcher<>(type);
+        return new SubNameMatcher<>(type);
+    }
+
+    /**
+     * Creates a matcher for elements that are subtypes of given types.
+     *
+     * @param types The set of type names to compare against
+     * @param <T> The element type extending TypeDesc
+     * @return A matcher that checks for subtype relationships
+     */
+    public static <T extends TypeDesc> Junction<T> isSubTypeOf(Set<String> types) {
+        return new SubNamesMatcher<>(types);
     }
 
     /**
@@ -153,7 +165,7 @@ public class MatcherBuilder {
      * @return A matcher that matches elements that implement the specified interface.
      */
     public static <T extends TypeDesc> Junction<T> isImplement(String type) {
-        return new SubTypeMatcher.SubNameMatcher<>(type, true);
+        return new SubNameMatcher<>(type, true);
     }
 
     /**

@@ -21,6 +21,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.jd.live.agent.core.util.StringUtils.split;
 
@@ -50,6 +51,8 @@ public class DbUrl {
 
     private String parameter;
 
+    private Map<String, String> parameters;
+
     private String parameterPart;
 
     public String toString() {
@@ -74,7 +77,7 @@ public class DbUrl {
 
     public DbUrl address(String address) {
         return new DbUrl(type, scheme, schemePart, user, password, userPart, address, parseNodes(address),
-                path, database, parameter, parameterPart);
+                path, database, parameter, parameters, parameterPart);
     }
 
     public static List<Address> parseNodes(String address) {
@@ -87,6 +90,10 @@ public class DbUrl {
             nodes.add(Address.parse(host));
         }
         return nodes;
+    }
+
+    public String getParameter(String key) {
+        return key == null || parameters == null ? null : parameters.get(key);
     }
 
     public boolean hasAddress() {
@@ -110,6 +117,7 @@ public class DbUrl {
         private String path;
         private String database;
         private String parameter;
+        private Map<String, String> parameters;
         private String parameterPart;
 
         public DbUrlBuilder type(String type) {
@@ -167,13 +175,18 @@ public class DbUrl {
             return this;
         }
 
+        public DbUrlBuilder parameters(Map<String, String> parameters) {
+            this.parameters = parameters;
+            return this;
+        }
+
         public DbUrlBuilder parameterPart(String parameterPart) {
             this.parameterPart = parameterPart;
             return this;
         }
 
         public DbUrl build() {
-            return new DbUrl(type, scheme, schemePart, user, password, userPart, address, nodes, path, database, parameter, parameterPart);
+            return new DbUrl(type, scheme, schemePart, user, password, userPart, address, nodes, path, database, parameter, parameters, parameterPart);
         }
     }
 

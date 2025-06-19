@@ -217,16 +217,40 @@ public class GovernancePolicy {
         return servicePolicy;
     }
 
-    public LiveDatabase getMaster(String... shards) {
+    /**
+     * Retrieves a writable master database node for the specified shards.
+     *
+     * @param shards target database shards (optional filters)
+     * @return writable LiveDatabase instance, or null if unavailable
+     */
+    public LiveDatabase getWriteDatabase(String... shards) {
+        LiveDatabase database = getDatabase(shards);
+        return database == null ? null : database.getWriteDatabase();
+    }
+
+    /**
+     * Retrieves a readable replica database node for the given topology.
+     *
+     * @param unit   logical data unit/partition identifier
+     * @param cell   deployment cell/zone identifier
+     * @param shards target database shards (optional filters)
+     * @return readable LiveDatabase instance, or null if unavailable
+     */
+    public LiveDatabase getReadDatabase(String unit, String cell, String... shards) {
+        LiveDatabase database = getDatabase(shards);
+        return database == null ? null : database.getReadDatabase(unit, cell);
+    }
+
+    /**
+     * Gets the base database instance before read/write specialization.
+     *
+     * @param shards target database shards (optional filters)
+     * @return raw LiveDatabase instance, or null if not found
+     */
+    public LiveDatabase getDatabase(String... shards) {
         LiveSpace liveSpace = getLocalLiveSpace();
         LiveSpec spec = liveSpace == null ? null : liveSpace.getSpec();
-        if (spec != null) {
-            LiveDatabase database = spec.getDatabase(shards);
-            if (database != null) {
-                return database.getMaster();
-            }
-        }
-        return null;
+        return spec == null ? null : spec.getDatabase(shards);
     }
 
     /**

@@ -51,6 +51,7 @@ public class GovernanceConfig {
     protected static final String CONFIG_SWITCH_CONFIG_CENTER = CONFIG_SWITCH + ".configCenter";
     protected static final String CONFIG_SWITCH_FLOW_CONTROL = CONFIG_SWITCH + ".flowcontrol";
     protected static final String CONFIG_SWITCH_PROTECT = CONFIG_SWITCH + ".protect";
+    protected static final String CONFIG_SWITCH_FAILOVER = CONFIG_SWITCH + ".failover";
     protected static final String CONFIG_SWITCH_TRANSMISSION = CONFIG_SWITCH + ".transmission";
     protected static final String CONFIG_SWITCH_REGISTRY = CONFIG_SWITCH + ".registry";
     protected static final String CONFIG_SWITCH_CLASSLOADER = CONFIG_SWITCH + ".classloader";
@@ -96,6 +97,12 @@ public class GovernanceConfig {
     public static final String CONFIG_PROTECT_ROCKETMQ_ENABLED = CONFIG_SWITCH_PROTECT + ".rocketmq";
     public static final String CONFIG_PROTECT_REDIS_ENABLED = CONFIG_SWITCH_PROTECT + ".redis";
 
+    public static final String CONFIG_FAILOVER_ENABLED = CONFIG_SWITCH_FAILOVER + ENABLED;
+    public static final String CONFIG_FAILOVER_DB_ENABLED = CONFIG_SWITCH_FAILOVER + ".db";
+    public static final String CONFIG_FAILOVER_MQ_ENABLED = CONFIG_SWITCH_FAILOVER + ".mq";
+    public static final String CONFIG_FAILOVER_MONGODB_ENABLED = CONFIG_SWITCH_FAILOVER + ".mongodb";
+    public static final String CONFIG_FAILOVER_ROCKETMQ_ENABLED = CONFIG_SWITCH_FAILOVER + ".rocketmq";
+
     public static final String CONFIG_COUNTER_ENABLED = CONFIG_SWITCH_COUNTER + ENABLED;
 
     public static final String CONFIG_ROUTER = CONFIG_AGENT_GOVERNANCE + ".router";
@@ -132,6 +139,9 @@ public class GovernanceConfig {
 
     @Config("configCenter")
     private ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
+
+    @Config("db")
+    private DbConfig dbConfig = new DbConfig();
 
     @Config
     private int initializeTimeout = 10 * 1000;
