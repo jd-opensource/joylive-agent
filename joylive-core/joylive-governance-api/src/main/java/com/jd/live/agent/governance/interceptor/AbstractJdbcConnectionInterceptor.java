@@ -68,16 +68,28 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
     @Override
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Connection connection = mc.getResult();
+        ConnectionUpdater updater = getConnectionUpdater(mc);
+        Connection connection = updater.getConnection();
         DriverConnection driver = unwrap(connection);
         if (driver != null) {
-            mc.setResult(createConnection(() -> build(connection, driver.getAddress(), driver, mc.getTarget())));
+            T newConnection = createConnection(() -> build(connection, driver, mc));
+            updater.update(newConnection);
         }
     }
 
     @Override
     public void onExit(ExecutableContext ctx) {
         DriverContext.remove();
+    }
+
+    /**
+     * Creates a new connection updater for the given method context.
+     *
+     * @param ctx the method execution context to wrap
+     * @return new ConnectionUpdater instance
+     */
+    protected ConnectionUpdater getConnectionUpdater(MethodContext ctx) {
+        return new DefaultConnectionUpdater(ctx);
     }
 
     @Override
@@ -91,15 +103,13 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
     }
 
     /**
-     * Builds an object of type T using the provided connection and related components.
-     *
-     * @param connection the database connection to be used
-     * @param address    the cluster redirect address (if applicable)
-     * @param driver     the live driver connection instance
-     * @param target     additional target object needed for building
-     * @return the built object of type T
+     * Creates a new instance of type T using the provided components.
+     * @param connection raw database connection
+     * @param driver     connection driver handle
+     * @param ctx        method invocation context
+     * @return newly constructed instance
      */
-    protected abstract T build(Connection connection, ClusterRedirect address, DriverConnection driver, Object target);
+    protected abstract T build(Connection connection, DriverConnection driver, MethodContext ctx);
 
     /**
      * Unwraps a connection to get its LiveDriverConnection implementation.
@@ -130,5 +140,42 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
      * @return constructed DataSourceDescription
      */
     protected abstract LiveDataSource build(DataSource dataSource);
+
+    /**
+     * Provides access to update a connection in current execution context.
+     */
+    protected interface ConnectionUpdater {
+        /**
+         * @return current connection instance
+         */
+        Connection getConnection();
+
+        /**
+         * @param connection new connection to set
+         */
+        void update(Connection connection);
+    }
+
+    /**
+     * Default implementation using MethodContext for connection storage.
+     */
+    protected static class DefaultConnectionUpdater implements ConnectionUpdater {
+
+        private final MethodContext context;
+
+        DefaultConnectionUpdater(MethodContext context) {
+            this.context = context;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return context.getResult();
+        }
+
+        @Override
+        public void update(Connection connection) {
+            context.setResult(connection);
+        }
+    }
 
 }

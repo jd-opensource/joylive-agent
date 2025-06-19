@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.protection.druid.connection;
 
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.connection.PooledConnection;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
 import java.sql.Connection;
 import java.util.function.Consumer;
@@ -30,11 +29,8 @@ public class DruidPooledConnection extends PooledConnection {
 
     private final Consumer<DruidPooledConnection> onClose;
 
-    public DruidPooledConnection(Connection delegate,
-                                 ClusterRedirect address,
-                                 DriverConnection driver,
-                                 Consumer<DruidPooledConnection> onClose) {
-        super(delegate, address, driver);
+    public DruidPooledConnection(Connection delegate, DriverConnection driver, Consumer<DruidPooledConnection> onClose) {
+        super(delegate, driver);
         this.onClose = onClose;
     }
 

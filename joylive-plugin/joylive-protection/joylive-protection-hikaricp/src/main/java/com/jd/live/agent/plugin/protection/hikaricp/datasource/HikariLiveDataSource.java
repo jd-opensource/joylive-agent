@@ -71,6 +71,7 @@ public class HikariLiveDataSource implements LiveDataSource {
                 try {
                     evictMethod.invoke(pool, hikariConnection.getPoolEntry(), "(connection evicted by user)", !connection.isClosed());
                 } catch (Throwable ignored) {
+                    // ignore
                 }
             }
         }

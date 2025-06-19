@@ -16,18 +16,18 @@
 package com.jd.live.agent.plugin.protection.hikaricp.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrlParser;
+import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
+import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.hikaricp.connection.HikariPooledConnection;
-import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
-import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
 import com.jd.live.agent.plugin.protection.hikaricp.datasource.HikariLiveDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
 
 /**
  * HikariCreateConnectionInterceptor
@@ -68,10 +69,35 @@ public class HikariJdbcConnectionInterceptor extends AbstractJdbcConnectionInter
     }
 
     @Override
-    protected HikariPooledConnection build(Connection connection,
-                                           ClusterRedirect address,
-                                           DriverConnection driver,
-                                           Object target) {
-        return new HikariPooledConnection(connection, address, driver, target, closer);
+    protected ConnectionUpdater getConnectionUpdater(MethodContext ctx) {
+        return new HikariConnectionUpdater(ctx.getResult());
+    }
+
+    @Override
+    protected HikariPooledConnection build(Connection connection, DriverConnection driver, MethodContext ctx) {
+        return new HikariPooledConnection(connection, driver, ctx.getResult(), closer);
+    }
+
+    /**
+     * HikariCP-specific implementation of ConnectionUpdater using reflection.
+     * Manages connections through Hikari's internal pool entry object.
+     */
+    private static class HikariConnectionUpdater implements ConnectionUpdater {
+
+        private final Object poolEntry;
+
+        HikariConnectionUpdater(Object poolEntry) {
+            this.poolEntry = poolEntry;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return getQuietly(poolEntry, "connection");
+        }
+
+        @Override
+        public void update(Connection connection) {
+            setValue(poolEntry, "connection", connection);
+        }
     }
 }

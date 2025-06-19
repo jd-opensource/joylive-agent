@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.protection.hikaricp.connection;
 
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.connection.PooledConnection;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
 import java.sql.Connection;
 import java.util.function.Consumer;
@@ -33,11 +32,10 @@ public class HikariPooledConnection extends PooledConnection {
     private final Object poolEntry;
 
     public HikariPooledConnection(Connection delegate,
-                                  ClusterRedirect address,
                                   DriverConnection driver,
                                   Object poolEntry,
                                   Consumer<HikariPooledConnection> onClose) {
-        super(delegate, address, driver);
+        super(delegate, driver);
         this.onClose = onClose;
         this.poolEntry = poolEntry;
     }

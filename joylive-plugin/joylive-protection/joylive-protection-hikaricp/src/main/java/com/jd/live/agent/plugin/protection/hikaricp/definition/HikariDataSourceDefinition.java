@@ -44,7 +44,7 @@ public class HikariDataSourceDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "com.zaxxer.hikari.pool.PoolBase";
 
-    private static final String METHOD = "newConnection";
+    private static final String METHOD = "newPoolEntry";
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;

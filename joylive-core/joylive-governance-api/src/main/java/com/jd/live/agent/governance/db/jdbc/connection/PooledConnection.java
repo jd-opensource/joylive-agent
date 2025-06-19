@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.db.jdbc.connection;
 
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -29,8 +27,8 @@ public abstract class PooledConnection extends AbstractConnection {
 
     protected final DriverConnection driver;
 
-    public PooledConnection(Connection delegate, ClusterRedirect address, DriverConnection driver) {
-        super(delegate, address);
+    public PooledConnection(Connection delegate, DriverConnection driver) {
+        super(delegate, driver.getAddress());
         this.driver = driver;
     }
 
