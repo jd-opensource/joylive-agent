@@ -64,12 +64,12 @@ public class HikariLiveDataSource implements LiveDataSource {
     @Override
     public void evict(Connection connection) {
         if (connection instanceof HikariPooledConnection) {
-            HikariPooledConnection hikariConnection = (HikariPooledConnection) connection;
+            Object poolEntry = ((HikariPooledConnection) connection).getPoolEntry();
             HikariPool pool = getPool();
             Method evictMethod = getEvictMethod();
             if (pool != null) {
                 try {
-                    evictMethod.invoke(pool, hikariConnection.getPoolEntry(), "(connection evicted by user)", !connection.isClosed());
+                    evictMethod.invoke(pool, poolEntry, "(connection evicted by user)", !connection.isClosed());
                 } catch (Throwable ignored) {
                     // ignore
                 }
