@@ -59,9 +59,9 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
         if (dataSource == null) {
             return;
         }
-        LiveDataSource description = DATASOURCE.computeIfAbsent(dataSource, this::build);
-        if (description.validate()) {
-            DriverContext.set(description);
+        LiveDataSource ds = DATASOURCE.computeIfAbsent(dataSource, this::build);
+        if (ds.validate()) {
+            DriverContext.set(ds);
         }
     }
 
@@ -74,6 +74,12 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
         if (driver != null) {
             T newConnection = createConnection(() -> build(connection, driver, mc));
             updater.update(newConnection);
+            // Avoid missing events caused by synchronous changes
+            ClusterRedirect redirect = driver.getAddress();
+            DbCandidate candidate = getCandidate(redirect, PRIMARY_ADDRESS_RESOLVER);
+            if (isChanged(redirect.getNewAddress(), candidate)) {
+                publisher.offer(new DatabaseEvent());
+            }
         }
     }
 

@@ -49,14 +49,14 @@ public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        LiveDataSource dataSource = DriverContext.get();
-        if (dataSource == null) {
+        LiveDataSource ds = DriverContext.get();
+        if (ds == null) {
             // not druid & hikari
             return;
         }
         // none tcp address, such as jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-        DbUrl dbUrl = dataSource.getUrl();
-        AccessMode accessMode = getAccessMode(dataSource.getPoolName(), dbUrl, ctx.getArgument(1));
+        DbUrl dbUrl = ds.getUrl();
+        AccessMode accessMode = getAccessMode(ds.getPoolName(), dbUrl, ctx.getArgument(1));
         DbCandidate candidate = getCandidate(dbUrl.getType(), dbUrl.getAddress(), accessMode, PRIMARY_ADDRESS_RESOLVER);
         String newAddress = candidate.getNewAddress();
         // redirect new address

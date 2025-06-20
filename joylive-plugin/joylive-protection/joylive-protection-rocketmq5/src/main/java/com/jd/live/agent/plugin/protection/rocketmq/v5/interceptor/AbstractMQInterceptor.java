@@ -68,13 +68,13 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     public void onSuccess(ExecutableContext ctx) {
         if (ctx.isLocked()) {
             T target = (T) ctx.getTarget();
-            DbCandidate oldDb = ctx.getAttribute(ATTR_OLD_ADDRESS);
-            ClusterRedirect redirect = toClusterRedirect(oldDb);
-            ClusterRedirect.redirect(redirect, oldDb.isRedirected() ? consumer : null);
+            DbCandidate oldCandidate = ctx.getAttribute(ATTR_OLD_ADDRESS);
+            ClusterRedirect redirect = toClusterRedirect(oldCandidate);
+            ClusterRedirect.redirect(redirect, oldCandidate.isRedirected() ? consumer : null);
             addConnection(createClient(target, redirect));
             // Avoid missing events caused by synchronous changes
-            DbCandidate newDb = getCandidate(oldDb.getOldAddress());
-            if (isChanged(oldDb, newDb)) {
+            DbCandidate newCandidate = getCandidate(oldCandidate.getOldAddress());
+            if (isChanged(oldCandidate, newCandidate)) {
                 publisher.offer(new DatabaseEvent());
             }
         }
@@ -91,10 +91,24 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
         ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
     }
 
+    /**
+     * Gets a database candidate for the given address.
+     * Uses RocketMQ type with read-write access and semicolon resolver by default.
+     *
+     * @param address the target address to connect
+     * @return configured database candidate
+     */
     protected DbCandidate getCandidate(String address) {
         return getCandidate(TYPE_ROCKETMQ, address, AccessMode.READ_WRITE, MULTI_ADDRESS_SEMICOLON_RESOLVER);
     }
 
+    /**
+     * Creates a client instance for the specified target.
+     *
+     * @param target   the endpoint to connect
+     * @param redirect cluster redirection configuration (if any)
+     * @return new client instance
+     */
     protected abstract C createClient(T target, ClusterRedirect redirect);
 
 }

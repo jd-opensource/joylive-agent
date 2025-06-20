@@ -59,6 +59,14 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
         return "consumer";
     }
 
+    /**
+     * Triggers rebalancing and seeks to adjusted timestamps for topics.
+     * For each topic, uses either:
+     * - Stored timestamp (if available) minus {@code MQ_SEEK_TIME_OFFSET}
+     * - Current system time (for new/unseen topics)
+     *
+     * @param seeker the seeker instance handling the operations
+     */
     protected void seek(Seeker seeker) {
         seeker.rebalance();
         seeker.seek(topic -> {
@@ -145,6 +153,10 @@ public abstract class AbstractMQConsumerClient<T extends ClientConfig> extends A
          */
         Set<String> getTopics();
 
+        /**
+         * Performs resource rebalancing according to current load or configuration.
+         * Default implementation does nothing (no-op).
+         */
         default void rebalance() {
 
         }

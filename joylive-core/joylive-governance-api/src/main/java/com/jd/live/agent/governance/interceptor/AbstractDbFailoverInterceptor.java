@@ -91,6 +91,44 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     protected DbCandidate getCandidate(String type, String address, AccessMode accessMode, Function<LiveDatabase, String> addressResolver) {
         address = address == null ? null : address.toLowerCase();
         String[] nodes = toList(toList(splitList(address), URI::parse), URI::getAddress).toArray(new String[0]);
+        return getCandidate(type, address, nodes, accessMode, addressResolver);
+    }
+
+    /**
+     * Gets a database candidate for cluster redirection.
+     * Delegates to {@link #getCandidate(ClusterAddress, AccessMode, Function)}.
+     *
+     * @param redirect        contains cluster address and access mode for redirection
+     * @param addressResolver converts LiveDatabase to connection address
+     * @return configured candidate or null if no suitable node available
+     */
+    protected DbCandidate getCandidate(ClusterRedirect redirect, Function<LiveDatabase, String> addressResolver) {
+        return getCandidate(redirect.getOldAddress(), redirect.getAccessMode(), addressResolver);
+    }
+
+    /**
+     * Selects a database cluster matching the address and access requirements.
+     *
+     * @param clusterAddress  cluster configuration (type/address/nodes)
+     * @param accessMode      READ or WRITE operation mode
+     * @param addressResolver converts LiveDatabase to connection address
+     * @return configured candidate or null if unavailable
+     */
+    protected DbCandidate getCandidate(ClusterAddress clusterAddress, AccessMode accessMode, Function<LiveDatabase, String> addressResolver) {
+        return getCandidate(clusterAddress.getType(), clusterAddress.getAddress(), clusterAddress.getNodes(), accessMode, addressResolver);
+    }
+
+    /**
+     * Selects a database cluster based on access mode and location.
+     *
+     * @param type            database type
+     * @param address         normalized cluster address
+     * @param nodes           available database nodes
+     * @param accessMode      READ/WRITE operation mode
+     * @param addressResolver converts LiveDatabase to connection address
+     * @return configured database candidate (never null)
+     */
+    protected DbCandidate getCandidate(String type, String address, String[] nodes, AccessMode accessMode, Function<LiveDatabase, String> addressResolver) {
         Location location = application.getLocation();
         GovernancePolicy policy = policySupplier.getPolicy();
         LiveDatabase database = accessMode.isWriteable()
@@ -102,17 +140,36 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     /**
      * Checks if master database configuration has changed between two states.
      *
-     * @param oldResult previous database state (may be null)
-     * @param newResult current database state (may be null)
+     * @param oldCandidate previous database state (may be null)
+     * @param newCandidate current database state (may be null)
      * @return true if master addresses differ or state changed from/to null
      */
-    protected boolean isChanged(DbCandidate oldResult, DbCandidate newResult) {
-        if (oldResult == null) {
-            return newResult != null;
-        } else if (newResult == null) {
+    protected boolean isChanged(DbCandidate oldCandidate, DbCandidate newCandidate) {
+        if (oldCandidate == null) {
+            return newCandidate != null;
+        } else if (newCandidate == null) {
             return true;
         }
-        return oldResult.isChanged(newResult);
+        return oldCandidate.isChanged(newCandidate);
+    }
+
+    /**
+     * Determines if there was a significant change between database states.
+     * A change is detected when:
+     * - Either state is null (but not both)
+     * - Master addresses differ between states
+     *
+     * @param oldAddress   previous database address (may be null)
+     * @param newCandidate current database candidate (may be null)
+     * @return true if a meaningful configuration change occurred
+     */
+    protected boolean isChanged(ClusterAddress oldAddress, DbCandidate newCandidate) {
+        if (oldAddress == null) {
+            return newCandidate != null;
+        } else if (newCandidate == null) {
+            return true;
+        }
+        return Objects.equals(oldAddress.getAddress(), newCandidate.getNewAddress());
     }
 
     /**

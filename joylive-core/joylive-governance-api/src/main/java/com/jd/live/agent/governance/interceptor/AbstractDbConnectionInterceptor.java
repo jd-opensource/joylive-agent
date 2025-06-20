@@ -88,10 +88,9 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
     }
 
     /**
-     * Creates and tracks a wrapped connection.
-     *
-     * @param supplier The connection supplier
-     * @return Managed connection instance
+     * Creates a new connection using the supplier and tracks it.
+     * @param supplier provides raw connections
+     * @return the managed connection
      */
     protected C createConnection(Supplier<C> supplier) {
         C conn = supplier.get();
@@ -99,6 +98,12 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
         return conn;
     }
 
+    /**
+     * Tracks a connection in the connection pool.
+     * Skips null connections. Groups by cluster address.
+     *
+     * @param conn the connection to track
+     */
     protected void addConnection(C conn) {
         if (conn != null) {
             ClusterAddress address = conn.getAddress().getNewAddress();
