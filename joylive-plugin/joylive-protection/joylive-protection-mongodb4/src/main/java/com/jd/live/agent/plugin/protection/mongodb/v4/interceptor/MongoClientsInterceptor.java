@@ -19,17 +19,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrl;
 import com.jd.live.agent.governance.db.DbUrlParser;
-import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.mongodb.v4.client.LiveMongoClient;
@@ -41,7 +36,6 @@ import com.mongodb.connection.ClusterSettings;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.invokeOrigin;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
@@ -57,9 +51,8 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
 
     private static final String TYPE_MONGODB = "mongodb";
 
-    public MongoClientsInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig,
-                                   Publisher<DatabaseEvent> publisher, Timer timer, Map<String, DbUrlParser> parsers) {
-        super(policySupplier, application, governanceConfig, publisher, timer, parsers);
+    public MongoClientsInterceptor(InvocationContext context) {
+        super(context);
     }
 
     @Override

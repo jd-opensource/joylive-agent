@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
@@ -27,6 +28,8 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.db.DbUrlParser;
+import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.instance.counter.CounterManager;
@@ -141,6 +144,21 @@ public interface InvocationContext {
      * @return A timer instance that can be used to measure and record event durations.
      */
     Timer getTimer();
+
+    /**
+     * Retrieves a publisher for database events.
+     *
+     * @return a Publisher that emits database events
+     */
+    Publisher<DatabaseEvent> getDatabasePublisher();
+
+    /**
+     * Returns a map of database URL parsers.
+     * The keys represent database types, and the values are the corresponding parsers.
+     *
+     * @return map of database URL parsers by type
+     */
+    Map<String, DbUrlParser> getDbUrlParsers();
 
     /**
      * Returns the CounterManager associated with this instance.
@@ -748,6 +766,16 @@ public interface InvocationContext {
         @Override
         public Timer getTimer() {
             return delegate.getTimer();
+        }
+
+        @Override
+        public Publisher<DatabaseEvent> getDatabasePublisher() {
+            return delegate.getDatabasePublisher();
+        }
+
+        @Override
+        public Map<String, DbUrlParser> getDbUrlParsers() {
+            return delegate.getDbUrlParsers();
         }
 
         @Override

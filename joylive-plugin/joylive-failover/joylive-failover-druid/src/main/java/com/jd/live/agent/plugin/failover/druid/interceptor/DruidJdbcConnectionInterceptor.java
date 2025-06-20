@@ -18,35 +18,24 @@ package com.jd.live.agent.plugin.failover.druid.interceptor;
 import com.alibaba.druid.pool.DruidAbstractDataSource;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
-import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.druid.connection.DruidPooledConnection;
 import com.jd.live.agent.plugin.failover.druid.datasource.DruidLiveDataSource;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.util.Map;
 
 /**
  * DruidCreateConnectionInterceptor
  */
 public class DruidJdbcConnectionInterceptor extends AbstractJdbcConnectionInterceptor<DruidPooledConnection> {
 
-    public DruidJdbcConnectionInterceptor(PolicySupplier policySupplier,
-                                          Application application,
-                                          GovernanceConfig governanceConfig,
-                                          Publisher<DatabaseEvent> publisher,
-                                          Timer timer,
-                                          Map<String, DbUrlParser> parsers) {
-        super(policySupplier, application, governanceConfig, publisher, timer, parsers);
+    public DruidJdbcConnectionInterceptor(InvocationContext context) {
+        super(context);
     }
 
     @Override

@@ -40,6 +40,7 @@ import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
@@ -141,6 +142,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     @Inject
     private Map<String, VariableParser<?, ?>> variableParsers;
+
+    @Getter
+    @Inject
+    private Map<String, DbUrlParser> dbUrlParsers;
 
     @Getter
     @Inject

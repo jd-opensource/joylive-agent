@@ -19,16 +19,14 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrl;
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.context.DriverContext;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
 import com.jd.live.agent.governance.interceptor.AbstractDbFailoverInterceptor;
 import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
@@ -41,10 +39,8 @@ public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractJdbcConnectionInterceptor.class);
 
-    public DriverConnectInterceptor(PolicySupplier policySupplier,
-                                    Application application,
-                                    GovernanceConfig governanceConfig) {
-        super(policySupplier, application, governanceConfig);
+    public DriverConnectInterceptor(InvocationContext context) {
+        super(context);
     }
 
     @Override

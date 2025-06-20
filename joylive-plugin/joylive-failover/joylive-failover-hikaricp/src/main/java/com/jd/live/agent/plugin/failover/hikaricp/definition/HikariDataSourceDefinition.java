@@ -16,25 +16,17 @@
 package com.jd.live.agent.plugin.failover.hikaricp.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.db.DbUrlParser;
-import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.hikaricp.interceptor.HikariJdbcConnectionInterceptor;
-
-import java.util.Map;
 
 @Injectable
 @Extension(value = "HikariPoolBaseDefinition", order = PluginDefinition.ORDER_PROTECT)
@@ -46,29 +38,14 @@ public class HikariDataSourceDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD = "newPoolEntry";
 
-    @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
-    private PolicySupplier policySupplier;
-
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
-    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
-    private GovernanceConfig governanceConfig;
-
-    @Inject(Publisher.DATABASE)
-    private Publisher<DatabaseEvent> publisher;
-
-    @Inject(Timer.COMPONENT_TIMER)
-    private Timer timer;
-
-    @Inject
-    private Map<String, DbUrlParser> parsers;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     public HikariDataSourceDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new HikariJdbcConnectionInterceptor(policySupplier, application, governanceConfig, publisher, timer, parsers))
+                        () -> new HikariJdbcConnectionInterceptor(context))
         };
     }
 }

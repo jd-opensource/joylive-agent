@@ -23,6 +23,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
@@ -70,13 +71,15 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
 
     protected final GovernanceConfig governanceConfig;
 
-    public AbstractDbFailoverInterceptor(PolicySupplier policySupplier,
-                                         Application application,
-                                         GovernanceConfig governanceConfig) {
+    public AbstractDbFailoverInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig) {
         this.policySupplier = policySupplier;
         this.application = application;
         this.location = application.getLocation();
         this.governanceConfig = governanceConfig;
+    }
+
+    public AbstractDbFailoverInterceptor(InvocationContext context) {
+        this(context.getPolicySupplier(), context.getApplication(), context.getGovernanceConfig());
     }
 
     /**

@@ -17,17 +17,12 @@ package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.connection.PooledConnection;
 import com.jd.live.agent.governance.db.jdbc.context.DriverContext;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.policy.PolicySupplier;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
@@ -44,13 +39,8 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
 
     private static final Map<DataSource, LiveDataSource> DATASOURCE = new ConcurrentHashMap<>();
 
-    public AbstractJdbcConnectionInterceptor(PolicySupplier policySupplier,
-                                             Application application,
-                                             GovernanceConfig governanceConfig,
-                                             Publisher<DatabaseEvent> publisher,
-                                             Timer timer,
-                                             Map<String, DbUrlParser> parsers) {
-        super(policySupplier, application, governanceConfig, publisher, timer, parsers);
+    public AbstractJdbcConnectionInterceptor(InvocationContext context) {
+        super(context);
     }
 
     @Override

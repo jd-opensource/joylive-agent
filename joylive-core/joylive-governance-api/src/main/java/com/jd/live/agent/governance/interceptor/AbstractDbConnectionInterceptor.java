@@ -17,15 +17,13 @@ package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
-import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
@@ -66,24 +64,11 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
         }
     };
 
-    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier,
-                                           Application application,
-                                           GovernanceConfig governanceConfig,
-                                           Publisher<DatabaseEvent> publisher,
-                                           Timer timer) {
-        this(policySupplier, application, governanceConfig, publisher, timer, null);
-    }
-
-    public AbstractDbConnectionInterceptor(PolicySupplier policySupplier,
-                                           Application application,
-                                           GovernanceConfig governanceConfig,
-                                           Publisher<DatabaseEvent> publisher,
-                                           Timer timer,
-                                           Map<String, DbUrlParser> parsers) {
-        super(policySupplier, application, governanceConfig);
-        this.publisher = publisher;
-        this.timer = timer;
-        this.parsers = parsers;
+    public AbstractDbConnectionInterceptor(InvocationContext context) {
+        super(context);
+        this.publisher = context.getDatabasePublisher();
+        this.timer = context.getTimer();
+        this.parsers = context.getDbUrlParsers();
         publisher.addHandler(this::onEvent);
     }
 
