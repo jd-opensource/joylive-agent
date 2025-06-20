@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.rocketmq.v5.client;
+package com.jd.live.agent.governance.mq;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -21,31 +21,24 @@ import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import lombok.Getter;
-import org.apache.rocketmq.client.ClientConfig;
-import org.apache.rocketmq.client.exception.MQClientException;
 
 /**
  * Abstract base class for MQ clients implementing {@link DbConnection}.
  * Manages client lifecycle (start/close/reconnect) with template methods.
- *
- * @param <T> Type of client configuration, must extend {@link ClientConfig}
  */
-public abstract class AbstractMQClient<T extends ClientConfig> implements DbConnection {
+public abstract class AbstractMQClient implements MQClient {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMQClient.class);
 
-    protected static final String FIELD_RPC_HOOK = "rpcHook";
-    protected static final String FIELD_TRACE_DISPATCHER = "traceDispatcher";
-    public static final String TYPE_ROCKETMQ = "rocketmq";
-
-    protected final T target;
+    // use object to fix classloader issue.
+    protected final Object target;
 
     @Getter
     protected volatile ClusterRedirect address;
 
     protected volatile boolean closed = false;
 
-    public AbstractMQClient(T target, ClusterRedirect address) {
+    public AbstractMQClient(Object target, ClusterRedirect address) {
         this.target = target;
         this.address = address;
     }
@@ -56,19 +49,23 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
         doClose();
     }
 
-    protected abstract String getType();
+    @Override
+    public synchronized void start() throws Exception {
+        doStart();
+    }
 
     /**
-     * Implementation-specific resource cleanup.
+     * Performs implementation-specific resource cleanup.
+     * <p>Called during client shutdown.
      */
     protected abstract void doClose();
 
     /**
-     * Implementation-specific client initialization.
+     * Performs implementation-specific initialization.
      *
-     * @throws MQClientException if startup fails
+     * @throws Exception if client fails to start
      */
-    protected abstract void doStart() throws MQClientException;
+    protected abstract void doStart() throws Exception;
 
     /**
      * Reconnects to a new cluster address and resets consumption offsets.
@@ -79,18 +76,21 @@ public abstract class AbstractMQClient<T extends ClientConfig> implements DbConn
         if (closed) {
             return;
         }
-        logger.info("Try redirecting the rocketmq {} connection from {} to {}", getType(), address.getOldAddress(), newAddress);
+        String type = getType();
+        String role = getRole().getName();
+        String oldAddress = address.getNewAddress().getAddress();
+        logger.info("Try redirecting the {} {} connection from {} to {}", type, role, oldAddress, newAddress);
         this.address = address.newAddress(newAddress);
-        logger.info("Try closing the rocketmq {} connection {}", getType(), target.getNamesrvAddr());
+        logger.info("Try closing the {} {} connection {}", type, role, oldAddress);
         doClose();
-        logger.info("Success closing the rocketmq {} connection {}", getType(), target.getNamesrvAddr());
+        logger.info("Success closing the {} {} connection {}", type, role, oldAddress);
         try {
-            logger.info("Try connecting rocketmq {} to {}", getType(), newAddress);
-            target.setNamesrvAddr(newAddress.getAddress());
+            logger.info("Try connecting {} {} to {}", type, role, newAddress);
+            setServerAddress(newAddress.getAddress());
             doStart();
-            logger.info("Success connecting rocketmq {} to {}", getType(), newAddress);
+            logger.info("Success connecting {} {} to {}", type, role, newAddress);
         } catch (Throwable e) {
-            logger.error("Failed to reconnect rocketmq {} to {}", getType(), newAddress, e);
+            logger.error("Failed to reconnect {} {} to {}", type, role, newAddress, e);
         }
     }
 }

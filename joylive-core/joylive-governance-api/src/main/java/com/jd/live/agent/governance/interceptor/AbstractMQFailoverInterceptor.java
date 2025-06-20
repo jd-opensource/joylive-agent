@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.rocketmq.v5.interceptor;
+package com.jd.live.agent.governance.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
@@ -24,56 +24,51 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.DatabaseEvent;
-import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
+import com.jd.live.agent.governance.mq.MQClient;
+import com.jd.live.agent.governance.mq.MQClientConfig;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
-import com.jd.live.agent.plugin.failover.rocketmq.v5.client.AbstractMQClient;
-import org.apache.rocketmq.client.ClientConfig;
-
-import static com.jd.live.agent.plugin.failover.rocketmq.v5.client.AbstractMQClient.TYPE_ROCKETMQ;
 
 /**
- * AbstractMQInterceptor
+ * AbstractMQFailoverInterceptor
  */
-public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends AbstractMQClient<T>> extends AbstractDbConnectionInterceptor<C> {
+public abstract class AbstractMQFailoverInterceptor<C extends MQClient> extends AbstractDbConnectionInterceptor<C> {
 
     private static final LockContext lock = new LockContext.DefaultLockContext();
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractMQInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractMQFailoverInterceptor.class);
 
-    public AbstractMQInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig, Publisher<DatabaseEvent> publisher, Timer timer) {
+    public AbstractMQFailoverInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig, Publisher<DatabaseEvent> publisher, Timer timer) {
         super(policySupplier, application, governanceConfig, publisher, timer);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         // TransactionMQProducer inherit from DefaultMQProducer, will call start 2 times.
         if (ctx.tryLock(lock)) {
-            T target = (T) ctx.getTarget();
-            DbCandidate candidate = getCandidate(target.getNamesrvAddr());
+            MQClientConfig config = getClientConfig(ctx);
+            DbCandidate candidate = getCandidate(config.getType(), config.getServerAddress());
             ctx.setAttribute(ATTR_OLD_ADDRESS, candidate);
             if (candidate.isRedirected()) {
                 // Determine if a cluster failover was triggered
-                target.setNamesrvAddr(candidate.getNewAddress());
-                logger.info("Try reconnecting to rocketmq {}", candidate.getNewAddress());
+                config.setServerAddress(candidate.getNewAddress());
+                logger.info("Try reconnecting to {} {}", config.getType(), candidate.getNewAddress());
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
         if (ctx.isLocked()) {
-            T target = (T) ctx.getTarget();
             DbCandidate oldCandidate = ctx.getAttribute(ATTR_OLD_ADDRESS);
             ClusterRedirect redirect = toClusterRedirect(oldCandidate);
             ClusterRedirect.redirect(redirect, oldCandidate.isRedirected() ? consumer : null);
-            addConnection(createClient(target, redirect));
+            C client = createClient(ctx, redirect);
+            addConnection(client);
             // Avoid missing events caused by synchronous changes
-            DbCandidate newCandidate = getCandidate(oldCandidate.getOldAddress());
+            DbCandidate newCandidate = getCandidate(client.getType(), oldCandidate.getOldAddress());
             if (isChanged(oldCandidate, newCandidate)) {
                 publisher.offer(new DatabaseEvent());
             }
@@ -92,23 +87,31 @@ public abstract class AbstractMQInterceptor<T extends ClientConfig, C extends Ab
     }
 
     /**
-     * Gets a database candidate for the given address.
-     * Uses RocketMQ type with read-write access and semicolon resolver by default.
+     * Creates and returns the MQ client configuration for the given execution context.
      *
-     * @param address the target address to connect
-     * @return configured database candidate
+     * @param ctx the execution context containing environment and runtime information
+     * @return fully configured MQ client settings (never null)
      */
-    protected DbCandidate getCandidate(String address) {
-        return getCandidate(TYPE_ROCKETMQ, address, AccessMode.READ_WRITE, MULTI_ADDRESS_SEMICOLON_RESOLVER);
-    }
+    protected abstract MQClientConfig getClientConfig(ExecutableContext ctx);
 
     /**
-     * Creates a client instance for the specified target.
+     * Creates a client instance for given context and cluster configuration.
      *
-     * @param target   the endpoint to connect
-     * @param redirect cluster redirection configuration (if any)
-     * @return new client instance
+     * @param ctx      execution context containing environment details
+     * @param redirect optional cluster redirection settings (nullable)
+     * @return newly initialized client instance
      */
-    protected abstract C createClient(T target, ClusterRedirect redirect);
+    protected abstract C createClient(ExecutableContext ctx, ClusterRedirect redirect);
+
+    /**
+     * Creates a database candidate with RW access and semicolon address resolver.
+     *
+     * @param type    database type (e.g., RocketMQ)
+     * @param address server address(es)
+     * @return pre-configured database candidate
+     */
+    protected DbCandidate getCandidate(String type, String address) {
+        return getCandidate(type, address, AccessMode.READ_WRITE, MULTI_ADDRESS_SEMICOLON_RESOLVER);
+    }
 
 }

@@ -13,28 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.db;
-
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+package com.jd.live.agent.governance.mq;
 
 /**
- * A database connection that supports auto-closing and provides cluster addressing.
+ * Basic configuration interface for message queue clients.
  */
-public interface DbConnection extends AutoCloseable {
+public interface MQClientConfig {
 
     /**
-     * Gets the cluster address redirection information.
-     *
-     * @return cluster redirect configuration
+     * Gets the message queue server address.
      */
-    ClusterRedirect getAddress();
+    String getServerAddress();
 
     /**
-     * Checks if the connection is in a closed state.
+     * Sets the message queue server address.
      *
-     * @return true if the connection is closed, false otherwise
+     * @param address the server connection address
      */
-    default boolean isClosed() {
-        return false;
-    }
+    void setServerAddress(String address);
+
+    /**
+     * Gets the client type identifier.
+     */
+    String getType();
 }

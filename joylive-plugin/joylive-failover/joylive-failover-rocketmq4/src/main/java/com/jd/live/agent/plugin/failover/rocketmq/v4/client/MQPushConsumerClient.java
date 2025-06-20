@@ -15,10 +15,12 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v4.client;
 
+import com.jd.live.agent.governance.mq.MsgQueue;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.hook.ConsumeMessageContext;
 import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
@@ -26,28 +28,32 @@ import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.core.util.CollectionUtils.toSet;
+import static com.jd.live.agent.plugin.failover.rocketmq.v4.client.RocketMQConfig.*;
 
-public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPushConsumer> {
+public class MQPushConsumerClient extends AbstractRocketMQConsumer {
 
     private static final String FIELD_CONSUMER_IMPL = "defaultMQPushConsumerImpl";
 
-    public MQPushConsumerClient(DefaultMQPushConsumer consumer, ClusterRedirect address) {
+    public MQPushConsumerClient(Object consumer, ClusterRedirect address) {
         super(consumer, address);
         addMessageHook(getQuietly(consumer, FIELD_CONSUMER_IMPL));
     }
 
     @Override
     protected void doClose() {
-        target.shutdown();
+        ((DefaultMQPushConsumer) target).shutdown();
     }
 
     @Override
@@ -57,7 +63,7 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
         boolean paused = seeker.isPaused();
         try {
             seeker.pause();
-            target.start();
+            ((DefaultMQPushConsumer) target).start();
             seek(seeker);
         } finally {
             if (!paused) {
@@ -70,87 +76,82 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
      * Resets consumer while maintaining subscriptions and tracing.
      */
     private Seeker reset() {
-        // capture topics
-        // reset offset store
+        // inline to fix classloader issue.
         DefaultMQPushConsumerImpl oldConsumerImpl = getQuietly(target, FIELD_CONSUMER_IMPL);
-        resetOffsetStore(oldConsumerImpl);
+        // reset offset store
+        OffsetStore offsetStore = oldConsumerImpl.getOffsetStore();
+        if (offsetStore != null) {
+            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, FIELD_CLIENT_FACTORY);
+            MQClientInstance mQClientFactory2 = oldConsumerImpl.getmQClientFactory();
+            if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
+                // inner offset store
+                setValue(target, FIELD_OFFSET_STORE, null);
+            } else {
+                // custom offset store
+                RebalanceImpl rebalance = oldConsumerImpl.getRebalanceImpl();
+                rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
+            }
+        }
         // recreate consumer impl
+        DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) target;
         RPCHook oldRpcHook = getQuietly(oldConsumerImpl, FIELD_RPC_HOOK);
-        DefaultMQPushConsumerImpl newConsumerImpl = new DefaultMQPushConsumerImpl(target, oldRpcHook);
+        DefaultMQPushConsumerImpl newConsumerImpl = new DefaultMQPushConsumerImpl(consumer, oldRpcHook);
         newConsumerImpl.getSubscriptionInner().putAll(oldConsumerImpl.getSubscriptionInner());
         addMessageHook(newConsumerImpl);
         setValue(target, FIELD_CONSUMER_IMPL, newConsumerImpl);
         // reset trace
-        resetTrace(oldRpcHook, newConsumerImpl);
+        TraceDispatcher oldDispatcher = consumer.getTraceDispatcher();
+        if (oldDispatcher instanceof AsyncTraceDispatcher) {
+            // create new trace dispatcher
+            AsyncTraceDispatcher newDispatcher = new AsyncTraceDispatcher(consumer.getConsumerGroup(), TraceDispatcher.Type.CONSUME,
+                    ((AsyncTraceDispatcher) oldDispatcher).getTraceTopicName(), oldRpcHook);
+            newDispatcher.setHostConsumer(newConsumerImpl);
+            List<ConsumeMessageHook> hooks = getQuietly(newConsumerImpl, FIELD_HOOK_LIST);
+            for (int i = hooks.size() - 1; i >= 0; i--) {
+                ConsumeMessageHook hook = hooks.get(i);
+                if (hook instanceof ConsumeMessageTraceHookImpl) {
+                    TraceDispatcher traceDispatcher = getQuietly(hook, FIELD_TRACE_DISPATCHER);
+                    if (oldDispatcher == traceDispatcher) {
+                        hooks.remove(i);
+                    }
+                }
+            }
+            newConsumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(newDispatcher));
+            setValue(target, FIELD_TRACE_DISPATCHER, newDispatcher);
+        }
         return new PushConsumerSeeker(newConsumerImpl);
     }
 
     /**
      * Registers timestamp tracking hook on pull consumer.
      */
-    private void addMessageHook(DefaultMQPushConsumerImpl consumerImpl) {
-        consumerImpl.registerConsumeMessageHook(new TimestampHook(timestamps));
-    }
-
-    /**
-     * Resets the offset store for the specified consumer implementation.
-     *
-     * @param consumerImpl the push consumer implementation to reset (non-null)
-     */
-    private void resetOffsetStore(DefaultMQPushConsumerImpl consumerImpl) {
-        // reset offset store
-        OffsetStore offsetStore = consumerImpl.getOffsetStore();
-        if (offsetStore != null) {
-            MQClientInstance mQClientFactory1 = getQuietly(offsetStore, FIELD_CLIENT_FACTORY);
-            MQClientInstance mQClientFactory2 = consumerImpl.getmQClientFactory();
-            if (mQClientFactory1 != null && mQClientFactory1 == mQClientFactory2) {
-                // inner offset store
-                setValue(target, FIELD_OFFSET_STORE, null);
-            } else {
-                // custom offset store
-                RebalanceImpl rebalance = consumerImpl.getRebalanceImpl();
-                rebalance.getProcessQueueTable().forEach((key, value) -> offsetStore.removeOffset(key));
+    private void addMessageHook(Object consumerImpl) {
+        ((DefaultMQPushConsumerImpl) consumerImpl).registerConsumeMessageHook(new ConsumeMessageHook() {
+            @Override
+            public String hookName() {
+                return "protection-hook";
             }
-        }
-    }
 
-    /**
-     * Replaces the trace dispatcher if it exists and is of type AsyncTraceDispatcher.
-     *
-     * @param rpcHook      original hook to preserve
-     * @param consumerImpl new consumer instance to associate
-     */
-    private void resetTrace(RPCHook rpcHook, DefaultMQPushConsumerImpl consumerImpl) {
-        TraceDispatcher dispatcher = target.getTraceDispatcher();
-        if (dispatcher instanceof AsyncTraceDispatcher) {
-            // create new trace dispatcher
-            setValue(target, FIELD_TRACE_DISPATCHER, createTraceDispatcher((AsyncTraceDispatcher) dispatcher, rpcHook, consumerImpl));
-        }
-    }
+            @Override
+            public void consumeMessageBefore(ConsumeMessageContext context) {
 
-    /**
-     * Creates a new trace dispatcher instance and migrates tracing hooks.
-     *
-     * @param dispatcher   old dispatcher instance (for configuration)
-     * @param rpcHook      original hook to preserve
-     * @param consumerImpl new consumer to associate
-     * @return new AsyncTraceDispatcher instance
-     */
-    private TraceDispatcher createTraceDispatcher(AsyncTraceDispatcher dispatcher, RPCHook rpcHook, DefaultMQPushConsumerImpl consumerImpl) {
-        AsyncTraceDispatcher result = new AsyncTraceDispatcher(target.getConsumerGroup(), TraceDispatcher.Type.CONSUME, dispatcher.getTraceTopicName(), rpcHook);
-        result.setHostConsumer(consumerImpl);
-        List<ConsumeMessageHook> hooks = getQuietly(consumerImpl, FIELD_HOOK_LIST);
-        for (int i = hooks.size() - 1; i >= 0; i--) {
-            ConsumeMessageHook hook = hooks.get(i);
-            if (hook instanceof ConsumeMessageTraceHookImpl) {
-                TraceDispatcher traceDispatcher = getQuietly(hook, FIELD_TRACE_DISPATCHER);
-                if (dispatcher == traceDispatcher) {
-                    hooks.remove(i);
+            }
+
+            @Override
+            public void consumeMessageAfter(ConsumeMessageContext context) {
+                // Message consumption hook that tracks the latest message timestamp per topic.
+                List<MessageExt> messages = context.getMsgList();
+                if (messages != null && !messages.isEmpty()) {
+                    MessageExt message = messages.get(messages.size() - 1);
+                    long newTime = message.getStoreTimestamp();
+                    AtomicLong last = timestamps.computeIfAbsent(message.getTopic(), k -> new AtomicLong(0));
+                    long oldTime = last.get();
+                    while (newTime > oldTime && !last.compareAndSet(oldTime, newTime)) {
+                        oldTime = last.get();
+                    }
                 }
             }
-        }
-        consumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(result));
-        return result;
+        });
     }
 
     /**
@@ -200,13 +201,15 @@ public class MQPushConsumerClient extends AbstractMQConsumerClient<DefaultMQPush
         }
 
         @Override
-        public Collection<MessageQueue> fetchQueues(String topic) throws MQClientException {
-            return consumerImpl.fetchSubscribeMessageQueues(topic);
+        public Collection<MsgQueue> fetchQueues(String topic) throws MQClientException {
+            return toSet(consumerImpl.fetchSubscribeMessageQueues(topic), RocketMsgQueue::new);
         }
 
         @Override
-        public void seek(MessageQueue queue, long timestamp) throws MQClientException {
-            consumerImpl.updateConsumeOffset(queue, consumerImpl.searchOffset(queue, timestamp));
+        public void seek(MsgQueue queue, long timestamp) throws MQClientException {
+            MessageQueue mq = ((RocketMsgQueue) queue).getQueue();
+            long offset = consumerImpl.searchOffset(mq, timestamp);
+            consumerImpl.updateConsumeOffset(mq, offset);
         }
     }
 

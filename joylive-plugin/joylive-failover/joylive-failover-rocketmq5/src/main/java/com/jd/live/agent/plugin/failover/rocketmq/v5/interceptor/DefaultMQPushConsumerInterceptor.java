@@ -15,27 +15,36 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v5.interceptor;
 
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.DatabaseEvent;
+import com.jd.live.agent.governance.interceptor.AbstractMQFailoverInterceptor;
+import com.jd.live.agent.governance.mq.MQClient;
+import com.jd.live.agent.governance.mq.MQClientConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.rocketmq.v5.client.MQPushConsumerClient;
-import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import com.jd.live.agent.plugin.failover.rocketmq.v5.client.RocketMQConfig;
 
 /**
  * DefaultMQPushConsumerInterceptor
  */
-public class DefaultMQPushConsumerInterceptor extends AbstractMQInterceptor<DefaultMQPushConsumer, MQPushConsumerClient> {
+public class DefaultMQPushConsumerInterceptor extends AbstractMQFailoverInterceptor<MQClient> {
 
     public DefaultMQPushConsumerInterceptor(PolicySupplier policySupplier, Application application, GovernanceConfig governanceConfig, Publisher<DatabaseEvent> publisher, Timer timer) {
         super(policySupplier, application, governanceConfig, publisher, timer);
     }
 
     @Override
-    protected MQPushConsumerClient createClient(DefaultMQPushConsumer config, ClusterRedirect redirect) {
-        return new MQPushConsumerClient(config, redirect);
+    protected MQClientConfig getClientConfig(ExecutableContext ctx) {
+        return new RocketMQConfig(ctx.getTarget());
+    }
+
+    @Override
+    protected MQClient createClient(ExecutableContext ctx, ClusterRedirect redirect) {
+        return new MQPushConsumerClient(ctx.getTarget(), redirect);
     }
 }

@@ -13,28 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.db;
+package com.jd.live.agent.governance.mq;
 
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import lombok.Getter;
 
 /**
- * A database connection that supports auto-closing and provides cluster addressing.
+ * Defines the roles in a message queue system.
+ *
+ * <p>Possible values:
+ * <ul>
+ *   <li>{@code PRODUCER} - Message sender role</li>
+ *   <li>{@code CONSUMER} - Message receiver role</li>
+ * </ul>
+ *
+ * @see #name Role identifier (lowercase)
  */
-public interface DbConnection extends AutoCloseable {
+public enum MQClientRole {
 
-    /**
-     * Gets the cluster address redirection information.
-     *
-     * @return cluster redirect configuration
-     */
-    ClusterRedirect getAddress();
+    PRODUCER("producer"),
 
-    /**
-     * Checks if the connection is in a closed state.
-     *
-     * @return true if the connection is closed, false otherwise
-     */
-    default boolean isClosed() {
-        return false;
+    CONSUMER("consumer");
+
+    @Getter
+    private final String name;
+
+    MQClientRole(String name) {
+        this.name = name;
     }
 }

@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v5.client;
 
+import com.jd.live.agent.governance.mq.AbstractMQClient;
+import com.jd.live.agent.governance.mq.MQClientRole;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.hook.SendMessageHook;
@@ -30,80 +32,77 @@ import java.util.List;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.plugin.failover.rocketmq.v5.client.RocketMQConfig.*;
 
-public class ProducerClient extends AbstractMQClient<DefaultMQProducer> {
+public class ProducerClient extends AbstractMQClient {
 
     private static final String FIELD_PRODUCER_IMPL = "defaultMQProducerImpl";
 
-    public ProducerClient(DefaultMQProducer producer, ClusterRedirect address) {
+    public ProducerClient(Object producer, ClusterRedirect address) {
         super(producer, address);
     }
 
     @Override
-    protected String getType() {
-        return "producer";
+    public MQClientRole getRole() {
+        return MQClientRole.PRODUCER;
+    }
+
+    @Override
+    public String getType() {
+        return TYPE_ROCKETMQ;
+    }
+
+    @Override
+    public String getServerAddress() {
+        return ((DefaultMQProducer) target).getNamesrvAddr();
+    }
+
+    @Override
+    public void setServerAddress(String address) {
+        ((DefaultMQProducer) target).setNamesrvAddr(address);
     }
 
     @Override
     protected void doClose() {
-        target.shutdown();
+        ((DefaultMQProducer) target).shutdown();
     }
 
     @Override
     protected void doStart() throws MQClientException {
         // reset to restart
         reset();
-        target.start();
+        ((DefaultMQProducer) target).start();
     }
 
     /**
      * Replaces producer instance while keeping RPC and tracing intact.
      */
     protected void reset() {
-        DefaultMQProducerImpl producerImpl = getQuietly(target, FIELD_PRODUCER_IMPL);
-        RPCHook rpcHook = getQuietly(producerImpl, FIELD_RPC_HOOK);
-        producerImpl = new DefaultMQProducerImpl(target, rpcHook);
-        setValue(target, FIELD_PRODUCER_IMPL, producerImpl);
-        resetTrace(rpcHook, producerImpl);
-    }
-
-    /**
-     * Replaces the trace dispatcher if it exists and is of type AsyncTraceDispatcher.
-     *
-     * @param rpcHook      original hook to preserve
-     * @param producerImpl new producer instance to associate
-     */
-    private void resetTrace(RPCHook rpcHook, DefaultMQProducerImpl producerImpl) {
-        TraceDispatcher dispatcher = target.getTraceDispatcher();
-        if (dispatcher instanceof AsyncTraceDispatcher) {
+        // inline to fix classloader issue.
+        DefaultMQProducerImpl oldProducerImpl = getQuietly(target, FIELD_PRODUCER_IMPL);
+        RPCHook rpcHook = getQuietly(oldProducerImpl, FIELD_RPC_HOOK);
+        DefaultMQProducer producer = (DefaultMQProducer) target;
+        DefaultMQProducerImpl newProducerImpl = new DefaultMQProducerImpl(producer, rpcHook);
+        setValue(target, FIELD_PRODUCER_IMPL, newProducerImpl);
+        TraceDispatcher oldDispatcher = producer.getTraceDispatcher();
+        if (oldDispatcher instanceof AsyncTraceDispatcher) {
             // create new trace dispatcher
-            setValue(target, FIELD_TRACE_DISPATCHER, createTraceDispatcher((AsyncTraceDispatcher) dispatcher, rpcHook, producerImpl));
-        }
-    }
-
-    /**
-     * Creates a new trace dispatcher instance and migrates tracing hooks.
-     *
-     * @param dispatcher   old dispatcher instance (for configuration)
-     * @param rpcHook      original hook to preserve
-     * @param producerImpl new producer to associate
-     * @return new AsyncTraceDispatcher instance
-     */
-    private TraceDispatcher createTraceDispatcher(AsyncTraceDispatcher dispatcher, RPCHook rpcHook, DefaultMQProducerImpl producerImpl) {
-        AsyncTraceDispatcher result = new AsyncTraceDispatcher(target.getProducerGroup(), TraceDispatcher.Type.PRODUCE, dispatcher.getTraceTopicName(), rpcHook);
-        result.setHostProducer(producerImpl);
-        List<SendMessageHook> hooks = getQuietly(producerImpl, "sendMessageHookList");
-        for (int i = hooks.size() - 1; i >= 0; i--) {
-            SendMessageHook hook = hooks.get(i);
-            if (hook instanceof SendMessageTraceHookImpl) {
-                TraceDispatcher traceDispatcher = getQuietly(hook, FIELD_TRACE_DISPATCHER);
-                if (dispatcher == traceDispatcher) {
-                    hooks.remove(i);
+            AsyncTraceDispatcher newDispatcher = new AsyncTraceDispatcher(producer.getProducerGroup(),
+                    TraceDispatcher.Type.PRODUCE, ((AsyncTraceDispatcher) oldDispatcher).getTraceTopicName(), rpcHook);
+            newDispatcher.setHostProducer(newProducerImpl);
+            List<SendMessageHook> hooks = getQuietly(newProducerImpl, "sendMessageHookList");
+            for (int i = hooks.size() - 1; i >= 0; i--) {
+                SendMessageHook hook = hooks.get(i);
+                if (hook instanceof SendMessageTraceHookImpl) {
+                    TraceDispatcher traceDispatcher = getQuietly(hook, FIELD_TRACE_DISPATCHER);
+                    if (oldDispatcher == traceDispatcher) {
+                        hooks.remove(i);
+                    }
                 }
             }
+            newProducerImpl.registerSendMessageHook(new SendMessageTraceHookImpl(oldDispatcher));
+            newProducerImpl.registerEndTransactionHook(new EndTransactionTraceHookImpl(oldDispatcher));
+            setValue(target, FIELD_TRACE_DISPATCHER, newDispatcher);
         }
-        producerImpl.registerSendMessageHook(new SendMessageTraceHookImpl(dispatcher));
-        producerImpl.registerEndTransactionHook(new EndTransactionTraceHookImpl(dispatcher));
-        return result;
     }
 }

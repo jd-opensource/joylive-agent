@@ -156,7 +156,10 @@ public class CollectionUtils {
         }
         List<V> result = new ArrayList<>();
         while (iterator.hasNext()) {
-            result.add(function.apply(iterator.next()));
+            V apply = function.apply(iterator.next());
+            if (apply != null) {
+                result.add(apply);
+            }
         }
         return result;
     }
@@ -199,6 +202,32 @@ public class CollectionUtils {
             return null;
         }
         List<V> result = iterable instanceof Collection ? new ArrayList<>(((Collection<T>) iterable).size()) : new ArrayList<>();
+        for (T t : iterable) {
+            V apply = function.apply(t);
+            if (apply != null) {
+                result.add(apply);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Converts an iterable to a Set by applying a transformation function to each element.
+     * The resulting set contains the transformed elements, excluding any null values produced by the function.
+     *
+     * @param <T>      the type of elements in the input iterable
+     * @param <V>      the type of elements in the resulting list
+     * @param iterable the iterable to convert; may be null, in which case the method returns null
+     * @param function the function to apply to each element of the iterable; must not be null
+     * @return a Set containing the transformed elements from the iterable, or null if the input iterable is null
+     */
+    public static <T, V> Set<V> toSet(Iterable<T> iterable, Function<T, V> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function is null");
+        } else if (iterable == null) {
+            return null;
+        }
+        HashSet<V> result = iterable instanceof Collection ? new HashSet<>(((Collection<T>) iterable).size()) : new HashSet<>();
         for (T t : iterable) {
             V apply = function.apply(t);
             if (apply != null) {

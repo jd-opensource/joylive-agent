@@ -48,7 +48,7 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  */
 public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractDbConnectionInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractDbFailoverInterceptor.class);
 
     protected static final String ACCESS_MODE = "accessMode";
 
