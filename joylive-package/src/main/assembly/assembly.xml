@@ -161,8 +161,8 @@
                 <include>com.jd.live:joylive-transmission-rocketmq5</include>
                 <include>com.jd.live:joylive-router-rocketmq4</include>
                 <include>com.jd.live:joylive-router-rocketmq5</include>
-                <include>com.jd.live:joylive-protection-rocketmq4</include>
-                <include>com.jd.live:joylive-protection-rocketmq5</include>
+                <include>com.jd.live:joylive-failover-rocketmq4</include>
+                <include>com.jd.live:joylive-failover-rocketmq5</include>
             </includes>
         </dependencySet>
 
@@ -287,9 +287,9 @@
             <outputDirectory>plugin/jdbc</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-protection-jdbc</include>
-                <include>com.jd.live:joylive-protection-druid</include>
-                <include>com.jd.live:joylive-protection-hikaricp</include>
+                <include>com.jd.live:joylive-failover-jdbc</include>
+                <include>com.jd.live:joylive-failover-druid</include>
+                <include>com.jd.live:joylive-failover-hikaricp</include>
             </includes>
         </dependencySet>
 

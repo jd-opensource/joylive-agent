@@ -530,17 +530,17 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-jdbc</artifactId>
+                <artifactId>joylive-failover-jdbc</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-druid</artifactId>
+                <artifactId>joylive-failover-druid</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-hikaricp</artifactId>
+                <artifactId>joylive-failover-hikaricp</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -585,12 +585,12 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-rocketmq4</artifactId>
+                <artifactId>joylive-failover-rocketmq4</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-rocketmq5</artifactId>
+                <artifactId>joylive-failover-rocketmq5</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

@@ -18,6 +18,7 @@
         <module>joylive-transmission</module>
         <module>joylive-protection</module>
         <module>joylive-application</module>
+        <module>joylive-failover</module>
     </modules>
 
     <dependencies>

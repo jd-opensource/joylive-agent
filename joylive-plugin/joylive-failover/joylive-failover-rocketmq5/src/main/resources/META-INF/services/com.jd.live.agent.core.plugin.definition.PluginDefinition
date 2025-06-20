@@ -1,0 +1,5 @@
+com.jd.live.agent.plugin.failover.rocketmq.v5.definition.DefaultLitePullConsumerDefinition
+com.jd.live.agent.plugin.failover.rocketmq.v5.definition.DefaultMQProducerDefinition
+com.jd.live.agent.plugin.failover.rocketmq.v5.definition.DefaultMQPushConsumerDefinition
+com.jd.live.agent.plugin.failover.rocketmq.v5.definition.DefaultMQPullConsumerDefinition
+com.jd.live.agent.plugin.failover.rocketmq.v5.definition.PullCallbackDefinition
