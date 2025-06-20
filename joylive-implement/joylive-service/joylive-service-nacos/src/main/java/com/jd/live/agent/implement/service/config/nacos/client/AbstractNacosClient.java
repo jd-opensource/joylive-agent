@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Executors;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.option.OptionSupplier;
@@ -40,7 +39,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
@@ -84,8 +82,8 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
         this.timer = timer;
         Option option = config.getOption();
         this.autoRecover = Converts.getBoolean(option.getString(KEY_AUTO_RECOVER, System.getenv(ENV_NACOS_AUTO_RECOVER)), true);
-        this.servers = toList(splitList(getAddress(config), CHAR_SEMICOLON),
-                v -> join(toList(toList(splitList(v, CHAR_COMMA), URI::parse), u -> u.getAddress(true))));
+        // keep url parameter to get grpc.port
+        this.servers = splitList(getAddress(config), CHAR_SEMICOLON);
         this.server = servers.isEmpty() ? null : servers.get(0);
         this.initializationTimeout = getInitializationTimeout(option);
         this.addressList = new SimpleAddressList(servers);
