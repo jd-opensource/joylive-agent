@@ -20,7 +20,11 @@
         <module>joylive-protection-opengauss3.1</module>
         <module>joylive-protection-mongodb4</module>
         <module>joylive-protection-redis</module>
-
+        <module>joylive-protection-rocketmq4</module>
+        <module>joylive-protection-rocketmq5</module>
+        <module>joylive-protection-kafka2</module>
+        <module>joylive-protection-kafka3</module>
+        <module>joylive-protection-kafka4</module>
     </modules>
 
 </project>

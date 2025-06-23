@@ -51,20 +51,20 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
     }
 
     private void configure(Properties properties) {
-        String group = properties.getProperty(GROUP_ID_CONFIG);
-        String newGroup = getGroup(group, null);
+        String oldGroup = properties.getProperty(GROUP_ID_CONFIG);
+        String newGroup = getGroup(oldGroup, null);
         properties.put(GROUP_ID_CONFIG, newGroup);
-        if (!newGroup.equals(group)) {
-            logger.info("Change consumer group " + group + " to " + newGroup);
+        if (!newGroup.equals(oldGroup)) {
+            logger.info("Change consumer group " + oldGroup + " to " + newGroup);
         }
     }
 
     private void configure(Map<String, Object> map) {
-        String group = (String) map.get(GROUP_ID_CONFIG);
-        String newGroup = getGroup(group, null);
+        String oldGroup = (String) map.get(GROUP_ID_CONFIG);
+        String newGroup = getGroup(oldGroup, null);
         map.put(GROUP_ID_CONFIG, newGroup);
-        if (!newGroup.equals(group)) {
-            logger.info("Change consumer group " + group + " to " + newGroup);
+        if (!newGroup.equals(oldGroup)) {
+            logger.info("Change consumer group " + oldGroup + " to " + newGroup);
         }
     }
 

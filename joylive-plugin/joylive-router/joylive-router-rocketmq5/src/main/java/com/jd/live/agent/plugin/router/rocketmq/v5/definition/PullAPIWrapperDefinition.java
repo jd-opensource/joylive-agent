@@ -25,7 +25,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.rocketmq.v5.condition.ConditionalOnRocketmq5AnyRouteEnabled;
-import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.PullInterceptor;
 import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.RegisterFilterInterceptor;
 
 /**
@@ -36,50 +35,27 @@ import com.jd.live.agent.plugin.router.rocketmq.v5.interceptor.RegisterFilterInt
 @Injectable
 @Extension(value = "PullAPIWrapperDefinition_v5")
 @ConditionalOnRocketmq5AnyRouteEnabled
-@ConditionalOnClass(PullAPIWrapperDefinition.TYPE_PULL_API_WRAPPER)
+@ConditionalOnClass(PullAPIWrapperDefinition.TYPE)
 public class PullAPIWrapperDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_PULL_API_WRAPPER = "org.apache.rocketmq.client.impl.consumer.PullAPIWrapper";
+    protected static final String TYPE = "org.apache.rocketmq.client.impl.consumer.PullAPIWrapper";
 
-    private static final String METHOD_REGISTER_FILTER_MESSAGE_HOOK = "registerFilterMessageHook";
+    private static final String METHOD = "registerFilterMessageHook";
 
-    private static final String[] ARGUMENT_REGISTER_FILTER_MESSAGE_HOOK = new String[]{
+    private static final String[] ARGUMENTS = new String[]{
             "java.util.ArrayList"
-    };
-
-    private static final String METHOD_PULL_KERNEL_IMPL = "pullKernelImpl";
-
-    private static final String[] ARGUMENT_PULL_KERNEL_IMPL = new String[]{
-            "org.apache.rocketmq.common.message.MessageQueue",
-            "java.lang.String",
-            "java.lang.String",
-            "long",
-            "long",
-            "int",
-            "int",
-            "int",
-            "long",
-            "long",
-            "long",
-            "org.apache.rocketmq.client.impl.CommunicationMode",
-            "org.apache.rocketmq.client.consumer.PullCallback"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
     public PullAPIWrapperDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_PULL_API_WRAPPER);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_REGISTER_FILTER_MESSAGE_HOOK).
-                                and(MatcherBuilder.arguments(ARGUMENT_REGISTER_FILTER_MESSAGE_HOOK)),
+                        MatcherBuilder.named(METHOD).
+                                and(MatcherBuilder.arguments(ARGUMENTS)),
                         () -> new RegisterFilterInterceptor(context)
-                ),
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_PULL_KERNEL_IMPL).
-                                and(MatcherBuilder.arguments(ARGUMENT_PULL_KERNEL_IMPL)),
-                        () -> new PullInterceptor(context)
                 )
         };
     }

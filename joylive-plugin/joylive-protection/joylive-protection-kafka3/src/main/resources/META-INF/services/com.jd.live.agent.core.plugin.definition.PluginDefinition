@@ -1,0 +1,2 @@
+com.jd.live.agent.plugin.protection.kafka.v3.definition.KafkaProducerDefinition
+com.jd.live.agent.plugin.protection.kafka.v3.definition.FetcherDefinition

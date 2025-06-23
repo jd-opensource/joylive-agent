@@ -561,6 +561,24 @@ public class Ipv4 {
     }
 
     /**
+     * Converts an {@link InetSocketAddress} to a formatted address string.
+     *
+     * <p>For IPv4 addresses, returns "host:port".
+     * For IPv6 addresses, wraps the host in square brackets: "[host]:port".
+     *
+     * @param address the socket address to convert
+     * @return formatted address string
+     */
+    public static String toString(InetSocketAddress address) {
+        String hostName = address.getHostString();
+        if (hostName.contains(":")) {
+            // ipv6
+            return "[" + hostName + "]:" + address.getPort();
+        }
+        return hostName + ":" + address.getPort();
+    }
+
+    /**
      * Get the IP string
      *
      * @param address The address
