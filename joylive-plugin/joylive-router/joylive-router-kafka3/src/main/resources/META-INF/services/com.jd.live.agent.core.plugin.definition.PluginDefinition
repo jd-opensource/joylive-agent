@@ -1,3 +1,2 @@
 com.jd.live.agent.plugin.router.kafka.v3.definition.ConsumerConfigDefinition
 com.jd.live.agent.plugin.router.kafka.v3.definition.FetchDefinition
-com.jd.live.agent.plugin.router.kafka.v3.definition.FetcherDefinition
