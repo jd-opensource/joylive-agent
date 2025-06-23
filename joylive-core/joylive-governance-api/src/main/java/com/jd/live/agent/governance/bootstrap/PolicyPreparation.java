@@ -71,6 +71,15 @@ public class PolicyPreparation extends AppListenerAdapter {
     @Config(GovernanceConfig.CONFIG_PROTECT_ENABLED)
     private boolean protectEnabled;
 
+    @Config(GovernanceConfig.CONFIG_FAILOVER_ENABLED)
+    private boolean failoverEnabled;
+
+    @Config(GovernanceConfig.CONFIG_FAILOVER_MQ_ENABLED)
+    private boolean failoverMQEnabled;
+
+    @Config(GovernanceConfig.CONFIG_FAILOVER_DB_ENABLED)
+    private boolean failoverDBEnabled;
+
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
 
@@ -124,7 +133,9 @@ public class PolicyPreparation extends AppListenerAdapter {
                 .append("Feature live is ").append(liveEnabled ? "enabled" : "disabled").append(", and fallbackLocationIfNoSpace is ")
                 .append(governanceConfig.getLiveConfig().isFallbackLocationIfNoSpace() ? "enabled" : "disabled").append("\n")
                 .append("Feature mq is ").append(mqEnabled ? "enabled" : "disabled").append("\n")
-                .append("Feature database protect is ").append(protectEnabled ? "enabled" : "disabled");
+                .append("Feature database protect is ").append(protectEnabled ? "enabled" : "disabled")
+                .append("Feature database failover is ").append(failoverEnabled && failoverDBEnabled ? "enabled" : "disabled")
+                .append("Feature mq failover is ").append(failoverEnabled && failoverMQEnabled ? "enabled" : "disabled");
         logger.info(builder.toString());
     }
 

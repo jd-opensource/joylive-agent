@@ -36,6 +36,11 @@ public interface PolicyWatcher {
     String TYPE_LANE_POLICY = "lane";
 
     /**
+     * A constant representing the live database policy.
+     */
+    String TYPE_LIVE_DATABASE_POLICY = "live-database";
+
+    /**
      * Adds a listener for configuration updates of the specified type.
      *
      * @param type     The type of configuration space to listen for updates.

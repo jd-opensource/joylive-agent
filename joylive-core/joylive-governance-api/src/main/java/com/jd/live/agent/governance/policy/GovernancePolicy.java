@@ -34,6 +34,8 @@ import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.LiveSpec;
 import com.jd.live.agent.governance.policy.live.UnitDomain;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSupervisor;
 import com.jd.live.agent.governance.policy.service.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,11 +49,15 @@ import java.util.*;
  * It provides caching mechanisms for efficient retrieval of domain, service, and database cluster information.
  * </p>
  */
-public class GovernancePolicy {
+public class GovernancePolicy implements LiveDatabaseSupervisor {
 
     @Setter
     @Getter
     private List<LiveSpace> liveSpaces;
+
+    @Setter
+    @Getter
+    private List<LiveDatabaseSpec> databaseSpecs;
 
     @Getter
     @Setter
@@ -63,6 +69,9 @@ public class GovernancePolicy {
 
     @Getter
     private transient LiveSpace localLiveSpace;
+
+    @Getter
+    private transient LiveDatabaseSpec localDatabaseSpec;
 
     @Getter
     private transient LaneSpace localLaneSpace;
@@ -82,6 +91,8 @@ public class GovernancePolicy {
     });
 
     private final transient Cache<String, LiveSpace> liveSpaceCache = new MapCache<>(new ListBuilder<>(() -> liveSpaces, LiveSpace::getId));
+
+    private final transient Cache<String, LiveDatabaseSpec> databaseCache = new MapCache<>(new ListBuilder<>(() -> databaseSpecs, LiveDatabaseSpec::getId));
 
     private final transient Cache<String, LaneSpace> laneSpaceCache = new MapCache<>(new ListBuilder<>(() -> laneSpaces, LaneSpace::getId));
 
@@ -217,40 +228,28 @@ public class GovernancePolicy {
         return servicePolicy;
     }
 
-    /**
-     * Retrieves a writable master database node for the specified shards.
-     *
-     * @param shards target database shards (optional filters)
-     * @return writable LiveDatabase instance, or null if unavailable
-     */
+    public LiveDatabaseSpec getLiveDatabaseSpec(String id) {
+        return databaseCache.get(id);
+    }
+
+    @Override
+    public LiveDatabase getDatabase(String address) {
+        return localDatabaseSpec == null ? null : localDatabaseSpec.getDatabase(address);
+    }
+
+    @Override
+    public LiveDatabase getDatabase(String[] shards) {
+        return localDatabaseSpec == null ? null : localDatabaseSpec.getDatabase(shards);
+    }
+
+    @Override
     public LiveDatabase getWriteDatabase(String... shards) {
-        LiveDatabase database = getDatabase(shards);
-        return database == null ? null : database.getWriteDatabase();
+        return localDatabaseSpec == null ? null : localDatabaseSpec.getWriteDatabase(shards);
     }
 
-    /**
-     * Retrieves a readable replica database node for the given topology.
-     *
-     * @param unit   logical data unit/partition identifier
-     * @param cell   deployment cell/zone identifier
-     * @param shards target database shards (optional filters)
-     * @return readable LiveDatabase instance, or null if unavailable
-     */
+    @Override
     public LiveDatabase getReadDatabase(String unit, String cell, String... shards) {
-        LiveDatabase database = getDatabase(shards);
-        return database == null ? null : database.getReadDatabase(unit, cell);
-    }
-
-    /**
-     * Gets the base database instance before read/write specialization.
-     *
-     * @param shards target database shards (optional filters)
-     * @return raw LiveDatabase instance, or null if not found
-     */
-    public LiveDatabase getDatabase(String... shards) {
-        LiveSpace liveSpace = getLocalLiveSpace();
-        LiveSpec spec = liveSpace == null ? null : liveSpace.getSpec();
-        return spec == null ? null : spec.getDatabase(shards);
+        return localDatabaseSpec == null ? null : localDatabaseSpec.getReadDatabase(unit, cell, shards);
     }
 
     /**
@@ -267,6 +266,7 @@ public class GovernancePolicy {
         if (localLiveSpace != null) {
             localLiveSpace.locate(location.getUnit(), location.getCell());
         }
+        localDatabaseSpec = getLiveDatabaseSpec(location.getLiveSpaceId());
         localLaneSpace = getLaneSpace(location.getLaneSpaceId());
         if (localLaneSpace != null) {
             localLaneSpace.locate(location.getLane());
@@ -283,6 +283,7 @@ public class GovernancePolicy {
      */
     public void cache() {
         getLiveSpace("");
+        getLiveDatabaseSpec("");
         getLaneSpace("");
         getDomain("");
         getService("");
@@ -291,6 +292,9 @@ public class GovernancePolicy {
 
         if (liveSpaces != null) {
             liveSpaces.forEach(LiveSpace::cache);
+        }
+        if (databaseSpecs != null) {
+            databaseSpecs.forEach(LiveDatabaseSpec::cache);
         }
         if (laneSpaces != null) {
             laneSpaces.forEach(LaneSpace::cache);
@@ -385,6 +389,7 @@ public class GovernancePolicy {
         result.liveSpaces = liveSpaces;
         result.laneSpaces = laneSpaces;
         result.services = services;
+        result.databaseSpecs = databaseSpecs;
         return result;
     }
 

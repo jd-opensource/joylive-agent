@@ -15,22 +15,23 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
-import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.file.FileWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent.EventType;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
+import com.jd.live.agent.governance.subscription.policy.listener.ServiceEvent;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,6 +46,7 @@ import java.util.List;
 @Getter
 @Injectable
 @Extension("ServiceFileSyncer")
+@ConditionalOnGovernanceEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "file")
 public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
 
@@ -54,7 +56,7 @@ public class ServiceFileSyncer extends AbstractFileSyncer<List<Service>> {
     private SyncConfig syncConfig = new SyncConfig();
 
     public ServiceFileSyncer() {
-        name = "service-file-syncer";
+        name = "LiveAgent-service-file-syncer";
     }
 
     @Override

@@ -20,7 +20,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLaneEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
@@ -44,8 +44,8 @@ import java.util.List;
 @Setter
 @Injectable
 @Extension("LaneSpaceFileSyncer")
+@ConditionalOnLaneEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "file")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
 
     private static final String CONFIG_LANE_SPACE = "lanes.json";
@@ -54,7 +54,7 @@ public class LaneSpaceFileSyncer extends AbstractFileSyncer<List<LaneSpace>> {
     private SyncConfig syncConfig = new SyncConfig();
 
     public LaneSpaceFileSyncer() {
-        name = "LiveAgent-space-file-syncer";
+        name = "LiveAgent-lane-space-file-syncer";
     }
 
     @Override

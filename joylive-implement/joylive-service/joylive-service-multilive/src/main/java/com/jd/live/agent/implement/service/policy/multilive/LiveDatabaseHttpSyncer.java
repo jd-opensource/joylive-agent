@@ -23,36 +23,34 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpStatus;
-import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.SyncStatus;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
 import com.jd.live.agent.governance.service.sync.api.ApiResult;
-import com.jd.live.agent.governance.service.sync.api.ApiSpace;
-import com.jd.live.agent.governance.service.sync.http.AbstractLiveSpaceHttpSyncer;
+import com.jd.live.agent.governance.service.sync.http.AbstractLiveDatabaseHttpSyncer;
 import com.jd.live.agent.implement.service.policy.multilive.config.LiveSyncConfig;
 import lombok.Setter;
 
 import java.io.StringReader;
-import java.util.List;
 
 /**
- * LiveSpaceSyncer is responsible for synchronizing live spaces from a multilive control plane.
+ * LiveDatabaseHttpSyncer is responsible for synchronizing live databases from a multilive control plane.
  */
 @Setter
 @Injectable
-@Extension("LiveSpaceSyncer")
-@ConditionalOnLiveEnabled
+@Extension("LiveDatabaseHttpSyncer")
+@ConditionalOnFailoverDBEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
-public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
+public class LiveDatabaseHttpSyncer extends AbstractLiveDatabaseHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
-    public LiveSpaceHttpSyncer() {
-        name = "LiveAgent-live-space-multilive-syncer";
+    public LiveDatabaseHttpSyncer() {
+        name = "LiveAgent-live-database-multilive-syncer";
     }
 
     @Override
@@ -61,21 +59,11 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
     }
 
     @Override
-    protected SyncResponse<List<ApiSpace>> parseSpaceList(HttpLiveSpaceKey key, String config) {
+    protected SyncResponse<LiveDatabaseSpec> parseDatabase(HttpLiveDatabaseKey key, String config) {
         if (config == null || config.isEmpty()) {
             return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
         }
-        ApiResponse<ApiResult<List<ApiSpace>>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<ApiResult<List<ApiSpace>>>>() {
-        });
-        return response.asSyncResponse(ApiResult::asSyncResponse);
-    }
-
-    @Override
-    protected SyncResponse<LiveSpace> parseSpace(HttpLiveSpaceKey key, String config) {
-        if (config == null || config.isEmpty()) {
-            return new SyncResponse<>(SyncStatus.NOT_FOUND, null);
-        }
-        ApiResponse<ApiResult<LiveSpace>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<ApiResult<LiveSpace>>>() {
+        ApiResponse<ApiResult<LiveDatabaseSpec>> response = parser.read(new StringReader(config), new TypeReference<ApiResponse<ApiResult<LiveDatabaseSpec>>>() {
         });
         saveConfig(response, parser, getFileName(key.getId()));
         return response.asSyncResponse(ApiResult::asSyncResponse);
@@ -88,12 +76,12 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
      * @param parser   the object parser used to serialize response data (must not be {@code null})
      * @param name     the filename to use for saving the configuration (must not be {@code null} or empty)
      */
-    private void saveConfig(ApiResponse<ApiResult<LiveSpace>> response, ObjectParser parser, String name) {
+    private void saveConfig(ApiResponse<ApiResult<LiveDatabaseSpec>> response, ObjectParser parser, String name) {
         // save config to local file
         if (response.getError() == null) {
-            ApiResult<LiveSpace> result = response.getResult();
+            ApiResult<LiveDatabaseSpec> result = response.getResult();
             if (response.getStatus() == HttpStatus.OK) {
-                saveConfig(result.getData(), parser, AgentPath.DIR_POLICY_LIVE, name);
+                saveConfig(result.getData(), parser, AgentPath.DIR_POLICY_LIVE_DATABASE, name);
             }
         }
     }
