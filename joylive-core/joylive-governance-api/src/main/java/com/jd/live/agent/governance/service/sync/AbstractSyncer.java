@@ -27,6 +27,8 @@ public abstract class AbstractSyncer<K extends SyncKey, T> extends AbstractPolic
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSyncer.class);
 
+    protected static final String APPLICATION = "application";
+
     @Setter
     @Inject(Application.COMPONENT_APPLICATION)
     protected Application application;

@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.request.DbRequest;
 
 import java.sql.SQLException;
@@ -61,7 +62,8 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
         LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
         if (liveSpace != null) {
             String address = request.getAddress();
-            LiveDatabase db = liveSpace.getSpec().getDatabase(address);
+            LiveDatabaseSpec databaseSpec = policy.getLocalDatabaseSpec();
+            LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(address);
             if (db != null) {
                 // Retrieve the database policy and determine the access mode
                 AccessMode dbMode = db.getAccessMode();

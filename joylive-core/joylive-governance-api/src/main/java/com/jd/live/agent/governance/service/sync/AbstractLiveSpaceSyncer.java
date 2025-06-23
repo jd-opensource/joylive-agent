@@ -207,9 +207,9 @@ public abstract class AbstractLiveSpaceSyncer<K1 extends LiveSpaceKey, K2 extend
     }
 
     /**
-     * Deletes a lane space by its ID.
+     * Deletes a live space by its ID.
      *
-     * @param spaceId The ID of the lane space to delete.
+     * @param spaceId The ID of the live space to delete.
      */
     protected void deleteSpace(String spaceId) {
         Subscription<K1, LiveSpace> subscription = subscriptions.remove(spaceId);

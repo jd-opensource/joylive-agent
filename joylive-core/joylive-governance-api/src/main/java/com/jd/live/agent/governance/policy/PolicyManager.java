@@ -63,6 +63,7 @@ import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherManager;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherSupervisor;
 import com.jd.live.agent.governance.subscription.policy.listener.LaneSpaceListener;
+import com.jd.live.agent.governance.subscription.policy.listener.LiveDatabaseListener;
 import com.jd.live.agent.governance.subscription.policy.listener.LiveSpaceListener;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceListener;
 import lombok.Builder;
@@ -418,7 +419,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             }
         });
 
-        policyWatcherSupervisor.addListener(TYPE_LIVE_POLICY, new LiveSpaceListener(this, objectParser, databasePublisher));
+        policyWatcherSupervisor.addListener(TYPE_LIVE_POLICY, new LiveSpaceListener(this, objectParser));
+        policyWatcherSupervisor.addListener(TYPE_LIVE_DATABASE_POLICY, new LiveDatabaseListener(this, objectParser, databasePublisher));
         policyWatcherSupervisor.addListener(TYPE_LANE_POLICY, new LaneSpaceListener(this, objectParser));
         policyWatcherSupervisor.addListener(TYPE_SERVICE_POLICY, new ServiceListener(this, objectParser, policyPublisher));
 

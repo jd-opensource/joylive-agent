@@ -44,4 +44,8 @@ public class LiveSyncConfig extends SyncConfig implements ServiceAddress, LiveSp
     public String getServiceUrl() {
         return getPath(multilive.serviceUrl, "/services/${service_name}/version/${service_version}");
     }
+
+    public String getDatabaseUrl() {
+        return getPath(multilive.databaseUrl, "/workspaces/${space_id}/databases/${database_version}");
+    }
 }

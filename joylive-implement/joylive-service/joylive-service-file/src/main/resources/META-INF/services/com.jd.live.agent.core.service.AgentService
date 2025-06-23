@@ -1,3 +1,4 @@
 com.jd.live.agent.implement.service.policy.file.LiveSpaceFileSyncer
 com.jd.live.agent.implement.service.policy.file.ServiceFileSyncer
 com.jd.live.agent.implement.service.policy.file.LaneSpaceFileSyncer
+com.jd.live.agent.implement.service.policy.file.LiveDatabaseFileSyncer

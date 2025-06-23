@@ -23,7 +23,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
@@ -45,16 +45,16 @@ import java.io.IOException;
 @Injectable
 @Extension("LiveServiceSyncer")
 @Setter
+@ConditionalOnLiveEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveServiceHttpSyncer extends AbstractServiceHttpSyncer<ServiceKey> {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
     public LiveServiceHttpSyncer() {
-        name = "LiveAgent-service-multilive-syncer";
+        name = "LiveAgent-live-service-multilive-syncer";
     }
 
     @Override

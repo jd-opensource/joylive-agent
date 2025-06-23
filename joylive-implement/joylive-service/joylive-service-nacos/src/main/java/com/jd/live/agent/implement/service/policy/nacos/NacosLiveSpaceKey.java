@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.service.policy.multilive.config;
+package com.jd.live.agent.implement.service.policy.nacos;
 
-import lombok.Setter;
+import com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
+import lombok.Getter;
 
-/**
- * LiveConfig
- *
- * @since 1.0.0
- */
-@Setter
-public class LiveConfig {
+@Getter
+public class NacosLiveSpaceKey extends LiveSpaceKey implements NacosSyncKey {
 
-    protected String spacesUrl;
+    private final String dataId;
 
-    protected String spaceUrl;
+    private final String group;
 
-    protected String serviceUrl;
-
-    protected String databaseUrl;
+    public NacosLiveSpaceKey(String id, String dataId, String group) {
+        super(id);
+        this.dataId = dataId;
+        this.group = group;
+    }
 }

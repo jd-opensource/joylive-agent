@@ -108,8 +108,8 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                 return;
             }
             LiveDatabase oldDatabase = policy.getDatabase(address.getNodes());
-            LiveDatabase newDatabase = oldDatabase.getReadDatabase(location.getUnit(), location.getCell());
-            LiveDatabase master = oldDatabase.getWriteDatabase();
+            LiveDatabase newDatabase = oldDatabase == null ? null : oldDatabase.getReadDatabase(location.getUnit(), location.getCell());
+            LiveDatabase master = oldDatabase == null ? null : oldDatabase.getWriteDatabase();
             cons.forEach(c -> {
                 ClusterRedirect redirect = c.getAddress();
                 String[] nodes = redirect.getNewAddress().getNodes();

@@ -20,9 +20,9 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
@@ -36,42 +36,42 @@ import java.io.InputStreamReader;
 import java.util.List;
 
 /**
- * LiveSpaceFileSyncer
+ * LiveDatabaseFileSyncer
  *
- * @since 1.0.0
+ * @since 1.8.0
  */
 @Setter
 @Getter
 @Injectable
-@Extension("LiveSpaceFileSyncer")
-@ConditionalOnLiveEnabled
+@Extension("LiveDatabaseFileSyncer")
+@ConditionalOnFailoverDBEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "file")
-public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
+public class LiveDatabaseFileSyncer extends AbstractFileSyncer<List<LiveDatabaseSpec>> {
 
-    private static final String CONFIG_LIVE_SPACE = "livespaces.json";
+    private static final String CONFIG_LIVE_DATABASE = "databases.json";
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private SyncConfig syncConfig = new SyncConfig();
 
-    public LiveSpaceFileSyncer() {
-        name = "LiveAgent-live-space-file-syncer";
+    public LiveDatabaseFileSyncer() {
+        name = "LiveAgent-live-database-file-syncer";
     }
 
     @Override
     public String getType() {
-        return PolicyWatcher.TYPE_LIVE_POLICY;
+        return PolicyWatcher.TYPE_LIVE_DATABASE_POLICY;
     }
 
     @Override
     protected String getDefaultResource() {
-        return CONFIG_LIVE_SPACE;
+        return CONFIG_LIVE_DATABASE;
     }
 
     @Override
-    protected Syncer<FileKey, List<LiveSpace>> createSyncer() {
+    protected Syncer<FileKey, List<LiveDatabaseSpec>> createSyncer() {
         fileWatcher = new FileWatcher(getName(), getSyncConfig(), publisher);
         return fileWatcher.createSyncer(file,
-                data -> parser.read(new InputStreamReader(new ByteArrayInputStream(data)), new TypeReference<List<LiveSpace>>() {
+                data -> parser.read(new InputStreamReader(new ByteArrayInputStream(data)), new TypeReference<List<LiveDatabaseSpec>>() {
                 }));
     }
 }

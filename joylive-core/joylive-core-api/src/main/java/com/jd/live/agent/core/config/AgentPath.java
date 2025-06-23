@@ -60,6 +60,8 @@ public class AgentPath {
 
     public static final String DIR_POLICY_LIVE = "policy/live/";
 
+    public static final String DIR_POLICY_LIVE_DATABASE = "policy/database/";
+
     public static final String DIR_POLICY_LANE = "policy/lane/";
 
     public static final String DIR_POLICY_SERVICE = "policy/service/";

@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.governance.subscription.policy.listener;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
+import com.jd.live.agent.governance.subscription.policy.PolicyEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +42,8 @@ public class LaneSpaceListener extends AbstractListener<LaneSpace> {
 
     @Override
     protected void updateItem(GovernancePolicy policy, LaneSpace item, PolicyEvent event) {
-        List<LaneSpace> spaces = policy.getLaneSpaces() == null ? new ArrayList<>() : policy.getLaneSpaces();
+        // copy on write
+        List<LaneSpace> spaces = policy.getLaneSpaces() == null ? new ArrayList<>() : new ArrayList<>(policy.getLaneSpaces());
         filter(spaces, space -> !space.getId().equals(item.getId()));
         spaces.add(item);
         policy.setLaneSpaces(spaces);

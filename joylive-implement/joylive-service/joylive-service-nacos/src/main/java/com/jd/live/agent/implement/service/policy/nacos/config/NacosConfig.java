@@ -60,6 +60,8 @@ public class NacosConfig {
 
     private String liveServiceTemplate = CONFIG_PREFIX + "-liveService-${name}";
 
+    private String liveDatabaseTemplate = CONFIG_PREFIX + "-liveDatabase-${id}";
+
     private String liveSpaceGroup = DEFAULT_GROUP;
 
 }

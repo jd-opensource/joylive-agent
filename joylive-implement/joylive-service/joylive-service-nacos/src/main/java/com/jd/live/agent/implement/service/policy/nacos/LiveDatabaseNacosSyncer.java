@@ -24,36 +24,30 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.annotation.ConditionalOnLaneEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
-import com.jd.live.agent.governance.policy.lane.LaneSpace;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.probe.HealthProbe;
-import com.jd.live.agent.governance.service.sync.AbstractLaneSpaceSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey.LaneSpaceKey;
+import com.jd.live.agent.governance.service.sync.AbstractLiveDatabaseSyncer;
 import com.jd.live.agent.governance.service.sync.Syncer;
-import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
-import lombok.Getter;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.jd.live.agent.implement.service.policy.nacos.LaneSpaceNacosSyncer.NacosLaneSpaceKey;
-
 /**
- * LaneSpaceNacosSyncer is responsible for synchronizing lane spaces policies from nacos.
+ * LiveDatabaseNacosSyncer is responsible for synchronizing live databases from nacos.
  */
 @Injectable
-@Extension("LaneSpaceNacosSyncer")
-@ConditionalOnLaneEnabled
-@ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "nacos")
-public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpaceKey> {
+@Extension("LiveDatabaseNacosSyncer")
+@ConditionalOnFailoverDBEnabled
+@ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
+public class LiveDatabaseNacosSyncer extends AbstractLiveDatabaseSyncer<NacosLiveSpaceKey> {
 
-    @Config(SyncConfig.SYNC_LANE_SPACE)
+    @Config(SyncConfig.SYNC_LIVE_SPACE)
     private NacosSyncConfig syncConfig = new NacosSyncConfig();
 
     @Inject(HealthProbe.NACOS)
@@ -64,8 +58,8 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
 
     private NacosClientApi client;
 
-    public LaneSpaceNacosSyncer() {
-        name = "LiveAgent-lane-space-nacos-syncer";
+    public LiveDatabaseNacosSyncer() {
+        name = "LiveAgent-live-database-nacos-syncer";
     }
 
     @Override
@@ -92,44 +86,20 @@ public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpace
 
     @Override
     protected Template createTemplate() {
-        return new Template(syncConfig.getNacos().getLaneSpaceKeyTemplate());
+        return new Template(syncConfig.getNacos().getLiveDatabaseTemplate());
     }
 
     @Override
-    protected NacosLaneSpaceKey createSpaceListKey() {
-        return new NacosLaneSpaceKey(null, syncConfig.getNacos().getLaneSpacesKey(), syncConfig.getNacos().getLaneSpaceGroup());
-    }
-
-    @Override
-    protected NacosLaneSpaceKey createSpaceKey(String spaceId) {
+    protected NacosLiveSpaceKey createSpaceKey(String spaceId) {
         Map<String, Object> context = new HashMap<>();
         context.put("id", spaceId);
+        context.put(APPLICATION, application.getName());
         String dataId = template.render(context);
-        return new NacosLaneSpaceKey(spaceId, dataId, syncConfig.getNacos().getLaneSpaceGroup());
+        return new NacosLiveSpaceKey(spaceId, dataId, syncConfig.getNacos().getLiveSpaceGroup());
     }
 
     @Override
-    protected Syncer<NacosLaneSpaceKey, List<ApiSpace>> createSpaceListSyncer() {
-        return client.createSyncer(this::parseSpaceList);
+    protected Syncer<NacosLiveSpaceKey, LiveDatabaseSpec> createSyncer() {
+        return client.createSyncer(this::parseDatabase);
     }
-
-    @Override
-    protected Syncer<NacosLaneSpaceKey, LaneSpace> createSyncer() {
-        return client.createSyncer(this::parseSpace);
-    }
-
-    @Getter
-    protected static class NacosLaneSpaceKey extends LaneSpaceKey implements NacosSyncKey {
-
-        private final String dataId;
-
-        private final String group;
-
-        public NacosLaneSpaceKey(String id, String dataId, String group) {
-            super(id);
-            this.dataId = dataId;
-            this.group = group;
-        }
-    }
-
 }
