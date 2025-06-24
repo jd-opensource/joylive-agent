@@ -111,6 +111,7 @@ public class ClusterRedirect {
      * @param callback Notification when redirection occurs
      */
     public static void redirect(ClusterRedirect address, BiConsumer<ClusterAddress, ClusterAddress> callback) {
+        // TODO Resolve concurrent access problems
         AtomicReference<ClusterAddress> reference = REDIRECTS.computeIfAbsent(address.getOldAddress(), AtomicReference::new);
         ClusterAddress oldRedirect = reference.get();
         ClusterAddress newRedirect = address.getNewAddress();

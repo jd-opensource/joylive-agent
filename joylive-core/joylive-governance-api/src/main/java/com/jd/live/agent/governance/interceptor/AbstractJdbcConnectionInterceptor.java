@@ -68,7 +68,7 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
             ClusterRedirect redirect = driver.getAddress();
             DbCandidate candidate = getCandidate(redirect, PRIMARY_ADDRESS_RESOLVER);
             if (isChanged(redirect.getNewAddress(), candidate)) {
-                publisher.offer(new DatabaseEvent());
+                publisher.offer(new DatabaseEvent(this));
             }
         }
     }

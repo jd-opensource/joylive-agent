@@ -191,6 +191,16 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     }
 
     /**
+     * Determines database access mode from data source name.
+     *
+     * @param name Data source name (checked for READ suffix)
+     * @return AccessMode.READ if detected in any source, otherwise READ_WRITE
+     */
+    protected AccessMode getAccessMode(String name) {
+        return getAccessMode(name, null, null);
+    }
+
+    /**
      * Determines database access mode from multiple configuration sources.
      * Checks in order: name suffix, URL parameter, connection properties, then global config.
      * Defaults to READ_WRITE if no read mode is specified.
@@ -203,7 +213,7 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     protected AccessMode getAccessMode(String name, DbUrl url, Properties properties) {
         if (name != null && name.toLowerCase().endsWith(READ)) {
             return AccessMode.READ;
-        } else if (READ.equalsIgnoreCase(url.getParameter(ACCESS_MODE))) {
+        } else if (url != null && READ.equalsIgnoreCase(url.getParameter(ACCESS_MODE))) {
             return AccessMode.READ;
         } else if (properties != null && READ.equalsIgnoreCase(properties.getProperty(ACCESS_MODE))) {
             return AccessMode.READ;

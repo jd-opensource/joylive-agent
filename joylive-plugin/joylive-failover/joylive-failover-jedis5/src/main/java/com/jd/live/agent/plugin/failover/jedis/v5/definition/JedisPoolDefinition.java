@@ -13,34 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.rocketmq.v4.definition;
+package com.jd.live.agent.plugin.failover.jedis.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.failover.rocketmq.v4.condition.ConditionalOnFailoverRocketmq4Enabled;
-import com.jd.live.agent.plugin.failover.rocketmq.v4.interceptor.PullCallbackInterceptor;
+import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.failover.jedis.v5.condition.ConditionalOnFailoverJedis5Enabled;
+import com.jd.live.agent.plugin.failover.jedis.v5.interceptor.JedisPoolInterceptor;
 
-@Extension(value = "PullCallbackDefinition_v4", order = PluginDefinition.ORDER_FAILOVER)
-@ConditionalOnFailoverRocketmq4Enabled
-@ConditionalOnClass(PullCallbackDefinition.TYPE)
-public class PullCallbackDefinition extends PluginDefinitionAdapter {
+@Injectable
+@Extension(value = "JedisPoolDefinition_v5", order = PluginDefinition.ORDER_FAILOVER)
+@ConditionalOnFailoverJedis5Enabled
+@ConditionalOnClass(JedisPoolDefinition.TYPE)
+public class JedisPoolDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl$1";
+    protected static final String TYPE = "redis.clients.jedis.JedisPool.JedisPool";
 
-    private static final String METHOD = "onException";
+    private static final String[] ARGUMENTS_CONSTRUCTOR = {
+            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
+            "org.apache.commons.pool2.PooledObjectFactory"
+    };
 
-    public PullCallbackDefinition() {
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
+
+    public JedisPoolDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD),
-                        () -> new PullCallbackInterceptor()
-                )
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR)),
+                        () -> new JedisPoolInterceptor(context)),
         };
     }
 }

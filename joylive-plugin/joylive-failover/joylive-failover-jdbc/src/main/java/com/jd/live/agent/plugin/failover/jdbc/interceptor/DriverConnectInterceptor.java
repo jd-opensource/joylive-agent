@@ -19,11 +19,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.db.DbUrl;
 import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.context.DriverContext;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
-import com.jd.live.agent.governance.interceptor.AbstractDbFailoverInterceptor;
+import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.interceptor.AbstractJdbcConnectionInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
@@ -35,7 +36,7 @@ import static com.jd.live.agent.governance.util.network.ClusterRedirect.getRedir
 /**
  * DriverInterceptor
  */
-public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
+public class DriverConnectInterceptor extends AbstractDbConnectionInterceptor<DbConnection> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractJdbcConnectionInterceptor.class);
 
@@ -78,5 +79,10 @@ public class DriverConnectInterceptor extends AbstractDbFailoverInterceptor {
         ClusterRedirect redirect = toClusterRedirect(candidate);
         ClusterRedirect.redirect(redirect, candidate.isRedirected() ? consumer : null);
         mc.setResult(new DriverConnection(mc.getResult(), redirect, DriverContext.get()));
+    }
+
+    @Override
+    protected void redirectTo(DbConnection connection, ClusterAddress address) {
+
     }
 }

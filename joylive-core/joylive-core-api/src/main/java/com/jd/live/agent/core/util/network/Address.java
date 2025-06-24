@@ -58,6 +58,17 @@ public class Address {
     }
 
     /**
+     * Parses an address string with specified port.
+     *
+     * @param address the address string to parse (may contain port)
+     * @param port    the default port to use if not specified in address
+     * @return parsed Address object, or null for empty input
+     */
+    public static Address parse(String address, int port) {
+        return parse(address, false, port);
+    }
+
+    /**
      * Parses a string address into an Address object.
      *
      * @param address         the address string to parse (may be IPv4, IPv6, or hostname)

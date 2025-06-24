@@ -457,6 +457,10 @@
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-failover-rocketmq5</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jedis5</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -102,6 +102,9 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * @param events List of database change notifications
      */
     protected void onEvent(List<Event<DatabaseEvent>> events) {
+        if (!isInteresting(events)) {
+            return;
+        }
         GovernancePolicy policy = policySupplier.getPolicy();
         connections.forEach((address, cons) -> {
             if (cons.isEmpty()) {
@@ -123,6 +126,24 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                 }
             });
         });
+    }
+
+    /**
+     * Checks if any event in the list is relevant to this instance.
+     * An event is relevant if its owner is null or matches this instance.
+     *
+     * @param events List of database events to check
+     * @return true if any relevant event is found, false otherwise
+     */
+    protected boolean isInteresting(List<Event<DatabaseEvent>> events) {
+        for (Event<DatabaseEvent> event : events) {
+            DatabaseEvent de = event.getData();
+            Object owner = de.getOwner();
+            if (owner == null || owner == this) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

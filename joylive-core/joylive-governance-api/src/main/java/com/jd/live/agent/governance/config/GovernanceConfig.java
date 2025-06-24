@@ -102,6 +102,7 @@ public class GovernanceConfig {
     public static final String CONFIG_FAILOVER_MQ_ENABLED = CONFIG_SWITCH_FAILOVER + ".mq";
     public static final String CONFIG_FAILOVER_MONGODB_ENABLED = CONFIG_SWITCH_FAILOVER + ".mongodb";
     public static final String CONFIG_FAILOVER_ROCKETMQ_ENABLED = CONFIG_SWITCH_FAILOVER + ".rocketmq";
+    public static final String CONFIG_FAILOVER_REDIS_ENABLED = CONFIG_SWITCH_FAILOVER + ".redis";
 
     public static final String CONFIG_COUNTER_ENABLED = CONFIG_SWITCH_COUNTER + ENABLED;
 

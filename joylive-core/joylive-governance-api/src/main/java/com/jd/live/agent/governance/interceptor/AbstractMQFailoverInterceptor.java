@@ -66,7 +66,7 @@ public abstract class AbstractMQFailoverInterceptor<C extends MQClient> extends 
             // Avoid missing events caused by synchronous changes
             DbCandidate newCandidate = getCandidate(client.getType(), oldCandidate.getOldAddress());
             if (isChanged(oldCandidate, newCandidate)) {
-                publisher.offer(new DatabaseEvent());
+                publisher.offer(new DatabaseEvent(this));
             }
         }
     }

@@ -161,6 +161,7 @@ agent:
       mq: ${CONFIG_FAILOVER_MQ_ENABLED:${CONFIG_FAILOVER_ENABLED:false}}
       mongodb: ${CONFIG_FAILOVER_MONGODB_ENABLED:true}
       rocketmq: ${CONFIG_FAILOVER_ROCKETMQ_ENABLED:true}
+      redis: ${CONFIG_FAILOVER_REDIS_ENABLED:true}
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
       db: ${CONFIG_PROTECT_DB_ENABLED:${CONFIG_PROTECT_ENABLED:false}}

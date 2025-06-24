@@ -15,6 +15,17 @@
  */
 package com.jd.live.agent.governance.event;
 
+import lombok.Getter;
+
+@Getter
 public class DatabaseEvent {
 
+    private Object owner;
+
+    public DatabaseEvent() {
+    }
+
+    public DatabaseEvent(Object owner) {
+        this.owner = owner;
+    }
 }
