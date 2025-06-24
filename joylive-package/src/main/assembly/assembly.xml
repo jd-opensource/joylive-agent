@@ -342,8 +342,10 @@
             <outputDirectory>plugin/redis</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-protection-redis</include>
+                <include>com.jd.live:joylive-protection-jedis5</include>
+                <include>com.jd.live:joylive-protection-lettuce6</include>
                 <include>com.jd.live:joylive-failover-jedis5</include>
+                <include>com.jd.live:joylive-failover-lettuce6</include>
             </includes>
         </dependencySet>
     </dependencySets>
