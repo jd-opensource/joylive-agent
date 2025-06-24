@@ -95,4 +95,20 @@ public class ExceptionUtils {
         return !(e instanceof WrappedException || e instanceof InvocationTargetException || e instanceof ExecutionException);
     }
 
+    /**
+     * Gets the cause of the given throwable.
+     *
+     * @param e the throwable to examine
+     * @return the root cause if available, or the original throwable
+     */
+    public static Throwable getCause(Throwable e) {
+        Throwable cause = null;
+        if (e instanceof InvocationTargetException) {
+            cause = e.getCause();
+        } else if (e instanceof ExecutionException) {
+            cause = e.getCause();
+        }
+        return cause == null ? e : cause;
+    }
+
 }

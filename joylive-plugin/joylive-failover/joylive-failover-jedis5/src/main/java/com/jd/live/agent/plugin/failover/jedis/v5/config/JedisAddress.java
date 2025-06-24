@@ -21,6 +21,9 @@ import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import lombok.Getter;
 import redis.clients.jedis.HostAndPort;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class JedisAddress extends HostAndPort {
 
     @Getter
@@ -38,5 +41,14 @@ public class JedisAddress extends HostAndPort {
 
     public JedisAddress newAddress(ClusterAddress newAddress) {
         return of(address.newAddress(newAddress));
+    }
+
+    public static Set<HostAndPort> getNodes(ClusterAddress address) {
+        Set<HostAndPort> result = new HashSet<>();
+        for (String node : address.getNodes()) {
+            Address addr = Address.parse(node);
+            result.add(new HostAndPort(addr.getHost(), addr.getPort()));
+        }
+        return result;
     }
 }

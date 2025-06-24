@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
@@ -176,6 +177,45 @@ public class ClassUtils {
                 } catch (Throwable ignored) {
                 }
             }
+            return null;
+        }
+    }
+
+    /**
+     * Gets a declared method by name from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type       the class to search
+     * @param methodName the method name
+     * @return the method if found, null otherwise
+     */
+    public static Method getDeclaredMethod(Class<?> type, String methodName) {
+        Method target = null;
+        Method[] methods = type.getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getName().equals(methodName)) {
+                target = method;
+                break;
+            }
+        }
+        if (target != null) {
+            target.setAccessible(true);
+        }
+        return target;
+    }
+
+    /**
+     * Gets a declared method by name from a class name and makes it accessible.
+     * Returns null if class not found or method not found.
+     *
+     * @param type       the fully qualified class name
+     * @param methodName the method name
+     * @return the method if found, null otherwise
+     */
+    public static Method getDeclaredMethod(String type, String methodName) {
+        try {
+            return getDeclaredMethod(Class.forName(type), methodName);
+        } catch (ClassNotFoundException e) {
             return null;
         }
     }
