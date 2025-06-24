@@ -51,4 +51,8 @@ public class JedisAddress extends HostAndPort {
         }
         return result;
     }
+
+    public static String getAddress(HostAndPort hp) {
+        return Address.parse(hp.getHost(), hp.getPort()).toString();
+    }
 }

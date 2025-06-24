@@ -78,9 +78,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * @return the managed connection
      */
     protected C createConnection(Supplier<C> supplier) {
-        C conn = supplier.get();
-        addConnection(conn);
-        return conn;
+        return addConnection(supplier.get());
     }
 
     /**
@@ -88,12 +86,14 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * Skips null connections. Groups by cluster address.
      *
      * @param conn the connection to track
+     * @return the managed connection
      */
-    protected void addConnection(C conn) {
+    protected C addConnection(C conn) {
         if (conn != null) {
             ClusterAddress address = conn.getAddress().getNewAddress();
             connections.computeIfAbsent(address, a -> new CopyOnWriteArraySet<>()).add(conn);
         }
+        return conn;
     }
 
     /**

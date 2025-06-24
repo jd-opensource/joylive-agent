@@ -16,30 +16,19 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObjectInfo;
 import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.Set;
-
-public class JedisPoolConnection implements DbConnection {
-
-    private final JedisPool jedisPool;
-
-    private final UnsafeFieldAccessor pooledObject;
+public class JedisPoolConnection extends AbstractJedisPoolConnection<JedisPool> {
 
     private JedisAddress address;
 
     public JedisPoolConnection(JedisPool jedisPool, ClusterRedirect address, UnsafeFieldAccessor pooledObject) {
-        this.jedisPool = jedisPool;
+        super(jedisPool, pooledObject);
         this.address = JedisAddress.of(address);
-        this.pooledObject = pooledObject;
     }
 
     @Override
@@ -47,34 +36,16 @@ public class JedisPoolConnection implements DbConnection {
         return address.getAddress();
     }
 
-    @Override
-    public void close() {
-        jedisPool.close();
-    }
-
-    @Override
-    public boolean isClosed() {
-        return jedisPool.isClosed();
-    }
-
     public HostAndPort getHostAndPort() {
         return address;
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
     public ClusterRedirect redirect(ClusterAddress newAddress) {
         // new connection will take the new address.
         this.address = address.newAddress(newAddress);
         // copy
-        Set<DefaultPooledObjectInfo> objects = jedisPool.listAllObjects();
-        objects.forEach(o -> {
-            try {
-                PooledObject<Jedis> po = (PooledObject<Jedis>) pooledObject.get(o);
-                jedisPool.invalidateObject(po.getObject());
-            } catch (Exception ignored) {
-                // ignore
-            }
-        });
+        evict();
         return address.getAddress();
     }
 }

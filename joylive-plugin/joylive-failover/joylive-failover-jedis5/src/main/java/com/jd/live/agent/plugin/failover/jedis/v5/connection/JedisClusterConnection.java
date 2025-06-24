@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
@@ -32,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 
-public class JedisClusterConnection implements DbConnection {
+public class JedisClusterConnection implements JedisConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(JedisClusterConnection.class);
 
@@ -81,10 +80,21 @@ public class JedisClusterConnection implements DbConnection {
         return closed.get();
     }
 
+    @Override
     public ClusterRedirect redirect(ClusterAddress newAddress) {
         this.address = address.newAddress(newAddress);
         JedisClusterInfoCache jc = (JedisClusterInfoCache) cache.get(provider);
         cache.set(provider, new JedisClusterInfoCache(clientConfig, JedisAddress.getNodes(newAddress)));
+        initializeSlotsCache();
+        jc.close();
+        return address;
+    }
+
+    /**
+     * Initializes Redis slots cache if enabled.
+     * Logs any errors that occur during initialization.
+     */
+    private void initializeSlotsCache() {
         if (initializeSlotsCache != null) {
             try {
                 initializeSlotsCache.invoke(provider);
@@ -93,7 +103,5 @@ public class JedisClusterConnection implements DbConnection {
                 logger.error(cause.getMessage(), cause);
             }
         }
-        jc.close();
-        return address;
     }
 }

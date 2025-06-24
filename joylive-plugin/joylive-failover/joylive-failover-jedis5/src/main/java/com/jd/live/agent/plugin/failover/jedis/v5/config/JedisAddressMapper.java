@@ -20,6 +20,9 @@ import redis.clients.jedis.HostAndPortMapper;
 
 import java.util.function.Function;
 
+/**
+ * HostAndPortMapper implementation that applies both a delegate mapper and a mapping function.
+ */
 public class JedisAddressMapper implements HostAndPortMapper {
 
     private final HostAndPortMapper delegate;

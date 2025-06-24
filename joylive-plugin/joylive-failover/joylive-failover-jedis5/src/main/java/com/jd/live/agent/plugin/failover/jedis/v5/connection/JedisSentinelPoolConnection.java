@@ -18,50 +18,36 @@ package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObjectInfo;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisSentinelPool;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Set;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 
-public class JedisSentinelPoolConnection implements DbConnection {
+public class JedisSentinelPoolConnection extends AbstractJedisPoolConnection<JedisSentinelPool> {
 
     private static final Logger logger = LoggerFactory.getLogger(JedisSentinelPoolConnection.class);
 
-    private final JedisSentinelPool sentinelPool;
-
+    private ClusterRedirect address;
     private final String masterName;
-
     private final UnsafeFieldAccessor masterListeners;
-
-    private final UnsafeFieldAccessor pooledObject;
-
     private final Method initSentinels;
-
     private final Method shutdown;
 
-    private ClusterRedirect address;
-
     public JedisSentinelPoolConnection(JedisSentinelPool sentinelPool,
-                                       String masterName,
                                        ClusterRedirect address,
-                                       UnsafeFieldAccessor masterListeners,
                                        UnsafeFieldAccessor pooledObject,
+                                       String masterName,
+                                       UnsafeFieldAccessor masterListeners,
                                        Method initSentinels,
                                        Method shutdown) {
-        this.sentinelPool = sentinelPool;
-        this.masterName = masterName;
+        super(sentinelPool, pooledObject);
         this.address = address;
-        this.pooledObject = pooledObject;
+        this.masterName = masterName;
         this.masterListeners = masterListeners;
         this.initSentinels = initSentinels;
         this.shutdown = shutdown;
@@ -73,18 +59,9 @@ public class JedisSentinelPoolConnection implements DbConnection {
     }
 
     @Override
-    public void close() {
-        sentinelPool.close();
-    }
-
-    @Override
-    public boolean isClosed() {
-        return sentinelPool.isClosed();
-    }
-
     public ClusterRedirect redirect(ClusterAddress newAddress) {
         this.address = address.newAddress(newAddress);
-        Collection<?> listeners = (Collection<?>) masterListeners.get(sentinelPool);
+        Collection<?> listeners = (Collection<?>) masterListeners.get(jedisPool);
         listeners.forEach(this::shutdownListener);
         listeners.clear();
         initSentinels(newAddress);
@@ -92,10 +69,16 @@ public class JedisSentinelPoolConnection implements DbConnection {
         return address;
     }
 
+    /**
+     * Initializes sentinels with the given cluster address.
+     * Logs any errors that occur during initialization.
+     *
+     * @param newAddress the new cluster address to initialize
+     */
     private void initSentinels(ClusterAddress newAddress) {
         if (initSentinels != null) {
             try {
-                initSentinels.invoke(sentinelPool, JedisAddress.getNodes(newAddress), masterName);
+                initSentinels.invoke(jedisPool, JedisAddress.getNodes(newAddress), masterName);
             } catch (Throwable e) {
                 Throwable cause = getCause(e);
                 logger.error(cause.getMessage(), cause);
@@ -103,6 +86,12 @@ public class JedisSentinelPoolConnection implements DbConnection {
         }
     }
 
+    /**
+     * Shuts down the specified listener.
+     * Logs any errors that occur during shutdown.
+     *
+     * @param listener the listener to shutdown
+     */
     private void shutdownListener(Object listener) {
         if (shutdown != null) {
             try {
@@ -114,17 +103,4 @@ public class JedisSentinelPoolConnection implements DbConnection {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void evict() {
-        Set<DefaultPooledObjectInfo> objects = sentinelPool.listAllObjects();
-        objects.forEach(o -> {
-            try {
-                PooledObject<Jedis> po = (PooledObject<Jedis>) pooledObject.get(o);
-                sentinelPool.invalidateObject(po.getObject());
-            } catch (Exception e) {
-                Throwable cause = getCause(e);
-                logger.error(cause.getMessage(), cause);
-            }
-        });
-    }
 }

@@ -93,6 +93,10 @@ public class ClusterRedirect {
         return new ClusterRedirect(type, accessMode, oldAddress, newAddress, addressResolver);
     }
 
+    public boolean isRedirected() {
+        return !oldAddress.equals(newAddress);
+    }
+
     /**
      * Gets the redirected address for a given cluster address if one exists.
      *
