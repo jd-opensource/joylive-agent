@@ -141,20 +141,22 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
                 return;
             }
             LiveDatabase oldDatabase = policy.getDatabase(address.getNodes());
-            LiveDatabase newDatabase = oldDatabase.getReadDatabase(location.getUnit(), location.getCell());
-            LiveDatabase master = oldDatabase.getWriteDatabase();
-            cons.forEach(c -> {
-                ClusterRedirect redirect = c.getAddress();
-                String[] nodes = redirect.getNewAddress().getNodes();
-                AccessMode accessMode = redirect.getAccessMode();
-                if (accessMode.isWriteable() && master != null && master != oldDatabase && !master.contains(nodes)) {
-                    // redirect when master is changed.
-                    addTask(c, master);
-                } else if (!accessMode.isWriteable() && newDatabase != null && newDatabase != oldDatabase && !newDatabase.contains(nodes)) {
-                    // redirect when slave is changed.
-                    addTask(c, newDatabase);
-                }
-            });
+            if (oldDatabase != null) {
+                LiveDatabase newDatabase = oldDatabase.getReadDatabase(location.getUnit(), location.getCell());
+                LiveDatabase master = oldDatabase.getWriteDatabase();
+                cons.forEach(c -> {
+                    ClusterRedirect redirect = c.getAddress();
+                    String[] nodes = redirect.getNewAddress().getNodes();
+                    AccessMode accessMode = redirect.getAccessMode();
+                    if (accessMode.isWriteable() && master != null && master != oldDatabase && !master.contains(nodes)) {
+                        // redirect when master is changed.
+                        addTask(c, master);
+                    } else if (!accessMode.isWriteable() && newDatabase != null && newDatabase != oldDatabase && !newDatabase.contains(nodes)) {
+                        // redirect when slave is changed.
+                        addTask(c, newDatabase);
+                    }
+                });
+            }
         });
     }
 
