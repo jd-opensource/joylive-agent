@@ -120,4 +120,9 @@ public class LettuceStatefulRedisClusterConnection<K, V>
     protected Iterable<RedisURI> getUri(ClusterAddress newAddress) {
         return UriUtils.getClusterUris(firstUri, newAddress.getNodes());
     }
+
+    @Override
+    protected void closeOld() {
+        // TODO close old
+    }
 }
