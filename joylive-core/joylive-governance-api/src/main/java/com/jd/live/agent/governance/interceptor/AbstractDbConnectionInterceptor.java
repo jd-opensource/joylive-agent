@@ -103,13 +103,13 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * @param connection      Cluster connection to verify
      * @param addressResolver Function to resolve database addresses
      */
-    protected void checkFailover(C connection, Function<LiveDatabase, String> addressResolver) {
-        if (connection == null) {
-            return;
+    protected C checkFailover(C connection, Function<LiveDatabase, String> addressResolver) {
+        if (connection != null) {
+            ClusterRedirect address = connection.getAddress();
+            ClusterRedirect.redirect(address, address.isRedirected() ? consumer : null);
+            checkFailover(address, addressResolver);
         }
-        ClusterRedirect address = connection.getAddress();
-        ClusterRedirect.redirect(address, address.isRedirected() ? consumer : null);
-        checkFailover(address, addressResolver);
+        return connection;
     }
 
     /**

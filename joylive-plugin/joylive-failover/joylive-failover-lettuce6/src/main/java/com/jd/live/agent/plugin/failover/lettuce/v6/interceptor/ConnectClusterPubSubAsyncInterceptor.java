@@ -79,9 +79,10 @@ public class ConnectClusterPubSubAsyncInterceptor extends AbstractLettuceInterce
         Iterable<RedisURI> uris = ctx.getAttribute(ATTR_URIS);
         ConnectionFuture<StatefulRedisClusterPubSubConnection<?, ?>> future = ((MethodContext) ctx).getResult();
         Function<Iterable<RedisURI>, CompletionStage<?>> recreator = u -> connect(ctx.getTarget(), u, ctx.getArgument(0));
-        future.thenAccept(connection -> {
-            checkFailover(createConnection(() -> new LettuceStatefulRedisClusterPubSubConnection(connection, uris, toClusterRedirect(candidate), closer, recreator)), addressResolver);
-        });
+        future.thenApply(connection -> checkFailover(
+                createConnection(() -> new LettuceStatefulRedisClusterPubSubConnection(
+                        connection, uris, toClusterRedirect(candidate), closer, recreator)),
+                addressResolver));
     }
 
     /**
