@@ -73,12 +73,13 @@ public class ConnectStandaloneAsyncInterceptor extends AbstractLettuceIntercepto
         RedisCodec<?, ?> codec = ctx.getArgument(0);
         RedisURI uri = ctx.getArgument(1);
         Duration timeout = ctx.getArgument(2);
-        ConnectionFuture<StatefulRedisConnection<?, ?>> future = ((MethodContext) ctx).getResult();
+        MethodContext mc = (MethodContext) ctx;
+        ConnectionFuture<StatefulRedisConnection<?, ?>> future = mc.getResult();
         Function<RedisURI, CompletionStage<?>> recreator = u -> connect(client, u, codec, timeout);
-        future.thenApply(connection -> checkFailover(
+        mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceStatefulRedisConnection(
                         connection, uri, toClusterRedirect(candidate), closer, recreator)),
-                addressResolver));
+                addressResolver)));
     }
 
     /**

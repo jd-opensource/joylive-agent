@@ -72,12 +72,13 @@ public class ConnectPubSubAsyncInterceptor extends AbstractLettuceInterceptor {
         RedisCodec<?, ?> codec = ctx.getArgument(0);
         RedisURI uri = ctx.getArgument(1);
         Duration timeout = ctx.getArgument(2);
-        ConnectionFuture<LettuceStatefulRedisPubSubConnection<?, ?>> future = ((MethodContext) ctx).getResult();
+        MethodContext mc = (MethodContext) ctx;
+        ConnectionFuture<LettuceStatefulRedisPubSubConnection<?, ?>> future = mc.getResult();
         Function<RedisURI, CompletionStage<?>> recreator = u -> connect(client, u, codec, timeout);
-        future.thenApply(connection -> checkFailover(
+        mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceStatefulRedisPubSubConnection(
                         connection, uri, toClusterRedirect(candidate), closer, recreator)),
-                addressResolver));
+                addressResolver)));
     }
 
     /**

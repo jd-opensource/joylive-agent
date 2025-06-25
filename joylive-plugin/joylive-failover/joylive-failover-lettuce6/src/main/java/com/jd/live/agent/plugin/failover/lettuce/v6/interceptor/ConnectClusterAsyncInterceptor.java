@@ -77,12 +77,13 @@ public class ConnectClusterAsyncInterceptor extends AbstractLettuceInterceptor {
             return;
         }
         Iterable<RedisURI> uris = ctx.getAttribute(ATTR_URIS);
-        ConnectionFuture<StatefulRedisClusterConnection<?, ?>> future = ((MethodContext) ctx).getResult();
+        MethodContext mc = (MethodContext) ctx;
+        ConnectionFuture<StatefulRedisClusterConnection<?, ?>> future = mc.getResult();
         Function<Iterable<RedisURI>, CompletionStage<?>> recreator = u -> connect(ctx.getTarget(), u, ctx.getArgument(0));
-        future.thenApply(connection -> checkFailover(
+        mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceStatefulRedisClusterConnection(
                         connection, uris, toClusterRedirect(candidate), closer, recreator)),
-                addressResolver));
+                addressResolver)));
     }
 
     /**
