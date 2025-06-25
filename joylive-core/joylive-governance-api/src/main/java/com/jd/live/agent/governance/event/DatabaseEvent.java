@@ -20,12 +20,12 @@ import lombok.Getter;
 @Getter
 public class DatabaseEvent {
 
-    private Object owner;
+    private Object receiver;
 
     public DatabaseEvent() {
     }
 
-    public DatabaseEvent(Object owner) {
-        this.owner = owner;
+    public DatabaseEvent(Object receiver) {
+        this.receiver = receiver;
     }
 }

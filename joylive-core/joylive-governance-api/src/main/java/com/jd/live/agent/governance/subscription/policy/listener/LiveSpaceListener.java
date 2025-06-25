@@ -53,7 +53,7 @@ public class LiveSpaceListener extends AbstractListener<LiveSpace> {
         List<LiveDatabaseGroup> oldGroups = oldSpace == null ? null : oldSpace.getSpec().getDatabaseGroups();
         List<LiveDatabaseGroup> newGroups = newSpace == null ? null : newSpace.getSpec().getDatabaseGroups();
         if (LiveSpec.isChanged(oldGroups, newGroups)) {
-            publisher.offer(new DatabaseEvent(this));
+            publisher.offer(new DatabaseEvent());
         }
     }
 

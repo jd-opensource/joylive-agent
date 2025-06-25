@@ -170,8 +170,8 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
     protected boolean isInteresting(List<Event<DatabaseEvent>> events) {
         for (Event<DatabaseEvent> event : events) {
             DatabaseEvent de = event.getData();
-            Object owner = de.getOwner();
-            if (owner == null || owner == this) {
+            Object receiver = de.getReceiver();
+            if (receiver == null || receiver == this) {
                 return true;
             }
         }
