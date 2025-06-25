@@ -32,7 +32,7 @@ import com.jd.live.agent.plugin.failover.lettuce.v6.interceptor.IgnoreSentinelIn
 @ConditionalOnClass(SentinelTopologyDefinition.TYPE)
 public class SentinelTopologyDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "o.lettuce.core.masterreplica.SentinelTopologyProvider";
+    protected static final String TYPE = "io.lettuce.core.masterreplica.SentinelTopologyProvider";
 
     private static final String METHOD = "getNodesAsync";
 
