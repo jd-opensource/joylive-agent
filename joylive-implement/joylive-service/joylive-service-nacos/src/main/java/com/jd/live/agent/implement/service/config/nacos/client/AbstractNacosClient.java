@@ -100,7 +100,7 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
             logger.info("Try detecting healthy nacos {}", join(servers));
             try {
                 // wait for connected
-                addDetectTask(0);
+                addDetectTask(0, false);
                 if (initializationTimeout > 0 && !connectLatch.await(initializationTimeout, TimeUnit.MILLISECONDS)) {
                     logger.error("It's timeout to connect to nacos. {}", join(servers));
                     // cancel task.
@@ -180,8 +180,8 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
      *
      * @param delay Initial delay before first execution (milliseconds)
      */
-    protected void addDetectTask(long delay) {
-        FailoverDetectTask detect = new FailoverDetectTask(addressList, probe, 1, false, new NacosDetectTaskListener());
+    protected void addDetectTask(long delay, boolean connected) {
+        FailoverDetectTask detect = new FailoverDetectTask(addressList, probe, 1, connected, new NacosDetectTaskListener());
         RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.detect", detect, versions.get(), predicate, timer);
         // fast to reconnect when initialization
         task.delay(delay);
@@ -204,7 +204,7 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
             versions.incrementAndGet();
             connected.set(false);
             disconnect();
-            addDetectTask(Timer.getRetryInterval(1000, 3000L));
+            addDetectTask(Timer.getRetryInterval(1000, 3000L), true);
         }
     }
 
