@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -33,8 +35,10 @@ import redis.clients.jedis.*;
  */
 public class JedisPoolInterceptor extends AbstractJedisInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(JedisPoolInterceptor.class);
+
     public JedisPoolInterceptor(InvocationContext context) {
-        super(context);
+        super(context, PRIMARY_ADDRESS_RESOLVER);
     }
 
     @Override
@@ -52,10 +56,13 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
 
         HostAndPort hostAndPort = (HostAndPort) Accessor.hostAndPort.get(socketFactory);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate oldCandidate = getCandidate(TYPE_REDIS, JedisAddress.getAddress(hostAndPort), accessMode, PRIMARY_ADDRESS_RESOLVER);
-        JedisPoolConnection connection = new JedisPoolConnection((JedisPool) ctx.getTarget(), toClusterRedirect(oldCandidate), Accessor.pooledObject);
+        DbCandidate candidate = getCandidate(TYPE_REDIS, JedisAddress.getAddress(hostAndPort), accessMode, addressResolver);
+        JedisPoolConnection connection = new JedisPoolConnection((JedisPool) ctx.getTarget(), toClusterRedirect(candidate), Accessor.pooledObject);
         JedisConfig config = new JedisConfig(clientConfig, hp -> connection.getHostAndPort());
         Accessor.config.set(factory, config);
+        if (candidate.isRedirected()) {
+            logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
+        }
         return connection;
     }
 

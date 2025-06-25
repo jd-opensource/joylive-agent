@@ -16,14 +16,16 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.jedis.v5.connection.JedisConnection;
 import redis.clients.jedis.JedisClientConfig;
+
+import java.util.function.Function;
 
 /**
  * AbstractJedisInterceptor
@@ -32,23 +34,16 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
 
     protected static final String TYPE_REDIS = "redis";
 
-    public AbstractJedisInterceptor(InvocationContext context) {
+    protected final Function<LiveDatabase, String> addressResolver;
+
+    public AbstractJedisInterceptor(InvocationContext context, Function<LiveDatabase, String> addressResolver) {
         super(context);
+        this.addressResolver = addressResolver;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        JedisConnection connection = createConnection(() -> createConnection(ctx));
-        if (connection == null) {
-            return;
-        }
-        ClusterRedirect address = connection.getAddress();
-        ClusterRedirect.redirect(address, address.isRedirected() ? consumer : null);
-        // Avoid missing events caused by synchronous changes
-        DbCandidate newCandidate = getCandidate(address, PRIMARY_ADDRESS_RESOLVER);
-        if (isChanged(address.getNewAddress(), newCandidate)) {
-            publisher.offer(new DatabaseEvent(this));
-        }
+        checkFailover(createConnection(() -> createConnection(ctx)), addressResolver);
     }
 
     @Override

@@ -141,6 +141,19 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
     }
 
     /**
+     * Selects a database cluster based on access mode and location.
+     *
+     * @param type            database type
+     * @param nodes           available database nodes
+     * @param accessMode      READ/WRITE operation mode
+     * @param addressResolver converts LiveDatabase to connection address
+     * @return configured database candidate (never null)
+     */
+    protected DbCandidate getCandidate(String type, String[] nodes, AccessMode accessMode, Function<LiveDatabase, String> addressResolver) {
+        return getCandidate(type, join(nodes), nodes, accessMode, addressResolver);
+    }
+
+    /**
      * Checks if master database configuration has changed between two states.
      *
      * @param oldCandidate previous database state (may be null)
@@ -251,6 +264,8 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
 
         private final String newAddress;
 
+        private final String[] newNodes;
+
         private final boolean redirected;
 
         public DbCandidate(String type,
@@ -266,6 +281,7 @@ public abstract class AbstractDbFailoverInterceptor extends InterceptorAdaptor {
             this.database = database;
             this.addressResolver = addressResolver;
             this.newAddress = database == null ? oldAddress : (addressResolver == null ? database.getPrimaryAddress() : addressResolver.apply(database));
+            this.newNodes = database == null ? oldNodes : database.getNodes().toArray(new String[0]);
             this.redirected = database != null && !database.contains(oldNodes);
         }
 

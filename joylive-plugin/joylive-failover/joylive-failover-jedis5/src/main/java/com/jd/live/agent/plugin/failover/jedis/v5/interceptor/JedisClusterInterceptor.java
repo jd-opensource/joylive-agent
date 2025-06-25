@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.StringUtils;
@@ -42,8 +44,10 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class JedisClusterInterceptor extends AbstractJedisInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(JedisClusterInterceptor.class);
+
     public JedisClusterInterceptor(InvocationContext context) {
-        super(context);
+        super(context, MULTI_ADDRESS_SEMICOLON_RESOLVER);
     }
 
     @SuppressWarnings("unchecked")
@@ -57,8 +61,11 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
 
         List<String> addresses = toList(startNodes, JedisAddress::getAddress);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate oldCandidate = getCandidate(TYPE_REDIS, StringUtils.join(addresses), addresses.toArray(new String[0]), accessMode, MULTI_ADDRESS_SEMICOLON_RESOLVER);
-        return new JedisClusterConnection(cluster, clientConfig, provider, toClusterRedirect(oldCandidate), Accessor.cache, Accessor.initializeSlotsCache);
+        DbCandidate candidate = getCandidate(TYPE_REDIS, StringUtils.join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
+        if (candidate.isRedirected()) {
+            logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
+        }
+        return new JedisClusterConnection(cluster, clientConfig, provider, toClusterRedirect(candidate), Accessor.cache, Accessor.initializeSlotsCache);
     }
 
     private static class Accessor {

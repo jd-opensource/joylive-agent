@@ -21,7 +21,6 @@ import com.jd.live.agent.governance.db.jdbc.connection.DriverConnection;
 import com.jd.live.agent.governance.db.jdbc.connection.PooledConnection;
 import com.jd.live.agent.governance.db.jdbc.context.DriverContext;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
-import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.util.network.ClusterAddress;
 import com.jd.live.agent.governance.util.network.ClusterRedirect;
@@ -65,11 +64,7 @@ public abstract class AbstractJdbcConnectionInterceptor<T extends PooledConnecti
             T newConnection = createConnection(() -> build(connection, driver, mc));
             updater.update(newConnection);
             // Avoid missing events caused by synchronous changes
-            ClusterRedirect redirect = driver.getAddress();
-            DbCandidate candidate = getCandidate(redirect, PRIMARY_ADDRESS_RESOLVER);
-            if (isChanged(redirect.getNewAddress(), candidate)) {
-                publisher.offer(new DatabaseEvent(this));
-            }
+            checkFailover(driver.getAddress(), PRIMARY_ADDRESS_RESOLVER);
         }
     }
 

@@ -32,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
@@ -94,6 +95,35 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             connections.computeIfAbsent(address, a -> new CopyOnWriteArraySet<>()).add(conn);
         }
         return conn;
+    }
+
+    /**
+     * Handles cluster connection verification and redirection flow.
+     *
+     * @param connection      Cluster connection to verify
+     * @param addressResolver Function to resolve database addresses
+     */
+    protected void checkFailover(C connection, Function<LiveDatabase, String> addressResolver) {
+        if (connection == null) {
+            return;
+        }
+        ClusterRedirect address = connection.getAddress();
+        ClusterRedirect.redirect(address, address.isRedirected() ? consumer : null);
+        checkFailover(address, addressResolver);
+    }
+
+    /**
+     * Core address change detection logic. Compares:
+     *
+     * @param address         Current cluster redirect information
+     * @param addressResolver Address resolution strategy
+     */
+    protected void checkFailover(ClusterRedirect address, Function<LiveDatabase, String> addressResolver) {
+        // Avoid missing events caused by synchronous changes
+        DbCandidate newCandidate = getCandidate(address, addressResolver);
+        if (isChanged(address.getNewAddress(), newCandidate)) {
+            publisher.offer(new DatabaseEvent(this));
+        }
     }
 
     /**

@@ -39,7 +39,7 @@ public class Address {
         this.port = port;
         this.ipv6 = ipv6;
         this.uriHost = !ipv6 ? host : ('[' + host + ']');
-        this.address = (ipv6 ? uriHost : host) + (port == null ? "" : ":" + port);
+        this.address = port == null ? uriHost : (uriHost + ":" + port);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class Address {
             if (endChar == ']') {
                 return new Address(address.substring(1, address.length() - 1), defPort, true);
             }
-            int pos = !addressWithPort ? -1 : address.lastIndexOf(']');
+            int pos = address.lastIndexOf(']');
             if (pos > 0) {
                 if (address.charAt(pos + 1) == ':') {
                     try {

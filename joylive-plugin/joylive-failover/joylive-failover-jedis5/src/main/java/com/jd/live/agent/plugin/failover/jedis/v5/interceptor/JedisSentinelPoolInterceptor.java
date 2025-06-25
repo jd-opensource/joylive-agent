@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.type.ClassUtils;
@@ -41,8 +43,10 @@ import static com.jd.live.agent.core.util.StringUtils.join;
  */
 public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(JedisSentinelPoolInterceptor.class);
+
     public JedisSentinelPoolInterceptor(InvocationContext context) {
-        super(context);
+        super(context, MULTI_ADDRESS_SEMICOLON_RESOLVER);
     }
 
     @Override
@@ -53,8 +57,11 @@ public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
         JedisClientConfig clientConfig = ctx.getArgument(ctx.getArgumentCount() - 1);
         List<String> addresses = toList(sentinels, JedisAddress::getAddress);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate oldCandidate = getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, MULTI_ADDRESS_SEMICOLON_RESOLVER);
-        return new JedisSentinelPoolConnection(sentinelPool, toClusterRedirect(oldCandidate), Accessor.pooledObject, masterName,
+        DbCandidate candidate = getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
+        if (candidate.isRedirected()) {
+            logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
+        }
+        return new JedisSentinelPoolConnection(sentinelPool, toClusterRedirect(candidate), Accessor.pooledObject, masterName,
                 Accessor.masterListeners, Accessor.initSentinels, Accessor.shutdown);
     }
 
