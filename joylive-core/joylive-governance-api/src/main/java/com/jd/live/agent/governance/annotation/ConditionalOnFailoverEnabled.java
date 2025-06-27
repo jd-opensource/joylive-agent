@@ -31,7 +31,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED)
+@ConditionalOnLiveEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_ENABLED)
 @ConditionalComposite
 public @interface ConditionalOnFailoverEnabled {

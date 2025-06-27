@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.kafka.v2.condition.ConditionalOnKafka1AnyRouteEnabled;
+import com.jd.live.agent.plugin.router.kafka.v2.condition.ConditionalOnKafka2AnyRouteEnabled;
 import com.jd.live.agent.plugin.router.kafka.v2.interceptor.GroupInterceptor;
 
 /**
@@ -34,17 +34,17 @@ import com.jd.live.agent.plugin.router.kafka.v2.interceptor.GroupInterceptor;
  */
 @Injectable
 @Extension(value = "ConsumerConfigDefinition_v2")
-@ConditionalOnKafka1AnyRouteEnabled
-@ConditionalOnClass(ConsumerConfigDefinition.TYPE_CONSUMER_CONFIG)
+@ConditionalOnKafka2AnyRouteEnabled
+@ConditionalOnClass(ConsumerConfigDefinition.TYPE)
 public class ConsumerConfigDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_CONSUMER_CONFIG = "org.apache.kafka.clients.consumer.ConsumerConfig";
+    protected static final String TYPE = "org.apache.kafka.clients.consumer.ConsumerConfig";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
     public ConsumerConfigDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONFIG);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(), () -> new GroupInterceptor(context))
         };

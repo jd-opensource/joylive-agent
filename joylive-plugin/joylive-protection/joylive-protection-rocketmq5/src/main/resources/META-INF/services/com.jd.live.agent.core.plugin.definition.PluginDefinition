@@ -1,0 +1,2 @@
+com.jd.live.agent.plugin.protection.rocketmq.v5.definition.PullAPIWrapperDefinition
+com.jd.live.agent.plugin.protection.rocketmq.v5.definition.DefaultMQProducerImplDefinition

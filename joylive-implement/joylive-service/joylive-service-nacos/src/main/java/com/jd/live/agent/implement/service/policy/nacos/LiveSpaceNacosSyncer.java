@@ -24,33 +24,29 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.service.sync.AbstractLiveSpaceSyncer;
-import com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.api.ApiSpace;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientApi;
 import com.jd.live.agent.implement.service.config.nacos.client.NacosClientFactory;
 import com.jd.live.agent.implement.service.policy.nacos.config.NacosSyncConfig;
-import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.jd.live.agent.implement.service.policy.nacos.LiveSpaceNacosSyncer.NacosLiveSpaceKey;
-
 /**
- * LiveSpaceSyncer is responsible for synchronizing live spaces from nacos.
+ * LiveSpaceNacosSyncer is responsible for synchronizing live spaces from nacos.
  */
 @Injectable
 @Extension("LiveSpaceNacosSyncer")
+@ConditionalOnLiveEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpaceKey, NacosLiveSpaceKey> {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
@@ -118,17 +114,4 @@ public class LiveSpaceNacosSyncer extends AbstractLiveSpaceSyncer<NacosLiveSpace
         return client.createSyncer(this::parseSpace);
     }
 
-    @Getter
-    protected static class NacosLiveSpaceKey extends LiveSpaceKey implements NacosSyncKey {
-
-        private final String dataId;
-
-        private final String group;
-
-        public NacosLiveSpaceKey(String id, String dataId, String group) {
-            super(id);
-            this.dataId = dataId;
-            this.group = group;
-        }
-    }
 }

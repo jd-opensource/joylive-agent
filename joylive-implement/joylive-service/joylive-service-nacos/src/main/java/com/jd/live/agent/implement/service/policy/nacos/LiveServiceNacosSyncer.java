@@ -24,7 +24,7 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
@@ -46,9 +46,9 @@ import java.util.concurrent.CompletableFuture;
  */
 @Injectable
 @Extension("LiveServiceNacosSyncer")
+@ConditionalOnLiveEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "nacos")
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_SERVICE, matchIfMissing = true)
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
@@ -63,7 +63,7 @@ public class LiveServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKe
     private NacosClientApi client;
 
     public LiveServiceNacosSyncer() {
-        name = "LiveAgent-service-nacos-syncer";
+        name = "LiveAgent-live-service-nacos-syncer";
     }
 
     @Override

@@ -21,6 +21,11 @@
         <module>joylive-protection-mongodb4</module>
         <module>joylive-protection-jedis5</module>
         <module>joylive-protection-lettuce6</module>
+        <module>joylive-protection-rocketmq4</module>
+        <module>joylive-protection-rocketmq5</module>
+        <module>joylive-protection-kafka2</module>
+        <module>joylive-protection-kafka3</module>
+        <module>joylive-protection-kafka4</module>
 
     </modules>
 

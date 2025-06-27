@@ -21,16 +21,20 @@ import com.jd.live.agent.core.util.template.Evaluator;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.MqMode;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.request.Message;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * AbstractMessageInterceptor
@@ -53,27 +57,107 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Determines if the given topic is ready to be consumed based on the governance context and policies.
+     * Checks consumption readiness for a topic from a single address string.
      *
-     * @param topic the topic name to check
-     * @return {@code true} if the topic is ready to be consumed, {@code false} otherwise
+     * @param topic the topic to check
+     * @param address the cluster address string (comma-delimited if multiple)
+     * @return Permission result from the delegated check
      */
-    protected boolean isConsumeReady(String topic) {
+    protected Permission isConsumeReady(String topic, String address) {
+        return isConsumeReady(topic, address, split(address));
+    }
+
+    /**
+     * Checks if consumption is permitted for a topic from specified addresses.
+     *
+     * @param topic     the topic to check
+     * @param nodes cluster addresses to validate
+     * @return Permission result with success/failure and reason if denied
+     */
+    protected Permission isConsumeReady(String topic, String address, String[] nodes) {
         if (!context.isGovernReady()) {
-            return false;
+            return Permission.failure("Application is not ready for consumer");
         } else if (!isEnabled(topic)) {
-            return true;
+            return Permission.success();
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
-        Unit unit = liveSpace == null ? null : liveSpace.getLocalUnit();
-        Cell cell = liveSpace == null ? null : liveSpace.getLocalCell();
-        if (unit == null) {
-            return true;
-        } else if (!unit.getAccessMode().isReadable()) {
-            return false;
+        if (policy == null) {
+            return Permission.success();
         }
-        return cell == null || cell.getAccessMode().isReadable();
+        LiveDatabase database = policy.getDatabase(nodes);
+        if (database != null && !database.getAccessMode().isReadable()) {
+            return Permission.failure("MQ cluster is not readable, cluster:" + (address == null ? join(nodes) : address));
+        }
+        LiveSpace liveSpace = policy.getLocalLiveSpace();
+        if (liveSpace != null) {
+            Unit unit = database != null && !isEmpty(database.getUnit())
+                    ? liveSpace.getUnit(database.getUnit())
+                    : liveSpace.getLocalUnit();
+            if (unit != null) {
+                if (!unit.getAccessMode().isReadable()) {
+                    return Permission.failure("Unit is not readable, unit: " + unit.getCode());
+                }
+                Cell cell = database != null && !isEmpty(database.getCell())
+                        ? unit.getCell(database.getCell())
+                        : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
+                if (cell != null && !cell.getAccessMode().isReadable()) {
+                    return Permission.failure("Cell is not readable, cell: " + cell.getCode());
+                }
+            }
+        }
+        return Permission.success();
+    }
+
+    /**
+     * Checks if a topic can be produced to in the specified cluster.
+     *
+     * @param topic   topic name to check
+     * @param address target cluster address
+     * @return Permission result with success/failure and reason
+     */
+    protected Permission isProduceReady(String topic, String address) {
+        return isProduceReady(topic, address, split(address));
+    }
+
+    /**
+     * Checks if a topic can be produced to in the specified cluster.
+     *
+     * @param topic topic name to check
+     * @param nodes target cluster address
+     * @return Permission result with success/failure and reason
+     */
+    protected Permission isProduceReady(String topic, String address, String[] nodes) {
+        if (!context.isGovernReady()) {
+            return Permission.failure("Application is not ready for producer");
+        } else if (!isEnabled(topic)) {
+            return Permission.success();
+        }
+        GovernancePolicy policy = policySupplier.getPolicy();
+        if (policy == null) {
+            return Permission.success();
+        }
+        LiveDatabase database = policy.getDatabase(nodes);
+        if (database != null && !database.getAccessMode().isWriteable()) {
+            return Permission.failure("MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address));
+        }
+        LiveSpace liveSpace = policy.getLocalLiveSpace();
+        if (liveSpace != null) {
+            Unit unit = database != null && !isEmpty(database.getUnit())
+                    ? liveSpace.getUnit(database.getUnit())
+                    : liveSpace.getLocalUnit();
+            if (unit != null) {
+                if (!unit.getAccessMode().isWriteable()) {
+                    return Permission.failure("Unit of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", unit: " + unit.getCode());
+                }
+                Cell cell = database != null && !isEmpty(database.getCell())
+                        ? unit.getCell(database.getCell())
+                        : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
+                if (cell != null && !cell.getAccessMode().isWriteable()) {
+                    return Permission.failure("Cell of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", cell: " + cell.getCode());
+                }
+            }
+        }
+        return Permission.success();
     }
 
     /**

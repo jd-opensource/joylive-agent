@@ -24,7 +24,7 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLaneEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.probe.HealthProbe;
@@ -49,8 +49,8 @@ import static com.jd.live.agent.implement.service.policy.nacos.LaneSpaceNacosSyn
  */
 @Injectable
 @Extension("LaneSpaceNacosSyncer")
+@ConditionalOnLaneEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LANE_SPACE_TYPE, value = "nacos")
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true)
 public class LaneSpaceNacosSyncer extends AbstractLaneSpaceSyncer<NacosLaneSpaceKey> {
 
     @Config(SyncConfig.SYNC_LANE_SPACE)

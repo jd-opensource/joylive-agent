@@ -30,4 +30,6 @@ public class LiveConfig {
     protected String spaceUrl;
 
     protected String serviceUrl;
+
+    protected String databaseUrl;
 }

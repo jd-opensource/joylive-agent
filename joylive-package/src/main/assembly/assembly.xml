@@ -161,6 +161,8 @@
                 <include>com.jd.live:joylive-transmission-rocketmq5</include>
                 <include>com.jd.live:joylive-router-rocketmq4</include>
                 <include>com.jd.live:joylive-router-rocketmq5</include>
+                <include>com.jd.live:joylive-protection-rocketmq4</include>
+                <include>com.jd.live:joylive-protection-rocketmq5</include>
                 <include>com.jd.live:joylive-failover-rocketmq4</include>
                 <include>com.jd.live:joylive-failover-rocketmq5</include>
             </includes>
@@ -197,6 +199,9 @@
                 <include>com.jd.live:joylive-router-kafka2</include>
                 <include>com.jd.live:joylive-router-kafka3</include>
                 <include>com.jd.live:joylive-router-kafka4</include>
+                <include>com.jd.live:joylive-protection-kafka2</include>
+                <include>com.jd.live:joylive-protection-kafka3</include>
+                <include>com.jd.live:joylive-protection-kafka4</include>
             </includes>
         </dependencySet>
 

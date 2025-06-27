@@ -35,14 +35,14 @@ import com.jd.live.agent.plugin.router.kafka.v3.interceptor.FetchInterceptor;
 @Injectable
 @Extension(value = "FetchDefinition_v3")
 @ConditionalOnKafka3AnyRouteEnabled
-@ConditionalOnClass(FetchDefinition.TYPE_FETCH)
+@ConditionalOnClass(FetchDefinition.TYPE)
 public class FetchDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FETCH = "org.apache.kafka.clients.consumer.internals.Fetch";
+    protected static final String TYPE = "org.apache.kafka.clients.consumer.internals.Fetch";
 
-    private static final String METHOD_FOR_PARTITION = "forPartition";
+    private static final String METHOD = "forPartition";
 
-    private static final String[] ARGUMENT_FOR_PARTITION = new String[]{
+    private static final String[] ARGUMENTS = new String[]{
             "org.apache.kafka.common.TopicPartition",
             "java.util.List",
             "boolean"
@@ -52,10 +52,10 @@ public class FetchDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public FetchDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FETCH);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FOR_PARTITION).and(MatcherBuilder.arguments(ARGUMENT_FOR_PARTITION)),
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
                         () -> new FetchInterceptor(context)
                 )
         };

@@ -69,6 +69,7 @@ public abstract class AbstractFileSyncer<T> extends AbstractSyncer<FileKey, T> {
         subscription = new Subscription<>(getName(), createFileKey(file), application.getName(), response -> {
             switch (response.getStatus()) {
                 case SUCCESS:
+                    logger.info("Success syncing policy from file {}", file.getName());
                     onSuccess(response.getData());
                     break;
                 case NOT_FOUND:

@@ -23,7 +23,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.http.HttpStatus;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
@@ -44,15 +44,15 @@ import java.util.List;
 @Setter
 @Injectable
 @Extension("LiveSpaceSyncer")
+@ConditionalOnLiveEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "multilive")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
 
     @Config(SyncConfig.SYNC_LIVE_SPACE)
     private LiveSyncConfig syncConfig = new LiveSyncConfig();
 
     public LiveSpaceHttpSyncer() {
-        name = "LiveAgent-space-multilive-syncer";
+        name = "LiveAgent-live-space-multilive-syncer";
     }
 
     @Override
@@ -88,10 +88,10 @@ public class LiveSpaceHttpSyncer extends AbstractLiveSpaceHttpSyncer {
      * @param parser   the object parser used to serialize response data (must not be {@code null})
      * @param name     the filename to use for saving the configuration (must not be {@code null} or empty)
      */
-    private <T> void saveConfig(ApiResponse<ApiResult<T>> response, ObjectParser parser, String name) {
+    private void saveConfig(ApiResponse<ApiResult<LiveSpace>> response, ObjectParser parser, String name) {
         // save config to local file
         if (response.getError() == null) {
-            ApiResult<?> result = response.getResult();
+            ApiResult<LiveSpace> result = response.getResult();
             if (response.getStatus() == HttpStatus.OK) {
                 saveConfig(result.getData(), parser, AgentPath.DIR_POLICY_LIVE, name);
             }

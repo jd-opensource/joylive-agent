@@ -24,7 +24,7 @@ import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.service.MergePolicy;
@@ -46,8 +46,8 @@ import java.util.concurrent.CompletableFuture;
  */
 @Injectable
 @Extension("ServiceNacosSyncer")
+@ConditionalOnFlowControlEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_MICROSERVICE_TYPE, value = "nacos")
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 public class ServiceNacosSyncer extends AbstractServiceSyncer<NacosServiceKey> {
 
     @Config(SyncConfig.SYNC_MICROSERVICE)

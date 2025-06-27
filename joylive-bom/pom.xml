@@ -530,21 +530,6 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-failover-jdbc</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
-                <artifactId>joylive-failover-druid</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
-                <artifactId>joylive-failover-hikaricp</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-protection-mariadb2</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -580,12 +565,27 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-jedis5</artifactId>
+                <artifactId>joylive-protection-rocketmq4</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-protection-lettuce6</artifactId>
+                <artifactId>joylive-protection-rocketmq5</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-kafka2</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-kafka3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-kafka4</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -596,6 +596,31 @@
             <dependency>
                 <groupId>com.jd.live</groupId>
                 <artifactId>joylive-failover-rocketmq5</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-jedis5</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-lettuce6</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-failover-jdbc</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-failover-druid</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-failover-hikaricp</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

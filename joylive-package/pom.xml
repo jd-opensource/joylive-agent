@@ -407,18 +407,6 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-failover-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-failover-druid</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-failover-hikaricp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
             <artifactId>joylive-protection-mariadb2</artifactId>
         </dependency>
         <dependency>
@@ -447,6 +435,26 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-rocketmq4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-rocketmq5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-kafka2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-kafka3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-kafka4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-protection-jedis5</artifactId>
         </dependency>
         <dependency>
@@ -460,6 +468,18 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-failover-rocketmq5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-druid</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-hikaricp</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

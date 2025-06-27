@@ -76,6 +76,7 @@ agent:
         spacesUrl: /workspaces
         spaceUrl: /workspaces/${space_id}/version/${space_version}
         serviceUrl: /services/${service_name}/version/${service_version}
+        databaseUrl: /workspaces/${space_id}/databases/${database_version}
       # for multilive-openapi
       jdcloud:
         accessKey: ${CONFIG_MULTILIVE_ACCESS_KEY}
@@ -89,6 +90,7 @@ agent:
         liveSpacesKey: ${CONFIG_NACOS_KEY_LIVE_SPACES:govern-liveSpaces}
         liveSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LIVE_SPACE_TEMPLATE:govern-liveSpace-${id}}
         liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
+        liveDatabaseTemplate: ${CONFIG_NACOS_KEY_LIVE_DATABASE_TEMPLATE:govern-liveDatabase-${id}}
     laneSpace:
       type: ${CONFIG_LANE_SPACE_API_TYPE:file} # [file,jmsf,nacos]
       url: ${CONFIG_LANE_SPACE_API_URL:http://api.jmsf.local:8080/v1}

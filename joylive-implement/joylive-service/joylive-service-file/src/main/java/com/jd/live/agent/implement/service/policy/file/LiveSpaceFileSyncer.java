@@ -15,19 +15,19 @@
  */
 package com.jd.live.agent.implement.service.policy.file;
 
-import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
-import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.TypeReference;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
+import com.jd.live.agent.governance.config.SyncConfig;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.service.sync.SyncKey.FileKey;
 import com.jd.live.agent.governance.service.sync.Syncer;
 import com.jd.live.agent.governance.service.sync.file.AbstractFileSyncer;
 import com.jd.live.agent.governance.service.sync.file.FileWatcher;
+import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -44,8 +44,8 @@ import java.util.List;
 @Getter
 @Injectable
 @Extension("LiveSpaceFileSyncer")
+@ConditionalOnLiveEnabled
 @ConditionalOnProperty(name = SyncConfig.SYNC_LIVE_SPACE_TYPE, value = "file")
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true)
 public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
 
     private static final String CONFIG_LIVE_SPACE = "livespaces.json";
@@ -54,7 +54,7 @@ public class LiveSpaceFileSyncer extends AbstractFileSyncer<List<LiveSpace>> {
     private SyncConfig syncConfig = new SyncConfig();
 
     public LiveSpaceFileSyncer() {
-        name = "LiveAgent-space-file-syncer";
+        name = "LiveAgent-live-space-file-syncer";
     }
 
     @Override
