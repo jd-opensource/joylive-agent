@@ -16,27 +16,7 @@
 package com.jd.live.agent.plugin.failover.lettuce.v6.connection;
 
 import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
-import io.lettuce.core.RedisURI;
 
 public interface LettuceConnection extends DbConnection {
 
-    /**
-     * Redirects the connection to a new cluster address.
-     *
-     * @param newAddress the new cluster address to redirect to
-     * @return ClusterRedirect object representing the redirection
-     */
-    ClusterRedirect redirect(ClusterAddress newAddress);
-
-    static RedisURI.Builder builder(RedisURI uri) {
-        return RedisURI.builder(uri)
-                .withAuthentication(uri)
-                .withSsl(uri)
-                .withDatabase(uri.getDatabase())
-                .withTimeout(uri.getTimeout())
-                .withVerifyPeer(uri.isVerifyPeer())
-                .withVerifyPeer(uri.getVerifyMode());
-    }
 }

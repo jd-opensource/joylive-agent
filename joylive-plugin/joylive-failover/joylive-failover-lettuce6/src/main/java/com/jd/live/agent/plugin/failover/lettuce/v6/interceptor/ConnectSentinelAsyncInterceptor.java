@@ -20,6 +20,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.lettuce.v6.connection.LettuceSentinelRedisConnection;
 import com.jd.live.agent.plugin.failover.lettuce.v6.context.LettuceContext;
@@ -54,7 +56,7 @@ public class ConnectSentinelAsyncInterceptor extends AbstractLettuceInterceptor 
             return;
         }
         RedisURI uri = ctx.getArgument(1);
-        DbCandidate candidate = getCandidate(TYPE_REDIS, UriUtils.getSentinelAddress(uri), getAccessMode(uri.getClientName()), addressResolver);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, UriUtils.getSentinelAddress(uri), getAccessMode(uri.getClientName()), addressResolver);
         if (candidate.isRedirected()) {
             ctx.setArgument(1, UriUtils.getSentinelUri(uri, candidate.getNewNodes()));
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
@@ -78,7 +80,7 @@ public class ConnectSentinelAsyncInterceptor extends AbstractLettuceInterceptor 
         Function<RedisURI, CompletionStage<?>> recreator = u -> connect(client, u, codec, timeout);
         mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceSentinelRedisConnection(
-                        connection, uri, toClusterRedirect(candidate), closer, recreator)),
+                        connection, uri, DbFailover.of(candidate), closer, recreator)),
                 addressResolver)));
     }
 

@@ -13,27 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mq;
+package com.jd.live.agent.governance.db;
 
 /**
- * Basic configuration interface for message queue clients.
+ * Defines possible actions after a failover operation.
  */
-public interface MQClientConfig {
+public enum DbFailoverResponse {
 
-    /**
-     * Gets the message queue server address.
-     */
-    String getServerAddress();
+    SUCCESS,
 
-    /**
-     * Sets the message queue server address.
-     *
-     * @param address the server connection address
-     */
-    void setServerAddress(String address);
+    DISCARD,
 
-    /**
-     * Gets the client type identifier.
-     */
-    String getType();
+    NONE,
+
 }

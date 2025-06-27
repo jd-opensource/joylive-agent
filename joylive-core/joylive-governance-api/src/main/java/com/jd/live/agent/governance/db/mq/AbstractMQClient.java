@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mq;
+package com.jd.live.agent.governance.db.mq;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbFailover;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
 import lombok.Getter;
 
 /**
@@ -34,13 +35,13 @@ public abstract class AbstractMQClient implements MQClient {
     protected final Object target;
 
     @Getter
-    protected volatile ClusterRedirect address;
+    protected volatile DbFailover failover;
 
     protected volatile boolean closed = false;
 
-    public AbstractMQClient(Object target, ClusterRedirect address) {
+    public AbstractMQClient(Object target, DbFailover failover) {
         this.target = target;
-        this.address = address;
+        this.failover = failover;
     }
 
     @Override
@@ -67,20 +68,16 @@ public abstract class AbstractMQClient implements MQClient {
      */
     protected abstract void doStart() throws Exception;
 
-    /**
-     * Reconnects to a new cluster address and resets consumption offsets.
-     *
-     * @param newAddress the new cluster address to connect to
-     */
-    public synchronized void reconnect(ClusterAddress newAddress) {
+    @Override
+    public synchronized DbFailoverResponse failover(DbAddress newAddress) {
         if (closed) {
-            return;
+            return DbFailoverResponse.NONE;
         }
         String type = getType();
         String role = getRole().getName();
-        String oldAddress = address.getNewAddress().getAddress();
+        String oldAddress = failover.getNewAddress().getAddress();
         logger.info("Try redirecting the {} {} connection from {} to {}", type, role, oldAddress, newAddress);
-        this.address = address.newAddress(newAddress);
+        this.failover = failover.newAddress(newAddress);
         logger.info("Try closing the {} {} connection {}", type, role, oldAddress);
         doClose();
         logger.info("Success closing the {} {} connection {}", type, role, oldAddress);
@@ -92,5 +89,6 @@ public abstract class AbstractMQClient implements MQClient {
         } catch (Throwable e) {
             logger.error("Failed to reconnect {} {} to {}", type, role, newAddress, e);
         }
+        return DbFailoverResponse.SUCCESS;
     }
 }

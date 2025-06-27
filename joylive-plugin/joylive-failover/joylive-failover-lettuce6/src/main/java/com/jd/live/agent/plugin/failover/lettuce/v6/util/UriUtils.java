@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.failover.lettuce.v6.connection.LettuceConnection.builder;
 
 public class UriUtils {
 
@@ -109,5 +108,22 @@ public class UriUtils {
      */
     public static String[] getClusterAddress(Iterable<RedisURI> uris) {
         return toList(uris, u -> Address.parse(u.getHost(), u.getPort()).getAddress()).toArray(new String[0]);
+    }
+
+    /**
+     * Creates a new {@link RedisURI.Builder} pre-configured from an existing {@link RedisURI}.
+     * Copies authentication, SSL settings, database, timeout, and peer verification settings.
+     *
+     * @param uri the source RedisURI to copy configuration from
+     * @return a new builder initialized with the source URI's settings
+     */
+    public static RedisURI.Builder builder(RedisURI uri) {
+        return RedisURI.builder(uri)
+                .withAuthentication(uri)
+                .withSsl(uri)
+                .withDatabase(uri.getDatabase())
+                .withTimeout(uri.getTimeout())
+                .withVerifyPeer(uri.isVerifyPeer())
+                .withVerifyPeer(uri.getVerifyMode());
     }
 }

@@ -18,24 +18,16 @@ package com.jd.live.agent.governance.interceptor;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.db.DbUrlParser;
+import com.jd.live.agent.governance.db.*;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
 
 /**
  * Abstract base class for database connection interceptors with failover support.
@@ -54,22 +46,17 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
 
     protected final Map<String, DbUrlParser> parsers;
 
-    protected final Map<ClusterAddress, Set<C>> connections = new ConcurrentHashMap<>();
+    protected final DbConnectionSupervisor connectionSupervisor;
 
-    protected final Map<C, FailoverTask> tasks = new ConcurrentHashMap<>(128);
-
-    protected final Consumer<C> closer = c -> {
-        Set<C> values = connections.get(c.getAddress().getNewAddress());
-        if (values != null) {
-            values.remove(c);
-        }
-    };
+    protected final Consumer<C> closer;
 
     public AbstractDbConnectionInterceptor(InvocationContext context) {
         super(context);
         this.publisher = context.getDatabasePublisher();
         this.timer = context.getTimer();
         this.parsers = context.getDbUrlParsers();
+        this.connectionSupervisor = context.getDbConnectionSupervisor();
+        this.closer = connectionSupervisor::removeConnection;
         publisher.addHandler(this::onEvent);
     }
 
@@ -79,22 +66,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      * @return the managed connection
      */
     protected C createConnection(Supplier<C> supplier) {
-        return addConnection(supplier.get());
-    }
-
-    /**
-     * Tracks a connection in the connection pool.
-     * Skips null connections. Groups by cluster address.
-     *
-     * @param conn the connection to track
-     * @return the managed connection
-     */
-    protected C addConnection(C conn) {
-        if (conn != null) {
-            ClusterAddress address = conn.getAddress().getNewAddress();
-            connections.computeIfAbsent(address, a -> new CopyOnWriteArraySet<>()).add(conn);
-        }
-        return conn;
+        return connectionSupervisor.addConnection(supplier.get());
     }
 
     /**
@@ -105,23 +77,22 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
      */
     protected C checkFailover(C connection, Function<LiveDatabase, String> addressResolver) {
         if (connection != null) {
-            ClusterRedirect address = connection.getAddress();
-            ClusterRedirect.redirect(address, address.isRedirected() ? consumer : null);
-            checkFailover(address, addressResolver);
+            checkFailover(connectionSupervisor.failover(connection.getFailover()), addressResolver);
         }
         return connection;
     }
 
     /**
-     * Core address change detection logic. Compares:
+     * Detects address changes by comparing current failover with new candidate.
+     * Publishes event if changes are detected.
      *
-     * @param address         Current cluster redirect information
-     * @param addressResolver Address resolution strategy
+     * @param failover        current cluster redirect configuration
+     * @param addressResolver strategy to resolve database addresses
      */
-    protected void checkFailover(ClusterRedirect address, Function<LiveDatabase, String> addressResolver) {
+    protected void checkFailover(DbFailover failover, Function<LiveDatabase, String> addressResolver) {
         // Avoid missing events caused by synchronous changes
-        DbCandidate newCandidate = getCandidate(address, addressResolver);
-        if (isChanged(address.getNewAddress(), newCandidate)) {
+        DbCandidate newCandidate = connectionSupervisor.getCandidate(failover, addressResolver);
+        if (failover.isChanged(newCandidate)) {
             publisher.offer(new DatabaseEvent(this));
         }
     }
@@ -135,29 +106,7 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
         if (!isInteresting(events)) {
             return;
         }
-        GovernancePolicy policy = policySupplier.getPolicy();
-        connections.forEach((address, cons) -> {
-            if (cons.isEmpty()) {
-                return;
-            }
-            LiveDatabase oldDatabase = policy.getDatabase(address.getNodes());
-            if (oldDatabase != null) {
-                LiveDatabase newDatabase = oldDatabase.getReadDatabase(location.getUnit(), location.getCell());
-                LiveDatabase master = oldDatabase.getWriteDatabase();
-                cons.forEach(c -> {
-                    ClusterRedirect redirect = c.getAddress();
-                    String[] nodes = redirect.getNewAddress().getNodes();
-                    AccessMode accessMode = redirect.getAccessMode();
-                    if (accessMode.isWriteable() && master != null && master != oldDatabase && !master.contains(nodes)) {
-                        // redirect when master is changed.
-                        addTask(c, master);
-                    } else if (!accessMode.isWriteable() && newDatabase != null && newDatabase != oldDatabase && !newDatabase.contains(nodes)) {
-                        // redirect when slave is changed.
-                        addTask(c, newDatabase);
-                    }
-                });
-            }
-        });
+        connectionSupervisor.failover();
     }
 
     /**
@@ -176,86 +125,6 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
             }
         }
         return false;
-    }
-
-    /**
-     * Adds a failover task for connection redirection with collision handling.
-     *
-     * @param conn     the connection needing redirection
-     * @param database target database with new connection details
-     */
-    protected void addTask(C conn, LiveDatabase database) {
-        // avoid async concurrently updating.
-        ClusterRedirect redirect = conn.getAddress();
-        ClusterAddress newAddress = redirect.getAddressResolver().apply(database);
-        while (!conn.isClosed()) {
-            FailoverTask newTask = new FailoverTask(conn, newAddress);
-            FailoverTask oldTask = tasks.putIfAbsent(conn, newTask);
-            if (oldTask == null) {
-                timer.delay("redirect-connection", getRetryInterval(100, 2000), newTask);
-                return;
-            } else if (oldTask.add(newAddress)) {
-                break;
-            }
-        }
-    }
-
-    /**
-     * Redirects the given connection to the specified cluster address.
-     *
-     * @param connection the connection to redirect
-     * @param address    the target cluster address
-     */
-    protected abstract void redirectTo(C connection, ClusterAddress address);
-
-    /**
-     * A background task that handles connection failover by redirecting to alternate cluster addresses.
-     * Thread-safe operations are guarded by the internal mutex lock.
-     */
-    protected class FailoverTask implements Runnable {
-
-        protected final C connection;
-
-        protected final Deque<ClusterAddress> queue = new LinkedList<>();
-
-        protected final Object mutex = new Object();
-
-        protected volatile boolean closed;
-
-        public FailoverTask(C connection, ClusterAddress address) {
-            this.connection = connection;
-            queue.add(address);
-        }
-
-        /**
-         * Adds a new failover target address to the queue.
-         *
-         * @param address the alternate address to add
-         * @return true if added successfully, false if task was already closed
-         */
-        public boolean add(ClusterAddress address) {
-            synchronized (mutex) {
-                if (closed) {
-                    return false;
-                }
-                queue.add(address);
-            }
-            return true;
-        }
-
-        @Override
-        public void run() {
-            synchronized (mutex) {
-                ClusterAddress address = queue.getLast();
-                queue.clear();
-                try {
-                    redirectTo(connection, address);
-                } finally {
-                    closed = true;
-                    tasks.remove(connection);
-                }
-            }
-        }
     }
 
 }

@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.config;
 
 import com.jd.live.agent.core.util.network.Address;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
 import lombok.Getter;
 import redis.clients.jedis.HostAndPort;
 
@@ -27,23 +27,23 @@ import java.util.Set;
 public class JedisAddress extends HostAndPort {
 
     @Getter
-    private final ClusterRedirect address;
+    private final DbFailover failover;
 
-    public JedisAddress(String host, int port, ClusterRedirect address) {
+    public JedisAddress(String host, int port, DbFailover failover) {
         super(host, port);
-        this.address = address;
+        this.failover = failover;
     }
 
-    public static JedisAddress of(ClusterRedirect address) {
-        Address addr = Address.parse(address.getNewAddress().getAddress());
-        return new JedisAddress(addr.getHost(), addr.getPort(), address);
+    public static JedisAddress of(DbFailover failover) {
+        Address addr = Address.parse(failover.getNewAddress().getAddress());
+        return new JedisAddress(addr.getHost(), addr.getPort(), failover);
     }
 
-    public JedisAddress newAddress(ClusterAddress newAddress) {
-        return of(address.newAddress(newAddress));
+    public JedisAddress newAddress(DbAddress newAddress) {
+        return of(failover.newAddress(newAddress));
     }
 
-    public static Set<HostAndPort> getNodes(ClusterAddress address) {
+    public static Set<HostAndPort> getNodes(DbAddress address) {
         Set<HostAndPort> result = new HashSet<>();
         for (String node : address.getNodes()) {
             Address addr = Address.parse(node);
@@ -52,7 +52,7 @@ public class JedisAddress extends HostAndPort {
         return result;
     }
 
-    public static String getAddress(HostAndPort hp) {
+    public static String getFailover(HostAndPort hp) {
         return Address.parse(hp.getHost(), hp.getPort()).toString();
     }
 }

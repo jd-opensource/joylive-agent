@@ -20,8 +20,6 @@ import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.jedis.v5.connection.JedisConnection;
 import redis.clients.jedis.JedisClientConfig;
 
@@ -44,11 +42,6 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
     @Override
     public void onSuccess(ExecutableContext ctx) {
         checkFailover(createConnection(() -> createConnection(ctx)), addressResolver);
-    }
-
-    @Override
-    protected void redirectTo(JedisConnection connection, ClusterAddress address) {
-        ClusterRedirect.redirect(connection.redirect(address), consumer);
     }
 
     /**

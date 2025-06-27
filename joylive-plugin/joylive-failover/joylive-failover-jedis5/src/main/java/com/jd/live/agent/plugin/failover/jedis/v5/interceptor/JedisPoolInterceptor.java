@@ -20,6 +20,8 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
@@ -56,8 +58,8 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
 
         HostAndPort hostAndPort = (HostAndPort) Accessor.hostAndPort.get(socketFactory);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate candidate = getCandidate(TYPE_REDIS, JedisAddress.getAddress(hostAndPort), accessMode, addressResolver);
-        JedisPoolConnection connection = new JedisPoolConnection((JedisPool) ctx.getTarget(), toClusterRedirect(candidate), Accessor.pooledObject);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, JedisAddress.getFailover(hostAndPort), accessMode, addressResolver);
+        JedisPoolConnection connection = new JedisPoolConnection((JedisPool) ctx.getTarget(), DbFailover.of(candidate), Accessor.pooledObject);
         JedisConfig config = new JedisConfig(clientConfig, hp -> connection.getHostAndPort());
         Accessor.config.set(factory, config);
         if (candidate.isRedirected()) {

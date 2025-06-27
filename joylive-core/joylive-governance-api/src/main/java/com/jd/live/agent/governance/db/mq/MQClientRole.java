@@ -13,20 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mq;
+package com.jd.live.agent.governance.db.mq;
+
+import lombok.Getter;
 
 /**
- * Represents a message queue with basic identification.
+ * Defines the roles in a message queue system.
+ *
+ * <p>Possible values:
+ * <ul>
+ *   <li>{@code PRODUCER} - Message sender role</li>
+ *   <li>{@code CONSUMER} - Message receiver role</li>
+ * </ul>
+ *
+ * @see #name Role identifier (lowercase)
  */
-public interface MsgQueue {
+public enum MQClientRole {
 
-    /**
-     * Gets the queue topic name.
-     */
-    String getTopic();
+    PRODUCER("producer"),
 
-    /**
-     * Gets the queue unique identifier.
-     */
-    int getId();
+    CONSUMER("consumer");
+
+    @Getter
+    private final String name;
+
+    MQClientRole(String name) {
+        this.name = name;
+    }
 }

@@ -22,6 +22,8 @@ import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
@@ -59,13 +61,13 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         JedisClientConfig clientConfig = (JedisClientConfig) Accessor.clientConfig.get(cache);
         JedisCluster cluster = (JedisCluster) ctx.getTarget();
 
-        List<String> addresses = toList(startNodes, JedisAddress::getAddress);
+        List<String> addresses = toList(startNodes, JedisAddress::getFailover);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate candidate = getCandidate(TYPE_REDIS, StringUtils.join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, StringUtils.join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisClusterConnection(cluster, clientConfig, provider, toClusterRedirect(candidate), Accessor.cache, Accessor.initializeSlotsCache);
+        return new JedisClusterConnection(cluster, clientConfig, provider, DbFailover.of(candidate), Accessor.cache, Accessor.initializeSlotsCache);
     }
 
     private static class Accessor {

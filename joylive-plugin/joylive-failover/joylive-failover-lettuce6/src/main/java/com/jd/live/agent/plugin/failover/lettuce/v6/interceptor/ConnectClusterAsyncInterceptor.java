@@ -22,6 +22,8 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.lettuce.v6.connection.LettuceStatefulRedisClusterConnection;
 import com.jd.live.agent.plugin.failover.lettuce.v6.context.LettuceContext;
@@ -60,7 +62,7 @@ public class ConnectClusterAsyncInterceptor extends AbstractLettuceInterceptor {
         Iterable<RedisURI> uris = (Iterable<RedisURI>) Accessor.uris.get(ctx.getTarget());
         RedisURI firstURI = uris.iterator().next();
         String clientName = firstURI.getClientName();
-        DbCandidate candidate = getCandidate(TYPE_REDIS, UriUtils.getClusterAddress(uris), getAccessMode(clientName), addressResolver);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, UriUtils.getClusterAddress(uris), getAccessMode(clientName), addressResolver);
         if (candidate.isRedirected()) {
             Accessor.setUris(ctx.getTarget(), UriUtils.getClusterUris(firstURI, candidate.getNewNodes()));
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
@@ -82,7 +84,7 @@ public class ConnectClusterAsyncInterceptor extends AbstractLettuceInterceptor {
         Function<Iterable<RedisURI>, CompletionStage<?>> recreator = u -> connect(ctx.getTarget(), u, ctx.getArgument(0));
         mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceStatefulRedisClusterConnection(
-                        connection, uris, toClusterRedirect(candidate), closer, recreator)),
+                        connection, uris, DbFailover.of(candidate), closer, recreator)),
                 addressResolver)));
     }
 

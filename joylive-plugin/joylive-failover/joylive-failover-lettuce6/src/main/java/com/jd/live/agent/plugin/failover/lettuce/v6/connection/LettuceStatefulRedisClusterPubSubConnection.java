@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.failover.lettuce.v6.connection;
 
 import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.plugin.failover.lettuce.v6.util.UriUtils;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.push.PushListener;
@@ -44,10 +44,10 @@ public class LettuceStatefulRedisClusterPubSubConnection<K, V>
 
     public LettuceStatefulRedisClusterPubSubConnection(StatefulRedisClusterPubSubConnection<K, V> delegate,
                                                        Iterable<RedisURI> uris,
-                                                       ClusterRedirect address,
+                                                       DbFailover failover,
                                                        Consumer<DbConnection> closer,
                                                        Function<Iterable<RedisURI>, CompletionStage<StatefulRedisClusterPubSubConnection<K, V>>> recreator) {
-        super(delegate, uris, address, closer, recreator);
+        super(delegate, uris, failover, closer, recreator);
         this.firstUri = uris.iterator().next();
     }
 
@@ -142,7 +142,7 @@ public class LettuceStatefulRedisClusterPubSubConnection<K, V>
     }
 
     @Override
-    protected Iterable<RedisURI> getUri(ClusterAddress newAddress) {
+    protected Iterable<RedisURI> getUri(DbAddress newAddress) {
         return UriUtils.getClusterUris(firstUri, newAddress.getNodes());
     }
 }

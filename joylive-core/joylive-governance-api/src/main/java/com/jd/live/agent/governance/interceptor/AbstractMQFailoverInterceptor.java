@@ -19,13 +19,13 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
+import com.jd.live.agent.governance.db.mq.MQClient;
+import com.jd.live.agent.governance.db.mq.MQClientConfig;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.mq.MQClient;
-import com.jd.live.agent.governance.mq.MQClientConfig;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 
 /**
  * AbstractMQFailoverInterceptor
@@ -59,13 +59,12 @@ public abstract class AbstractMQFailoverInterceptor<C extends MQClient> extends 
     public void onSuccess(ExecutableContext ctx) {
         if (ctx.isLocked()) {
             DbCandidate oldCandidate = ctx.getAttribute(ATTR_OLD_ADDRESS);
-            ClusterRedirect redirect = toClusterRedirect(oldCandidate);
-            ClusterRedirect.redirect(redirect, oldCandidate.isRedirected() ? consumer : null);
-            C client = createClient(ctx, redirect);
-            addConnection(client);
+            DbFailover failover = connectionSupervisor.failover(oldCandidate);
+            C client = createClient(ctx, failover);
+            connectionSupervisor.addConnection(client);
             // Avoid missing events caused by synchronous changes
             DbCandidate newCandidate = getCandidate(client.getType(), oldCandidate.getOldAddress());
-            if (isChanged(oldCandidate, newCandidate)) {
+            if (oldCandidate.isChanged(newCandidate)) {
                 publisher.offer(new DatabaseEvent(this));
             }
         }
@@ -74,12 +73,6 @@ public abstract class AbstractMQFailoverInterceptor<C extends MQClient> extends 
     @Override
     public void onExit(ExecutableContext ctx) {
         ctx.unlock();
-    }
-
-    @Override
-    protected void redirectTo(C client, ClusterAddress address) {
-        client.reconnect(address);
-        ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
     }
 
     /**
@@ -94,10 +87,10 @@ public abstract class AbstractMQFailoverInterceptor<C extends MQClient> extends 
      * Creates a client instance for given context and cluster configuration.
      *
      * @param ctx      execution context containing environment details
-     * @param redirect optional cluster redirection settings (nullable)
+     * @param failover optional cluster redirection settings (nullable)
      * @return newly initialized client instance
      */
-    protected abstract C createClient(ExecutableContext ctx, ClusterRedirect redirect);
+    protected abstract C createClient(ExecutableContext ctx, DbFailover failover);
 
     /**
      * Creates a database candidate with RW access and semicolon address resolver.
@@ -107,7 +100,7 @@ public abstract class AbstractMQFailoverInterceptor<C extends MQClient> extends 
      * @return pre-configured database candidate
      */
     protected DbCandidate getCandidate(String type, String address) {
-        return getCandidate(type, address, AccessMode.READ_WRITE, MULTI_ADDRESS_SEMICOLON_RESOLVER);
+        return connectionSupervisor.getCandidate(type, address, AccessMode.READ_WRITE, MULTI_ADDRESS_SEMICOLON_RESOLVER);
     }
 
 }

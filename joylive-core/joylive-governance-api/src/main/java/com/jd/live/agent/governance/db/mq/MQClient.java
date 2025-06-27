@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mq;
+package com.jd.live.agent.governance.db.mq;
 
 import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
 
 /**
  * Core message queue client interface providing lifecycle operations.
@@ -40,10 +39,4 @@ public interface MQClient extends MQClientConfig, DbConnection {
      */
     void start() throws Exception;
 
-    /**
-     * Reconnects to a new cluster address and resets consumption offsets.
-     *
-     * @param newAddress the new cluster address to connect to
-     */
-    void reconnect(ClusterAddress newAddress);
 }

@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v5.connection;
-
-import com.jd.live.agent.governance.db.DbConnection;
+package com.jd.live.agent.governance.db.mq;
 
 /**
- * Interface for Jedis connections extending basic database connection.
+ * Represents a message queue with basic identification.
  */
-public interface JedisConnection extends DbConnection {
+public interface MsgQueue {
 
+    /**
+     * Gets the queue topic name.
+     */
+    String getTopic();
+
+    /**
+     * Gets the queue unique identifier.
+     */
+    int getId();
 }

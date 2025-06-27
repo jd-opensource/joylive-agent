@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.plugin.protection.mongodb.v4.client;
 
-import com.jd.live.agent.governance.util.network.ClusterAddress;
+import com.jd.live.agent.governance.db.DbAddress;
 import com.mongodb.client.MongoClient;
 
 public interface MongoClientFactory {
 
-    MongoClient create(ClusterAddress address);
+    MongoClient create(DbAddress address);
 }

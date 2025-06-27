@@ -16,8 +16,9 @@
 package com.jd.live.agent.plugin.failover.lettuce.v6.connection;
 
 import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisConnectionStateListener;
 import io.lettuce.core.api.StatefulConnection;
@@ -29,7 +30,6 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,20 +39,20 @@ public abstract class LettuceStatefulConnection<K, V, T extends StatefulConnecti
     protected volatile T delegate;
     protected volatile U uri;
     @Getter
-    protected volatile ClusterRedirect address;
+    protected volatile DbFailover failover;
     protected final Consumer<DbConnection> closer;
     protected final Function<U, CompletionStage<T>> recreator;
-    protected final AtomicBoolean closed = new AtomicBoolean(false);
+    protected volatile boolean closed;
     protected final Object mutex = new Object();
 
     public LettuceStatefulConnection(T delegate,
                                      U uri,
-                                     ClusterRedirect address,
+                                     DbFailover failover,
                                      Consumer<DbConnection> closer,
                                      Function<U, CompletionStage<T>> recreator) {
         this.delegate = delegate;
         this.uri = uri;
-        this.address = address;
+        this.failover = failover;
         this.closer = closer;
         this.recreator = recreator;
     }
@@ -89,7 +89,14 @@ public abstract class LettuceStatefulConnection<K, V, T extends StatefulConnecti
 
     @Override
     public void close() {
-        if (closed.compareAndSet(false, true)) {
+        if (closed) {
+            return;
+        }
+        synchronized (mutex) {
+            if (closed) {
+                return;
+            }
+            closed = true;
             delegate.close();
             if (closer != null) {
                 closer.accept(this);
@@ -99,7 +106,7 @@ public abstract class LettuceStatefulConnection<K, V, T extends StatefulConnecti
 
     @Override
     public boolean isClosed() {
-        return closed.get();
+        return closed;
     }
 
     @Override
@@ -138,29 +145,27 @@ public abstract class LettuceStatefulConnection<K, V, T extends StatefulConnecti
         delegate.flushCommands();
     }
 
-    /**
-     * Handles cluster redirection by updating connection to the specified node.
-     *
-     * @param newAddress Target cluster node address for redirection
-     * @return New cluster redirect information after update
-     */
-    public ClusterRedirect redirect(ClusterAddress newAddress) {
-        ClusterRedirect newRedirect = address.newAddress(newAddress);
+    @Override
+    public DbFailoverResponse failover(DbAddress newAddress) {
+        DbFailover newFailover = failover.newAddress(newAddress);
         U newUri = getUri(newAddress);
-        address = newRedirect;
-        uri = newUri;
         synchronized (mutex) {
+            if (isClosed()) {
+                return DbFailoverResponse.NONE;
+            }
+            failover = newFailover;
+            uri = newUri;
             delegate.close();
+            closeOld();
+            reconnect(newUri);
         }
-        closeOld();
-        reconnect(newUri);
-        return address;
+        return DbFailoverResponse.SUCCESS;
     }
 
     protected void closeOld() {
     }
 
-    protected abstract U getUri(ClusterAddress newAddress);
+    protected abstract U getUri(DbAddress newAddress);
 
     /**
      * Verifies if reconnection to specified URI should be attempted.

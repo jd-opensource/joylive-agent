@@ -18,8 +18,6 @@ package com.jd.live.agent.plugin.failover.lettuce.v6.interceptor;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.failover.lettuce.v6.connection.LettuceConnection;
 
 import java.util.function.Function;
@@ -36,10 +34,5 @@ public abstract class AbstractLettuceInterceptor extends AbstractDbConnectionInt
     public AbstractLettuceInterceptor(InvocationContext context, Function<LiveDatabase, String> addressResolver) {
         super(context);
         this.addressResolver = addressResolver;
-    }
-
-    @Override
-    protected void redirectTo(LettuceConnection connection, ClusterAddress address) {
-        ClusterRedirect.redirect(connection.redirect(address), consumer);
     }
 }

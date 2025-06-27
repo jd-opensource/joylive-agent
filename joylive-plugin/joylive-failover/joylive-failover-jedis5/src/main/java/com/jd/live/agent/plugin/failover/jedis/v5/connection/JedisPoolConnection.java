@@ -16,8 +16,9 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisPool;
@@ -26,14 +27,14 @@ public class JedisPoolConnection extends AbstractJedisPoolConnection<JedisPool> 
 
     private JedisAddress address;
 
-    public JedisPoolConnection(JedisPool jedisPool, ClusterRedirect address, UnsafeFieldAccessor pooledObject) {
+    public JedisPoolConnection(JedisPool jedisPool, DbFailover failover, UnsafeFieldAccessor pooledObject) {
         super(jedisPool, pooledObject);
-        this.address = JedisAddress.of(address);
+        this.address = JedisAddress.of(failover);
     }
 
     @Override
-    public ClusterRedirect getAddress() {
-        return address.getAddress();
+    public DbFailover getFailover() {
+        return address.getFailover();
     }
 
     public HostAndPort getHostAndPort() {
@@ -41,11 +42,11 @@ public class JedisPoolConnection extends AbstractJedisPoolConnection<JedisPool> 
     }
 
     @Override
-    public ClusterRedirect redirect(ClusterAddress newAddress) {
+    public DbFailoverResponse failover(DbAddress newAddress) {
         // new connection will take the new address.
         this.address = address.newAddress(newAddress);
         // copy
         evict();
-        return address.getAddress();
+        return DbFailoverResponse.SUCCESS;
     }
 }

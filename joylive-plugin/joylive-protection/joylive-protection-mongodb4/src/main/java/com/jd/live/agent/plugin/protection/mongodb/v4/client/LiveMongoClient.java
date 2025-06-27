@@ -16,8 +16,9 @@
 package com.jd.live.agent.plugin.protection.mongodb.v4.client;
 
 import com.jd.live.agent.governance.db.DbConnection;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.mongodb.ClientSessionOptions;
 import com.mongodb.client.*;
 import com.mongodb.connection.ClusterDescription;
@@ -33,7 +34,7 @@ public class LiveMongoClient implements MongoClient, DbConnection {
     private volatile MongoClient delegate;
 
     @Getter
-    private volatile ClusterRedirect address;
+    private volatile DbFailover failover;
 
     private final MongoClientFactory factory;
 
@@ -42,11 +43,11 @@ public class LiveMongoClient implements MongoClient, DbConnection {
     private volatile boolean closed;
 
     public LiveMongoClient(MongoClient delegate,
-                           ClusterRedirect address,
+                           DbFailover failover,
                            MongoClientFactory factory,
                            Consumer<LiveMongoClient> onClose) {
         this.delegate = delegate;
-        this.address = address;
+        this.failover = failover;
         this.factory = factory;
         this.onClose = onClose;
     }
@@ -173,20 +174,15 @@ public class LiveMongoClient implements MongoClient, DbConnection {
         return delegate.getClusterDescription();
     }
 
-    /**
-     * Reconnects to a new cluster address.
-     * Synchronously replaces the current connection with a new one.
-     * Does nothing if the client is already closed.
-     *
-     * @param newAddress the target cluster address to connect to
-     */
-    public synchronized void reconnect(ClusterAddress newAddress) {
+    @Override
+    public synchronized DbFailoverResponse failover(DbAddress newAddress) {
         if (closed) {
-            return;
+            return DbFailoverResponse.NONE;
         }
         MongoClient old = this.delegate;
+        this.failover = failover.newAddress(newAddress);
         this.delegate = factory.create(newAddress);
-        this.address = address.newAddress(newAddress);
         old.close();
+        return DbFailoverResponse.SUCCESS;
     }
 }

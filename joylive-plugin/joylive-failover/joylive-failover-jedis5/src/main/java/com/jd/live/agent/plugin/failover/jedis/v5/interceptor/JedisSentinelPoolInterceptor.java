@@ -21,6 +21,8 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.util.type.ClassUtils;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
@@ -55,13 +57,13 @@ public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
         Set<HostAndPort> sentinels = ctx.getArgument(1);
         JedisSentinelPool sentinelPool = (JedisSentinelPool) ctx.getTarget();
         JedisClientConfig clientConfig = ctx.getArgument(ctx.getArgumentCount() - 1);
-        List<String> addresses = toList(sentinels, JedisAddress::getAddress);
+        List<String> addresses = toList(sentinels, JedisAddress::getFailover);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate candidate = getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisSentinelPoolConnection(sentinelPool, toClusterRedirect(candidate), Accessor.pooledObject, masterName,
+        return new JedisSentinelPoolConnection(sentinelPool, DbFailover.of(candidate), Accessor.pooledObject, masterName,
                 Accessor.masterListeners, Accessor.initSentinels, Accessor.shutdown);
     }
 

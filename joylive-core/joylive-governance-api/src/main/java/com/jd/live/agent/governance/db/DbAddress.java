@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.util.network;
+package com.jd.live.agent.governance.db;
 
 import lombok.Getter;
 
@@ -22,10 +22,10 @@ import java.util.Objects;
 import static com.jd.live.agent.core.util.StringUtils.split;
 
 /**
- * Represents a cluster address with individual node information.
+ * Represents a database address.
  */
 @Getter
-public class ClusterAddress {
+public class DbAddress {
 
     public static final String TYPE_DB = "DB";
 
@@ -35,11 +35,11 @@ public class ClusterAddress {
 
     private final String[] nodes;
 
-    public ClusterAddress(String address) {
+    public DbAddress(String address) {
         this(TYPE_DB, address);
     }
 
-    public ClusterAddress(String type, String address) {
+    public DbAddress(String type, String address) {
         this.type = type;
         this.address = address;
         this.nodes = split(address);
@@ -47,8 +47,8 @@ public class ClusterAddress {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ClusterAddress)) return false;
-        ClusterAddress that = (ClusterAddress) o;
+        if (!(o instanceof DbAddress)) return false;
+        DbAddress that = (DbAddress) o;
         return Objects.equals(address, that.address);
     }
 

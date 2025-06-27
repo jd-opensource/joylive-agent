@@ -18,8 +18,9 @@ package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
 import redis.clients.jedis.JedisSentinelPool;
 
@@ -32,21 +33,21 @@ public class JedisSentinelPoolConnection extends AbstractJedisPoolConnection<Jed
 
     private static final Logger logger = LoggerFactory.getLogger(JedisSentinelPoolConnection.class);
 
-    private ClusterRedirect address;
+    private DbFailover failover;
     private final String masterName;
     private final UnsafeFieldAccessor masterListeners;
     private final Method initSentinels;
     private final Method shutdown;
 
     public JedisSentinelPoolConnection(JedisSentinelPool sentinelPool,
-                                       ClusterRedirect address,
+                                       DbFailover failover,
                                        UnsafeFieldAccessor pooledObject,
                                        String masterName,
                                        UnsafeFieldAccessor masterListeners,
                                        Method initSentinels,
                                        Method shutdown) {
         super(sentinelPool, pooledObject);
-        this.address = address;
+        this.failover = failover;
         this.masterName = masterName;
         this.masterListeners = masterListeners;
         this.initSentinels = initSentinels;
@@ -54,19 +55,20 @@ public class JedisSentinelPoolConnection extends AbstractJedisPoolConnection<Jed
     }
 
     @Override
-    public ClusterRedirect getAddress() {
-        return address;
+    public DbFailover getFailover() {
+        return failover;
     }
 
+
     @Override
-    public ClusterRedirect redirect(ClusterAddress newAddress) {
-        this.address = address.newAddress(newAddress);
+    public DbFailoverResponse failover(DbAddress newAddress) {
+        this.failover = failover.newAddress(newAddress);
         Collection<?> listeners = (Collection<?>) masterListeners.get(jedisPool);
         listeners.forEach(this::shutdownListener);
         listeners.clear();
         initSentinels(newAddress);
         evict();
-        return address;
+        return DbFailoverResponse.SUCCESS;
     }
 
     /**
@@ -75,7 +77,7 @@ public class JedisSentinelPoolConnection extends AbstractJedisPoolConnection<Jed
      *
      * @param newAddress the new cluster address to initialize
      */
-    private void initSentinels(ClusterAddress newAddress) {
+    private void initSentinels(DbAddress newAddress) {
         if (initSentinels != null) {
             try {
                 initSentinels.invoke(jedisPool, JedisAddress.getNodes(newAddress), masterName);

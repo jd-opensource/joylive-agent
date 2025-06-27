@@ -15,26 +15,30 @@
  */
 package com.jd.live.agent.governance.db;
 
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
-
 /**
- * A database connection that supports auto-closing and provides cluster addressing.
+ * Cluster-aware database connection with auto-close support.
  */
 public interface DbConnection extends AutoCloseable {
 
     /**
-     * Gets the cluster address redirection information.
-     *
-     * @return cluster redirect configuration
+     * Gets the connection's failover address.
      */
-    ClusterRedirect getAddress();
+    DbFailover getFailover();
 
     /**
-     * Checks if the connection is in a closed state.
-     *
-     * @return true if the connection is closed, false otherwise
+     * Checks if connection is closed (default: false).
      */
     default boolean isClosed() {
         return false;
+    }
+
+    /**
+     * Attempts to reconnect to specified cluster address.
+     *
+     * @param newAddress target cluster address
+     * @return failover response (default: NONE)
+     */
+    default DbFailoverResponse failover(DbAddress newAddress) {
+        return DbFailoverResponse.NONE;
     }
 }

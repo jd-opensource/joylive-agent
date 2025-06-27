@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v4.client;
 
-import com.jd.live.agent.governance.mq.MQClientConfig;
+import com.jd.live.agent.governance.db.mq.MQClientConfig;
 import org.apache.rocketmq.client.ClientConfig;
 
 /**

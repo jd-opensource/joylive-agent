@@ -13,31 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mq;
-
-import lombok.Getter;
+package com.jd.live.agent.governance.db.mq;
 
 /**
- * Defines the roles in a message queue system.
- *
- * <p>Possible values:
- * <ul>
- *   <li>{@code PRODUCER} - Message sender role</li>
- *   <li>{@code CONSUMER} - Message receiver role</li>
- * </ul>
- *
- * @see #name Role identifier (lowercase)
+ * Basic configuration interface for message queue clients.
  */
-public enum MQClientRole {
+public interface MQClientConfig {
 
-    PRODUCER("producer"),
+    /**
+     * Gets the message queue server address.
+     */
+    String getServerAddress();
 
-    CONSUMER("consumer");
+    /**
+     * Sets the message queue server address.
+     *
+     * @param address the server connection address
+     */
+    void setServerAddress(String address);
 
-    @Getter
-    private final String name;
-
-    MQClientRole(String name) {
-        this.name = name;
-    }
+    /**
+     * Gets the client type identifier.
+     */
+    String getType();
 }

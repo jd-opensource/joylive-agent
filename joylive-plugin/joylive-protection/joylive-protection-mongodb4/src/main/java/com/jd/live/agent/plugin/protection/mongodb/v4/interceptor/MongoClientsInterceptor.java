@@ -20,13 +20,13 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.DbUrl;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.util.network.ClusterAddress;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import com.jd.live.agent.plugin.protection.mongodb.v4.client.LiveMongoClient;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoDriverInformation;
@@ -66,7 +66,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         DbUrl dbUrl = DbUrlParser.parse(CONNECTION_STRING.get(), parsers::get);
         // Check whether read-write separation is configured
         AccessMode accessMode = getAccessMode(settings.getApplicationName(), dbUrl, null);
-        DbCandidate candidate = getCandidate(TYPE_MONGODB, address, accessMode, MULTI_ADDRESS_SEMICOLON_RESOLVER);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_MONGODB, address, accessMode, MULTI_ADDRESS_SEMICOLON_RESOLVER);
         ctx.setAttribute(ATTR_OLD_ADDRESS, candidate);
         if (candidate.isRedirected()) {
             MongoClientSettings.Builder builder = MongoClientSettings.builder(settings);
@@ -92,8 +92,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         String srvHost = cluster.getSrvHost();
         // redirected address
         DbCandidate candidate = ctx.getAttribute(ATTR_OLD_ADDRESS);
-        ClusterRedirect redirect = toClusterRedirect(candidate);
-        ClusterRedirect.redirect(redirect, candidate.isRedirected() ? consumer : null);
+        DbFailover redirect = connectionSupervisor.failover(candidate);
 
         Method method = mc.getMethod();
         mc.setResult(createConnection(() -> new LiveMongoClient(client, redirect, addr -> {
@@ -117,12 +116,6 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
     @Override
     public void onExit(ExecutableContext ctx) {
         CONNECTION_STRING.remove();
-    }
-
-    @Override
-    protected void redirectTo(LiveMongoClient client, ClusterAddress address) {
-        client.reconnect(address);
-        ClusterRedirect.redirect(client.getAddress().newAddress(address), consumer);
     }
 
     protected ServerAddress toServerAddress(String address) {

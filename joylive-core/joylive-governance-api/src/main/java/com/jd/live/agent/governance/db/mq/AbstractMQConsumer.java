@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mq;
+package com.jd.live.agent.governance.db.mq;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.DbFailover;
 
 import java.util.Collection;
 import java.util.Map;
@@ -43,8 +43,8 @@ public abstract class AbstractMQConsumer extends AbstractMQClient {
 
     protected Map<String, AtomicLong> timestamps = new ConcurrentHashMap<>();
 
-    public AbstractMQConsumer(Object target, ClusterRedirect address) {
-        super(target, address);
+    public AbstractMQConsumer(Object target, DbFailover failover) {
+        super(target, failover);
     }
 
     @Override
