@@ -251,6 +251,7 @@ agent:
           - org.apache.tomcat.util.threads.InlineExecutorService
           - javax.management.NotificationBroadcasterSupport$1
           - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory
+          - com.alibaba.druid.pool.DruidAbstractDataSource$SynchronousExecutor
         excludeTasks:
           - com.jd.live.agent.core.thread.NamedThreadFactory
           - com.jd.jr.sgm.client.disruptor.LogEventFactory
