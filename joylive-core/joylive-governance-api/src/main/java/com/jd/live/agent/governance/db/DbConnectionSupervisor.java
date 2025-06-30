@@ -105,7 +105,7 @@ public interface DbConnectionSupervisor {
      * @return registered connection (may be wrapped)
      */
     default <C extends DbConnection> C addConnection(C conn) {
-        return addConnection(conn, conn.getFailover().getNewAddress());
+        return conn == null ? null : addConnection(conn, conn.getFailover().getNewAddress());
     }
 
     /**

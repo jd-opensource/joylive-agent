@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
+import lombok.Getter;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -178,6 +179,23 @@ public class DbConnectionManager implements DbConnectionSupervisor {
     }
 
     /**
+     * Adds a failover retry task for connection redirection.
+     *
+     * @param conn       the connection needing redirection
+     * @param oldAddress the source address
+     * @param newAddress the target address
+     */
+    protected void addRetryTask(DbConnection conn, DbAddress oldAddress, DbAddress newAddress) {
+        if (!conn.isClosed() && conn.getFailover().getNewAddress().equals(oldAddress)) {
+            FailoverTask newTask = new FailoverTask(conn, new DbFailoverAddress(newAddress, oldAddress));
+            FailoverTask oldTask = tasks.putIfAbsent(conn, newTask);
+            if (oldTask == null) {
+                timer.delay("redirect-connection", getRetryInterval(1000, 2000), newTask);
+            }
+        }
+    }
+
+    /**
      * A background task that handles connection failover by redirecting to alternate cluster addresses.
      * Thread-safe operations are guarded by the internal mutex lock.
      */
@@ -208,13 +226,18 @@ public class DbConnectionManager implements DbConnectionSupervisor {
 
         @Override
         public synchronized void run() {
-            DbAddress address = queue.getLast();
+            DbAddress newAddress = queue.peekLast();
             queue.clear();
+            boolean success;
+            DbAddress oldAddress = connection.getFailover().getNewAddress();
             try {
-                redirect(connection, address);
+                success = redirect(connection, oldAddress, newAddress);
             } finally {
                 closed = true;
                 tasks.remove(connection);
+            }
+            if (!success) {
+                addRetryTask(connection, oldAddress, newAddress);
             }
         }
 
@@ -222,10 +245,18 @@ public class DbConnectionManager implements DbConnectionSupervisor {
          * Redirects the given connection to the specified cluster address.
          *
          * @param connection the connection to redirect
+         * @param oldAddress the source cluster address.
          * @param newAddress the target cluster address
+         * @return true if redirection was successful, false if redirector is failed.
          */
-        protected void redirect(DbConnection connection, DbAddress newAddress) {
-            DbAddress oldAddress = connection.getFailover().getNewAddress();
+        protected boolean redirect(DbConnection connection, DbAddress oldAddress, DbAddress newAddress) {
+            // check failover address
+            if (newAddress instanceof DbFailoverAddress) {
+                DbFailoverAddress failoverAddress = (DbFailoverAddress) newAddress;
+                if (!failoverAddress.getOldAddress().equals(oldAddress)) {
+                    return true;
+                }
+            }
             switch (connection.failover(newAddress)) {
                 case SUCCESS:
                     failover(addConnection(removeConnection(connection, oldAddress), newAddress).getFailover());
@@ -233,14 +264,28 @@ public class DbConnectionManager implements DbConnectionSupervisor {
                         // avoid concurrency close.
                         removeConnection(connection, newAddress);
                     }
-                    break;
+                    return true;
+                case FAILED:
+                    return false;
                 case DISCARD:
                     failover(removeConnection(connection, oldAddress).getFailover());
-                    break;
+                    return true;
                 case NONE:
                 default:
-                    break;
+                    return true;
             }
+        }
+
+    }
+
+    private static class DbFailoverAddress extends DbAddress {
+
+        @Getter
+        private final DbAddress oldAddress;
+
+        DbFailoverAddress(DbAddress newAddress, DbAddress oldAddress) {
+            super(newAddress.getType(), newAddress.getAddress(), newAddress.getNodes());
+            this.oldAddress = oldAddress;
         }
     }
 }

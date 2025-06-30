@@ -40,9 +40,13 @@ public class DbAddress {
     }
 
     public DbAddress(String type, String address) {
+        this(type, address, split(address));
+    }
+
+    protected DbAddress(String type, String address, String[] nodes) {
         this.type = type;
         this.address = address;
-        this.nodes = split(address);
+        this.nodes = nodes;
     }
 
     @Override

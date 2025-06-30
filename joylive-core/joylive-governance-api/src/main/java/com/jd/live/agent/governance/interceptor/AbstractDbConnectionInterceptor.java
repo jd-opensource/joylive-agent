@@ -18,7 +18,10 @@ package com.jd.live.agent.governance.interceptor;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.db.*;
+import com.jd.live.agent.governance.db.DbCandidate;
+import com.jd.live.agent.governance.db.DbConnection;
+import com.jd.live.agent.governance.db.DbFailover;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
@@ -46,8 +49,6 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
 
     protected final Map<String, DbUrlParser> parsers;
 
-    protected final DbConnectionSupervisor connectionSupervisor;
-
     protected final Consumer<C> closer;
 
     public AbstractDbConnectionInterceptor(InvocationContext context) {
@@ -55,7 +56,6 @@ public abstract class AbstractDbConnectionInterceptor<C extends DbConnection> ex
         this.publisher = context.getDatabasePublisher();
         this.timer = context.getTimer();
         this.parsers = context.getDbUrlParsers();
-        this.connectionSupervisor = context.getDbConnectionSupervisor();
         this.closer = connectionSupervisor::removeConnection;
         publisher.addHandler(this::onEvent);
     }

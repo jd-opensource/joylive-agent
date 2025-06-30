@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.lettuce.v6.interceptor;
+package com.jd.live.agent.plugin.failover.jedis.v3.connection;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.failover.lettuce.v6.context.LettuceContext;
+import com.jd.live.agent.governance.db.DbFailover;
+import lombok.Getter;
 
-/**
- * IgnoreSentinelInterceptor
- */
-public class IgnoreSentinelInterceptor extends InterceptorAdaptor {
+@Getter
+public class JedisFailoverConnection
+        extends JedisConnectionAdapter<org.springframework.data.redis.connection.jedis.JedisConnection>
+        implements JedisConnection {
 
+    protected volatile DbFailover failover;
 
-    public void onEnter(ExecutableContext ctx) {
-        LettuceContext.ignore();
+    public JedisFailoverConnection(org.springframework.data.redis.connection.jedis.JedisConnection delegate, DbFailover failover) {
+        super(delegate);
+        this.failover = failover;
     }
-
-    @Override
-    public void onExit(ExecutableContext ctx) {
-        LettuceContext.remove();
-    }
-
 }

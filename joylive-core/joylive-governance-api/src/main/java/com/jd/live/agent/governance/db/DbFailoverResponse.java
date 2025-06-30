@@ -22,6 +22,8 @@ public enum DbFailoverResponse {
 
     SUCCESS,
 
+    FAILED,
+
     DISCARD,
 
     NONE,
