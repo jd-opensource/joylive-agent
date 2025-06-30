@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -176,6 +178,66 @@ public class ClassUtils {
                 } catch (Throwable ignored) {
                 }
             }
+            return null;
+        }
+    }
+
+    /**
+     * Gets a declared method by name from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type       the class to search
+     * @param methodName the method name
+     * @return the method if found, null otherwise
+     */
+    public static Method getDeclaredMethod(Class<?> type, String methodName) {
+        return getDeclaredMethod(type, m -> m.getName().equals(methodName));
+    }
+
+    /**
+     * Gets a declared method by name from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type           the class to search
+     * @param methodName     the method name
+     * @param parameterTypes the method parameter types
+     * @return the method if found, null otherwise
+     */
+    public static Method getDeclaredMethod(Class<?> type, String methodName, Class<?>[] parameterTypes) {
+        return getDeclaredMethod(type, m -> m.getName().equals(methodName) && Arrays.equals(parameterTypes, m.getParameterTypes()));
+    }
+
+    /**
+     * Gets a declared method by name from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type      the class to search
+     * @param predicate the predicate to match
+     * @return the method if found, null otherwise
+     */
+    public static Method getDeclaredMethod(Class<?> type, Predicate<Method> predicate) {
+        Method[] methods = type.getDeclaredMethods();
+        for (Method method : methods) {
+            if (predicate.test(method)) {
+                method.setAccessible(true);
+                return method;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets a declared method by name from a class name and makes it accessible.
+     * Returns null if class not found or method not found.
+     *
+     * @param type       the fully qualified class name
+     * @param methodName the method name
+     * @return the method if found, null otherwise
+     */
+    public static Method getDeclaredMethod(String type, String methodName) {
+        try {
+            return getDeclaredMethod(Class.forName(type), m -> m.getName().equals(methodName));
+        } catch (ClassNotFoundException e) {
             return null;
         }
     }

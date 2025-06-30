@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v5.client;
 
-import com.jd.live.agent.governance.mq.AbstractMQClient;
-import com.jd.live.agent.governance.mq.MQClientRole;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.mq.AbstractMQClient;
+import com.jd.live.agent.governance.db.mq.MQClientRole;
+import com.jd.live.agent.governance.db.DbFailover;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
@@ -38,8 +38,8 @@ public class ProducerClient extends AbstractMQClient {
 
     private static final String FIELD_PRODUCER_IMPL = "defaultMQProducerImpl";
 
-    public ProducerClient(Object producer, ClusterRedirect address) {
-        super(producer, address);
+    public ProducerClient(Object producer, DbFailover failover) {
+        super(producer, failover);
     }
 
     @Override

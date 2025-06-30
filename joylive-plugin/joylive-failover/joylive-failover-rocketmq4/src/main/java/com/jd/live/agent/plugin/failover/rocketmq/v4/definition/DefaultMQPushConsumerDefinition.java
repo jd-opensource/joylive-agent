@@ -29,7 +29,7 @@ import com.jd.live.agent.plugin.failover.rocketmq.v4.condition.ConditionalOnFail
 import com.jd.live.agent.plugin.failover.rocketmq.v4.interceptor.DefaultMQPushConsumerInterceptor;
 
 @Injectable
-@Extension(value = "DefaultMQPushConsumerDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "DefaultMQPushConsumerDefinition_v4", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnFailoverRocketmq4Enabled
 @ConditionalOnClass(DefaultMQPushConsumerDefinition.TYPE)
 public class DefaultMQPushConsumerDefinition extends PluginDefinitionAdapter {

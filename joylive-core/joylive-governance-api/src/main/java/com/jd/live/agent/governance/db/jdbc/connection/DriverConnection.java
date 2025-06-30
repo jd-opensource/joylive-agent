@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.governance.db.jdbc.connection;
 
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.jdbc.datasource.LiveDataSource;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import lombok.Getter;
 
 import java.sql.Connection;
@@ -31,8 +31,8 @@ public class DriverConnection extends AbstractConnection {
     @Getter
     private final LiveDataSource dataSource;
 
-    public DriverConnection(Connection delegate, ClusterRedirect address, LiveDataSource dataSource) {
-        super(delegate, address);
+    public DriverConnection(Connection delegate, DbFailover failover, LiveDataSource dataSource) {
+        super(delegate, failover);
         this.dataSource = dataSource;
     }
 

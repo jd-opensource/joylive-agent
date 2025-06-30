@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.failover.rocketmq.v4.condition.ConditionalOnFailoverRocketmq4Enabled;
 import com.jd.live.agent.plugin.failover.rocketmq.v4.interceptor.PullCallbackInterceptor;
 
-@Extension(value = "PullCallbackDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "PullCallbackDefinition_v4", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnFailoverRocketmq4Enabled
 @ConditionalOnClass(PullCallbackDefinition.TYPE)
 public class PullCallbackDefinition extends PluginDefinitionAdapter {

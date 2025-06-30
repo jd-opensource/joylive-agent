@@ -107,6 +107,10 @@ public abstract class ExecutableContext extends AbstractAttributes {
         }
     }
 
+    public int getArgumentCount() {
+        return arguments == null ? 0 : arguments.length;
+    }
+
     /**
      * Attempts to acquire a lock using the provided lock context.
      *

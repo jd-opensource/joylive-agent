@@ -39,7 +39,7 @@ public class Address {
         this.port = port;
         this.ipv6 = ipv6;
         this.uriHost = !ipv6 ? host : ('[' + host + ']');
-        this.address = (ipv6 ? uriHost : host) + (port == null ? "" : ":" + port);
+        this.address = port == null ? uriHost : (uriHost + ":" + port);
     }
 
     @Override
@@ -55,6 +55,17 @@ public class Address {
      */
     public static Address parse(String address) {
         return parse(address, true, null);
+    }
+
+    /**
+     * Parses an address string with specified port.
+     *
+     * @param address the address string to parse (may contain port)
+     * @param port    the default port to use if not specified in address
+     * @return parsed Address object, or null for empty input
+     */
+    public static Address parse(String address, int port) {
+        return parse(address, false, port);
     }
 
     /**
@@ -75,7 +86,7 @@ public class Address {
             if (endChar == ']') {
                 return new Address(address.substring(1, address.length() - 1), defPort, true);
             }
-            int pos = !addressWithPort ? -1 : address.lastIndexOf(']');
+            int pos = address.lastIndexOf(']');
             if (pos > 0) {
                 if (address.charAt(pos + 1) == ':') {
                     try {

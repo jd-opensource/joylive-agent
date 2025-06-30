@@ -74,6 +74,11 @@ public interface PluginDefinition {
     int ORDER_PROTECT = ORDER_ROUTER + 1000;
 
     /**
+     * Order for failover-level plugins. These are the last to be applied before user plugins.
+     */
+    int ORDER_FAILOVER = ORDER_PROTECT + 1000;
+
+    /**
      * Returns the matcher used to determine if this plugin should be applied to a given class.
      *
      * @return The element matcher that defines the criteria for matching classes.

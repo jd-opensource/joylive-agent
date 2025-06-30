@@ -1,0 +1,3 @@
+com.jd.live.agent.plugin.failover.lettuce.v6.definition.RedisClientDefinition
+com.jd.live.agent.plugin.failover.lettuce.v6.definition.SentinelTopologyDefinition
+com.jd.live.agent.plugin.failover.lettuce.v6.definition.RedisClusterClientDefinition

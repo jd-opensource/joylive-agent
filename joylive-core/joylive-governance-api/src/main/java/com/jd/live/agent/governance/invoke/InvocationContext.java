@@ -28,6 +28,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.HostConfig;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.db.DbConnectionSupervisor;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -159,6 +160,8 @@ public interface InvocationContext {
      * @return map of database URL parsers by type
      */
     Map<String, DbUrlParser> getDbUrlParsers();
+
+    DbConnectionSupervisor getDbConnectionSupervisor();
 
     /**
      * Returns the CounterManager associated with this instance.
@@ -776,6 +779,11 @@ public interface InvocationContext {
         @Override
         public Map<String, DbUrlParser> getDbUrlParsers() {
             return delegate.getDbUrlParsers();
+        }
+
+        @Override
+        public DbConnectionSupervisor getDbConnectionSupervisor() {
+            return delegate.getDbConnectionSupervisor();
         }
 
         @Override

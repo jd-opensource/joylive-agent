@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v5.client;
 
-import com.jd.live.agent.governance.mq.MsgQueue;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.mq.MsgQueue;
+import com.jd.live.agent.governance.db.DbFailover;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.store.OffsetStore;
 import org.apache.rocketmq.client.exception.MQClientException;
@@ -46,8 +46,8 @@ public class MQPushConsumerClient extends AbstractRocketMQConsumer {
 
     private static final String FIELD_CONSUMER_IMPL = "defaultMQPushConsumerImpl";
 
-    public MQPushConsumerClient(Object consumer, ClusterRedirect address) {
-        super(consumer, address);
+    public MQPushConsumerClient(Object consumer, DbFailover failover) {
+        super(consumer, failover);
         addMessageHook(getQuietly(consumer, FIELD_CONSUMER_IMPL));
     }
 

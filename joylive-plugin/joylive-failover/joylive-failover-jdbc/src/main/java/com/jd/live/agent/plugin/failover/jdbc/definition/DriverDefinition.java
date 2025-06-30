@@ -29,7 +29,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.jdbc.interceptor.DriverConnectInterceptor;
 
 @Injectable
-@Extension(value = "DriverDefinition", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "DriverDefinition", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnFailoverDBEnabled
 @ConditionalOnClass(DriverDefinition.TYPE)
 public class DriverDefinition extends PluginDefinitionAdapter {

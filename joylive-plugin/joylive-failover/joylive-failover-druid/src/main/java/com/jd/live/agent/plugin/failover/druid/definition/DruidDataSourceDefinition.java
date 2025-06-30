@@ -29,7 +29,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.druid.interceptor.DruidJdbcConnectionInterceptor;
 
 @Injectable
-@Extension(value = "DruidDataSourceDefinition", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "DruidDataSourceDefinition", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnFailoverDBEnabled
 @ConditionalOnClass(DruidDataSourceDefinition.TYPE)
 public class DruidDataSourceDefinition extends PluginDefinitionAdapter {

@@ -15,6 +15,10 @@
  */
 package com.jd.live.agent.governance.db.jdbc.connection;
 
+import com.jd.live.agent.governance.db.DbAddress;
+import com.jd.live.agent.governance.db.DbFailover;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -28,25 +32,8 @@ public abstract class PooledConnection extends AbstractConnection {
     protected final DriverConnection driver;
 
     public PooledConnection(Connection delegate, DriverConnection driver) {
-        super(delegate, driver.getAddress());
+        super(delegate, driver.getFailover());
         this.driver = driver;
-    }
-
-    /**
-     * Forcefully evicts and closes this connection.
-     * Performs full cleanup including driver resources.
-     *
-     * @throws SQLException if any close operation fails
-     */
-    public void evict() throws SQLException {
-        try {
-            closed = true;
-            evictConnection();
-            driver.close();
-            close();
-        } finally {
-            doClose();
-        }
     }
 
     @Override
@@ -61,6 +48,27 @@ public abstract class PooledConnection extends AbstractConnection {
     @Override
     public int hashCode() {
         return Objects.hash(driver);
+    }
+
+    @Override
+    public DbFailoverResponse failover(DbAddress newAddress) {
+        // TODO check origin evict
+        DbFailover newDirect = failover.newAddress(newAddress);
+        try {
+            closed = true;
+            // disable return to pool
+            evictConnection();
+            driver.close();
+            // close will not return to data source after eviction
+            close();
+        } catch (SQLException ignored) {
+            // ignore
+        } finally {
+            // 2nd close to ensure no resources are leaked
+            doClose();
+        }
+        this.failover = newDirect;
+        return DbFailoverResponse.DISCARD;
     }
 
     /**

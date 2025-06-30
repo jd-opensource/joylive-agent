@@ -93,6 +93,13 @@ public abstract class AbstractListener<T> implements PolicyListener {
         return false;
     }
 
+    /**
+     * Updates the policy based on the given event.
+     * Logs success and triggers callbacks if the update succeeds.
+     *
+     * @param event the policy event triggering the update
+     * @return true if update was successful, false otherwise
+     */
     protected boolean doUpdate(PolicyEvent event) {
         if (supervisor.update(policy -> newPolicy(policy, event), this::onSuccess)) {
             logger.info("Success {} {}", event.getType().getDescription(), event.getDescription());
@@ -102,6 +109,13 @@ public abstract class AbstractListener<T> implements PolicyListener {
         return false;
     }
 
+    /**
+     * Callback invoked when policy update succeeds.
+     * Default implementation does nothing - override to add custom behavior.
+     *
+     * @param oldPolicy the policy before update
+     * @param newPolicy the policy after update
+     */
     protected void onSuccess(GovernancePolicy oldPolicy, GovernancePolicy newPolicy) {
 
     }

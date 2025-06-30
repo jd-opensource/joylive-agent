@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v5.client;
 
-import com.jd.live.agent.governance.mq.AbstractMQConsumer;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.mq.AbstractMQConsumer;
+import com.jd.live.agent.governance.db.DbFailover;
 import org.apache.rocketmq.client.ClientConfig;
 
 import static com.jd.live.agent.plugin.failover.rocketmq.v5.client.RocketMQConfig.TYPE_ROCKETMQ;
@@ -27,8 +27,8 @@ import static com.jd.live.agent.plugin.failover.rocketmq.v5.client.RocketMQConfi
  */
 public abstract class AbstractRocketMQConsumer extends AbstractMQConsumer {
 
-    public AbstractRocketMQConsumer(Object target, ClusterRedirect address) {
-        super(target, address);
+    public AbstractRocketMQConsumer(Object target, DbFailover failover) {
+        super(target, failover);
     }
 
     @Override

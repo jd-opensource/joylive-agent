@@ -15,6 +15,17 @@
  */
 package com.jd.live.agent.governance.event;
 
+import lombok.Getter;
+
+@Getter
 public class DatabaseEvent {
 
+    private Object receiver;
+
+    public DatabaseEvent() {
+    }
+
+    public DatabaseEvent(Object receiver) {
+        this.receiver = receiver;
+    }
 }

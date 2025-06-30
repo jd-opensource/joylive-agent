@@ -17,8 +17,8 @@ package com.jd.live.agent.governance.db.jdbc.connection;
 
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.db.DbConnection;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.request.DbRequest;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
 import lombok.Getter;
 
 import java.sql.*;
@@ -35,12 +35,12 @@ public abstract class AbstractConnection implements Connection, DbConnection {
     protected final Connection delegate;
 
     @Getter
-    protected final ClusterRedirect address;
+    protected volatile DbFailover failover;
 
     protected volatile boolean closed;
 
-    public AbstractConnection(Connection delegate, ClusterRedirect address) {
-        this.address = address;
+    public AbstractConnection(Connection delegate, DbFailover failover) {
+        this.failover = failover;
         this.delegate = delegate;
     }
 
