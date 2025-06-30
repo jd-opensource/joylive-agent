@@ -455,6 +455,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-jedis4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-protection-jedis5</artifactId>
         </dependency>
         <dependency>
@@ -480,6 +484,10 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-failover-hikaricp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jedis4</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
