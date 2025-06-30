@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v4.interceptor;
+package com.jd.live.agent.plugin.failover.jedis.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
@@ -25,12 +26,14 @@ import com.jd.live.agent.governance.db.DbCandidate;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.plugin.failover.jedis.v4.config.JedisAddress;
-import com.jd.live.agent.plugin.failover.jedis.v4.connection.JedisConnection;
-import com.jd.live.agent.plugin.failover.jedis.v4.connection.JedisSentinelPoolConnection;
+import com.jd.live.agent.plugin.failover.jedis.v3.config.JedisAddress;
+import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisConnection;
+import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisSentinelPoolConnection;
 import org.apache.commons.pool2.impl.DefaultPooledObjectInfo;
-import redis.clients.jedis.HostAndPort;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisSentinelPool;
 
 import java.lang.reflect.Method;
@@ -47,28 +50,53 @@ public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(JedisSentinelPoolInterceptor.class);
 
+    private static final LockContext lock = new LockContext.DefaultLockContext();
+
     public JedisSentinelPoolInterceptor(InvocationContext context) {
         super(context, MULTI_ADDRESS_SEMICOLON_RESOLVER);
     }
 
     @Override
+    public void onEnter(ExecutableContext ctx) {
+        // avoid calling constructor recursively
+        ctx.tryLock(lock);
+    }
+
+    @Override
+    public void onSuccess(ExecutableContext ctx) {
+        if (ctx.isLocked()) {
+            super.onSuccess(ctx);
+        }
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        ctx.unlock();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     protected JedisConnection createConnection(ExecutableContext ctx) {
         String masterName = ctx.getArgument(0);
-        Set<HostAndPort> sentinels = ctx.getArgument(1);
         JedisSentinelPool sentinelPool = (JedisSentinelPool) ctx.getTarget();
-        JedisClientConfig clientConfig = ctx.getArgument(ctx.getArgumentCount() - 1);
+        JedisClientConfig clientConfig = (JedisClientConfig) Accessor.clientConfig.get(sentinelPool);
+        GenericObjectPool<Jedis> internalPool = (GenericObjectPool<Jedis>) Accessor.internalPool.get(sentinelPool);
+        // maybe Set<String> or Set<HostAndPort>
+        Set<?> sentinels = ctx.getArgument(1);
         List<String> addresses = toList(sentinels, JedisAddress::getFailover);
         AccessMode accessMode = getAccessMode(clientConfig);
         DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisSentinelPoolConnection(sentinelPool, DbFailover.of(candidate), Accessor.pooledObject, masterName,
-                Accessor.masterListeners, Accessor.initSentinels, Accessor.shutdown);
+        return new JedisSentinelPoolConnection(sentinelPool, DbFailover.of(candidate), internalPool, Accessor.pooledObject,
+                masterName, Accessor.masterListeners, Accessor.initSentinels, Accessor.shutdown);
     }
 
     private static class Accessor {
 
+        private static final UnsafeFieldAccessor internalPool = UnsafeFieldAccessorFactory.getAccessor(JedisPool.class, "internalPool");
+        private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisSentinelPool.class, "sentinelClientConfig");
         private static final UnsafeFieldAccessor masterListeners = UnsafeFieldAccessorFactory.getAccessor(JedisSentinelPool.class, "masterListeners");
         private static final UnsafeFieldAccessor pooledObject = UnsafeFieldAccessorFactory.getAccessor(DefaultPooledObjectInfo.class, "pooledObject");
         private static final Method initSentinels = ClassUtils.getDeclaredMethod(JedisSentinelPool.class, "initSentinels");

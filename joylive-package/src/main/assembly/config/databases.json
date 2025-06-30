@@ -119,6 +119,35 @@
             "accessMode": "NONE"
           }
         ]
+      },
+      {
+        "id": "5",
+        "type": "redis",
+        "name": "redis-group-1",
+        "databases": [
+          {
+            "id": "7",
+            "name": "redis-1",
+            "addresses": [
+              "redis.live.local:31597"
+            ],
+            "unit": "unit1",
+            "cell": "cell1",
+            "role": "MASTER",
+            "accessMode": "READ_WRITE"
+          },
+          {
+            "id": "8",
+            "name": "redis-2",
+            "addresses": [
+              "redis.live.local:31126"
+            ],
+            "unit": "unit1",
+            "cell": "cell2",
+            "role": "SLAVE",
+            "accessMode": "NONE"
+          }
+        ]
       }
     ]
   }
