@@ -35,11 +35,6 @@ public class JedisConfig implements JedisClientConfig {
     }
 
     @Override
-    public RedisProtocol getRedisProtocol() {
-        return config == null ? null : config.getRedisProtocol();
-    }
-
-    @Override
     public int getConnectionTimeoutMillis() {
         return config == null ? Protocol.DEFAULT_TIMEOUT : config.getConnectionTimeoutMillis();
     }
@@ -104,11 +99,6 @@ public class JedisConfig implements JedisClientConfig {
     @Override
     public HostAndPortMapper getHostAndPortMapper() {
         return new JedisAddressMapper(config == null ? null : config.getHostAndPortMapper(), mapper);
-    }
-
-    @Override
-    public boolean isReadOnlyForRedisClusterReplicas() {
-        return config != null && config.isReadOnlyForRedisClusterReplicas();
     }
 
     @Override
