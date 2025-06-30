@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.failover.jedis.v5.interceptor.JedisClusterInterc
 @ConditionalOnClass(JedisClusterDefinition.TYPE)
 public class JedisClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "redis.clients.jedis.JedisCluster.JedisCluster";
+    protected static final String TYPE = "redis.clients.jedis.JedisCluster";
 
     private static final String[] ARGUMENTS1 = {
             "redis.clients.jedis.providers.ClusterConnectionProvider",

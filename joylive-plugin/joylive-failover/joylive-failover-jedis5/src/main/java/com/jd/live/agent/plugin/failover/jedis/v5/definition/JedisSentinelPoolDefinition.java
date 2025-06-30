@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.failover.jedis.v5.interceptor.JedisSentinelPoolI
 @ConditionalOnClass(JedisSentinelPoolDefinition.TYPE)
 public class JedisSentinelPoolDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "redis.clients.jedis.JedisSentinelPool.JedisSentinelPool";
+    protected static final String TYPE = "redis.clients.jedis.JedisSentinelPool";
 
     private static final String[] ARGUMENTS1 = {
             "java.lang.String",

@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.failover.jedis.v5.interceptor.JedisPoolIntercept
 @ConditionalOnClass(JedisPoolDefinition.TYPE)
 public class JedisPoolDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "redis.clients.jedis.JedisPool.JedisPool";
+    protected static final String TYPE = "redis.clients.jedis.JedisPool";
 
     private static final String[] ARGUMENTS_CONSTRUCTOR = {
             "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
