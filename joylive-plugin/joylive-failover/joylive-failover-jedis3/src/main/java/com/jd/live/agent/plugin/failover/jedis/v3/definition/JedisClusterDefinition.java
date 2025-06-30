@@ -124,7 +124,6 @@ public class JedisClusterDefinition extends PluginDefinitionAdapter {
             "int",
             "java.lang.String",
             "java.lang.String",
-            "java.lang.String",
             "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
             "boolean",
             "javax.net.ssl.SSLSocketFactory",
@@ -135,7 +134,6 @@ public class JedisClusterDefinition extends PluginDefinitionAdapter {
 
     private static final String[] ARGUMENTS10 = {
             "java.util.Set",
-            "int",
             "int",
             "int",
             "int",
@@ -165,7 +163,39 @@ public class JedisClusterDefinition extends PluginDefinitionAdapter {
             "javax.net.ssl.SSLParameters",
             "javax.net.ssl.HostnameVerifier",
             "redis.clients.jedis.JedisClusterHostAndPortMap",
+    };
+
+    private static final String[] ARGUMENTS12 = {
+            "java.util.Set",
+            "int",
+            "int",
+            "int",
+            "int",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
+            "boolean",
+            "javax.net.ssl.SSLSocketFactory",
+            "javax.net.ssl.SSLParameters",
+            "javax.net.ssl.HostnameVerifier",
+            "redis.clients.jedis.JedisClusterHostAndPortMap",
             "java.time.Duration"
+    };
+
+    private static final String[] ARGUMENTS13 = {
+            "java.util.Set",
+            "redis.clients.jedis.JedisClientConfig",
+            "int",
+            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
+    };
+
+    private static final String[] ARGUMENTS14 = {
+            "java.util.Set",
+            "redis.clients.jedis.JedisClientConfig",
+            "int",
+            "java.time.Duration",
+            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
@@ -195,6 +225,12 @@ public class JedisClusterDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS10)),
                         () -> new JedisClusterInterceptor(context)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS11)),
+                        () -> new JedisClusterInterceptor(context)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS12)),
+                        () -> new JedisClusterInterceptor(context)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS13)),
+                        () -> new JedisClusterInterceptor(context)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS14)),
                         () -> new JedisClusterInterceptor(context)),
         };
     }

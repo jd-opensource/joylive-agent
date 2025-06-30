@@ -47,8 +47,9 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
     @SuppressWarnings("unchecked")
     @Override
     protected JedisConnection createConnection(ExecutableContext ctx) {
-        // change HostAndPortMapper of jedis client config in constructor
-        PooledObjectFactory<Jedis> factory = ctx.getArgument(1);
+        JedisPool jedisPool = (JedisPool) ctx.getTarget();
+        GenericObjectPool<Jedis> internalPool = (GenericObjectPool<Jedis>) Accessor.internalPool.get(jedisPool);
+        PooledObjectFactory<Jedis> factory = (PooledObjectFactory<Jedis>) Accessor.factory.get(internalPool);
         if (!(factory instanceof JedisFactory)) {
             return null;
         }
@@ -58,8 +59,6 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
             return null;
         }
 
-        JedisPool jedisPool = (JedisPool) ctx.getTarget();
-        GenericObjectPool<Jedis> internalPool = (GenericObjectPool<Jedis>) Accessor.internalPool.get(jedisPool);
         HostAndPort hostAndPort = (HostAndPort) Accessor.hostAndPort.get(socketFactory);
         AccessMode accessMode = getAccessMode(clientConfig);
         DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, JedisAddress.getFailover(hostAndPort), accessMode, addressResolver);
@@ -75,6 +74,7 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
     private static class Accessor {
 
         private static final UnsafeFieldAccessor internalPool = UnsafeFieldAccessorFactory.getAccessor(JedisPool.class, "internalPool");
+        private static final UnsafeFieldAccessor factory = UnsafeFieldAccessorFactory.getAccessor(GenericObjectPool.class, "factory");
         private static final UnsafeFieldAccessor socketFactory = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "jedisSocketFactory");
         private static final UnsafeFieldAccessor config = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
         private static final UnsafeFieldAccessor hostAndPort = UnsafeFieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPort");

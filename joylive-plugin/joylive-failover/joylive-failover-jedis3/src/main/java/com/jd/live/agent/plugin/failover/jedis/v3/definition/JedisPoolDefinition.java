@@ -36,9 +36,20 @@ public class JedisPoolDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "redis.clients.jedis.JedisPool";
 
-    private static final String[] ARGUMENTS_CONSTRUCTOR = {
+    private static final String[] ARGUMENTS0 = {
             "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
             "org.apache.commons.pool2.PooledObjectFactory"
+    };
+
+    private static final String[] ARGUMENTS1 = {
+            "java.lang.String",
+    };
+
+    private static final String[] ARGUMENTS2 = {
+            "java.lang.String",
+            "javax.net.ssl.SSLSocketFactory",
+            "javax.net.ssl.SSLParameters",
+            "javax.net.ssl.HostnameVerifier"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
@@ -48,8 +59,11 @@ public class JedisPoolDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR)),
-                        () -> new JedisPoolInterceptor(context)),
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS0)), () -> new JedisPoolInterceptor(context)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS1)), () -> new JedisPoolInterceptor(context)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS2)), () -> new JedisPoolInterceptor(context)),
         };
     }
 }
