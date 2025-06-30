@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v5.condition;
+package com.jd.live.agent.plugin.failover.jedis.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
@@ -28,10 +29,13 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnFailoverDBEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_REDIS_ENABLED)
-@ConditionalOnMissingClass(ConditionalOnFailoverJedis5Enabled.TYPE_ABSTRACT_PIPELINE)
+@ConditionalOnClass(ConditionalOnFailoverJedis4Enabled.TYPE_GEO_UNIT)
+@ConditionalOnMissingClass(ConditionalOnFailoverJedis4Enabled.TYPE_ABSTRACT_PIPELINE)
 @ConditionalComposite
-public @interface ConditionalOnFailoverJedis5Enabled {
+public @interface ConditionalOnFailoverJedis4Enabled {
 
     String TYPE_ABSTRACT_PIPELINE = "redis.clients.jedis.AbstractPipeline";
+
+    String TYPE_GEO_UNIT = "redis.clients.jedis.args.GeoUnit";
 
 }
