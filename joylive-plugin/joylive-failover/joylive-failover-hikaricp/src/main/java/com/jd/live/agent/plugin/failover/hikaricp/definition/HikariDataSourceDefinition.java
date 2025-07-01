@@ -29,7 +29,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.hikaricp.interceptor.HikariJdbcConnectionInterceptor;
 
 @Injectable
-@Extension(value = "HikariPoolBaseDefinition", order = PluginDefinition.ORDER_PROTECT)
+@Extension(value = "HikariPoolBaseDefinition", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnFailoverDBEnabled
 @ConditionalOnClass(HikariDataSourceDefinition.TYPE)
 public class HikariDataSourceDefinition extends PluginDefinitionAdapter {

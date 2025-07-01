@@ -40,6 +40,8 @@ import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.AutoDetect;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.context.bag.Propagation.AutoPropagation;
+import com.jd.live.agent.governance.db.DbConnectionManager;
+import com.jd.live.agent.governance.db.DbConnectionSupervisor;
 import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
@@ -202,6 +204,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     private Registry registry;
 
+    @Getter
+    private DbConnectionSupervisor dbConnectionSupervisor;
+
     private List<String> serviceSyncers;
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
@@ -326,6 +331,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             source.add(PolicySupervisor.COMPONENT_POLICY_SUPPLIER, this);
             source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
             source.add(Propagation.COMPONENT_PROPAGATION, propagation);
+            source.add(DbConnectionSupervisor.COMPONENT_DB_CONNECTION_SUPERVISOR, dbConnectionSupervisor);
             if (governanceConfig != null) {
                 source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
                 source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig.getServiceConfig());
@@ -409,6 +415,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         governanceConfig.initialize(application);
         counterManager = new InternalCounterManager(timer);
         propagation = buildPropagation();
+        dbConnectionSupervisor = new DbConnectionManager(this, application.getLocation(), timer);
         systemPublisher.addHandler(events -> {
             for (Event<AgentEvent> event : events) {
                 if (event.getData().getType() == EventType.AGENT_SERVICE_READY) {

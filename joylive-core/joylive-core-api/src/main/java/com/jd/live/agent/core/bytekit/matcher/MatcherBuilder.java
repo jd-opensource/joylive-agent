@@ -221,6 +221,16 @@ public class MatcherBuilder {
     }
 
     /**
+     * Creates a matcher that matches default constructor.
+     *
+     * @param <T> The type of the element.
+     * @return A matcher that matches default constructor.
+     */
+    public static <T extends MethodDesc> Junction<T> isDefaultConstructor() {
+        return new MethodTypeMatcher<>(MethodType.CONSTRUCTOR).and(MatcherBuilder.arguments(0));
+    }
+
+    /**
      * Creates a matcher that matches elements that are methods (excluding constructors).
      *
      * @param <T> The type of the element.

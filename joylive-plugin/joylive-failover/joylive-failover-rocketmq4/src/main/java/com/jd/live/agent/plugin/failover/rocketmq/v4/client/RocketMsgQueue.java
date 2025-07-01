@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.failover.rocketmq.v4.client;
 
-import com.jd.live.agent.governance.mq.MsgQueue;
+import com.jd.live.agent.governance.db.mq.MsgQueue;
 import lombok.Getter;
 import org.apache.rocketmq.common.message.MessageQueue;
 

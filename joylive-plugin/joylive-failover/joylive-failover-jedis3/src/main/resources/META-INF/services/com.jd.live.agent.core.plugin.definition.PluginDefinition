@@ -1,0 +1,4 @@
+com.jd.live.agent.plugin.failover.jedis.v3.definition.JedisClusterDefinition
+com.jd.live.agent.plugin.failover.jedis.v3.definition.JedisPoolDefinition
+com.jd.live.agent.plugin.failover.jedis.v3.definition.JedisSentinelPoolDefinition
+com.jd.live.agent.plugin.failover.jedis.v3.definition.JedisConnectionFactoryDefinition

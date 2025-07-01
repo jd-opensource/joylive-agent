@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.failover.rocketmq.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.governance.interceptor.AbstractMQFailoverInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.mq.MQClient;
-import com.jd.live.agent.governance.mq.MQClientConfig;
-import com.jd.live.agent.governance.util.network.ClusterRedirect;
+import com.jd.live.agent.governance.db.mq.MQClient;
+import com.jd.live.agent.governance.db.mq.MQClientConfig;
+import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.plugin.failover.rocketmq.v4.client.LitePullConsumerClient;
 import com.jd.live.agent.plugin.failover.rocketmq.v4.client.RocketMQConfig;
 
@@ -39,7 +39,7 @@ public class DefaultLitePullConsumerInterceptor extends AbstractMQFailoverInterc
     }
 
     @Override
-    protected MQClient createClient(ExecutableContext ctx, ClusterRedirect redirect) {
-        return new LitePullConsumerClient(ctx.getTarget(), redirect);
+    protected MQClient createClient(ExecutableContext ctx, DbFailover failover) {
+        return new LitePullConsumerClient(ctx.getTarget(), failover);
     }
 }

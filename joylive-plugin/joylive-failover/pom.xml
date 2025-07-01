@@ -18,5 +18,10 @@
         <module>joylive-failover-hikaricp</module>
         <module>joylive-failover-rocketmq5</module>
         <module>joylive-failover-rocketmq4</module>
+        <module>joylive-failover-jedis3</module>
+        <module>joylive-failover-jedis4</module>
+        <module>joylive-failover-jedis5</module>
+        <module>joylive-failover-jedis6</module>
+        <module>joylive-failover-lettuce6</module>
     </modules>
 </project>

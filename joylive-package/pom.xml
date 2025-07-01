@@ -435,10 +435,6 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-protection-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
             <artifactId>joylive-protection-rocketmq4</artifactId>
         </dependency>
         <dependency>
@@ -459,6 +455,26 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-jedis3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-jedis4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-jedis5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-jedis6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-protection-lettuce6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-failover-rocketmq4</artifactId>
         </dependency>
         <dependency>
@@ -476,6 +492,26 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-failover-hikaricp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jedis3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jedis4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jedis5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-jedis6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-lettuce6</artifactId>
         </dependency>
     </dependencies>
 

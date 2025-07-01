@@ -7,14 +7,13 @@
 3. Added support for Kafka 4.0
 4. Refactored the registration module to enhance multi-registration and multi-subscription support
 5. Added support for active-standby cluster failover of Zookeeper in multi-active scenarios
-6. Added support for database protection and active-standby cluster switching in multi-active scenarios, currently supporting active-standby cluster switching for Druid, HikariCP, and MongoDB.
-7. Added support for active-standby cluster failover of RocketMQ in multi-active scenarios
-8. Added dependency service warm-up support when migrating traditional Spring Boot applications to microservices
-9. Added support for XMLPath and JavaPath to extract exception error codes for exception determination in circuit breaking and retry mechanisms
-10. Added support for virtual threads in Tomcat
-11. Enhanced Dubbo framework compatibility and support
-12. Improved message routing in multi-active scenarios
-13. Fixed miscellaneous issues
+6. Added support for database protection and active-standby cluster switching in multi-active scenarios, currently supporting active-standby cluster switching for Druid, HikariCP, MongoDB, Rocketmq, Jedis, and Lettuce.
+7. Added dependency service warm-up support when migrating traditional Spring Boot applications to microservices
+8. Added support for XMLPath and JavaPath to extract exception error codes for exception determination in circuit breaking and retry mechanisms
+9. Added support for virtual threads in Tomcat
+10. Enhanced Dubbo framework compatibility and support
+11. Improved message routing in multi-active scenarios
+12. Fixed miscellaneous issues
 
 ## 1.7.0
 
