@@ -27,6 +27,7 @@ import com.jd.live.agent.plugin.failover.jedis.v6.connection.JedisFailoverConnec
 import com.jd.live.agent.plugin.failover.jedis.v6.connection.JedisSpringConnection;
 import com.jd.live.agent.plugin.failover.jedis.v6.context.JedisContext;
 import org.springframework.data.redis.connection.RedisClusterConnection;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
 /**
@@ -44,7 +45,7 @@ public class JedisSpringGetConnectionInterceptor extends AbstractJedisIntercepto
     protected JedisConnection createConnection(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         JedisConnectionFactory connectionFactory = (JedisConnectionFactory) mc.getTarget();
-        org.springframework.data.redis.connection.jedis.JedisConnection connection = mc.getResult();
+        RedisConnection connection = mc.getResult();
         if (connection instanceof RedisClusterConnection) {
             // cluster connection is handled by JedisClusterInterceptor.
             return null;
@@ -55,7 +56,7 @@ public class JedisSpringGetConnectionInterceptor extends AbstractJedisIntercepto
             //  for recreate redis connection
             return null;
         }
-        JedisSpringConnection result = new JedisSpringConnection(connection, JedisContext.removeDbFailover(),
+        JedisSpringConnection result = new JedisSpringConnection((org.springframework.data.redis.connection.jedis.JedisConnection) connection, JedisContext.removeDbFailover(),
                 Accessor.jedis, addr -> recreate(connectionFactory), connectionSupervisor::removeConnection);
         mc.setResult(result);
         return result;
