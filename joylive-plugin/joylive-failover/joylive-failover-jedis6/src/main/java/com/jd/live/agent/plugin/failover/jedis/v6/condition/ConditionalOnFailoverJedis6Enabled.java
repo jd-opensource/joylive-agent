@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v5.condition;
+package com.jd.live.agent.plugin.failover.jedis.v6.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -28,10 +29,10 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnFailoverDBEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_REDIS_ENABLED)
-@ConditionalOnClass(ConditionalOnFailoverJedis5Enabled.TYPE_ABSTRACT_PIPELINE)
-@ConditionalOnClass(ConditionalOnFailoverJedis5Enabled.TYPE_REDIS_GRAPH_COMMANDS)
+@ConditionalOnClass(ConditionalOnFailoverJedis6Enabled.TYPE_ABSTRACT_PIPELINE)
+@ConditionalOnMissingClass(ConditionalOnFailoverJedis6Enabled.TYPE_REDIS_GRAPH_COMMANDS)
 @ConditionalComposite
-public @interface ConditionalOnFailoverJedis5Enabled {
+public @interface ConditionalOnFailoverJedis6Enabled {
 
     String TYPE_ABSTRACT_PIPELINE = "redis.clients.jedis.AbstractPipeline";
 

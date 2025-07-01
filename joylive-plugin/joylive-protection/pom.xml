@@ -28,6 +28,7 @@
         <module>joylive-protection-kafka2</module>
         <module>joylive-protection-kafka3</module>
         <module>joylive-protection-kafka4</module>
+        <module>joylive-protection-jedis6</module>
 
     </modules>
 

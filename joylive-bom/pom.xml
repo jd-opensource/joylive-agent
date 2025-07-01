@@ -615,6 +615,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-jedis6</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-protection-lettuce6</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -646,6 +651,11 @@
             <dependency>
                 <groupId>com.jd.live</groupId>
                 <artifactId>joylive-failover-jedis5</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-failover-jedis6</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
