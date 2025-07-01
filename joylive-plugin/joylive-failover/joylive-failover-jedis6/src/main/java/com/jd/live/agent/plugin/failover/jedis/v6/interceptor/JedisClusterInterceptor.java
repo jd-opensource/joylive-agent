@@ -64,7 +64,7 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         }
         return new JedisClusterConnection(cluster, DbFailover.of(candidate), addr -> {
             Accessor.cache.set(provider, new JedisClusterInfoCache(clientConfig, poolConfig, JedisAddress.getNodes(addr)));
-            executeQuietly(() -> Accessor.initializeSlotsCache.invoke(provider, JedisAddress.getNodes(addr), clientConfig));
+            executeQuietly(() -> Accessor.initializeSlotsCache(provider, JedisAddress.getNodes(addr), clientConfig));
             cache.reset();
         });
     }
