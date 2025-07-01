@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.core.util.StringUtils.join;
 
 /**
@@ -65,11 +66,19 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisClusterConnection(cluster, clientConfig, poolConfig, connectionHandler, DbFailover.of(candidate), Accessor.cache, Accessor.initializeSlotsCache);
+        return new JedisClusterConnection(cluster, DbFailover.of(candidate), addr -> {
+            Accessor.cache.set(connectionHandler, new JedisClusterInfoCache(poolConfig, clientConfig, JedisAddress.getNodes(addr)));
+            try {
+                Accessor.initializeSlotsCache.invoke(connectionHandler);
+            } catch (Throwable e) {
+                Throwable cause = getCause(e);
+                logger.error(cause.getMessage(), cause);
+            }
+            cache.reset();
+        });
     }
 
     private static class Accessor {
-
         @SuppressWarnings("deprecation")
         private static final UnsafeFieldAccessor connectionHandler = UnsafeFieldAccessorFactory.getAccessor(BinaryJedisCluster.class, "connectionHandler");
         private static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(JedisClusterConnectionHandler.class, "cache");
@@ -77,6 +86,5 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         private static final UnsafeFieldAccessor poolConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
         private static final UnsafeFieldAccessor startNodes = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
         private static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterInfoCache.class, "initializeSlotsCache");
-
     }
 }

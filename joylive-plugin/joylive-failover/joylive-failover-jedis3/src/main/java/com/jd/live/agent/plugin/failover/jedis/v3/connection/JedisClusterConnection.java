@@ -15,55 +15,27 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v3.connection;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.DbFailoverResponse;
-import com.jd.live.agent.plugin.failover.jedis.v3.config.JedisAddress;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import redis.clients.jedis.*;
+import redis.clients.jedis.JedisCluster;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
+import java.util.function.Consumer;
 
 public class JedisClusterConnection implements JedisConnection {
 
-    private static final Logger logger = LoggerFactory.getLogger(JedisClusterConnection.class);
+    private final JedisCluster cluster;
 
-    private final JedisCluster jedisCluster;
+    private final Consumer<DbAddress> onFailover;
 
-    private final JedisClientConfig clientConfig;
+    private volatile DbFailover failover;
 
-    private final GenericObjectPoolConfig<Jedis> poolConfig;
+    private volatile boolean closed;
 
-    private final JedisClusterConnectionHandler connectionHandler;
-
-    private final UnsafeFieldAccessor cache;
-
-    private final Method initializeSlotsCache;
-
-    private DbFailover failover;
-
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-
-    public JedisClusterConnection(JedisCluster jedisCluster,
-                                  JedisClientConfig clientConfig,
-                                  GenericObjectPoolConfig<Jedis> poolConfig,
-                                  JedisClusterConnectionHandler connectionHandler,
-                                  DbFailover failover,
-                                  UnsafeFieldAccessor cache,
-                                  Method initializeSlotsCache) {
-        this.jedisCluster = jedisCluster;
-        this.clientConfig = clientConfig;
-        this.poolConfig = poolConfig;
-        this.connectionHandler = connectionHandler;
+    public JedisClusterConnection(JedisCluster cluster, DbFailover failover, Consumer<DbAddress> onFailover) {
+        this.cluster = cluster;
         this.failover = failover;
-        this.cache = cache;
-        this.initializeSlotsCache = initializeSlotsCache;
+        this.onFailover = onFailover;
     }
 
     @Override
@@ -72,39 +44,22 @@ public class JedisClusterConnection implements JedisConnection {
     }
 
     @Override
-    public void close() {
-        if (closed.compareAndSet(false, true)) {
-            jedisCluster.close();
+    public synchronized void close() {
+        if (!closed) {
+            closed = true;
+            cluster.close();
         }
     }
 
     @Override
     public boolean isClosed() {
-        return closed.get();
+        return closed;
     }
 
     @Override
-    public DbFailoverResponse failover(DbAddress newAddress) {
-        this.failover = failover.newAddress(newAddress);
-        JedisClusterInfoCache jc = (JedisClusterInfoCache) cache.get(connectionHandler);
-        cache.set(connectionHandler, new JedisClusterInfoCache(poolConfig, clientConfig, JedisAddress.getNodes(newAddress)));
-        initializeSlotsCache();
-        jc.reset();
+    public synchronized DbFailoverResponse failover(DbAddress newAddress) {
+        failover = failover.newAddress(newAddress);
+        onFailover.accept(newAddress);
         return DbFailoverResponse.SUCCESS;
-    }
-
-    /**
-     * Initializes Redis slots cache if enabled.
-     * Logs any errors that occur during initialization.
-     */
-    private void initializeSlotsCache() {
-        if (initializeSlotsCache != null) {
-            try {
-                initializeSlotsCache.invoke(connectionHandler);
-            } catch (Throwable e) {
-                Throwable cause = getCause(e);
-                logger.error(cause.getMessage(), cause);
-            }
-        }
     }
 }

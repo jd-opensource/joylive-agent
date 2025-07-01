@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.core.util.StringUtils.join;
 
 /**
@@ -66,16 +67,23 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisClusterConnection(cluster, clientConfig, poolConfig, provider, DbFailover.of(candidate), Accessor.cache, Accessor.initializeSlotsCache);
+        return new JedisClusterConnection(cluster, DbFailover.of(candidate), addr -> {
+            Accessor.cache.set(provider, new JedisClusterInfoCache(clientConfig, poolConfig, JedisAddress.getNodes(addr)));
+            try {
+                Accessor.initializeSlotsCache.invoke(provider);
+            } catch (Throwable e) {
+                Throwable cause = getCause(e);
+                logger.error(cause.getMessage(), cause);
+            }
+            cache.reset();
+        });
     }
 
     private static class Accessor {
-
         private static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(ClusterConnectionProvider.class, "cache");
         private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
         private static final UnsafeFieldAccessor poolConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
         private static final UnsafeFieldAccessor startNodes = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
         private static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterInfoCache.class, "initializeSlotsCache");
-
     }
 }
