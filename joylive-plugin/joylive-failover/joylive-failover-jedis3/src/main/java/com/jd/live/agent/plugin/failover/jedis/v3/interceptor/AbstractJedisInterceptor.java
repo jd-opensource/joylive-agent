@@ -81,6 +81,7 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
      */
     protected abstract JedisConnection createConnection(ExecutableContext ctx);
 
+    // lazy load class to avoid class loading error
     protected static class Accessor {
         @SuppressWarnings("deprecation")
         protected static final UnsafeFieldAccessor connectionHandler = UnsafeFieldAccessorFactory.getAccessor(BinaryJedisCluster.class, "connectionHandler");
@@ -115,6 +116,7 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
          */
         @SuppressWarnings("unchecked")
         protected static void evict(Object pool) {
+            // lazy load class to avoid class loading error
             GenericObjectPool<Jedis> objectPool = (GenericObjectPool<Jedis>) pool;
             Set<DefaultPooledObjectInfo> objects = objectPool.listAllObjects();
             objects.forEach(o -> {
