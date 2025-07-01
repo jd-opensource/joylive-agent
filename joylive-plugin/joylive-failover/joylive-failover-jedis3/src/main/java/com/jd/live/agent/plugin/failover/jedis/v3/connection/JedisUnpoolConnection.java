@@ -17,15 +17,14 @@ package com.jd.live.agent.plugin.failover.jedis.v3.connection;
 
 import com.jd.live.agent.governance.db.DbFailover;
 import lombok.Getter;
+import org.springframework.data.redis.connection.RedisConnection;
 
 @Getter
-public class JedisFailoverConnection
-        extends JedisConnectionAdapter<org.springframework.data.redis.connection.jedis.JedisConnection>
-        implements JedisConnection {
+public class JedisUnpoolConnection extends JedisConnectionAdapter<RedisConnection> implements JedisConnection {
 
     protected volatile DbFailover failover;
 
-    public JedisFailoverConnection(org.springframework.data.redis.connection.jedis.JedisConnection delegate, DbFailover failover) {
+    public JedisUnpoolConnection(RedisConnection delegate, DbFailover failover) {
         super(delegate);
         this.failover = failover;
     }

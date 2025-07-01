@@ -18,8 +18,6 @@ package com.jd.live.agent.plugin.failover.jedis.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.governance.db.DbCandidate;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -29,7 +27,6 @@ import com.jd.live.agent.plugin.failover.jedis.v3.config.JedisConfig;
 import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisConnection;
 import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisPoolConnection;
 import org.apache.commons.pool2.PooledObjectFactory;
-import org.apache.commons.pool2.impl.DefaultPooledObjectInfo;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import redis.clients.jedis.*;
 
@@ -53,33 +50,21 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
         if (!(factory instanceof JedisFactory)) {
             return null;
         }
-        JedisClientConfig clientConfig = (JedisClientConfig) Accessor.config.get(factory);
+        JedisClientConfig clientConfig = (JedisClientConfig) Accessor.factoryClientConfig.get(factory);
         JedisSocketFactory socketFactory = (JedisSocketFactory) Accessor.socketFactory.get(factory);
         if (!(socketFactory instanceof DefaultJedisSocketFactory)) {
             return null;
         }
 
         HostAndPort hostAndPort = (HostAndPort) Accessor.hostAndPort.get(socketFactory);
-        AccessMode accessMode = getAccessMode(clientConfig);
+        AccessMode accessMode = getAccessMode(clientConfig.getClientName());
         DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, JedisAddress.getFailover(hostAndPort), accessMode, addressResolver);
-        JedisPoolConnection connection = new JedisPoolConnection(jedisPool, DbFailover.of(candidate), internalPool, Accessor.pooledObject);
+        JedisPoolConnection connection = new JedisPoolConnection(jedisPool, DbFailover.of(candidate), addr -> Accessor.evict(internalPool));
         JedisConfig config = new JedisConfig(clientConfig, hp -> connection.getHostAndPort());
-        Accessor.config.set(factory, config);
+        Accessor.factoryClientConfig.set(factory, config);
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
         return connection;
     }
-
-    private static class Accessor {
-
-        private static final UnsafeFieldAccessor internalPool = UnsafeFieldAccessorFactory.getAccessor(JedisPool.class, "internalPool");
-        private static final UnsafeFieldAccessor factory = UnsafeFieldAccessorFactory.getAccessor(GenericObjectPool.class, "factory");
-        private static final UnsafeFieldAccessor socketFactory = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "jedisSocketFactory");
-        private static final UnsafeFieldAccessor config = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
-        private static final UnsafeFieldAccessor hostAndPort = UnsafeFieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPort");
-        private static final UnsafeFieldAccessor pooledObject = UnsafeFieldAccessorFactory.getAccessor(DefaultPooledObjectInfo.class, "pooledObject");
-
-    }
-
 }

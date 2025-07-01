@@ -13,34 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v5.connection;
+package com.jd.live.agent.plugin.failover.jedis.v6.connection;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.DbFailoverResponse;
+import org.springframework.data.redis.connection.RedisConnection;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class JedisSpringConnection extends JedisFailoverConnection implements JedisConnection {
+public class JedisUnpoolSpringConnection extends JedisUnpoolConnection implements JedisConnection {
 
-    private final UnsafeFieldAccessor jedisAccessor;
-
-    private final Function<DbAddress, JedisFailoverConnection> creator;
+    private final Function<DbAddress, JedisUnpoolConnection> creator;
 
     private final Consumer<DbConnection> closer;
 
-    public JedisSpringConnection(org.springframework.data.redis.connection.jedis.JedisConnection delegate,
-                                 DbFailover failover,
-                                 UnsafeFieldAccessor jedisAccessor,
-                                 Function<DbAddress, JedisFailoverConnection> creator,
-                                 Consumer<DbConnection> closer) {
+    public JedisUnpoolSpringConnection(RedisConnection delegate,
+                                       DbFailover failover,
+                                       Consumer<DbConnection> closer,
+                                       Function<DbAddress, JedisUnpoolConnection> creator
+    ) {
         super(delegate, failover);
-        this.jedisAccessor = jedisAccessor;
-        this.creator = creator;
         this.closer = closer;
+        this.creator = creator;
     }
 
     @Override
@@ -60,10 +57,9 @@ public class JedisSpringConnection extends JedisFailoverConnection implements Je
     public synchronized DbFailoverResponse failover(DbAddress newAddress) {
         try {
             // recreate jedis
-            JedisFailoverConnection conn = creator.apply(newAddress);
-            jedisAccessor.set(delegate, conn.getDelegate().getJedis());
+            JedisUnpoolConnection newConn = creator.apply(newAddress);
             // user failover new address.
-            this.failover = conn.getFailover();
+            this.failover = newConn.getFailover();
             return DbFailoverResponse.SUCCESS;
         } catch (Throwable e) {
             // retry on failed

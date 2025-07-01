@@ -19,16 +19,15 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisConnection;
-import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisFailoverConnection;
-import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisSpringConnection;
+import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisUnpoolConnection;
+import com.jd.live.agent.plugin.failover.jedis.v3.connection.JedisUnpoolSpringConnection;
 import com.jd.live.agent.plugin.failover.jedis.v3.context.JedisContext;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import redis.clients.jedis.Jedis;
 
 /**
  * JedisConnectionFactoryInterceptor
@@ -56,35 +55,22 @@ public class JedisSpringGetConnectionInterceptor extends AbstractJedisIntercepto
             //  for recreate redis connection
             return null;
         }
-        JedisSpringConnection result = new JedisSpringConnection((org.springframework.data.redis.connection.jedis.JedisConnection) connection, JedisContext.removeDbFailover(),
-                Accessor.jedis, addr -> recreate(connectionFactory), connectionSupervisor::removeConnection);
+        JedisUnpoolSpringConnection result = new JedisUnpoolSpringConnection(connection, JedisContext.removeDbFailover(),
+                connectionSupervisor::removeConnection, addr -> {
+            JedisContext.ignore();
+            try {
+                RedisConnection newConn = connectionFactory.getConnection();
+                Jedis jedis = ((org.springframework.data.redis.connection.jedis.JedisConnection) newConn).getJedis();
+                Accessor.jedis.set(connection, jedis);
+                return new JedisUnpoolConnection(newConn, JedisContext.removeDbFailover());
+            } catch (Exception e) {
+                logger.error("Failed to create new redis connection.", e);
+                throw new RuntimeException(e);
+            } finally {
+                JedisContext.removeIgnore();
+            }
+        });
         mc.setResult(result);
         return result;
     }
-
-    /**
-     * Creates a new Jedis connection with failover support.
-     *
-     * @param factory the connection factory to use
-     * @return new failover-enabled connection
-     * @throws RuntimeException if connection fails
-     */
-    private JedisFailoverConnection recreate(JedisConnectionFactory factory) {
-        JedisContext.ignore();
-        try {
-            org.springframework.data.redis.connection.jedis.JedisConnection newConn = (org.springframework.data.redis.connection.jedis.JedisConnection) factory.getConnection();
-            return new JedisFailoverConnection(newConn, JedisContext.removeDbFailover());
-        } catch (Exception e) {
-            logger.error("Failed to create new redis connection.", e);
-            throw new RuntimeException(e);
-        } finally {
-            JedisContext.removeIgnore();
-        }
-    }
-
-    private static class Accessor {
-        private static final UnsafeFieldAccessor jedis = UnsafeFieldAccessorFactory.getAccessor(org.springframework.data.redis.connection.jedis.JedisConnection.class, "jedis");
-        private static final UnsafeFieldAccessor pool = UnsafeFieldAccessorFactory.getAccessor(org.springframework.data.redis.connection.jedis.JedisConnection.class, "pool");
-    }
-
 }

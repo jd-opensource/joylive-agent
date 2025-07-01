@@ -15,14 +15,8 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v3.connection;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObjectInfo;
-import org.apache.commons.pool2.impl.GenericObjectPool;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.util.Pool;
-
-import java.util.Set;
 
 /**
  * Abstract base class for Jedis pool connections.
@@ -32,13 +26,9 @@ import java.util.Set;
 public abstract class AbstractJedisPoolConnection<T extends Pool<Jedis>> implements JedisConnection {
 
     protected final T jedisPool;
-    protected final GenericObjectPool<Jedis> internalPool;
-    protected final UnsafeFieldAccessor pooledObject;
 
-    public AbstractJedisPoolConnection(T jedisPool, GenericObjectPool<Jedis> internalPool, UnsafeFieldAccessor pooledObject) {
+    public AbstractJedisPoolConnection(T jedisPool) {
         this.jedisPool = jedisPool;
-        this.internalPool = internalPool;
-        this.pooledObject = pooledObject;
     }
 
     @Override
@@ -49,22 +39,5 @@ public abstract class AbstractJedisPoolConnection<T extends Pool<Jedis>> impleme
     @Override
     public boolean isClosed() {
         return jedisPool.isClosed();
-    }
-
-    /**
-     * Evicts all objects from the sentinel pool.
-     * Logs any errors that occur during eviction.
-     */
-    @SuppressWarnings("unchecked")
-    protected void evict() {
-        Set<DefaultPooledObjectInfo> objects = internalPool.listAllObjects();
-        objects.forEach(o -> {
-            try {
-                PooledObject<Jedis> po = (PooledObject<Jedis>) pooledObject.get(o);
-                internalPool.invalidateObject(po.getObject());
-            } catch (Exception ignored) {
-                // ignore
-            }
-        });
     }
 }

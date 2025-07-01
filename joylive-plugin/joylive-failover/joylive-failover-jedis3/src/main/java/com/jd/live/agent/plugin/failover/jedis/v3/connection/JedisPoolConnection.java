@@ -15,26 +15,25 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v3.connection;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.DbFailoverResponse;
 import com.jd.live.agent.plugin.failover.jedis.v3.config.JedisAddress;
-import org.apache.commons.pool2.impl.GenericObjectPool;
 import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+
+import java.util.function.Consumer;
 
 public class JedisPoolConnection extends AbstractJedisPoolConnection<JedisPool> {
 
     private JedisAddress address;
 
-    public JedisPoolConnection(JedisPool jedisPool,
-                               DbFailover failover,
-                               GenericObjectPool<Jedis> internalPool,
-                               UnsafeFieldAccessor pooledObject) {
-        super(jedisPool, internalPool, pooledObject);
+    private final Consumer<DbAddress> onFailover;
+
+    public JedisPoolConnection(JedisPool jedisPool, DbFailover failover, Consumer<DbAddress> onFailover) {
+        super(jedisPool);
         this.address = JedisAddress.of(failover);
+        this.onFailover = onFailover;
     }
 
     @Override
@@ -50,8 +49,7 @@ public class JedisPoolConnection extends AbstractJedisPoolConnection<JedisPool> 
     public DbFailoverResponse failover(DbAddress newAddress) {
         // new connection will take the new address.
         this.address = address.newAddress(newAddress);
-        // copy
-        evict();
+        onFailover.accept(newAddress);
         return DbFailoverResponse.SUCCESS;
     }
 }

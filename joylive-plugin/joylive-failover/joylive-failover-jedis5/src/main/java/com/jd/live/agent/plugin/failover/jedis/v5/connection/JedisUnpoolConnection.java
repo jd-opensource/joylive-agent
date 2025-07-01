@@ -15,29 +15,17 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.util.Pool;
+import com.jd.live.agent.governance.db.DbFailover;
+import lombok.Getter;
+import org.springframework.data.redis.connection.RedisConnection;
 
-/**
- * Abstract base class for Jedis pool connections.
- *
- * @param <T> the type of Jedis pool implementation
- */
-public abstract class AbstractJedisPoolConnection<T extends Pool<Jedis>> implements JedisConnection {
+@Getter
+public class JedisUnpoolConnection extends JedisConnectionAdapter<RedisConnection> implements JedisConnection {
 
-    protected final T jedisPool;
+    protected volatile DbFailover failover;
 
-    public AbstractJedisPoolConnection(T jedisPool) {
-        this.jedisPool = jedisPool;
-    }
-
-    @Override
-    public void close() {
-        jedisPool.close();
-    }
-
-    @Override
-    public boolean isClosed() {
-        return jedisPool.isClosed();
+    public JedisUnpoolConnection(RedisConnection delegate, DbFailover failover) {
+        super(delegate);
+        this.failover = failover;
     }
 }

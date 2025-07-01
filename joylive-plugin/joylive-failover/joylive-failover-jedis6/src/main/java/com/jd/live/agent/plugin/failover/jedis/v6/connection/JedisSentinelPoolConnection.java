@@ -15,43 +15,23 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v6.connection;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.DbFailoverResponse;
-import com.jd.live.agent.plugin.failover.jedis.v6.config.JedisAddress;
 import redis.clients.jedis.JedisSentinelPool;
 
-import java.lang.reflect.Method;
-import java.util.Collection;
-
-import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
+import java.util.function.Consumer;
 
 public class JedisSentinelPoolConnection extends AbstractJedisPoolConnection<JedisSentinelPool> {
 
-    private static final Logger logger = LoggerFactory.getLogger(JedisSentinelPoolConnection.class);
-
     private DbFailover failover;
-    private final String masterName;
-    private final UnsafeFieldAccessor masterListeners;
-    private final Method initSentinels;
-    private final Method shutdown;
 
-    public JedisSentinelPoolConnection(JedisSentinelPool sentinelPool,
-                                       DbFailover failover,
-                                       UnsafeFieldAccessor pooledObject,
-                                       String masterName,
-                                       UnsafeFieldAccessor masterListeners,
-                                       Method initSentinels,
-                                       Method shutdown) {
-        super(sentinelPool, pooledObject);
+    private final Consumer<DbAddress> onFailover;
+
+    public JedisSentinelPoolConnection(JedisSentinelPool sentinelPool, DbFailover failover, Consumer<DbAddress> onFailover) {
+        super(sentinelPool);
         this.failover = failover;
-        this.masterName = masterName;
-        this.masterListeners = masterListeners;
-        this.initSentinels = initSentinels;
-        this.shutdown = shutdown;
+        this.onFailover = onFailover;
     }
 
     @Override
@@ -59,50 +39,10 @@ public class JedisSentinelPoolConnection extends AbstractJedisPoolConnection<Jed
         return failover;
     }
 
-
     @Override
     public DbFailoverResponse failover(DbAddress newAddress) {
         this.failover = failover.newAddress(newAddress);
-        Collection<?> listeners = (Collection<?>) masterListeners.get(jedisPool);
-        listeners.forEach(this::shutdownListener);
-        listeners.clear();
-        initSentinels(newAddress);
-        evict();
+        onFailover.accept(newAddress);
         return DbFailoverResponse.SUCCESS;
     }
-
-    /**
-     * Initializes sentinels with the given cluster address.
-     * Logs any errors that occur during initialization.
-     *
-     * @param newAddress the new cluster address to initialize
-     */
-    private void initSentinels(DbAddress newAddress) {
-        if (initSentinels != null) {
-            try {
-                initSentinels.invoke(jedisPool, JedisAddress.getNodes(newAddress), masterName);
-            } catch (Throwable e) {
-                Throwable cause = getCause(e);
-                logger.error(cause.getMessage(), cause);
-            }
-        }
-    }
-
-    /**
-     * Shuts down the specified listener.
-     * Logs any errors that occur during shutdown.
-     *
-     * @param listener the listener to shutdown
-     */
-    private void shutdownListener(Object listener) {
-        if (shutdown != null) {
-            try {
-                shutdown.invoke(listener);
-            } catch (Throwable e) {
-                Throwable cause = getCause(e);
-                logger.error(cause.getMessage(), cause);
-            }
-        }
-    }
-
 }

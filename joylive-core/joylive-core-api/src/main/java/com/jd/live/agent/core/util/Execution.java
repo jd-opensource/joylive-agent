@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v5.connection;
+package com.jd.live.agent.core.util;
 
-import com.jd.live.agent.governance.db.DbFailover;
-import lombok.Getter;
-
-@Getter
-public class JedisFailoverConnection
-        extends JedisConnectionAdapter<org.springframework.data.redis.connection.jedis.JedisConnection>
-        implements JedisConnection {
-
-    protected volatile DbFailover failover;
-
-    public JedisFailoverConnection(org.springframework.data.redis.connection.jedis.JedisConnection delegate, DbFailover failover) {
-        super(delegate);
-        this.failover = failover;
-    }
+/**
+ * Represents an executable operation that may throw an exception.
+ * Implementations should define the operation in {@code execute()}.
+ */
+@FunctionalInterface
+public interface Execution {
+    /**
+     * Performs the defined operation.
+     *
+     * @throws Exception if execution fails
+     */
+    void execute() throws Exception;
 }
+
