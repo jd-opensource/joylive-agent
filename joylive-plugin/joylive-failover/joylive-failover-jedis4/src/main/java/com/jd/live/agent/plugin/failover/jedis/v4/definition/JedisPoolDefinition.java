@@ -36,7 +36,11 @@ public class JedisPoolDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "redis.clients.jedis.JedisPool";
 
-    private static final String[] ARGUMENTS_CONSTRUCTOR = {
+    private static final String[] ARGUMENTS0 = {
+            "org.apache.commons.pool2.PooledObjectFactory"
+    };
+
+    private static final String[] ARGUMENTS1 = {
             "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
             "org.apache.commons.pool2.PooledObjectFactory"
     };
@@ -48,8 +52,9 @@ public class JedisPoolDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR)),
-                        () -> new JedisPoolInterceptor(context)),
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS0)), () -> new JedisPoolInterceptor(context)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS1)), () -> new JedisPoolInterceptor(context)),
         };
     }
 }

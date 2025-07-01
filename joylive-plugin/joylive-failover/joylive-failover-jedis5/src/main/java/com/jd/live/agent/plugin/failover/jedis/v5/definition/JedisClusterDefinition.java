@@ -39,14 +39,14 @@ public class JedisClusterDefinition extends PluginDefinitionAdapter {
     private static final String[] ARGUMENTS1 = {
             "redis.clients.jedis.providers.ClusterConnectionProvider",
             "int",
-            "java.time.Duration"
+            "java.time.Duration",
     };
 
     private static final String[] ARGUMENTS2 = {
             "redis.clients.jedis.providers.ClusterConnectionProvider",
             "int",
             "java.time.Duration",
-            "redis.clients.jedis.RedisProtocol"
+            "redis.clients.jedis.RedisProtocol",
     };
 
     private static final String[] ARGUMENTS3 = {

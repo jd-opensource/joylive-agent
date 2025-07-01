@@ -37,30 +37,30 @@ public class JedisClusterDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE = "redis.clients.jedis.JedisCluster";
 
     private static final String[] ARGUMENTS1 = {
-            "redis.clients.jedis.providers.ClusterConnectionProvider",
-            "int",
-            "java.time.Duration"
+            "java.util.Set",
+            "redis.clients.jedis.JedisClientConfig",
+            "int"
     };
 
     private static final String[] ARGUMENTS2 = {
             "java.util.Set",
             "redis.clients.jedis.JedisClientConfig",
-            "int"
+            "int",
+            "java.time.Duration"
     };
 
     private static final String[] ARGUMENTS3 = {
             "java.util.Set",
             "redis.clients.jedis.JedisClientConfig",
             "int",
-            "java.time.Duration"
+            "java.time.Duration",
+            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
     };
 
     private static final String[] ARGUMENTS4 = {
-            "java.util.Set",
-            "redis.clients.jedis.JedisClientConfig",
+            "redis.clients.jedis.providers.ClusterConnectionProvider",
             "int",
-            "java.time.Duration",
-            "org.apache.commons.pool2.impl.GenericObjectPoolConfig"
+            "java.time.Duration"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)

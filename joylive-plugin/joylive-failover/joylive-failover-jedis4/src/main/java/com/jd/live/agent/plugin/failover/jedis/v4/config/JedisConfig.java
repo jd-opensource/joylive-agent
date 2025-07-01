@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v4.config;
 
-import redis.clients.jedis.*;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.HostAndPortMapper;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.Protocol;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class JedisConfig implements JedisClientConfig {
 
@@ -60,13 +62,6 @@ public class JedisConfig implements JedisClientConfig {
     }
 
     @Override
-    public Supplier<RedisCredentials> getCredentialsProvider() {
-        return config == null
-                ? new DefaultRedisCredentialsProvider(new DefaultRedisCredentials(getUser(), getPassword()))
-                : config.getCredentialsProvider();
-    }
-
-    @Override
     public int getDatabase() {
         return config == null ? Protocol.DEFAULT_DATABASE : config.getDatabase();
     }
@@ -99,10 +94,5 @@ public class JedisConfig implements JedisClientConfig {
     @Override
     public HostAndPortMapper getHostAndPortMapper() {
         return new JedisAddressMapper(config == null ? null : config.getHostAndPortMapper(), mapper);
-    }
-
-    @Override
-    public ClientSetInfoConfig getClientSetInfoConfig() {
-        return config == null ? null : config.getClientSetInfoConfig();
     }
 }

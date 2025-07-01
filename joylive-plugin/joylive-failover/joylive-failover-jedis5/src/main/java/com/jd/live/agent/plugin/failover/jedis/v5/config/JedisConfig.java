@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.plugin.failover.jedis.v5.config;
 
-import redis.clients.jedis.*;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.HostAndPortMapper;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.Protocol;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class JedisConfig implements JedisClientConfig {
 
@@ -32,11 +34,6 @@ public class JedisConfig implements JedisClientConfig {
     public JedisConfig(JedisClientConfig config, Function<HostAndPort, HostAndPort> mapper) {
         this.config = config;
         this.mapper = mapper;
-    }
-
-    @Override
-    public RedisProtocol getRedisProtocol() {
-        return config == null ? null : config.getRedisProtocol();
     }
 
     @Override
@@ -62,13 +59,6 @@ public class JedisConfig implements JedisClientConfig {
     @Override
     public String getPassword() {
         return config == null ? null : config.getPassword();
-    }
-
-    @Override
-    public Supplier<RedisCredentials> getCredentialsProvider() {
-        return config == null
-                ? new DefaultRedisCredentialsProvider(new DefaultRedisCredentials(getUser(), getPassword()))
-                : config.getCredentialsProvider();
     }
 
     @Override
@@ -104,15 +94,5 @@ public class JedisConfig implements JedisClientConfig {
     @Override
     public HostAndPortMapper getHostAndPortMapper() {
         return new JedisAddressMapper(config == null ? null : config.getHostAndPortMapper(), mapper);
-    }
-
-    @Override
-    public boolean isReadOnlyForRedisClusterReplicas() {
-        return config != null && config.isReadOnlyForRedisClusterReplicas();
-    }
-
-    @Override
-    public ClientSetInfoConfig getClientSetInfoConfig() {
-        return config == null ? null : config.getClientSetInfoConfig();
     }
 }

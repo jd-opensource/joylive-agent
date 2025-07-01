@@ -36,14 +36,14 @@ public class JedisSentinelPoolDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "redis.clients.jedis.JedisSentinelPool";
 
-    private static final String[] ARGUMENTS1 = {
+    private static final String[] ARGUMENTS0 = {
             "java.lang.String",
             "java.util.Set",
             "redis.clients.jedis.JedisFactory",
             "redis.clients.jedis.JedisClientConfig"
     };
 
-    private static final String[] ARGUMENTS2 = {
+    private static final String[] ARGUMENTS1 = {
             "java.lang.String",
             "java.util.Set",
             "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
@@ -57,9 +57,9 @@ public class JedisSentinelPoolDefinition extends PluginDefinitionAdapter {
     public JedisSentinelPoolDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS1)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS0)),
                         () -> new JedisSentinelPoolInterceptor(context)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS2)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS1)),
                         () -> new JedisSentinelPoolInterceptor(context)),
         };
     }

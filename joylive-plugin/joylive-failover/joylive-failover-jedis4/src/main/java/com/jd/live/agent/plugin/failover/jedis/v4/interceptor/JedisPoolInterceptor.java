@@ -45,8 +45,8 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
 
     @Override
     protected JedisConnection createConnection(ExecutableContext ctx) {
-        // change HostAndPortMapper of jedis client config in constructor
-        PooledObjectFactory<Jedis> factory = ctx.getArgument(1);
+        JedisPool jedisPool = (JedisPool) ctx.getTarget();
+        PooledObjectFactory<Jedis> factory = ctx.getArgument(ctx.getArgumentCount() - 1);
         if (!(factory instanceof JedisFactory)) {
             return null;
         }
@@ -59,7 +59,7 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
         HostAndPort hostAndPort = (HostAndPort) Accessor.hostAndPort.get(socketFactory);
         AccessMode accessMode = getAccessMode(clientConfig);
         DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, JedisAddress.getFailover(hostAndPort), accessMode, addressResolver);
-        JedisPoolConnection connection = new JedisPoolConnection((JedisPool) ctx.getTarget(), DbFailover.of(candidate), Accessor.pooledObject);
+        JedisPoolConnection connection = new JedisPoolConnection(jedisPool, DbFailover.of(candidate), Accessor.pooledObject);
         JedisConfig config = new JedisConfig(clientConfig, hp -> connection.getHostAndPort());
         Accessor.config.set(factory, config);
         if (candidate.isRedirected()) {
@@ -70,8 +70,8 @@ public class JedisPoolInterceptor extends AbstractJedisInterceptor {
 
     private static class Accessor {
 
-        private static final UnsafeFieldAccessor config = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
         private static final UnsafeFieldAccessor socketFactory = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "jedisSocketFactory");
+        private static final UnsafeFieldAccessor config = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
         private static final UnsafeFieldAccessor hostAndPort = UnsafeFieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPort");
         private static final UnsafeFieldAccessor pooledObject = UnsafeFieldAccessorFactory.getAccessor(DefaultPooledObjectInfo.class, "pooledObject");
 

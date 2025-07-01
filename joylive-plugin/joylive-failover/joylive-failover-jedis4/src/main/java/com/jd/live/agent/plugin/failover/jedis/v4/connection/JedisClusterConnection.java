@@ -22,10 +22,12 @@ import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbFailover;
 import com.jd.live.agent.governance.db.DbFailoverResponse;
 import com.jd.live.agent.plugin.failover.jedis.v4.config.JedisAddress;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import redis.clients.jedis.Connection;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisClusterInfoCache;
-import redis.clients.jedis.providers.ClusterConnectionProvider;
+import redis.clients.jedis.providers.ConnectionProvider;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,7 +42,9 @@ public class JedisClusterConnection implements JedisConnection {
 
     private final JedisClientConfig clientConfig;
 
-    private final ClusterConnectionProvider provider;
+    private final GenericObjectPoolConfig<Connection> poolConfig;
+
+    private final ConnectionProvider provider;
 
     private final UnsafeFieldAccessor cache;
 
@@ -52,12 +56,14 @@ public class JedisClusterConnection implements JedisConnection {
 
     public JedisClusterConnection(JedisCluster jedisCluster,
                                   JedisClientConfig clientConfig,
-                                  ClusterConnectionProvider provider,
+                                  GenericObjectPoolConfig<Connection> poolConfig,
+                                  ConnectionProvider provider,
                                   DbFailover failover,
                                   UnsafeFieldAccessor cache,
                                   Method initializeSlotsCache) {
         this.jedisCluster = jedisCluster;
         this.clientConfig = clientConfig;
+        this.poolConfig = poolConfig;
         this.provider = provider;
         this.failover = failover;
         this.cache = cache;
@@ -85,7 +91,7 @@ public class JedisClusterConnection implements JedisConnection {
     public DbFailoverResponse failover(DbAddress newAddress) {
         this.failover = failover.newAddress(newAddress);
         JedisClusterInfoCache jc = (JedisClusterInfoCache) cache.get(provider);
-        cache.set(provider, new JedisClusterInfoCache(clientConfig, JedisAddress.getNodes(newAddress)));
+        cache.set(provider, new JedisClusterInfoCache(clientConfig, poolConfig, JedisAddress.getNodes(newAddress)));
         initializeSlotsCache();
         jc.reset();
         return DbFailoverResponse.SUCCESS;

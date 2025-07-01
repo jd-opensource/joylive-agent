@@ -56,7 +56,7 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         JedisClusterConnectionHandler connectionHandler = (JedisClusterConnectionHandler) Accessor.connectionHandler.get(cluster);
         JedisClusterInfoCache cache = (JedisClusterInfoCache) Accessor.cache.get(connectionHandler);
         JedisClientConfig clientConfig = (JedisClientConfig) Accessor.clientConfig.get(cache);
-        GenericObjectPoolConfig<Jedis> poolConfig = (GenericObjectPoolConfig<Jedis>) Accessor.poolConfig.get(connectionHandler);
+        GenericObjectPoolConfig<Jedis> poolConfig = (GenericObjectPoolConfig<Jedis>) Accessor.poolConfig.get(cache);
         Set<HostAndPort> startNodes = (Set<HostAndPort>) Accessor.startNodes.get(cache);
 
         List<String> addresses = toList(startNodes, JedisAddress::getFailover);

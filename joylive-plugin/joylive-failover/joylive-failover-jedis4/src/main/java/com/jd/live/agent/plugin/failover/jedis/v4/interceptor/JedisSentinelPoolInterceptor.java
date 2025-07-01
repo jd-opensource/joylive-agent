@@ -52,10 +52,15 @@ public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
     }
 
     @Override
+    public void onExit(ExecutableContext ctx) {
+        ctx.unlock();
+    }
+
+    @Override
     protected JedisConnection createConnection(ExecutableContext ctx) {
+        JedisSentinelPool sentinelPool = (JedisSentinelPool) ctx.getTarget();
         String masterName = ctx.getArgument(0);
         Set<HostAndPort> sentinels = ctx.getArgument(1);
-        JedisSentinelPool sentinelPool = (JedisSentinelPool) ctx.getTarget();
         JedisClientConfig clientConfig = ctx.getArgument(ctx.getArgumentCount() - 1);
         List<String> addresses = toList(sentinels, JedisAddress::getFailover);
         AccessMode accessMode = getAccessMode(clientConfig);
@@ -63,12 +68,13 @@ public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisSentinelPoolConnection(sentinelPool, DbFailover.of(candidate), Accessor.pooledObject, masterName,
-                Accessor.masterListeners, Accessor.initSentinels, Accessor.shutdown);
+        return new JedisSentinelPoolConnection(sentinelPool, DbFailover.of(candidate), Accessor.pooledObject,
+                masterName, Accessor.masterListeners, Accessor.initSentinels, Accessor.shutdown);
     }
 
     private static class Accessor {
 
+        private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisSentinelPool.class, "sentinelClientConfig");
         private static final UnsafeFieldAccessor masterListeners = UnsafeFieldAccessorFactory.getAccessor(JedisSentinelPool.class, "masterListeners");
         private static final UnsafeFieldAccessor pooledObject = UnsafeFieldAccessorFactory.getAccessor(DefaultPooledObjectInfo.class, "pooledObject");
         private static final Method initSentinels = ClassUtils.getDeclaredMethod(JedisSentinelPool.class, "initSentinels");

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.failover.jedis.v5.definition;
+package com.jd.live.agent.plugin.failover.jedis.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -25,36 +25,32 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.failover.jedis.v5.condition.ConditionalOnFailoverJedis5Enabled;
-import com.jd.live.agent.plugin.failover.jedis.v5.interceptor.JedisPoolInterceptor;
+import com.jd.live.agent.plugin.failover.jedis.v4.condition.ConditionalOnFailoverJedis4Enabled;
+import com.jd.live.agent.plugin.failover.jedis.v4.interceptor.JedisSpringCreateConfigInterceptor;
+import com.jd.live.agent.plugin.failover.jedis.v4.interceptor.JedisSpringGetConnectionInterceptor;
 
 @Injectable
-@Extension(value = "JedisPoolDefinition_v5", order = PluginDefinition.ORDER_FAILOVER)
-@ConditionalOnFailoverJedis5Enabled
-@ConditionalOnClass(JedisPoolDefinition.TYPE)
-public class JedisPoolDefinition extends PluginDefinitionAdapter {
+@Extension(value = "JedisSpringConnectionDefinition_v4", order = PluginDefinition.ORDER_FAILOVER)
+@ConditionalOnFailoverJedis4Enabled
+@ConditionalOnClass(JedisConnectionFactoryDefinition.TYPE)
+public class JedisConnectionFactoryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "redis.clients.jedis.JedisPool";
+    protected static final String TYPE = "org.springframework.data.redis.connection.jedis.JedisConnectionFactory";
 
-    private static final String[] ARGUMENTS0 = {
-            "org.apache.commons.pool2.PooledObjectFactory"
-    };
+    private static final String METHOD_GET_CONNECTION = "getConnection";
 
-    private static final String[] ARGUMENTS1 = {
-            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
-            "org.apache.commons.pool2.PooledObjectFactory"
-    };
+    private static final String METHOD_CREATE_CLIENT_CONFIG = "createClientConfig";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public JedisPoolDefinition() {
+    public JedisConnectionFactoryDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS0)), () -> new JedisPoolInterceptor(context)),
+                        MatcherBuilder.named(METHOD_GET_CONNECTION), () -> new JedisSpringGetConnectionInterceptor(context)),
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS1)), () -> new JedisPoolInterceptor(context)),
+                        MatcherBuilder.named(METHOD_CREATE_CLIENT_CONFIG), () -> new JedisSpringCreateConfigInterceptor(context)),
         };
     }
 }

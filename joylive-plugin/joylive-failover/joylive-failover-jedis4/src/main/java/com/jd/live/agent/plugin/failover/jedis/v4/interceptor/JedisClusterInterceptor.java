@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.db.DbCandidate;
 import com.jd.live.agent.governance.db.DbFailover;
@@ -29,14 +28,17 @@ import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.plugin.failover.jedis.v4.config.JedisAddress;
 import com.jd.live.agent.plugin.failover.jedis.v4.connection.JedisClusterConnection;
 import com.jd.live.agent.plugin.failover.jedis.v4.connection.JedisConnection;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.*;
 import redis.clients.jedis.providers.ClusterConnectionProvider;
+import redis.clients.jedis.providers.ConnectionProvider;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.join;
 
 /**
  * JedisClusterInterceptor
@@ -53,18 +55,19 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
     @Override
     protected JedisConnection createConnection(ExecutableContext ctx) {
         JedisCluster cluster = (JedisCluster) ctx.getTarget();
-        ClusterConnectionProvider provider = (ClusterConnectionProvider) Accessor.provider.get(cluster);
+        ConnectionProvider provider = (ConnectionProvider) Accessor.provider.get(cluster);
         JedisClusterInfoCache cache = (JedisClusterInfoCache) Accessor.cache.get(provider);
-        Set<HostAndPort> startNodes = (Set<HostAndPort>) Accessor.startNodes.get(cache);
         JedisClientConfig clientConfig = (JedisClientConfig) Accessor.clientConfig.get(cache);
+        GenericObjectPoolConfig<Connection> poolConfig = (GenericObjectPoolConfig<Connection>) Accessor.poolConfig.get(cache);
+        Set<HostAndPort> startNodes = (Set<HostAndPort>) Accessor.startNodes.get(cache);
 
         List<String> addresses = toList(startNodes, JedisAddress::getFailover);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, StringUtils.join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
-        return new JedisClusterConnection(cluster, clientConfig, provider, DbFailover.of(candidate), Accessor.cache, Accessor.initializeSlotsCache);
+        return new JedisClusterConnection(cluster, clientConfig, poolConfig, provider, DbFailover.of(candidate), Accessor.cache, Accessor.initializeSlotsCache);
     }
 
     private static class Accessor {
@@ -72,6 +75,7 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         private static final UnsafeFieldAccessor provider = UnsafeFieldAccessorFactory.getAccessor(UnifiedJedis.class, "provider");
         private static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(ClusterConnectionProvider.class, "cache");
         private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
+        private static final UnsafeFieldAccessor poolConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
         private static final UnsafeFieldAccessor startNodes = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
         private static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterInfoCache.class, "initializeSlotsCache");
 

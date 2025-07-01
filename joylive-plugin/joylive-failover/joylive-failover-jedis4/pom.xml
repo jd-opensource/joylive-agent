@@ -13,6 +13,7 @@
 
     <properties>
         <jedis.version>4.4.8</jedis.version>
+        <spring-data-redis.version>3.0.12</spring-data-redis.version>
     </properties>
 
     <dependencies>
@@ -20,6 +21,12 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <version>${jedis.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>${spring-data-redis.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

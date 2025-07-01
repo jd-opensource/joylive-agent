@@ -16,9 +16,9 @@
 package com.jd.live.agent.plugin.failover.jedis.v5.connection;
 
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.governance.db.DbFailoverResponse;
 import com.jd.live.agent.governance.db.DbAddress;
 import com.jd.live.agent.governance.db.DbFailover;
+import com.jd.live.agent.governance.db.DbFailoverResponse;
 import com.jd.live.agent.plugin.failover.jedis.v5.config.JedisAddress;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisPool;
