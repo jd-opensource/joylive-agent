@@ -45,31 +45,12 @@ public class DbFailover {
 
     private final Function<LiveDatabase, DbAddress> addressResolver;
 
-    public DbFailover(String address) {
-        this(TYPE_DB, AccessMode.READ_WRITE, new DbAddress(TYPE_DB, address), new DbAddress(TYPE_DB, address), DB_ADDRESS_RESOLVER);
-    }
-
-    public DbFailover(String oldAddress, String newAddress) {
-        this(TYPE_DB, AccessMode.READ_WRITE, new DbAddress(TYPE_DB, oldAddress), new DbAddress(TYPE_DB, newAddress), DB_ADDRESS_RESOLVER);
-    }
-
-    public DbFailover(String type, String oldAddress, String newAddress, Function<LiveDatabase, DbAddress> addressResolver) {
-        this(type, AccessMode.READ_WRITE, new DbAddress(type, oldAddress), new DbAddress(type, newAddress), addressResolver);
-    }
-
     public DbFailover(String type,
                       AccessMode accessMode,
                       String oldAddress,
                       String newAddress,
                       Function<LiveDatabase, DbAddress> addressResolver) {
         this(type, accessMode, new DbAddress(type, oldAddress), new DbAddress(type, newAddress), addressResolver);
-    }
-
-    public DbFailover(String type,
-                      DbAddress oldAddress,
-                      DbAddress newAddress,
-                      Function<LiveDatabase, DbAddress> addressResolver) {
-        this(type, AccessMode.READ_WRITE, oldAddress, newAddress, addressResolver);
     }
 
     public DbFailover(String type,

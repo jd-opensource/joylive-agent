@@ -98,7 +98,7 @@ public class DbConnectionManager implements DbConnectionSupervisor {
     @Override
     public DbFailover failover(DbFailover failover) {
         if (failover != null) {
-            failover(failover, failover.isRedirected() ? consumer : null);
+            failover(failover, consumer);
         }
         return failover;
     }
@@ -108,13 +108,12 @@ public class DbConnectionManager implements DbConnectionSupervisor {
         if (failover == null) {
             return;
         }
-        // TODO Resolve concurrent access problems
         AtomicReference<DbAddress> reference = failovers.computeIfAbsent(failover.getOldAddress(), AtomicReference::new);
-        DbAddress oldRedirect = reference.get();
-        DbAddress newRedirect = failover.getNewAddress();
-        if (!newRedirect.equals(oldRedirect) && reference.compareAndSet(oldRedirect, newRedirect)) {
+        DbAddress oldAddress = reference.get();
+        DbAddress newAddress = failover.getNewAddress();
+        if (!newAddress.equals(oldAddress) && reference.compareAndSet(oldAddress, newAddress)) {
             if (callback != null) {
-                callback.accept(oldRedirect, newRedirect);
+                callback.accept(oldAddress, newAddress);
             }
         }
     }
@@ -187,7 +186,7 @@ public class DbConnectionManager implements DbConnectionSupervisor {
      */
     protected void addRetryTask(DbConnection conn, DbAddress oldAddress, DbAddress newAddress) {
         if (!conn.isClosed() && conn.getFailover().getNewAddress().equals(oldAddress)) {
-            FailoverTask newTask = new FailoverTask(conn, new DbFailoverAddress(newAddress, oldAddress));
+            FailoverTask newTask = new FailoverTask(conn, new DbRetryAddress(newAddress, oldAddress));
             FailoverTask oldTask = tasks.putIfAbsent(conn, newTask);
             if (oldTask == null) {
                 timer.delay("redirect-connection", getRetryInterval(1000, 2000), newTask);
@@ -250,10 +249,10 @@ public class DbConnectionManager implements DbConnectionSupervisor {
          * @return true if redirection was successful, false if redirector is failed.
          */
         protected boolean redirect(DbConnection connection, DbAddress oldAddress, DbAddress newAddress) {
-            // check failover address
-            if (newAddress instanceof DbFailoverAddress) {
-                DbFailoverAddress failoverAddress = (DbFailoverAddress) newAddress;
-                if (!failoverAddress.getOldAddress().equals(oldAddress)) {
+            // Prevent asynchronous concurrency(retry & update)， check failover address again
+            if (newAddress instanceof DbRetryAddress) {
+                DbRetryAddress retryAddress = (DbRetryAddress) newAddress;
+                if (!retryAddress.getOldAddress().equals(oldAddress)) {
                     return true;
                 }
             }
@@ -278,12 +277,12 @@ public class DbConnectionManager implements DbConnectionSupervisor {
 
     }
 
-    private static class DbFailoverAddress extends DbAddress {
+    private static class DbRetryAddress extends DbAddress {
 
         @Getter
         private final DbAddress oldAddress;
 
-        DbFailoverAddress(DbAddress newAddress, DbAddress oldAddress) {
+        DbRetryAddress(DbAddress newAddress, DbAddress oldAddress) {
             super(newAddress.getType(), newAddress.getAddress(), newAddress.getNodes());
             this.oldAddress = oldAddress;
         }

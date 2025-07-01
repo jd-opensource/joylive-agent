@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.db.DbCandidate;
 import com.jd.live.agent.governance.db.DbFailover;
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.StringUtils.join;
 
 /**
  * JedisClusterInterceptor
@@ -61,7 +61,7 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
 
         List<String> addresses = toList(startNodes, JedisAddress::getFailover);
         AccessMode accessMode = getAccessMode(clientConfig);
-        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, StringUtils.join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
+        DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, join(addresses), addresses.toArray(new String[0]), accessMode, addressResolver);
         if (candidate.isRedirected()) {
             logger.info("Try reconnecting to {} {}", TYPE_REDIS, candidate.getNewAddress());
         }
