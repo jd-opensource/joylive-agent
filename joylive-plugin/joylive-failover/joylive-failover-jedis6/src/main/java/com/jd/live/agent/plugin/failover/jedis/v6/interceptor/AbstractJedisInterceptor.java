@@ -85,6 +85,7 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
     protected static class Accessor {
         protected static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(ClusterConnectionProvider.class, "cache");
         protected static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(ClusterConnectionProvider.class, "initializeSlotsCache");
+
         protected static final UnsafeFieldAccessor cacheClientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
         protected static final UnsafeFieldAccessor poolConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
         protected static final UnsafeFieldAccessor startNodes = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
@@ -98,9 +99,8 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
         protected static final Method initSentinels = ClassUtils.getDeclaredMethod(JedisSentinelPool.class, "initSentinels");
         protected static final Method shutdown = ClassUtils.getDeclaredMethod("redis.clients.jedis.JedisSentinelPool$MasterListener", "shutdown");
 
-        protected static final Class<?> jedisConnectionType = org.springframework.data.redis.connection.jedis.JedisConnection.class;
-        protected static final UnsafeFieldAccessor jedis = UnsafeFieldAccessorFactory.getAccessor(jedisConnectionType, "jedis");
-        protected static final UnsafeFieldAccessor pool = UnsafeFieldAccessorFactory.getAccessor(jedisConnectionType, "pool");
+        protected static final UnsafeFieldAccessor jedis = UnsafeFieldAccessorFactory.getAccessor(org.springframework.data.redis.connection.jedis.JedisConnection.class, "jedis");
+        protected static final UnsafeFieldAccessor pool = UnsafeFieldAccessorFactory.getAccessor(org.springframework.data.redis.connection.jedis.JedisConnection.class, "pool");
 
         /**
          * Invalidates all Jedis objects in the pool during failover.
@@ -109,12 +109,13 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
          * @param pool the Jedis connection pool to process
          */
         @SuppressWarnings("unchecked")
-        protected static void evict(GenericObjectPool<Jedis> pool) {
-            Set<DefaultPooledObjectInfo> objects = pool.listAllObjects();
+        protected static void evict(Object pool) {
+            GenericObjectPool<Jedis> objectPool = (GenericObjectPool<Jedis>) pool;
+            Set<DefaultPooledObjectInfo> objects = objectPool.listAllObjects();
             objects.forEach(o -> {
                 try {
                     PooledObject<Jedis> po = (PooledObject<Jedis>) pooledObject.get(o);
-                    pool.invalidateObject(po.getObject());
+                    objectPool.invalidateObject(po.getObject());
                 } catch (Exception ignored) {
                     // ignore
                 }

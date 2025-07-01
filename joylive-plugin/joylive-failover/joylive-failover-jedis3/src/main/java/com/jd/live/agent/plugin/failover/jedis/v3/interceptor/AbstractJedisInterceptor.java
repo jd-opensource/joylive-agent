@@ -84,6 +84,7 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
     protected static class Accessor {
         @SuppressWarnings("deprecation")
         protected static final UnsafeFieldAccessor connectionHandler = UnsafeFieldAccessorFactory.getAccessor(BinaryJedisCluster.class, "connectionHandler");
+
         protected static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(JedisClusterConnectionHandler.class, "cache");
         protected static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterConnectionHandler.class, "initializeSlotsCache");
         protected static final UnsafeFieldAccessor cacheClientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
@@ -113,12 +114,13 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
          * @param pool the Jedis connection pool to process
          */
         @SuppressWarnings("unchecked")
-        protected static void evict(GenericObjectPool<Jedis> pool) {
-            Set<DefaultPooledObjectInfo> objects = pool.listAllObjects();
+        protected static void evict(Object pool) {
+            GenericObjectPool<Jedis> objectPool = (GenericObjectPool<Jedis>) pool;
+            Set<DefaultPooledObjectInfo> objects = objectPool.listAllObjects();
             objects.forEach(o -> {
                 try {
                     PooledObject<Jedis> po = (PooledObject<Jedis>) pooledObject.get(o);
-                    pool.invalidateObject(po.getObject());
+                    objectPool.invalidateObject(po.getObject());
                 } catch (Exception ignored) {
                     // ignore
                 }
