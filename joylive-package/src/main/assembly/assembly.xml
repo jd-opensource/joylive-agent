@@ -89,7 +89,6 @@
             </includes>
         </dependencySet>
 
-
         <!-- plugin/spring -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
