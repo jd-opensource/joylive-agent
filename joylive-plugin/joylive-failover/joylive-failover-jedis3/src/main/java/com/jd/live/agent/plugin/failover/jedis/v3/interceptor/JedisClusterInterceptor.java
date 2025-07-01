@@ -69,7 +69,7 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         return new JedisClusterConnection(cluster, DbFailover.of(candidate), addr -> {
             Accessor.cache.set(connectionHandler, new JedisClusterInfoCache(poolConfig, clientConfig, JedisAddress.getNodes(addr)));
             try {
-                Accessor.initializeSlotsCache.invoke(connectionHandler);
+                Accessor.initializeSlotsCache.invoke(connectionHandler, JedisAddress.getNodes(addr), clientConfig);
             } catch (Throwable e) {
                 Throwable cause = getCause(e);
                 logger.error(cause.getMessage(), cause);
@@ -82,9 +82,9 @@ public class JedisClusterInterceptor extends AbstractJedisInterceptor {
         @SuppressWarnings("deprecation")
         private static final UnsafeFieldAccessor connectionHandler = UnsafeFieldAccessorFactory.getAccessor(BinaryJedisCluster.class, "connectionHandler");
         private static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(JedisClusterConnectionHandler.class, "cache");
+        private static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterConnectionHandler.class, "initializeSlotsCache");
         private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
         private static final UnsafeFieldAccessor poolConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
         private static final UnsafeFieldAccessor startNodes = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
-        private static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterInfoCache.class, "initializeSlotsCache");
     }
 }
