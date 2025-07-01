@@ -26,6 +26,16 @@ import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
  */
 public class SmoothBurstyLimiter extends TokenBucketLimiter {
 
+    /**
+     * The maximum burst seconds (maxBurstSeconds).
+     * <p>
+     * This defines the maximum number of tokens that the token bucket can store, which is equal to the
+     * total number of tokens that can be generated within this period. This parameter determines the
+     * upper limit of burst traffic that the rate limiter can handle.
+     * <p>
+     * For example, if the rate is 100 TPS (tokens per second) and {@code maxBurstSeconds} is 2,
+     * the bucket can store a maximum of 200 extra tokens.
+     */
     private static final String KEY_MAX_BURST_SECONDS = "maxBurstSeconds";
 
     private static final long DEFAULT_MAX_BURST_SECONDS = 1L;

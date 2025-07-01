@@ -26,8 +26,21 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class LeakyBucketLimiter extends TokenBucketLimiter {
 
+    /**
+     * The key for configuring the capacity of the leaky bucket.
+     * <p>
+     * This represents the maximum number of requests that can be queued or waiting for a permit.
+     * If the number of concurrent requests reaches this capacity, subsequent requests may be rejected.
+     */
     private static final String KEY_CAPACITY = "capacity";
 
+    /**
+     * The key for configuring the flow window in seconds.
+     * <p>
+     * This value is used to calculate the maximum number of storable permits (tokens) to prevent
+     * excessive accumulation. The bucket can store at most the number of permits generated during this time window,
+     * which helps in maintaining a smoother outflow rate.
+     */
     private static final String KEY_FLOW_WINDOW_SECONDS = "flowWindowSeconds";
 
     private final long capacity;

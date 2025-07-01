@@ -28,8 +28,27 @@ import static java.lang.Math.min;
  */
 public class SmoothWarmupLimiter extends TokenBucketLimiter {
 
+    /**
+     * The key for configuring the warmup period in seconds.
+     * <p>
+     * This is the duration during which the rate limiter gradually increases its rate from a
+     * "cold" state (defined by {@code coldFactor}) to its full, stable rate. A warmup period
+     * prevents a system that has been idle from being suddenly overwhelmed by requests at its
+     * maximum configured rate. Instead, it allows the system to "warm up" gracefully.
+     */
     private static final String KEY_WARMUP_SECONDS = "warmupSeconds";
 
+    /**
+     * The key for configuring the cold factor.
+     * <p>
+     * This factor determines how much slower the rate limiter is during the "cold" state
+     * (at the beginning of the warmup period) compared to the stable, hot state. It is a multiplier
+     * applied to the stable interval between permits to determine the cold interval.
+     * <p>
+     * For example, a {@code coldFactor} of 3.0 (the default) means that the limiter issues permits
+     * at 1/3 of its stable rate when it is at its coldest. This allows the system to
+     * gradually ramp up its rate, preventing a sudden burst from overwhelming a "cold" system.
+     */
     private static final String KEY_COLD_FACTOR = "coldFactor";
 
     private static final double DEFAULT_COLD_FACTOR = 3.0D;
@@ -37,6 +56,7 @@ public class SmoothWarmupLimiter extends TokenBucketLimiter {
     private static final long DEFAULT_WARMUP_SECONDS = 5L;
 
     private long warmupMicros;
+
     /**
      * The slope of the line from the stable interval (when permits == 0), to the cold interval
      * (when permits == maxPermits)
