@@ -31,16 +31,19 @@ thereby enhancing business stability and disaster recovery capabilities.
 2. Agent architect   
 ![pic](docs/image/architect-1.png)
 
-3. Agent government theory   
+3. Agent governance theory   
 ![pic](docs/image/architect-2.png)
 
-4. Agent for full chain gray release based on lane   
+4. Agent governance strategy
+   ![pic](docs/image/architect-6.png)
+
+5. Agent for full chain gray release based on lane   
 ![pic](docs/image/architect-3.png)
 
-5. Agent for local cell priority strategy   
+6. Agent for local cell priority strategy   
 ![pic](docs/image/architect-4.png)
 
-6. For more information, please refer to the [Architecture Manual](docs/architect.md).
+7. For more information, please refer to the [Architecture Manual](docs/architect.md).
 
 ## Related Projects
 

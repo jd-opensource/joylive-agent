@@ -30,13 +30,16 @@
 3. Agent治理原理   
    ![pic](docs/image/architect-2.png)
 
-4. Agent基于泳道的全链路灰度   
+4. Agent服务治理策略
+   ![pic](docs/image/architect-6.png)
+
+5. Agent基于泳道的全链路灰度   
    ![pic](docs/image/architect-3.png)
 
-5. Agent本地分区优先策略   
+6. Agent本地分区优先策略   
    ![pic](docs/image/architect-4.png)
 
-6. 更多请参考[架构手册](docs/cn/architect.md)
+7. 更多请参考[架构手册](docs/cn/architect.md)
 
 ## 关联项目
 
