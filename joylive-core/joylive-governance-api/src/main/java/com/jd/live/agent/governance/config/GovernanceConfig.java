@@ -162,5 +162,6 @@ public class GovernanceConfig {
         } else if (monitorConfig.getForwardEnabled() == null) {
             monitorConfig.setForwardEnabled(application.getService().isFrontGateway());
         }
+        serviceConfig.initialize();
     }
 }

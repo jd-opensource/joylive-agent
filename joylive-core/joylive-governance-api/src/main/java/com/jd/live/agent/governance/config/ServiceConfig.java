@@ -177,5 +177,9 @@ public class ServiceConfig {
     public String getGroup(String service) {
         return serviceGroups == null || service == null ? null : serviceGroups.get(service);
     }
+
+    protected void initialize() {
+        loadLimiter.initialize();
+    }
 }
 

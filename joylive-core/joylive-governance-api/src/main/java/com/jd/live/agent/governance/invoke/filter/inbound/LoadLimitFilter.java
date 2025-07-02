@@ -32,17 +32,18 @@ import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.limit.LoadLimitPolicy;
+import com.jd.live.agent.governance.policy.service.limit.LoadMetric;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.sun.management.OperatingSystemMXBean;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /**
  * A load limiting filter for inbound requests.
@@ -56,11 +57,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @ConditionalOnFlowControlEnabled
 public class LoadLimitFilter implements InboundFilter {
     private static final Logger logger = LoggerFactory.getLogger(LoadLimitFilter.class);
-    public static final String LOAD_LIMITER_TIMER = "load-limiter";
 
-    private static final int DEFAULT_INTERVAL = 2000;
+    private static final String LOAD_LIMITER_TIMER = "load-limiter";
 
-    private static volatile SystemLoad load;
+    private static volatile LoadMetric load;
 
     private static volatile long processCpuTime = 0;
 
@@ -82,14 +82,24 @@ public class LoadLimitFilter implements InboundFilter {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<LoadLimitPolicy> policies = servicePolicy == null ? null : servicePolicy.getLoadLimitPolicies();
 
-        if (limiterConfig != null && !limiterConfig.isEmpty()) {
-            pass(invocation, new SystemLoad(limiterConfig.getCpuUsage(), limiterConfig.getLoadUsage()), load);
+        boolean hasLimitConfig = limiterConfig != null && !limiterConfig.isEmpty();
+        boolean hasLimitPolicy = policies != null && !policies.isEmpty();
+        if (hasLimitConfig || hasLimitPolicy) {
+            if (!scheduled.get()) {
+                schedule(limiterConfig == null ? LoadLimiterConfig.DEFAULT_WINDOW : limiterConfig.getCpuWindow());
+            }
         }
-        if (null != policies && !policies.isEmpty()) {
-            Permission permission;
+        Permission permission;
+        if (hasLimitConfig) {
+            permission = pass(load, limiterConfig::getRatio);
+            if (!permission.isSuccess()) {
+                return Futures.future(FaultType.LIMIT.reject(permission.getMessage()));
+            }
+        }
+        if (hasLimitPolicy) {
             for (LoadLimitPolicy policy : policies) {
                 if (!policy.isEmpty() && policy.match(invocation)) {
-                    permission = pass(invocation, new SystemLoad(policy.getCpuUsage(), policy.getLoadUsage()), load);
+                    permission = pass(load, policy::getRatio);
                     if (!permission.isSuccess()) {
                         return Futures.future(FaultType.LIMIT.reject(permission.getMessage()));
                     }
@@ -101,39 +111,33 @@ public class LoadLimitFilter implements InboundFilter {
     }
 
     /**
-     * Schedules the computation of system load metrics.
+     * Determines if the request should be allowed based on current load metrics.
+     * Uses a probabilistic rejection strategy when near threshold limits.
+     *
+     * @param metric current system load metrics (CPU and load average)
+     * @param limitFunc function that calculates the rejection ratio (0-100)
+     * @return Permission.success() if allowed, Permission.failure() with details if rejected
      */
-    private void schedule() {
-        if (scheduled.compareAndSet(false, true)) {
-            addTask(DEFAULT_INTERVAL);
+    private Permission pass(LoadMetric metric, Function<LoadMetric, Integer> limitFunc) {
+        int ratio = limitFunc.apply(metric);
+        if (ratio <= 0) {
+            return Permission.success();
         }
+        if (ratio >= 100 || ThreadLocalRandom.current().nextInt(0, 100) < ratio) {
+            return Permission.failure("The request is rejected by load limiter"
+                    + ", cpu:" + metric.getCpuUsage()
+                    + ", load:" + metric.getLoadUsage());
+        }
+        return Permission.success();
     }
 
     /**
-     * Checks if the system load exceeds the configured threshold and rejects the request if necessary.
-     *
-     * @param invocation the inbound request to process
-     * @param threshold  the configured threshold for CPU usage and load average
-     * @param load       the current system load metrics
-     * @return the permission to proceed with the request
+     * Schedules the computation of system load metrics.
      */
-    private Permission pass(InboundInvocation<?> invocation, SystemLoad threshold, SystemLoad load) {
-        if (!scheduled.get()) {
-            schedule();
+    private void schedule(long interval) {
+        if (scheduled.compareAndSet(false, true)) {
+            addTask(interval);
         }
-        if (threshold == null || load == null) {
-            return Permission.success();
-        }
-        Integer cpuUsage = threshold.getCpuUsage();
-        Integer loadUsage = threshold.getLoadUsage();
-        if (cpuUsage != null && cpuUsage > 0 && cpuUsage <= load.getCpuUsage()
-                || loadUsage != null && loadUsage > 0 && loadUsage <= load.getLoadUsage()) {
-            return Permission.failure("The request is rejected by load limiter. "
-                    + "load(cpu:" + load.getCpuUsage() + ", load:" + load.getLoadUsage() + "), "
-                    + "threshold(cpu:" + (cpuUsage == null ? "" : cpuUsage) + ", load:" + (loadUsage == null ? "" : loadUsage) + ")");
-
-        }
-        return Permission.success();
     }
 
     /**
@@ -142,13 +146,13 @@ public class LoadLimitFilter implements InboundFilter {
      * @param time the delay in milliseconds before the task is executed
      */
     private void addTask(long time) {
-        timer.delay(LOAD_LIMITER_TIMER, time, this::compute);
+        timer.delay(LOAD_LIMITER_TIMER, time, () -> compute(time));
     }
 
     /**
      * Computes the system load metrics.
      */
-    private void compute() {
+    private void compute(long interval) {
         try {
             osBean = osBean == null ? ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class) : osBean;
             runtimeBean = runtimeBean == null ? ManagementFactory.getPlatformMXBean(RuntimeMXBean.class) : runtimeBean;
@@ -167,21 +171,11 @@ public class LoadLimitFilter implements InboundFilter {
             double cpuUsage = Math.max(processCpuUsage, systemCpuUsage) * 100;
             double loadAverage = osBean.getSystemLoadAverage();
 
-            load = new SystemLoad((int) cpuUsage, (int) loadAverage);
-            addTask(DEFAULT_INTERVAL);
+            load = new LoadMetric((int) cpuUsage, (int) loadAverage);
+            addTask(interval);
         } catch (Throwable e) {
             logger.warn("Failed to get system metrics from JMX. caused by " + e.getMessage());
-            addTask(10000);
+            addTask(interval * 5);
         }
-    }
-
-    @Getter
-    @AllArgsConstructor
-    private static class SystemLoad {
-
-        private Integer cpuUsage;
-
-        private Integer loadUsage;
-
     }
 }

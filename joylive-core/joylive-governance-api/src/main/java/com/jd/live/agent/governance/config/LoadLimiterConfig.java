@@ -15,23 +15,59 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.governance.policy.service.limit.LoadLimitThrottle;
+import com.jd.live.agent.governance.policy.service.limit.LoadMetric;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Configuration class load rate limiter settings.
  */
-@Getter
-@Setter
 public class LoadLimiterConfig {
 
+    public static final int DEFAULT_WINDOW = 2000;
+
+    @Getter
+    @Setter
+    @Deprecated
     private Integer cpuUsage;
 
+    @Getter
+    @Setter
+    @Deprecated
     private Integer loadUsage;
 
-    public boolean isEmpty() {
-        return cpuUsage == null && loadUsage == null;
+    @Getter
+    @Setter
+    private List<LoadLimitThrottle> throttles;
+
+    @Setter
+    private int cpuWindow = DEFAULT_WINDOW;
+
+    private transient List<LoadLimitThrottle> cache;
+
+    public int getCpuWindow() {
+        return cpuWindow <= 0 ? DEFAULT_WINDOW : cpuWindow;
     }
 
+    public boolean isEmpty() {
+        return cache == null || cache.isEmpty();
+    }
+
+    public int getRatio(LoadMetric metric) {
+        return LoadLimitThrottle.getRatio(metric, cache);
+    }
+
+    protected void initialize() {
+        cache = throttles == null ? new ArrayList<>() : new ArrayList<>(throttles);
+        if (cpuUsage != null || loadUsage != null) {
+            cache.add(new LoadLimitThrottle(cpuUsage, loadUsage, 100));
+        }
+        Collections.sort(cache);
+    }
 }
 

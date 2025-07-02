@@ -19,16 +19,30 @@ import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Load limit policy
  */
-@Getter
-@Setter
 public class LoadLimitPolicy extends AbstractLimitPolicy implements LimitPolicy, PolicyInheritWithIdGen<LoadLimitPolicy> {
 
+    @Getter
+    @Setter
+    @Deprecated
     private Integer cpuUsage;
 
+    @Getter
+    @Setter
+    @Deprecated
     private Integer loadUsage;
+
+    @Getter
+    @Setter
+    private List<LoadLimitThrottle> throttles;
+
+    private transient List<LoadLimitThrottle> cache;
 
     public LoadLimitPolicy() {
     }
@@ -38,7 +52,11 @@ public class LoadLimitPolicy extends AbstractLimitPolicy implements LimitPolicy,
     }
 
     public boolean isEmpty() {
-        return cpuUsage == null && loadUsage == null;
+        return cache == null || cache.isEmpty();
+    }
+
+    public int getRatio(LoadMetric metric) {
+        return LoadLimitThrottle.getRatio(metric, cache);
     }
 
     @Override
@@ -53,6 +71,17 @@ public class LoadLimitPolicy extends AbstractLimitPolicy implements LimitPolicy,
         if (loadUsage == null) {
             loadUsage = source.loadUsage;
         }
+        if (throttles == null && source.throttles != null) {
+            throttles = new ArrayList<>(source.throttles);
+        }
+    }
+
+    public void cache() {
+        cache = throttles == null ? new ArrayList<>() : new ArrayList<>(throttles);
+        if (cpuUsage != null || loadUsage != null) {
+            cache.add(new LoadLimitThrottle(cpuUsage, loadUsage, 100));
+        }
+        Collections.sort(cache);
     }
 }
 

@@ -181,6 +181,9 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         if (circuitBreakPolicies != null) {
             circuitBreakPolicies.forEach(CircuitBreakPolicy::cache);
         }
+        if (loadLimitPolicies != null) {
+            loadLimitPolicies.forEach(LoadLimitPolicy::cache);
+        }
     }
 
     /**
