@@ -24,6 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.redis.condition.ConditionalOnProtectJedis5Enabled;
 import com.jd.live.agent.plugin.protection.redis.interceptor.JedisConnectionInterceptor;
@@ -45,13 +46,16 @@ public class JedisConnectionDefinition extends PluginDefinitionAdapter {
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
     private PolicySupplier policySupplier;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
+
     public JedisConnectionDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_JEDIS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SEND_COMMAND).
                                 and(MatcherBuilder.arguments(ARGUMENT_SEND_COMMAND)),
-                        () -> new JedisConnectionInterceptor(policySupplier)
+                        () -> new JedisConnectionInterceptor(policySupplier, governanceConfig)
                 )
         };
     }

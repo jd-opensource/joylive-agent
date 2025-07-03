@@ -17,6 +17,8 @@ package com.jd.live.agent.plugin.protection.redis.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.RedisConfig;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.redis.request.JedisRequest;
@@ -28,15 +30,18 @@ import redis.clients.jedis.Connection;
  */
 public class JedisConnectionInterceptor extends AbstractDbInterceptor {
 
-    public JedisConnectionInterceptor(PolicySupplier policySupplier) {
+    private final RedisConfig redisConfig;
+
+    public JedisConnectionInterceptor(PolicySupplier policySupplier, GovernanceConfig governanceConfig) {
         super(policySupplier);
+        this.redisConfig = governanceConfig.getRedisConfig();
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Connection connection = (Connection) ctx.getTarget();
         CommandArguments args = ctx.getArgument(0);
-        protect((MethodContext) ctx, new JedisRequest(connection, args));
+        protect((MethodContext) ctx, new JedisRequest(connection, args.getCommand(), redisConfig::getAccessMode));
     }
 
 }

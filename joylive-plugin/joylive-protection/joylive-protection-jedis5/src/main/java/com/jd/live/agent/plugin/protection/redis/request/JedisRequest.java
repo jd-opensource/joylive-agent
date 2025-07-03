@@ -25,19 +25,23 @@ import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.JedisException;
 
 import java.net.Socket;
+import java.util.function.Function;
 
 public class JedisRequest extends AbstractAttributes implements DbRequest.CacheRequest {
 
     private final Connection connection;
 
-    private final CommandArguments args;
+    private final ProtocolCommand command;
 
     private final HostAndPort hostAndPort;
 
-    public JedisRequest(Connection connection, CommandArguments args) {
+    private final Function<String, AccessMode> commandFunc;
+
+    public JedisRequest(Connection connection, ProtocolCommand command, Function<String, AccessMode> commandFunc) {
         this.connection = connection;
-        this.args = args;
+        this.command = command;
         this.hostAndPort = parse(connection);
+        this.commandFunc = commandFunc;
     }
 
     @Override
@@ -62,110 +66,8 @@ public class JedisRequest extends AbstractAttributes implements DbRequest.CacheR
 
     @Override
     public AccessMode getAccessMode() {
-        ProtocolCommand command = args.getCommand();
         if (command instanceof Protocol.Command) {
-            switch ((Protocol.Command) command) {
-                case AUTH:
-                case HELLO:
-                case PING:
-                case SELECT:
-                case SWAPDB:
-                case DBSIZE:
-                case FLUSHDB:
-                case FLUSHALL:
-                case TIME:
-                case CONFIG:
-                case INFO:
-                case SHUTDOWN:
-                case MONITOR:
-                case SLAVEOF:
-                case REPLICAOF:
-                case CLIENT:
-                case ASKING:
-                case READONLY:
-                case READWRITE:
-                case CLUSTER:
-                case SENTINEL:
-                case MODULE:
-                case ACL:
-                case LASTSAVE:
-                case SAVE:
-                case BGSAVE:
-                case BGREWRITEAOF:
-                case ROLE:
-                case FAILOVER:
-                case SLOWLOG:
-                case LOLWUT:
-                case COMMAND:
-                case RESET:
-                case LATENCY:
-                case WAIT:
-                case WAITAOF:
-                case MULTI:
-                case DISCARD:
-                case WATCH:
-                case UNWATCH:
-                    return AccessMode.NONE;
-                // Read-only commands
-                case GET:
-                case GETEX:
-                case GETDEL:
-                case GETBIT:
-                case GETRANGE:
-                case MGET:
-                case HGET:
-                case HMGET:
-                case HGETALL:
-                case HSTRLEN:
-                case HEXISTS:
-                case HLEN:
-                case HKEYS:
-                case HVALS:
-                case HRANDFIELD:
-                case EXISTS:
-                case TYPE:
-                case STRLEN:
-                case LLEN:
-                case LRANGE:
-                case LINDEX:
-                case LPOS:
-                case SCARD:
-                case SMEMBERS:
-                case SISMEMBER:
-                case SMISMEMBER:
-                case SRANDMEMBER:
-                case ZCARD:
-                case ZCOUNT:
-                case ZLEXCOUNT:
-                case ZRANGE:
-                case ZRANGEBYLEX:
-                case ZRANGEBYSCORE:
-                case ZRANK:
-                case ZREVRANGE:
-                case ZREVRANGEBYLEX:
-                case ZREVRANGEBYSCORE:
-                case ZREVRANK:
-                case ZSCORE:
-                case ZMSCORE:
-                case XLEN:
-                case XRANGE:
-                case XREVRANGE:
-                case XINFO:
-                case PFCOUNT:
-                case BITCOUNT:
-                case BITPOS:
-                case BITFIELD_RO:
-                case LCS:
-                case GEODIST:
-                case GEOHASH:
-                case GEOPOS:
-                case GEORADIUS_RO:
-                case GEOSEARCH:
-                case GEORADIUSBYMEMBER_RO:
-                    return AccessMode.READ;
-                default:
-                    return AccessMode.READ_WRITE;
-            }
+            return commandFunc.apply(((Protocol.Command) command).name());
         }
         return AccessMode.NONE;
     }

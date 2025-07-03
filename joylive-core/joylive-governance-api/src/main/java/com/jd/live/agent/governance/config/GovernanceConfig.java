@@ -144,6 +144,9 @@ public class GovernanceConfig {
     @Config("db")
     private DbConfig dbConfig = new DbConfig();
 
+    @Config("redis")
+    private RedisConfig redisConfig = new RedisConfig();
+
     @Config
     private int initializeTimeout = 10 * 1000;
 
@@ -163,5 +166,6 @@ public class GovernanceConfig {
             monitorConfig.setForwardEnabled(application.getService().isFrontGateway());
         }
         serviceConfig.initialize();
+        redisConfig.initialize();
     }
 }
