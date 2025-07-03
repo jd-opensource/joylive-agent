@@ -1,1 +1,1 @@
-com.jd.live.agent.plugin.protection.redis.definition.JedisConnectionDefinition
+com.jd.live.agent.plugin.protection.redis.v3.definition.JedisConnectionDefinition
