@@ -25,12 +25,9 @@ import java.util.function.Function;
 
 public class LettuceRequest extends AbstractAttributes implements DbRequest.CacheRequest {
 
-    private final RedisCommand<?, ?, ?> command;
-
     private final Function<String, AccessMode> commandFunc;
 
-    public LettuceRequest(RedisCommand<?, ?, ?> command, Function<String, AccessMode> commandFunc) {
-        this.command = command;
+    public LettuceRequest(Function<String, AccessMode> commandFunc) {
         this.commandFunc = commandFunc;
     }
 
@@ -55,23 +52,21 @@ public class LettuceRequest extends AbstractAttributes implements DbRequest.Cach
     }
 
     @Override
-    public AccessMode getAccessMode() {
-        RedisCommand<?, ?, ?> cmd = command;
-        while (cmd instanceof DecoratedCommand<?, ?, ?>) {
-            cmd = ((DecoratedCommand<?, ?, ?>) cmd).getDelegate();
+    public Exception reject(String message) {
+        return new RedisException(message);
+    }
+
+    protected AccessMode getAccessMode(RedisCommand<?, ?, ?> command) {
+        while (command instanceof DecoratedCommand<?, ?, ?>) {
+            command = ((DecoratedCommand<?, ?, ?>) command).getDelegate();
         }
-        if (cmd instanceof Command<?, ?, ?>) {
-            ProtocolKeyword keyword = cmd.getType();
+        if (command instanceof Command<?, ?, ?>) {
+            ProtocolKeyword keyword = command.getType();
             if (keyword instanceof CommandType) {
                 return commandFunc.apply(((CommandType) keyword).name());
             }
         }
         return AccessMode.READ_WRITE;
-    }
-
-    @Override
-    public Exception reject(String message) {
-        return new RedisException(message);
     }
 
 }

@@ -21,25 +21,27 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.RedisConfig;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.lettuce.v6.request.LettuceRequest;
+import com.jd.live.agent.plugin.protection.lettuce.v6.request.MultiCommandRequest;
 import io.lettuce.core.protocol.RedisCommand;
 
+import java.util.Collection;
+
 /**
- * RedisChannelHandlerInterceptor
+ * DispatchMultiCommandHandlerInterceptor
  */
-public class RedisChannelHandlerInterceptor extends AbstractDbInterceptor {
+public class MultiCommandHandlerInterceptor extends AbstractDbInterceptor {
 
     private final RedisConfig redisConfig;
 
-    public RedisChannelHandlerInterceptor(PolicySupplier policySupplier, GovernanceConfig governanceConfig) {
+    public MultiCommandHandlerInterceptor(PolicySupplier policySupplier, GovernanceConfig governanceConfig) {
         super(policySupplier);
         this.redisConfig = governanceConfig.getRedisConfig();
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        RedisCommand<?, ?, ?> command = ctx.getArgument(0);
-        protect((MethodContext) ctx, new LettuceRequest(command, redisConfig::getAccessMode));
+        Collection<? extends RedisCommand<?, ?, ?>> commands = ctx.getArgument(0);
+        protect((MethodContext) ctx, new MultiCommandRequest(commands, redisConfig::getAccessMode));
     }
 
 }

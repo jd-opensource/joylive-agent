@@ -27,20 +27,25 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.lettuce.v6.condition.ConditionalOnProtectLettuce6Enabled;
-import com.jd.live.agent.plugin.protection.lettuce.v6.interceptor.RedisChannelHandlerInterceptor;
+import com.jd.live.agent.plugin.protection.lettuce.v6.interceptor.MultiCommandHandlerInterceptor;
+import com.jd.live.agent.plugin.protection.lettuce.v6.interceptor.SingleCommandHandlerInterceptor;
 
 @Injectable
 @Extension(value = "RedisChannelHandlerDefinition_v6", order = PluginDefinition.ORDER_PROTECT)
 @ConditionalOnProtectLettuce6Enabled
-@ConditionalOnClass(RedisChannelHandlerDefinition.TYPE_JEDIS)
+@ConditionalOnClass(RedisChannelHandlerDefinition.TYPE)
 public class RedisChannelHandlerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_JEDIS = "io.lettuce.core.RedisChannelHandler";
+    protected static final String TYPE = "io.lettuce.core.RedisChannelHandler";
 
-    private static final String METHOD_SEND_COMMAND = "dispatch";
+    private static final String METHOD = "dispatch";
 
-    private static final String[] ARGUMENT_SEND_COMMAND = {
+    private static final String[] ARGUMENTS0 = {
             "io.lettuce.core.protocol.RedisCommand"
+    };
+
+    private static final String[] ARGUMENTS1 = {
+            "java.util.Collection"
     };
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)
@@ -50,12 +55,15 @@ public class RedisChannelHandlerDefinition extends PluginDefinitionAdapter {
     private GovernanceConfig governanceConfig;
 
     public RedisChannelHandlerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_JEDIS);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_SEND_COMMAND).
-                                and(MatcherBuilder.arguments(ARGUMENT_SEND_COMMAND)),
-                        () -> new RedisChannelHandlerInterceptor(policySupplier, governanceConfig)
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS0)),
+                        () -> new SingleCommandHandlerInterceptor(policySupplier, governanceConfig)
+                ),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS1)),
+                        () -> new MultiCommandHandlerInterceptor(policySupplier, governanceConfig)
                 )
         };
     }
