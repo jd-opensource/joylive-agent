@@ -41,6 +41,7 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // TODO add cluster permission check
         TopicPartition partition = Accessors.getPartition(ctx.getArgument(0));
         if (partition != null) {
             ConsumerMetadata metadata = Accessors.getMetadata(ctx.getTarget());

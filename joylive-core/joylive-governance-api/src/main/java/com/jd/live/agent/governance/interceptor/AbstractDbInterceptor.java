@@ -24,6 +24,8 @@ import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.request.DbRequest;
 
+import static com.jd.live.agent.core.util.StringUtils.join;
+
 /**
  * AbstractDbInterceptor is an abstract class that provides a base implementation for
  * database-related interceptors. It encapsulates the common functionality required to
@@ -57,16 +59,16 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
     protected void protect(MethodContext context, DbRequest request) {
         GovernancePolicy policy = policySupplier.getPolicy();
         LiveDatabaseSpec databaseSpec = policy == null ? null : policy.getLocalDatabaseSpec();
-        LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(request.getAddress());
+        LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(request.getAddresses());
         if (db != null) {
             // Retrieve the database policy and determine the access mode
             AccessMode dbMode = db.getAccessMode();
             AccessMode requestMode = request.getAccessMode();
             // Check if the operation is allowed based on the access mode
             if (!dbMode.isReadable() && requestMode.isReadable()) {
-                onReject(context, request, request.getType() + " is not readable, address=" + request.getAddress());
+                onReject(context, request, request.getType() + " is not readable, address=" + join(request.getAddresses()));
             } else if (!dbMode.isWriteable() && requestMode.isWriteable()) {
-                onReject(context, request, request.getType() + " is not writeable, address=" + request.getAddress());
+                onReject(context, request, request.getType() + " is not writeable, address=" + join(request.getAddresses()));
             }
         }
     }

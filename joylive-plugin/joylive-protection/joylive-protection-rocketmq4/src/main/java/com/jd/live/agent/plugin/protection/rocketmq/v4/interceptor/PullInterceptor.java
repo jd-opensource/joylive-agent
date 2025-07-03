@@ -39,6 +39,7 @@ public class PullInterceptor extends AbstractMessageInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // TODO add cluster permission check
         PullAPIWrapper wrapper = (PullAPIWrapper) ctx.getTarget();
         MQClientInstance config = Accessors.getInstance(wrapper);
         String address = config != null ? config.getClientConfig().getNamesrvAddr() : null;

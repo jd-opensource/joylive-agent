@@ -25,8 +25,8 @@ public class MultiCommandRequest extends LettuceRequest {
 
     private final Collection<? extends RedisCommand<?, ?, ?>> commands;
 
-    public MultiCommandRequest(Collection<? extends RedisCommand<?, ?, ?>> commands, Function<String, AccessMode> commandFunc) {
-        super(commandFunc);
+    public MultiCommandRequest(Collection<? extends RedisCommand<?, ?, ?>> commands, String[] addresses, Function<String, AccessMode> commandFunc) {
+        super(addresses, commandFunc);
         this.commands = commands;
     }
 

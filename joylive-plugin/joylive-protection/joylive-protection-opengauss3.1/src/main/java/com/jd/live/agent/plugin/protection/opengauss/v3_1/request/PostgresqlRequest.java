@@ -36,13 +36,8 @@ public class PostgresqlRequest extends AbstractAttributes implements SQLRequest 
     }
 
     @Override
-    public String getHost() {
-        return executor.getHostSpec().getHost();
-    }
-
-    @Override
-    public int getPort() {
-        return executor.getHostSpec().getPort();
+    public String[] getAddresses() {
+        return new String[]{executor.getHostSpec().toString()};
     }
 
     @Override

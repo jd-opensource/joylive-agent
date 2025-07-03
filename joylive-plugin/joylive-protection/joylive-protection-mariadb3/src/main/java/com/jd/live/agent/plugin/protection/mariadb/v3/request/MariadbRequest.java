@@ -44,13 +44,8 @@ public class MariadbRequest extends AbstractDbRequest implements SQLRequest {
     }
 
     @Override
-    public String getHost() {
-        return client.getHostAddress().host;
-    }
-
-    @Override
-    public int getPort() {
-        return client.getHostAddress().port;
+    public String[] getAddresses() {
+        return new String[]{client.getHostAddress().host + ":" + client.getHostAddress().port};
     }
 
     @Override

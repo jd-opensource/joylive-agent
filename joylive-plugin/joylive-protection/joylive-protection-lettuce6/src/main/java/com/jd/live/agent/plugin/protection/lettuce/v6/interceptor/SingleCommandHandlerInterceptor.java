@@ -18,28 +18,23 @@ package com.jd.live.agent.plugin.protection.lettuce.v6.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.RedisConfig;
-import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.lettuce.v6.request.SingleCommandRequest;
 import io.lettuce.core.protocol.RedisCommand;
 
 /**
- * DispatchSingleCommandHandlerInterceptor
+ * SingleCommandHandlerInterceptor
  */
-public class SingleCommandHandlerInterceptor extends AbstractDbInterceptor {
-
-    private final RedisConfig redisConfig;
+public class SingleCommandHandlerInterceptor extends RedisChannelHandlerInterceptor {
 
     public SingleCommandHandlerInterceptor(PolicySupplier policySupplier, GovernanceConfig governanceConfig) {
-        super(policySupplier);
-        this.redisConfig = governanceConfig.getRedisConfig();
+        super(policySupplier, governanceConfig);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         RedisCommand<?, ?, ?> command = ctx.getArgument(0);
-        protect((MethodContext) ctx, new SingleCommandRequest(command, redisConfig::getAccessMode));
+        protect((MethodContext) ctx, new SingleCommandRequest(command, Accessor.getAddresses(ctx.getTarget()), redisConfig::getAccessMode));
     }
 
 }

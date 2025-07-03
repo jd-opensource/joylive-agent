@@ -58,25 +58,7 @@ public interface DbRequest extends Request {
         return name.toLowerCase();
     }
 
-    /**
-     * Retrieves the host address of the database server.
-     *
-     * @return The host address as a String.
-     */
-    String getHost();
-
-    /**
-     * Retrieves the port number of the database server.
-     *
-     * @return The port number.
-     */
-    int getPort();
-
-    default String getAddress() {
-        String host = getHost();
-        int port = getPort();
-        return port > 0 ? host + ":" + port : host;
-    }
+    String[] getAddresses();
 
     /**
      * Retrieves the name of the database.

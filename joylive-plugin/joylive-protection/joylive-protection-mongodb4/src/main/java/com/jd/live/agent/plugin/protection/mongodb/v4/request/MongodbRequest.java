@@ -38,13 +38,8 @@ public class MongodbRequest extends AbstractAttributes implements SQLRequest {
     }
 
     @Override
-    public String getHost() {
-        return serverAddress == null ? null : serverAddress.getHost();
-    }
-
-    @Override
-    public int getPort() {
-        return serverAddress == null ? 0 : serverAddress.getPort();
+    public String[] getAddresses() {
+        return new String[]{serverAddress == null ? null : serverAddress.toString()};
     }
 
     @Override

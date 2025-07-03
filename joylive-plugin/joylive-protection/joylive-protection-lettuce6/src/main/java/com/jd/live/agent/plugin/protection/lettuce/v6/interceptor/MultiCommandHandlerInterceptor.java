@@ -18,8 +18,6 @@ package com.jd.live.agent.plugin.protection.lettuce.v6.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.RedisConfig;
-import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.lettuce.v6.request.MultiCommandRequest;
 import io.lettuce.core.protocol.RedisCommand;
@@ -27,21 +25,18 @@ import io.lettuce.core.protocol.RedisCommand;
 import java.util.Collection;
 
 /**
- * DispatchMultiCommandHandlerInterceptor
+ * MultiCommandHandlerInterceptor
  */
-public class MultiCommandHandlerInterceptor extends AbstractDbInterceptor {
-
-    private final RedisConfig redisConfig;
+public class MultiCommandHandlerInterceptor extends RedisChannelHandlerInterceptor {
 
     public MultiCommandHandlerInterceptor(PolicySupplier policySupplier, GovernanceConfig governanceConfig) {
-        super(policySupplier);
-        this.redisConfig = governanceConfig.getRedisConfig();
+        super(policySupplier, governanceConfig);
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         Collection<? extends RedisCommand<?, ?, ?>> commands = ctx.getArgument(0);
-        protect((MethodContext) ctx, new MultiCommandRequest(commands, redisConfig::getAccessMode));
+        protect((MethodContext) ctx, new MultiCommandRequest(commands, Accessor.getAddresses(ctx.getTarget()), redisConfig::getAccessMode));
     }
 
 }

@@ -17,17 +17,20 @@ package com.jd.live.agent.plugin.protection.lettuce.v6.request;
 
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.request.DbRequest;
+import com.jd.live.agent.governance.request.DbRequest.CacheRequest;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.protocol.*;
 
 import java.util.function.Function;
 
-public class LettuceRequest extends AbstractAttributes implements DbRequest.CacheRequest {
+public abstract class LettuceRequest extends AbstractAttributes implements CacheRequest {
 
-    private final Function<String, AccessMode> commandFunc;
+    protected final String[] addresses;
 
-    public LettuceRequest(Function<String, AccessMode> commandFunc) {
+    protected final Function<String, AccessMode> commandFunc;
+
+    public LettuceRequest(String[] addresses, Function<String, AccessMode> commandFunc) {
+        this.addresses = addresses;
         this.commandFunc = commandFunc;
     }
 
@@ -37,13 +40,8 @@ public class LettuceRequest extends AbstractAttributes implements DbRequest.Cach
     }
 
     @Override
-    public String getHost() {
-        return null;
-    }
-
-    @Override
-    public int getPort() {
-        return 0;
+    public String[] getAddresses() {
+        return addresses;
     }
 
     @Override

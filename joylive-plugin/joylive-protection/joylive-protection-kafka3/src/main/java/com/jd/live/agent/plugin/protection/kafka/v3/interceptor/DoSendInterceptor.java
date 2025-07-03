@@ -37,6 +37,7 @@ public class DoSendInterceptor extends AbstractMessageInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // TODO add cluster permission check
         MethodContext mc = (MethodContext) ctx;
         ProducerRecord<?, ?> record = ctx.getArgument(0);
         ProducerConfig config = Accessors.getConfig(ctx.getTarget());

@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.governance.policy.AccessMode;
-import com.jd.live.agent.governance.request.DbRequest;
+import com.jd.live.agent.governance.request.DbRequest.CacheRequest;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.JedisException;
@@ -27,7 +27,7 @@ import redis.clients.jedis.exceptions.JedisException;
 import java.net.Socket;
 import java.util.function.Function;
 
-public class JedisRequest extends AbstractAttributes implements DbRequest.CacheRequest {
+public class JedisRequest extends AbstractAttributes implements CacheRequest {
 
     private final Connection connection;
 
@@ -50,13 +50,8 @@ public class JedisRequest extends AbstractAttributes implements DbRequest.CacheR
     }
 
     @Override
-    public String getHost() {
-        return hostAndPort.getHost();
-    }
-
-    @Override
-    public int getPort() {
-        return hostAndPort.getPort();
+    public String[] getAddresses() {
+        return new String[]{hostAndPort.toString()};
     }
 
     @Override

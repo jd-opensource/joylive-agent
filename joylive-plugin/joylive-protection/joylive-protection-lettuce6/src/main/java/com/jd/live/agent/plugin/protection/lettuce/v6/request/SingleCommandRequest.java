@@ -24,8 +24,8 @@ public class SingleCommandRequest extends LettuceRequest {
 
     private final RedisCommand<?, ?, ?> command;
 
-    public SingleCommandRequest(RedisCommand<?, ?, ?> command, Function<String, AccessMode> commandFunc) {
-        super(commandFunc);
+    public SingleCommandRequest(RedisCommand<?, ?, ?> command, String[] addresses, Function<String, AccessMode> commandFunc) {
+        super(addresses, commandFunc);
         this.command = command;
     }
 
