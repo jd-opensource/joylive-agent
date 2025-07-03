@@ -18,14 +18,13 @@ package com.jd.live.agent.plugin.protection.redis.request;
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
-import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.request.DbRequest;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.JedisException;
 
-import java.lang.reflect.Method;
+import java.net.Socket;
 
 public class JedisRequest extends AbstractAttributes implements DbRequest.CacheRequest {
 
@@ -38,14 +37,7 @@ public class JedisRequest extends AbstractAttributes implements DbRequest.CacheR
     public JedisRequest(Connection connection, CommandArguments args) {
         this.connection = connection;
         this.args = args;
-        JedisSocketFactory socketFactory = (JedisSocketFactory) Accessor.socketFactory.get(connection);
-        // TODO hostAndPort
-        HostAndPort hostAndPort = null;
-        try {
-            hostAndPort = socketFactory == null ? null : (HostAndPort) Accessor.getSocketHostAndPort.invoke(socketFactory);
-        } catch (Throwable ignore) {
-        }
-        this.hostAndPort = hostAndPort;
+        this.hostAndPort = parse(connection);
     }
 
     @Override
@@ -183,11 +175,24 @@ public class JedisRequest extends AbstractAttributes implements DbRequest.CacheR
         return new JedisException(message);
     }
 
+    /**
+     * Parses the connection to extract host and port information.
+     *
+     * @param connection the connection to parse
+     * @return HostAndPort containing the connection details
+     */
+    private HostAndPort parse(Connection connection) {
+        JedisSocketFactory socketFactory = (JedisSocketFactory) Accessor.socketFactory.get(connection);
+        if (socketFactory instanceof DefaultJedisSocketFactory) {
+            return ((DefaultJedisSocketFactory) socketFactory).getHostAndPort();
+        }
+        Socket socket = (Socket) Accessor.socket.get(connection);
+        return new HostAndPort(socket.getInetAddress().getHostAddress(), socket.getPort());
+    }
+
     private static class Accessor {
 
         private static final UnsafeFieldAccessor socketFactory = UnsafeFieldAccessorFactory.getAccessor(Connection.class, "socketFactory");
-
-        private static final Method getSocketHostAndPort = ClassUtils.getDeclaredMethod(JedisSocketFactory.class, "getSocketHostAndPort");
-
+        private static final UnsafeFieldAccessor socket = UnsafeFieldAccessorFactory.getAccessor(Connection.class, "socket");
     }
 }
