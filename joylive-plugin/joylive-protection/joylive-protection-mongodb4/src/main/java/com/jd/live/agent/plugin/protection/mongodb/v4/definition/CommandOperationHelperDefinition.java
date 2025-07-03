@@ -27,6 +27,8 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.mongodb.v4.condition.ConditionalOnProtectMongodbEnabled;
 import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.ExecuteCommandInterceptor;
+import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.ExecuteRetryableCommandInterceptor;
+import com.jd.live.agent.plugin.protection.mongodb.v4.interceptor.ExecuteWriteCommandInterceptor;
 
 @Injectable
 @Extension(value = "CommandOperationHelperDefinition_v4", order = PluginDefinition.ORDER_PROTECT)
@@ -89,12 +91,12 @@ public class CommandOperationHelperDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXECUTE_WRITE_COMMAND).
                                 and(MatcherBuilder.arguments(ARGUMENT_EXECUTE_WRITE_COMMAND)),
-                        () -> new ExecuteCommandInterceptor(policySupplier)
+                        () -> new ExecuteWriteCommandInterceptor(policySupplier)
                 ),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXECUTE_RETRYABLE_COMMAND).
                                 and(MatcherBuilder.arguments(ARGUMENT_EXECUTE_RETRYABLE_COMMAND)),
-                        () -> new ExecuteCommandInterceptor(policySupplier)
+                        () -> new ExecuteRetryableCommandInterceptor(policySupplier)
                 )
         };
     }

@@ -19,15 +19,22 @@ import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.governance.request.DbRequest;
 import redis.clients.jedis.CommandArguments;
 import redis.clients.jedis.Connection;
+import redis.clients.jedis.exceptions.JedisException;
 
 public class JedisRequest extends AbstractAttributes implements DbRequest.CacheRequest {
 
     private final Connection connection;
+
     private final CommandArguments args;
 
     public JedisRequest(Connection connection, CommandArguments args) {
         this.connection = connection;
         this.args = args;
+    }
+
+    @Override
+    public String getType() {
+        return "redis";
     }
 
     @Override
@@ -43,5 +50,10 @@ public class JedisRequest extends AbstractAttributes implements DbRequest.CacheR
     @Override
     public String getDatabase() {
         return null;
+    }
+
+    @Override
+    public Exception reject(String message) {
+        return new JedisException(message);
     }
 }

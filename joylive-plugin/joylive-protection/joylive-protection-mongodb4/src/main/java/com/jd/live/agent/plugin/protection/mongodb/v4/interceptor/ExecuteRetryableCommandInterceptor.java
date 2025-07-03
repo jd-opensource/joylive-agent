@@ -33,18 +33,13 @@ public class ExecuteRetryableCommandInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Connection connection = (Connection) ctx.getArguments()[4];
+        String database = ctx.getArgument(0);
+        Connection connection = ctx.getArgument(4);
         ConnectionDescription description = connection.getDescription();
         ServerAddress serverAddress = description == null ? null : description.getServerAddress();
-        protect((MethodContext) ctx, new MongodbRequest(serverAddress, (String) ctx.getArguments()[0]));
+        protect((MethodContext) ctx, new MongodbRequest(serverAddress, database));
     }
 
 }

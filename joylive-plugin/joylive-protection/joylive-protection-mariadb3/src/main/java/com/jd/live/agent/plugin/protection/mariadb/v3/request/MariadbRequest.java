@@ -33,6 +33,11 @@ public class MariadbRequest extends AbstractDbRequest implements SQLRequest {
     }
 
     @Override
+    public String getType() {
+        return "mariadb";
+    }
+
+    @Override
     public String getName() {
         String name = client.getContext().getConf().nonMappedOptions().getProperty(KEY_CLUSTER);
         return name != null ? name : SQLRequest.super.getName();

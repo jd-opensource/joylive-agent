@@ -32,19 +32,15 @@ public class ExecuteWriteCommandInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        ServerAddress serverAddress = ((WriteBinding) ctx.getArguments()[0])
+        WriteBinding writeBinding = ctx.getArgument(0);
+        String database = ctx.getArgument(1);
+        ServerAddress serverAddress = writeBinding
                 .getWriteConnectionSource()
                 .getServerDescription()
                 .getAddress();
-        protect((MethodContext) ctx, new MongodbRequest(serverAddress, (String) ctx.getArguments()[1]));
+        protect((MethodContext) ctx, new MongodbRequest(serverAddress, database));
     }
 
 }

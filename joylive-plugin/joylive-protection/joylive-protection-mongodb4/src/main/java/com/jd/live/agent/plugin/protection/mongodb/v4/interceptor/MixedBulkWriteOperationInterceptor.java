@@ -33,19 +33,15 @@ public class MixedBulkWriteOperationInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        ServerAddress serverAddress = ((WriteBinding) ctx.getArguments()[0])
+        MixedBulkWriteOperation operation = (MixedBulkWriteOperation) ctx.getTarget();
+        WriteBinding writeBinding = ctx.getArgument(0);
+        ServerAddress serverAddress = writeBinding
                 .getWriteConnectionSource()
                 .getServerDescription()
                 .getAddress();
-        String database = ((MixedBulkWriteOperation) ctx.getTarget()).getNamespace().getDatabaseName();
+        String database = operation.getNamespace().getDatabaseName();
         protect((MethodContext) ctx, new MongodbRequest(serverAddress, database));
     }
 

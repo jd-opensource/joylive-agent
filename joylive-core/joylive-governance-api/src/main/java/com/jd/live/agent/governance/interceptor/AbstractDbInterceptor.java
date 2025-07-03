@@ -20,12 +20,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.request.DbRequest;
-
-import java.sql.SQLException;
 
 /**
  * AbstractDbInterceptor is an abstract class that provides a base implementation for
@@ -59,28 +56,30 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
      */
     protected void protect(MethodContext context, DbRequest request) {
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
-        if (liveSpace != null) {
-            String address = request.getAddress();
-            LiveDatabaseSpec databaseSpec = policy.getLocalDatabaseSpec();
-            LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(address);
-            if (db != null) {
-                // Retrieve the database policy and determine the access mode
-                AccessMode dbMode = db.getAccessMode();
-                AccessMode requestMode = request.getAccessMode();
-                // Check if the operation is allowed based on the access mode
-                if (!dbMode.isReadable() && requestMode.isReadable()
-                        || !dbMode.isWriteable() && requestMode.isWriteable()) {
-                    onReject(context, request);
-                }
+        LiveDatabaseSpec databaseSpec = policy == null ? null : policy.getLocalDatabaseSpec();
+        LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(request.getAddress());
+        if (db != null) {
+            // Retrieve the database policy and determine the access mode
+            AccessMode dbMode = db.getAccessMode();
+            AccessMode requestMode = request.getAccessMode();
+            // Check if the operation is allowed based on the access mode
+            if (!dbMode.isReadable() && requestMode.isReadable()) {
+                onReject(context, request, request.getType() + " is not readable, address=" + request.getAddress());
+            } else if (!dbMode.isWriteable() && requestMode.isWriteable()) {
+                onReject(context, request, request.getType() + " is not writeable, address=" + request.getAddress());
             }
         }
     }
 
-    protected void onReject(MethodContext context, DbRequest request) {
-        // If not allowed, set an exception and skip the rest of the interceptor chain
-        context.setThrowable(new SQLException("Database is not accessible, address=" + request.getAddress()));
-        context.setSkip(true);
+    /**
+     * Handles request rejection by skipping further processing and throwing an exception.
+     *
+     * @param context the method execution context
+     * @param request the database request being processed
+     * @param message rejection reason message
+     */
+    protected void onReject(MethodContext context, DbRequest request, String message) {
+        context.skipWithThrowable(request.reject(message));
     }
 }
 

@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.governance.policy.AccessMode;
 
+import java.sql.SQLException;
 import java.util.regex.Pattern;
 
 /**
@@ -42,6 +43,19 @@ public interface DbRequest extends Request {
      */
     default String getName() {
         return null;
+    }
+
+    /**
+     * Gets the type name of the implementing class.
+     *
+     * @return lowercase type name with "Request" suffix removed if present
+     */
+    default String getType() {
+        String name = this.getClass().getSimpleName();
+        if (name.endsWith("Request")) {
+            name = name.substring(0, name.length() - 7);
+        }
+        return name.toLowerCase();
     }
 
     /**
@@ -83,6 +97,15 @@ public interface DbRequest extends Request {
         }
         return AccessMode.READ_WRITE;
     }
+
+    /**
+     * Creates a new exception indicating a rejected operation.
+     *
+     * @param message the detailed rejection reason (required)
+     * @return the constructed exception instance
+     * @throws IllegalArgumentException if message is null or empty
+     */
+    Exception reject(String message);
 
     /**
      * Defines an interface for cache-related database requests.
@@ -140,6 +163,11 @@ public interface DbRequest extends Request {
             } else {
                 return AccessMode.NONE;
             }
+        }
+
+        @Override
+        default Exception reject(String message) {
+            return new SQLException(message);
         }
     }
 }
