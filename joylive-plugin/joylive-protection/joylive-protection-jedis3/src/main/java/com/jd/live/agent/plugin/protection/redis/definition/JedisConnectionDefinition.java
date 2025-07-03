@@ -25,12 +25,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.policy.PolicySupplier;
-import com.jd.live.agent.plugin.protection.redis.condition.ConditionalOnProtectJedis5Enabled;
+import com.jd.live.agent.plugin.protection.redis.condition.ConditionalOnProtectJedis3Enabled;
 import com.jd.live.agent.plugin.protection.redis.interceptor.JedisConnectionInterceptor;
 
 @Injectable
 @Extension(value = "JedisConnectionDefinition", order = PluginDefinition.ORDER_PROTECT)
-@ConditionalOnProtectJedis5Enabled
+@ConditionalOnProtectJedis3Enabled
 @ConditionalOnClass(JedisConnectionDefinition.TYPE_JEDIS)
 public class JedisConnectionDefinition extends PluginDefinitionAdapter {
 
@@ -39,7 +39,8 @@ public class JedisConnectionDefinition extends PluginDefinitionAdapter {
     private static final String METHOD_SEND_COMMAND = "sendCommand";
 
     private static final String[] ARGUMENT_SEND_COMMAND = {
-            "redis.clients.jedis.CommandArguments"
+            "redis.clients.jedis.commands.ProtocolCommand",
+            "byte[][]"
     };
 
     @Inject(PolicySupplier.COMPONENT_POLICY_SUPPLIER)

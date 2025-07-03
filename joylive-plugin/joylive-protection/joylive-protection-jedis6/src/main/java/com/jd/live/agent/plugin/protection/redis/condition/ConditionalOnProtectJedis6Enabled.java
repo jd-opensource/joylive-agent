@@ -16,8 +16,10 @@
 package com.jd.live.agent.plugin.protection.redis.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnProtectEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
@@ -25,9 +27,15 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnProtectEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_PROTECT_REDIS_ENABLED)
+@ConditionalOnFailoverDBEnabled
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_REDIS_ENABLED)
+@ConditionalOnClass(ConditionalOnProtectJedis6Enabled.TYPE_ABSTRACT_PIPELINE)
+@ConditionalOnMissingClass(ConditionalOnProtectJedis6Enabled.TYPE_REDIS_GRAPH_COMMANDS)
 @ConditionalComposite
-public @interface ConditionalOnRedisProtectEnabled {
+public @interface ConditionalOnProtectJedis6Enabled {
+
+    String TYPE_ABSTRACT_PIPELINE = "redis.clients.jedis.AbstractPipeline";
+
+    String TYPE_REDIS_GRAPH_COMMANDS = "redis.clients.jedis.graph.RedisGraphCommands";
 
 }
