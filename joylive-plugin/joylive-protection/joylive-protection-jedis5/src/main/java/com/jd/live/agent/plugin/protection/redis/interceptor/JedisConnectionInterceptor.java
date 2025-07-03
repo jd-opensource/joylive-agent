@@ -32,17 +32,11 @@ public class JedisConnectionInterceptor extends AbstractDbInterceptor {
         super(policySupplier);
     }
 
-    /**
-     * Enhanced logic before method execution<br>
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO Get cluster id
-        protect((MethodContext) ctx,
-                new JedisRequest((Connection) ctx.getTarget(), (CommandArguments) ctx.getArguments()[0]));
+        Connection connection = (Connection) ctx.getTarget();
+        CommandArguments args = ctx.getArgument(0);
+        protect((MethodContext) ctx, new JedisRequest(connection, args));
     }
 
 }
