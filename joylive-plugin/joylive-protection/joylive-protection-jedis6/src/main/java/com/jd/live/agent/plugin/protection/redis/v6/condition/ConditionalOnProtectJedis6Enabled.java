@@ -19,7 +19,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnFailoverDBEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnProtectDBEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
@@ -27,7 +27,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnFailoverDBEnabled
+@ConditionalOnProtectDBEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FAILOVER_REDIS_ENABLED)
 @ConditionalOnClass(ConditionalOnProtectJedis6Enabled.TYPE_ABSTRACT_PIPELINE)
 @ConditionalOnMissingClass(ConditionalOnProtectJedis6Enabled.TYPE_REDIS_GRAPH_COMMANDS)
