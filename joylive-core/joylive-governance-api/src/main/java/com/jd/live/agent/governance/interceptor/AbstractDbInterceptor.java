@@ -21,7 +21,6 @@ import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
-import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.request.DbRequest;
 
 import static com.jd.live.agent.core.util.StringUtils.join;
@@ -57,19 +56,8 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
      * @param request the DbRequest representing the database operation to be protected
      */
     protected void protect(MethodContext context, DbRequest request) {
-        protect(context, request, policySupplier.getPolicy());
-    }
-
-    /**
-     * Enforces access control for database operations based on governance policies.
-     *
-     * @param context the execution context containing method information
-     * @param request the database operation request to validate
-     * @param policy  the governance policy defining access rules
-     */
-    public static void protect(MethodContext context, DbRequest request, GovernancePolicy policy) {
-        LiveDatabaseSpec databaseSpec = policy == null ? null : policy.getLocalDatabaseSpec();
-        LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(request.getAddresses());
+        GovernancePolicy policy = policySupplier.getPolicy();
+        LiveDatabase db = policy == null ? null : policy.getDatabase(request.getAddresses());
         if (db != null) {
             // Retrieve the database policy and determine the access mode
             AccessMode dbMode = db.getAccessMode();

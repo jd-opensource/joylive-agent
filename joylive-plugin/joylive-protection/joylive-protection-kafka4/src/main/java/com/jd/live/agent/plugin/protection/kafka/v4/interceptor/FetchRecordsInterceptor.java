@@ -40,13 +40,14 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
         super(context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO add cluster permission check
-        TopicPartition partition = Accessors.getPartition(ctx.getArgument(0));
+        TopicPartition partition = Accessors.partition.get(ctx.getArgument(0), TopicPartition.class);
         if (partition != null) {
-            ConsumerMetadata metadata = Accessors.getMetadata(ctx.getTarget());
-            List<InetSocketAddress> bootstrapAddresses = Accessors.getBootstrapAddresses(metadata);
+            ConsumerMetadata metadata = Accessors.metadata.get(ctx.getTarget(), ConsumerMetadata.class);
+            // TODO addresses
+            List<InetSocketAddress> bootstrapAddresses = (List<InetSocketAddress>) Accessors.bootstrapAddresses.get(metadata);
             String[] address = bootstrapAddresses == null ? null : toList(bootstrapAddresses, Ipv4::toString).toArray(new String[0]);
             Permission permission = isConsumeReady(partition.topic(), null, address);
             if (!permission.isSuccess()) {
@@ -56,23 +57,8 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
     }
 
     private static class Accessors {
-
         private static final UnsafeFieldAccessor partition = getAccessor(CompletedFetch.class, "partition");
         private static final UnsafeFieldAccessor metadata = getAccessor(FetchCollector.class, "metadata");
         private static final UnsafeFieldAccessor bootstrapAddresses = getAccessor(ConsumerMetadata.class, "bootstrapAddresses");
-
-        public static TopicPartition getPartition(Object target) {
-            return partition == null || target == null ? null : (TopicPartition) partition.get(target);
-        }
-
-        public static ConsumerMetadata getMetadata(Object target) {
-            return metadata == null || target == null ? null : (ConsumerMetadata) metadata.get(target);
-        }
-
-        @SuppressWarnings("unchecked")
-        public static List<InetSocketAddress> getBootstrapAddresses(Object target) {
-            return bootstrapAddresses == null || target == null ? null : (List<InetSocketAddress>) bootstrapAddresses.get(target);
-        }
-
     }
 }

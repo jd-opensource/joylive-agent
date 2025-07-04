@@ -37,10 +37,9 @@ public class DoSendInterceptor extends AbstractMessageInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO add cluster permission check
         MethodContext mc = (MethodContext) ctx;
         ProducerRecord<?, ?> record = ctx.getArgument(0);
-        ProducerConfig config = Accessors.getConfig(ctx.getTarget());
+        ProducerConfig config = Accessors.producerConfig.get(ctx.getTarget(), ProducerConfig.class);
         String address = config == null ? null : config.getString(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
         Permission permission = isProduceReady(record.topic(), address);
         if (!permission.isSuccess()) {
@@ -49,10 +48,6 @@ public class DoSendInterceptor extends AbstractMessageInterceptor {
     }
 
     private static class Accessors {
-        private static final UnsafeFieldAccessor config = getAccessor(KafkaProducer.class, "producerConfig");
-
-        public static ProducerConfig getConfig(Object target) {
-            return config == null || target == null ? null : (ProducerConfig) config.get(target);
-        }
+        private static final UnsafeFieldAccessor producerConfig = getAccessor(KafkaProducer.class, "producerConfig");
     }
 }

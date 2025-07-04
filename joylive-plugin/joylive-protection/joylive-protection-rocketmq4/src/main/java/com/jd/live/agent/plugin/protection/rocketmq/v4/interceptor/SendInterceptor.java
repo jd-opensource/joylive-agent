@@ -33,7 +33,6 @@ public class SendInterceptor extends AbstractMessageInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO add cluster permission check
         MethodContext mc = (MethodContext) ctx;
         Message message = ctx.getArgument(0);
         DefaultMQProducerImpl producerImpl = (DefaultMQProducerImpl) ctx.getTarget();

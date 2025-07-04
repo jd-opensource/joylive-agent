@@ -39,9 +39,8 @@ public class PullInterceptor extends AbstractMessageInterceptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO add cluster permission check
         PullAPIWrapper wrapper = (PullAPIWrapper) ctx.getTarget();
-        MQClientInstance config = Accessors.getInstance(wrapper);
+        MQClientInstance config = Accessors.mQClientFactory.get(wrapper, MQClientInstance.class);
         String address = config != null ? config.getClientConfig().getNamesrvAddr() : null;
         MessageQueue messageQueue = ctx.getArgument(0);
         Permission permission = isConsumeReady(messageQueue.getTopic(), address);
@@ -52,10 +51,6 @@ public class PullInterceptor extends AbstractMessageInterceptor {
     }
 
     private static class Accessors {
-        private static final UnsafeFieldAccessor instance = getAccessor(PullAPIWrapper.class, "mQClientFactory");
-
-        public static MQClientInstance getInstance(Object target) {
-            return instance == null || target == null ? null : (MQClientInstance) instance.get(target);
-        }
+        private static final UnsafeFieldAccessor mQClientFactory = getAccessor(PullAPIWrapper.class, "mQClientFactory");
     }
 }

@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.protection.kafka.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.core.util.network.Address;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.auth.Permission;
@@ -32,6 +33,7 @@ import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
 
@@ -39,14 +41,14 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
         super(context);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO add cluster permission check
-        TopicPartition partition = Accessors.getPartition(ctx.getArgument(0));
+        TopicPartition partition = Accessors.partition.get(ctx.getArgument(0), TopicPartition.class);
         if (partition != null) {
-            ConsumerMetadata metadata = Accessors.getMetadata(ctx.getTarget());
-            MetadataCache cache = Accessors.getCache(metadata);
-            Map<Integer, Node> nodes = Accessors.getNodes(cache);
+            ConsumerMetadata metadata = Accessors.metadata.get(ctx.getTarget(), ConsumerMetadata.class);
+            MetadataCache cache = Accessors.cache.get(metadata, MetadataCache.class);
+            Map<Integer, Node> nodes = (Map<Integer, Node>) Accessors.nodes.get(cache);
             String[] address = nodes == null ? null : toList(nodes.values(), this::toAddress).toArray(new String[0]);
             Permission permission = isConsumeReady(partition.topic(), null, address);
             if (!permission.isSuccess()) {
@@ -60,50 +62,16 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
      *
      * @param node the cluster node containing host and port information
      * @return formatted address string with proper IPv6 bracketing
-     * @throws NullPointerException if node or node.host() is null
      */
     protected String toAddress(Node node) {
-        String hostName = node.host();
-        if (hostName.contains(":")) {
-            // ipv6
-            return "[" + hostName + "]:" + node.port();
-        }
-        return hostName + ":" + node.port();
+        return Address.parse(node.host(), node.port()).getAddress();
     }
 
     private static class Accessors {
-
-        private static final UnsafeFieldAccessor partition;
+        private static final Class<?> completedFetchType = loadClass("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch", Fetcher.class.getClassLoader());
+        private static final UnsafeFieldAccessor partition = getAccessor(completedFetchType, "partition");
         private static final UnsafeFieldAccessor metadata = getAccessor(Fetcher.class, "metadata");
         private static final UnsafeFieldAccessor cache = getAccessor(ConsumerMetadata.class, "cache");
         private static final UnsafeFieldAccessor nodes = getAccessor(MetadataCache.class, "nodes");
-
-        static {
-            UnsafeFieldAccessor accessor = null;
-            try {
-                Class<?> type = Class.forName("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch");
-                accessor = getAccessor(type, "partition");
-            } catch (ClassNotFoundException ignored) {
-            }
-            partition = accessor;
-        }
-
-        public static TopicPartition getPartition(Object target) {
-            return partition == null || target == null ? null : (TopicPartition) partition.get(target);
-        }
-
-        public static ConsumerMetadata getMetadata(Object target) {
-            return metadata == null || target == null ? null : (ConsumerMetadata) metadata.get(target);
-        }
-
-        public static MetadataCache getCache(Object target) {
-            return cache == null || target == null ? null : (MetadataCache) cache.get(target);
-        }
-
-        @SuppressWarnings("unchecked")
-        public static Map<Integer, Node> getNodes(Object target) {
-            return nodes == null || target == null ? null : (Map<Integer, Node>) nodes.get(target);
-        }
-
     }
 }
