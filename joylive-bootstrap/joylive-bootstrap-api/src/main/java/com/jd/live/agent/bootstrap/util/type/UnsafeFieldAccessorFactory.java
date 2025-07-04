@@ -325,7 +325,7 @@ public class UnsafeFieldAccessorFactory {
         Map<String, Optional<Field>> map = fields.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
         return map.computeIfAbsent(field, k -> {
             Class<?> parent = clazz;
-            while (parent != null) {
+            while (parent != null && parent != Object.class) {
                 try {
                     return Optional.of(parent.getDeclaredField(k));
                 } catch (NoSuchFieldException e) {
@@ -374,7 +374,7 @@ public class UnsafeFieldAccessorFactory {
         public Object get(Object target) {
             try {
                 return field.get(target);
-            } catch (IllegalAccessException e) {
+            } catch (Throwable e) {
                 throw new ReflectException("an error occurred while getting field value. " + field.getName(), e);
             }
         }
@@ -383,7 +383,7 @@ public class UnsafeFieldAccessorFactory {
         public void set(Object target, Object value) {
             try {
                 field.set(target, value);
-            } catch (IllegalAccessException e) {
+            } catch (Throwable e) {
                 throw new ReflectException("an error occurred while setting field value. " + field.getName(), e);
             }
         }

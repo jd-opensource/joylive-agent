@@ -29,6 +29,14 @@ public interface ObjectGetter {
      */
     Object get(Object target);
 
+    /**
+     * Gets a value from the target object and casts it to the specified type.
+     *
+     * @param <T>    the type to cast the value to
+     * @param target the object to get the value from
+     * @param type   the expected class type of the return value
+     * @return the casted value if the value is of the specified type, otherwise null
+     */
     @SuppressWarnings("unchecked")
     default <T> T get(Object target, Class<T> type) {
         Object value = get(target);
