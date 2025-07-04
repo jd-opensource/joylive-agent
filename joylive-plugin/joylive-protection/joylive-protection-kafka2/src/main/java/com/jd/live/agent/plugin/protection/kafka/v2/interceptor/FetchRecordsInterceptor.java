@@ -18,21 +18,18 @@ package com.jd.live.agent.plugin.protection.kafka.v2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.core.util.network.Address;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.auth.Permission;
-import org.apache.kafka.clients.MetadataCache;
-import org.apache.kafka.clients.consumer.internals.ConsumerMetadata;
+import com.jd.live.agent.plugin.protection.kafka.v2.client.LiveKafkaClient;
+import org.apache.kafka.clients.KafkaClient;
+import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient;
 import org.apache.kafka.clients.consumer.internals.Fetcher;
-import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.Collections;
-import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
@@ -41,38 +38,25 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
         super(context);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO address
         TopicPartition partition = Accessors.partition.get(ctx.getArgument(0), TopicPartition.class);
         if (partition != null) {
-            ConsumerMetadata metadata = Accessors.metadata.get(ctx.getTarget(), ConsumerMetadata.class);
-            MetadataCache cache = Accessors.cache.get(metadata, MetadataCache.class);
-            Map<Integer, Node> nodes = (Map<Integer, Node>) Accessors.nodes.get(cache);
-            String[] address = nodes == null ? null : toList(nodes.values(), this::toAddress).toArray(new String[0]);
-            Permission permission = isConsumeReady(partition.topic(), null, address);
+            Fetcher<?, ?> fetcher = (Fetcher<?, ?>) ctx.getTarget();
+            ConsumerNetworkClient networkClient = Accessors.networkClient.get(fetcher, ConsumerNetworkClient.class);
+            KafkaClient kafkaClient = Accessors.kafkaClient.get(networkClient, KafkaClient.class);
+            String[] addresses = kafkaClient instanceof LiveKafkaClient ? ((LiveKafkaClient) kafkaClient).getAddresses() : null;
+            Permission permission = isConsumeReady(partition.topic(), null, addresses);
             if (!permission.isSuccess()) {
                 ((MethodContext) ctx).skipWithResult(Collections.emptyList());
             }
         }
     }
 
-    /**
-     * Formats a node's address as "host:port" or "[IPv6]:port".
-     *
-     * @param node the cluster node containing host and port information
-     * @return formatted address string with proper IPv6 bracketing
-     */
-    protected String toAddress(Node node) {
-        return Address.parse(node.host(), node.port()).getAddress();
-    }
-
     private static class Accessors {
         private static final Class<?> completedFetchType = loadClass("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch", Fetcher.class.getClassLoader());
         private static final UnsafeFieldAccessor partition = getAccessor(completedFetchType, "partition");
-        private static final UnsafeFieldAccessor metadata = getAccessor(Fetcher.class, "metadata");
-        private static final UnsafeFieldAccessor cache = getAccessor(ConsumerMetadata.class, "cache");
-        private static final UnsafeFieldAccessor nodes = getAccessor(MetadataCache.class, "nodes");
+        private static final UnsafeFieldAccessor networkClient = getAccessor(Fetcher.class, "client");
+        private static final UnsafeFieldAccessor kafkaClient = getAccessor(ConsumerNetworkClient.class, "client");
     }
 }
