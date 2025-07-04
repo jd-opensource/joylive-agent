@@ -45,4 +45,8 @@ public class ConstructorContext extends ExecutableContext {
         super(type, arguments, description);
         this.constructor = constructor;
     }
+
+    public void setTarget(Object target) {
+        this.target = target;
+    }
 }
