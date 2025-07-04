@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.jedis.v4.interceptor;
+package com.jd.live.agent.plugin.protection.jedis.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.protection.jedis.v4.config.JedisConfig;
+import com.jd.live.agent.plugin.protection.jedis.v6.config.JedisConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
 
@@ -26,12 +26,9 @@ import java.util.Set;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
- * ClusterConnectionProviderInterceptor
+ * JedisClusterProtectInterceptor
  */
-public class ClusterConnectionProviderInterceptor extends InterceptorAdaptor {
-
-    public ClusterConnectionProviderInterceptor() {
-    }
+public class JedisClusterProtectInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {

@@ -26,12 +26,9 @@ import java.util.Set;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
- * JedisClusterConnectionHandlerInterceptor
+ * JedisClusterProtectInterceptor
  */
-public class JedisClusterConnectionHandlerInterceptor extends InterceptorAdaptor {
-
-    public JedisClusterConnectionHandlerInterceptor() {
-    }
+public class JedisClusterProtectInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {

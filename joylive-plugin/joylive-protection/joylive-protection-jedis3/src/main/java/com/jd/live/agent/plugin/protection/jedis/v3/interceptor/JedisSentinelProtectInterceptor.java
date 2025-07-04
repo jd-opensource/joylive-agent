@@ -13,30 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.jedis.v6.interceptor;
+package com.jd.live.agent.plugin.protection.jedis.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.protection.jedis.v6.config.JedisConfig;
+import com.jd.live.agent.plugin.protection.jedis.v3.config.JedisConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.JedisFactory;
 
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
- * ClusterConnectionProviderInterceptor
+ * JedisSentinelProtectInterceptor
  */
-public class ClusterConnectionProviderInterceptor extends InterceptorAdaptor {
-
-    public ClusterConnectionProviderInterceptor() {
-    }
+public class JedisSentinelProtectInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Set<HostAndPort> clusterNodes = ctx.getArgument(0);
-        JedisClientConfig config = ctx.getArgument(1);
-        ctx.setArgument(1, new JedisConfig(config, toList(clusterNodes, HostAndPort::toString).toArray(new String[0])));
+        Set<HostAndPort> sentinels = ctx.getArgument(1);
+        JedisFactory factory = ctx.getArgument(ctx.getArgumentCount() - 2);
+        JedisClientConfig config = Accessor.clientConfig.get(factory, JedisClientConfig.class);
+        Accessor.clientConfig.set(factory, new JedisConfig(config, toList(sentinels, HostAndPort::toString).toArray(new String[0])));
+    }
+
+    private static class Accessor {
+
+        private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
+
     }
 }

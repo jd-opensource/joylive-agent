@@ -24,36 +24,29 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.protection.jedis.v3.condition.ConditionalOnProtectJedis3Enabled;
-import com.jd.live.agent.plugin.protection.jedis.v3.interceptor.JedisClusterConnectionHandlerInterceptor;
+import com.jd.live.agent.plugin.protection.jedis.v3.interceptor.JedisSentinelProtectInterceptor;
 
 @Injectable
-@Extension(value = "JedisClusterConnectionHandlerDefinition_v3", order = PluginDefinition.ORDER_FAILOVER)
+@Extension(value = "JedisSentinelProtectDefinition_v3", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnProtectJedis3Enabled
-@ConditionalOnClass(JedisClusterConnectionHandlerDefinition.TYPE)
-public class JedisClusterConnectionHandlerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(JedisSentinelProtectDefinition.TYPE)
+public class JedisSentinelProtectDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "redis.clients.jedis.JedisClusterConnectionHandler";
+    protected static final String TYPE = "redis.clients.jedis.JedisSentinelPool";
 
-    private static final String[] ARGUMENTS0 = new String[]{
+    private static final String[] ARGUMENTS = {
+            "java.lang.String",
             "java.util.Set",
             "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
+            "redis.clients.jedis.JedisFactory",
             "redis.clients.jedis.JedisClientConfig"
     };
 
-    private static final String[] ARGUMENTS1 = new String[]{
-            "java.util.Set",
-            "redis.clients.jedis.JedisClientConfig",
-            "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
-            "redis.clients.jedis.JedisClientConfig"
-    };
-
-    public JedisClusterConnectionHandlerDefinition() {
+    public JedisSentinelProtectDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS0)),
-                        () -> new JedisClusterConnectionHandlerInterceptor()),
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS1)),
-                        () -> new JedisClusterConnectionHandlerInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new JedisSentinelProtectInterceptor()),
         };
     }
 }

@@ -24,21 +24,21 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.protection.jedis.v5.condition.ConditionalOnProtectJedis5Enabled;
-import com.jd.live.agent.plugin.protection.jedis.v5.interceptor.ClusterConnectionProviderInterceptor;
+import com.jd.live.agent.plugin.protection.jedis.v5.interceptor.JedisClusterProtectInterceptor;
 
 @Injectable
-@Extension(value = "ClusterConnectionProviderDefinition_v5", order = PluginDefinition.ORDER_FAILOVER)
+@Extension(value = "JedisClusterProtectDefinition_v5", order = PluginDefinition.ORDER_FAILOVER)
 @ConditionalOnProtectJedis5Enabled
-@ConditionalOnClass(ClusterConnectionProviderDefinition.TYPE)
-public class ClusterConnectionProviderDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(JedisClusterProtectDefinition.TYPE)
+public class JedisClusterProtectDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "redis.clients.jedis.providers.ClusterConnectionProvider";
 
-    public ClusterConnectionProviderDefinition() {
+    public JedisClusterProtectDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
-                        () -> new ClusterConnectionProviderInterceptor()),
+                        () -> new JedisClusterProtectInterceptor()),
         };
     }
 }

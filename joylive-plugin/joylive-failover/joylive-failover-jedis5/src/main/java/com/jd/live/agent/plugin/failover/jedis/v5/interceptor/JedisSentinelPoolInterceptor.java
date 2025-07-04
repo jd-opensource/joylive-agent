@@ -48,11 +48,6 @@ public class JedisSentinelPoolInterceptor extends AbstractJedisInterceptor {
     }
 
     @Override
-    public void onExit(ExecutableContext ctx) {
-        ctx.unlock();
-    }
-
-    @Override
     protected JedisConnection createConnection(ExecutableContext ctx) {
         JedisSentinelPool pool = (JedisSentinelPool) ctx.getTarget();
         String masterName = ctx.getArgument(0);
