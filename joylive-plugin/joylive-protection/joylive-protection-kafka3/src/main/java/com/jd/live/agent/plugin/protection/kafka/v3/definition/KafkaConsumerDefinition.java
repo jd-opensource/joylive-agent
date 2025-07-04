@@ -48,8 +48,8 @@ public class KafkaConsumerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS))
-                        , () -> new KafkaConsumerInterceptor()
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new KafkaConsumerInterceptor()
                 )
         };
     }

@@ -46,8 +46,8 @@ public class FetchConfigDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS))
-                        , () -> new FetchConfigInterceptor()
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new FetchConfigInterceptor()
                 )
         };
     }

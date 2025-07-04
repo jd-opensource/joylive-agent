@@ -54,8 +54,8 @@ public class ClassicConsumerDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS))
-                        , () -> new ClassicConsumerInterceptor()
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS)),
+                        () -> new ClassicConsumerInterceptor()
                 )
         };
     }
