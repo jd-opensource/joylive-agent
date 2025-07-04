@@ -652,6 +652,7 @@ public class URI {
                         return;
                     case '@':
                         // user:password@host:port
+                        // password@host:port
                         int schemaEnd = Role.SCHEMA.getEnd(pos);
                         if (lastColon >= 0) {
                             Role.USER.setPosition(pos, schemaEnd == -1 ? 0 : schemaEnd + 3, lastColon);
@@ -660,7 +661,7 @@ public class URI {
                             Role.PORT.setStart(pos, -1);
                             lastColon = -1;
                         } else {
-                            Role.USER.setPosition(pos, schemaEnd == -1 ? 0 : schemaEnd + 3, i);
+                            Role.PASSWORD.setPosition(pos, schemaEnd == -1 ? 0 : schemaEnd + 3, i);
                         }
                         Role.HOST.setStart(pos, i + 1);
                         break;

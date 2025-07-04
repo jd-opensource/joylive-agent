@@ -103,7 +103,7 @@ public class URITest {
     void testParseJdbc() {
         URI uri = URI.parse("jdbc:mariadb://localhost:8080/book");
         Assertions.assertNotNull(uri);
-        Assertions.assertEquals("jdbc:mariadb", uri.getSchema());
+        Assertions.assertEquals("jdbc:mariadb", uri.getScheme());
         Assertions.assertEquals("localhost", uri.getHost());
         Assertions.assertEquals(8080, uri.getPort());
         Assertions.assertEquals("/book", uri.getPath());
@@ -112,8 +112,19 @@ public class URITest {
     @Test
     void testLb() {
         URI uri = URI.parse("lb://com.jd.live.agent.demo.service.SleepService:DEFAULT");
-        Assertions.assertEquals("lb", uri.getSchema());
+        Assertions.assertEquals("lb", uri.getScheme());
         Assertions.assertEquals("com.jd.live.agent.demo.service.SleepService:DEFAULT", uri.getHost());
+    }
+
+    @Test
+    void testPassword() {
+        URI uri = URI.parse("redis://12345@localhost:6957/0");
+        Assertions.assertNotNull(uri);
+        Assertions.assertEquals("redis", uri.getScheme());
+        Assertions.assertEquals("localhost", uri.getHost());
+        Assertions.assertEquals(6957, uri.getPort());
+        Assertions.assertNull(uri.getUser());
+        Assertions.assertEquals("12345", uri.getPassword());
     }
 
 
