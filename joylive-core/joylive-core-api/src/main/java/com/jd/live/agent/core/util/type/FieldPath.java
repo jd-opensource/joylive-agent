@@ -67,7 +67,7 @@ public class FieldPath implements ObjectGetter {
 
     @Override
     public Object get(Object target) {
-        return get(target, null);
+        return get(target, (Supplier<Object>) null);
     }
 
     /**

@@ -1,1 +1,2 @@
-com.jd.live.agent.plugin.protection.redis.v3.definition.JedisConnectionDefinition
+com.jd.live.agent.plugin.protection.jedis.v3.definition.JedisConnectionDefinition
+com.jd.live.agent.plugin.protection.jedis.v3.definition.JedisClusterConnectionHandlerDefinition

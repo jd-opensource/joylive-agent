@@ -18,6 +18,7 @@ package com.jd.live.agent.bootstrap.util.type;
 /**
  * An interface that defines a method for retrieving a value from a target object.
  */
+@FunctionalInterface
 public interface ObjectGetter {
 
     /**
@@ -27,5 +28,11 @@ public interface ObjectGetter {
      * @return The value retrieved from the target object.
      */
     Object get(Object target);
+
+    @SuppressWarnings("unchecked")
+    default <T> T get(Object target, Class<T> type) {
+        Object value = get(target);
+        return type.isInstance(value) ? (T) value : null;
+    }
 }
 
