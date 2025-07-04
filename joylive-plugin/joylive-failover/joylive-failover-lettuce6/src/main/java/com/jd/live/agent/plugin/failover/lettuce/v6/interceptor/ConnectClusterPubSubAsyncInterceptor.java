@@ -28,7 +28,6 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.lettuce.v6.connection.LettuceStatefulRedisClusterPubSubConnection;
 import com.jd.live.agent.plugin.failover.lettuce.v6.context.LettuceContext;
 import com.jd.live.agent.plugin.failover.lettuce.v6.util.UriUtils;
-import io.lettuce.core.ConnectionFuture;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.cluster.RedisClusterClient;
@@ -80,7 +79,7 @@ public class ConnectClusterPubSubAsyncInterceptor extends AbstractLettuceInterce
         }
         Iterable<RedisURI> uris = ctx.getAttribute(ATTR_URIS);
         MethodContext mc = (MethodContext) ctx;
-        ConnectionFuture<StatefulRedisClusterPubSubConnection<?, ?>> future = mc.getResult();
+        CompletionStage<StatefulRedisClusterPubSubConnection<?, ?>> future = mc.getResult();
         Function<Iterable<RedisURI>, CompletionStage<?>> recreator = u -> connect(ctx.getTarget(), u, ctx.getArgument(0));
         mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceStatefulRedisClusterPubSubConnection(

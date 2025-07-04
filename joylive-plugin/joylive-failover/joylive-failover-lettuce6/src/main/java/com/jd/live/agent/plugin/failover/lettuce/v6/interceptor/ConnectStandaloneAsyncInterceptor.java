@@ -26,7 +26,6 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.failover.lettuce.v6.connection.LettuceStatefulRedisConnection;
 import com.jd.live.agent.plugin.failover.lettuce.v6.context.LettuceContext;
 import com.jd.live.agent.plugin.failover.lettuce.v6.util.UriUtils;
-import io.lettuce.core.ConnectionFuture;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -76,7 +75,7 @@ public class ConnectStandaloneAsyncInterceptor extends AbstractLettuceIntercepto
         RedisURI uri = ctx.getArgument(1);
         Duration timeout = ctx.getArgument(2);
         MethodContext mc = (MethodContext) ctx;
-        ConnectionFuture<StatefulRedisConnection<?, ?>> future = mc.getResult();
+        CompletionStage<StatefulRedisConnection<?, ?>> future = mc.getResult();
         Function<RedisURI, CompletionStage<?>> recreator = u -> connect(client, u, codec, timeout);
         mc.setResult(future.thenApply(connection -> checkFailover(
                 createConnection(() -> new LettuceStatefulRedisConnection(
