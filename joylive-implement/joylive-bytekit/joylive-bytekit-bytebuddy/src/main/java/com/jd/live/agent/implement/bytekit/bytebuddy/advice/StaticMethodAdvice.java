@@ -34,6 +34,7 @@ public class StaticMethodAdvice {
     private StaticMethodAdvice() {
     }
 
+    @SuppressWarnings("all")
     @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
     public static boolean onEnter(@Advice.Origin Class<?> type,
                                   @Advice.Origin Method method,

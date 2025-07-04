@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.kafka.v4.condition;
+package com.jd.live.agent.plugin.protection.kafka.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnMqEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnOnlyRouteEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnProtectMQEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
@@ -27,15 +26,16 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnOnlyRouteEnabled
-@ConditionalOnMqEnabled
-@ConditionalOnClass(ConditionalOnKafka4AnyRouteEnabled.TYPE_GROUP_PROTOCOL)
+@ConditionalOnProtectMQEnabled
+@ConditionalOnMissingClass(ConditionalOnProtectKafka3Enabled.TYPE_ABORT_TRANSACTION_OPTIONS)
+@ConditionalOnMissingClass(ConditionalOnProtectKafka3Enabled.TYPE_GROUP_PROTOCOL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_KAFKA_ENABLED, matchIfMissing = true)
 @ConditionalComposite
-public @interface ConditionalOnKafka4AnyRouteEnabled {
+public @interface ConditionalOnProtectKafka3Enabled {
 
     // kafka client 4.0.0+
     String TYPE_GROUP_PROTOCOL = "org.apache.kafka.clients.consumer.GroupProtocol";
-
+    // kafka client 3+
+    String TYPE_ABORT_TRANSACTION_OPTIONS = "org.apache.kafka.clients.admin.AbortTransactionOptions";
 }
 

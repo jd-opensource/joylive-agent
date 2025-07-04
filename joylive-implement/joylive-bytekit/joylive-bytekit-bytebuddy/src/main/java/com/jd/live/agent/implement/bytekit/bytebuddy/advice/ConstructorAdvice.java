@@ -33,6 +33,7 @@ public class ConstructorAdvice {
     private ConstructorAdvice() {
     }
 
+    @SuppressWarnings("all")
     @Advice.OnMethodEnter
     public static void onEnter(@Advice.Origin Class<?> type,
                                @Advice.Origin Constructor<?> constructor,

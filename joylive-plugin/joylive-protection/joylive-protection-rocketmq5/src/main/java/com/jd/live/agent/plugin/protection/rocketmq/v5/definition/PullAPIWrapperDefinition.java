@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.protection.rocketmq.v5.condition.ConditionalOnRocketmq5AnyRouteEnabled;
+import com.jd.live.agent.plugin.protection.rocketmq.v5.condition.ConditionalOnProtectRocketmq5Enabled;
 import com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor.PullInterceptor;
 
 /**
@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.protection.rocketmq.v5.interceptor.PullIntercept
  */
 @Injectable
 @Extension(value = "PullAPIWrapperDefinition_v5")
-@ConditionalOnRocketmq5AnyRouteEnabled
+@ConditionalOnProtectRocketmq5Enabled
 @ConditionalOnClass(PullAPIWrapperDefinition.TYPE)
 public class PullAPIWrapperDefinition extends PluginDefinitionAdapter {
 

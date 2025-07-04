@@ -61,7 +61,7 @@ public class MethodContext extends ExecutableContext {
     public MethodContext(final Class<?> type, final Object target, final Method method,
                          final Object[] arguments, final String description, final boolean origin) {
         super(type, arguments, description);
-        super.setTarget(target);
+        this.target = target;
         this.method = method;
         this.origin = origin;
     }

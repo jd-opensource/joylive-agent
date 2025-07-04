@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.plugin.protection.kafka.v4.context;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
-import java.lang.annotation.*;
+public class KafkaContext {
 
-/**
- * An annotation used to mark a type as requiring either the protect mq feature to be enabled, and the flow control
- * feature to be disabled.
- */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnLiveEnabled
-@ConditionalOnMqEnabled
-@ConditionalComposite
-public @interface ConditionalOnProtectMQEnabled {
+    private static final ThreadLocal<ConsumerConfig> CONTEXT = new ThreadLocal<>();
+
+    public static void set(ConsumerConfig config) {
+        CONTEXT.set(config);
+    }
+
+    public static ConsumerConfig remove() {
+        ConsumerConfig config = CONTEXT.get();
+        CONTEXT.remove();
+        return config;
+    }
 
 }

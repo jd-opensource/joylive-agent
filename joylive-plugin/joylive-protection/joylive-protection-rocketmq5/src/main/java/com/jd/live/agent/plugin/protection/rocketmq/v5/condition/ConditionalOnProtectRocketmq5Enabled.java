@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.protection.rocketmq.v4.condition;
+package com.jd.live.agent.plugin.protection.rocketmq.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnOnlyRouteEnabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.governance.annotation.ConditionalOnProtectMQEnabled;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnOnlyRouteEnabled
-@ConditionalOnRocketmq4Enabled
+@ConditionalOnProtectMQEnabled
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_ROCKETMQ_ENABLED, matchIfMissing = true)
+@ConditionalOnClass(ConditionalOnProtectRocketmq5Enabled.TYPE_ACK_CALLBACK)
 @ConditionalComposite
-public @interface ConditionalOnRocketmq4AnyRouteEnabled {
+public @interface ConditionalOnProtectRocketmq5Enabled {
+
+    String TYPE_ACK_CALLBACK = "org.apache.rocketmq.client.consumer.AckCallback";
 
 }
 

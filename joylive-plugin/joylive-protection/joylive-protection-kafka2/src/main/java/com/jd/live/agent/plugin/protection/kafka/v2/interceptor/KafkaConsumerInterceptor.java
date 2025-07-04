@@ -1,0 +1,46 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.jd.live.agent.plugin.protection.kafka.v2.interceptor;
+
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.plugin.protection.kafka.v2.client.LiveKafkaClient;
+import org.apache.kafka.clients.KafkaClient;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient;
+
+import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.core.util.StringUtils.split;
+
+public class KafkaConsumerInterceptor extends InterceptorAdaptor {
+
+    @Override
+    public void onSuccess(ExecutableContext ctx) {
+        KafkaConsumer<?, ?> consumer = (KafkaConsumer<?, ?>) ctx.getTarget();
+        ConsumerConfig config = ctx.getArgument(0);
+        ConsumerNetworkClient networkClient = Accessors.networkClient.get(consumer, ConsumerNetworkClient.class);
+        KafkaClient kafkaClient = Accessors.kafkaClient.get(networkClient, KafkaClient.class);
+        kafkaClient = new LiveKafkaClient(kafkaClient, split(config.getString(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)));
+        Accessors.networkClient.set(networkClient, kafkaClient);
+    }
+
+    private static class Accessors {
+        private static final UnsafeFieldAccessor networkClient = getAccessor(KafkaConsumer.class, "client");
+        private static final UnsafeFieldAccessor kafkaClient = getAccessor(ConsumerNetworkClient.class, "client");
+    }
+}

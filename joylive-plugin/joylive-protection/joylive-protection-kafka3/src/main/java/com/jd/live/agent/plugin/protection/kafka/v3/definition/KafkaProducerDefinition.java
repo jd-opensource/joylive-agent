@@ -24,17 +24,17 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.protection.kafka.v3.condition.ConditionalOnKafka3AnyRouteEnabled;
+import com.jd.live.agent.plugin.protection.kafka.v3.condition.ConditionalOnProtectKafka3Enabled;
 import com.jd.live.agent.plugin.protection.kafka.v3.interceptor.DoSendInterceptor;
 
 /**
- * FetcherDefinition
+ * KafkaProducerDefinition
  *
  * @since 1.8.0
  */
 @Injectable
-@Extension(value = "FetchCollectorDefinition_v3")
-@ConditionalOnKafka3AnyRouteEnabled
+@Extension(value = "KafkaProducerDefinition_v3")
+@ConditionalOnProtectKafka3Enabled
 @ConditionalOnClass(KafkaProducerDefinition.TYPE)
 public class KafkaProducerDefinition extends PluginDefinitionAdapter {
 

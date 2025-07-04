@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.protection.rocketmq.v4.condition.ConditionalOnRocketmq4AnyRouteEnabled;
+import com.jd.live.agent.plugin.protection.rocketmq.v4.condition.ConditionalOnProtectRocketmq4Enabled;
 import com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor.SendInterceptor;
 
 /**
@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor.SendIntercept
  */
 @Injectable
 @Extension(value = "DefaultMQProducerImplDefinition_v4")
-@ConditionalOnRocketmq4AnyRouteEnabled
+@ConditionalOnProtectRocketmq4Enabled
 @ConditionalOnClass(DefaultMQProducerImplDefinition.TYPE)
 public class DefaultMQProducerImplDefinition extends PluginDefinitionAdapter {
 

@@ -24,8 +24,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.protection.kafka.v4.condition.ConditionalOnKafka4AnyRouteEnabled;
-import com.jd.live.agent.plugin.protection.kafka.v4.interceptor.FetchRecordsInterceptor;
+import com.jd.live.agent.plugin.protection.kafka.v4.condition.ConditionalOnProtectKafka4Enabled;
+import com.jd.live.agent.plugin.protection.kafka.v4.interceptor.FetchCollectorConstructorInterceptor;
+import com.jd.live.agent.plugin.protection.kafka.v4.interceptor.FetchCollectorFetchRecordsInterceptor;
 
 /**
  * FetcherDefinition
@@ -34,11 +35,11 @@ import com.jd.live.agent.plugin.protection.kafka.v4.interceptor.FetchRecordsInte
  */
 @Injectable
 @Extension(value = "FetchCollectorDefinition_v4")
-@ConditionalOnKafka4AnyRouteEnabled
-@ConditionalOnClass(FetchCollectorDefinition.TYPE_FETCHER)
+@ConditionalOnProtectKafka4Enabled
+@ConditionalOnClass(FetchCollectorDefinition.TYPE)
 public class FetchCollectorDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FETCHER = "org.apache.kafka.clients.consumer.internals.FetchCollector";
+    protected static final String TYPE = "org.apache.kafka.clients.consumer.internals.FetchCollector";
 
     private static final String METHOD_FETCH_RECORDS = "fetchRecords";
 
@@ -47,16 +48,30 @@ public class FetchCollectorDefinition extends PluginDefinitionAdapter {
             "int"
     };
 
+    private static final String[] ARGUMENT_CONSTRUCTOR = new String[]{
+            "org.apache.kafka.common.utils.LogContext",
+            "org.apache.kafka.clients.consumer.internals.ConsumerMetadata",
+            "org.apache.kafka.clients.consumer.internals.SubscriptionState",
+            "org.apache.kafka.clients.consumer.internals.FetchConfig",
+            "org.apache.kafka.clients.consumer.internals.Deserializers",
+            "org.apache.kafka.clients.consumer.internals.FetchMetricsManager",
+            "org.apache.kafka.common.utils.Time"
+    };
+
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
     public FetchCollectorDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FETCHER);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENT_CONSTRUCTOR)),
+                        () -> new FetchCollectorConstructorInterceptor()
+                ),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_FETCH_RECORDS)
                                 .and(MatcherBuilder.arguments(ARGUMENT_FETCH_RECORDS)),
-                        () -> new FetchRecordsInterceptor(context)
+                        () -> new FetchCollectorFetchRecordsInterceptor(context)
                 )
         };
     }

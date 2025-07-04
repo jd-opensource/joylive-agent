@@ -1,2 +1,4 @@
 com.jd.live.agent.plugin.protection.kafka.v4.definition.KafkaProducerDefinition
+com.jd.live.agent.plugin.protection.kafka.v4.definition.ClassicConsumerDefinition
 com.jd.live.agent.plugin.protection.kafka.v4.definition.FetchCollectorDefinition
+com.jd.live.agent.plugin.protection.kafka.v4.definition.FetchConfigDefinition

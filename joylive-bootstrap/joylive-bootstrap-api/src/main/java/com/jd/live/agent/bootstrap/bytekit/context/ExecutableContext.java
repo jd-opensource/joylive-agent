@@ -53,7 +53,6 @@ public abstract class ExecutableContext extends AbstractAttributes {
     /**
      * The target object of the executable context.
      */
-    @Setter
     protected Object target;
 
     /**

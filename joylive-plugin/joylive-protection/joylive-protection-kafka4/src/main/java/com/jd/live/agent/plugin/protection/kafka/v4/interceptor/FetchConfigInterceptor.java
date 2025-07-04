@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.plugin.protection.kafka.v4.interceptor;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.plugin.protection.kafka.v4.context.KafkaContext;
 
-import java.lang.annotation.*;
+public class FetchConfigInterceptor extends InterceptorAdaptor {
 
-/**
- * An annotation used to mark a type as requiring either the protect mq feature to be enabled, and the flow control
- * feature to be disabled.
- */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnLiveEnabled
-@ConditionalOnMqEnabled
-@ConditionalComposite
-public @interface ConditionalOnProtectMQEnabled {
+    @Override
+    public void onSuccess(ExecutableContext ctx) {
+        KafkaContext.set(ctx.getArgument(0));
+    }
 
 }

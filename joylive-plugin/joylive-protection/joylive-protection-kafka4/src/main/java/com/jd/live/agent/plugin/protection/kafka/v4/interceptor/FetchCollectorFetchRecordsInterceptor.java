@@ -18,48 +18,40 @@ package com.jd.live.agent.plugin.protection.kafka.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.auth.Permission;
+import com.jd.live.agent.plugin.protection.kafka.v4.config.LiveFetchConfig;
 import org.apache.kafka.clients.consumer.internals.CompletedFetch;
-import org.apache.kafka.clients.consumer.internals.ConsumerMetadata;
 import org.apache.kafka.clients.consumer.internals.Fetch;
 import org.apache.kafka.clients.consumer.internals.FetchCollector;
+import org.apache.kafka.clients.consumer.internals.FetchConfig;
 import org.apache.kafka.common.TopicPartition;
 
-import java.net.InetSocketAddress;
-import java.util.List;
-
 import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
-public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
+public class FetchCollectorFetchRecordsInterceptor extends AbstractMessageInterceptor {
 
-    public FetchRecordsInterceptor(InvocationContext context) {
+    public FetchCollectorFetchRecordsInterceptor(InvocationContext context) {
         super(context);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // TODO address
-        TopicPartition partition = Accessors.partition.get(ctx.getArgument(0), TopicPartition.class);
-        if (partition != null) {
-            ConsumerMetadata metadata = Accessors.metadata.get(ctx.getTarget(), ConsumerMetadata.class);
-            // TODO addresses
-            List<InetSocketAddress> bootstrapAddresses = (List<InetSocketAddress>) Accessors.bootstrapAddresses.get(metadata);
-            String[] address = bootstrapAddresses == null ? null : toList(bootstrapAddresses, Ipv4::toString).toArray(new String[0]);
-            Permission permission = isConsumeReady(partition.topic(), null, address);
+        FetchCollector<?, ?> fetchCollector = (FetchCollector<?, ?>) ctx.getTarget();
+        FetchConfig fetchConfig = Accessor.fetchConfig.get(fetchCollector, FetchConfig.class);
+        TopicPartition partition = Accessor.partition.get(ctx.getArgument(0), TopicPartition.class);
+        if (partition != null && fetchConfig instanceof LiveFetchConfig) {
+            LiveFetchConfig cfg = (LiveFetchConfig) fetchConfig;
+            Permission permission = isConsumeReady(partition.topic(), null, cfg.getAddresses());
             if (!permission.isSuccess()) {
                 ((MethodContext) ctx).skipWithResult(Fetch.empty());
             }
         }
     }
 
-    private static class Accessors {
+    private static class Accessor {
         private static final UnsafeFieldAccessor partition = getAccessor(CompletedFetch.class, "partition");
-        private static final UnsafeFieldAccessor metadata = getAccessor(FetchCollector.class, "metadata");
-        private static final UnsafeFieldAccessor bootstrapAddresses = getAccessor(ConsumerMetadata.class, "bootstrapAddresses");
+        private static final UnsafeFieldAccessor fetchConfig = getAccessor(FetchCollector.class, "fetchConfig");
     }
 }

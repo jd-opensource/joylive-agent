@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.plugin.protection.kafka.v4.config;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import org.apache.kafka.clients.consumer.internals.FetchConfig;
 
-import java.lang.annotation.*;
+public class LiveFetchConfig extends FetchConfig {
 
-/**
- * An annotation used to mark a type as requiring either the protect mq feature to be enabled, and the flow control
- * feature to be disabled.
- */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnLiveEnabled
-@ConditionalOnMqEnabled
-@ConditionalComposite
-public @interface ConditionalOnProtectMQEnabled {
+    private final String[] addresses;
 
+    public LiveFetchConfig(FetchConfig config, String[] addresses) {
+        super(config.minBytes, config.maxBytes, config.maxWaitMs, config.fetchSize, config.maxPollRecords,
+                config.checkCrcs, config.clientRackId, config.isolationLevel);
+        this.addresses = addresses;
+    }
+
+    public String[] getAddresses() {
+        return addresses;
+    }
 }
