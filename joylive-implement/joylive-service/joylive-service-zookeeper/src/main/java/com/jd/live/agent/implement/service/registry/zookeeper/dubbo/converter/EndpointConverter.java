@@ -131,9 +131,6 @@ public class EndpointConverter implements BiConverter<ServiceId, ChildData, Dubb
         } catch (Exception ignored) {
         }
         URI uri = URI.parse(path);
-        if (uri == null) {
-            return null;
-        }
         Map<String, String> parameters = uri.getParameters();
         String group = uri.getParameter(GROUP);
         group = group == null || group.isEmpty() ? serviceId.getGroup() : group;

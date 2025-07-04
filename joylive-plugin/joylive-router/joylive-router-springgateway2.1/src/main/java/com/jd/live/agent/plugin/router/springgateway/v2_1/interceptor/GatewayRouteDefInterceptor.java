@@ -33,7 +33,7 @@ public class GatewayRouteDefInterceptor extends InterceptorAdaptor {
             // try fixing special service name. such as "lb://SleepService:DEFAULT"
             String string = uri.toString();
             com.jd.live.agent.core.util.URI u = com.jd.live.agent.core.util.URI.parse(string);
-            if (u != null && u.getHost() != null) {
+            if (u.getHost() != null) {
                 ctx.setArgument(0, HttpUtils.newURI(uri, uri.getScheme(), null,
                         u.getHost(), null, null, null, null, string));
             }

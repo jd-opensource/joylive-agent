@@ -17,7 +17,6 @@ package com.jd.live.agent.implement.service.config.apollo.client;
 
 import com.ctrip.framework.apollo.ConfigFileChangeListener;
 import com.jd.live.agent.core.exception.ConfigException;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.service.config.AbstractSharedClientApi;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
@@ -25,6 +24,8 @@ import com.jd.live.agent.governance.subscription.config.ConfigName;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * A factory class for creating and managing shared instances of ApolloClientApi.
@@ -41,14 +42,14 @@ public abstract class ApolloClientFactory {
      * @return A shared ApolloClientApi instance.
      */
     public static ApolloClientApi create(ApolloProperties properties) {
-        URI uri = URI.parse(properties.getAddress());
-        if (uri == null) {
+        if (!properties.validate()) {
             throw new ConfigException("Invalid config center address: " + properties.getAddress());
         }
+        URI uri = URI.parse(properties.getAddress());
         ConfigName configName = properties.getName();
-        String name = StringUtils.isEmpty(configName.getName()) ? "" : configName.getName();
-        String username = StringUtils.isEmpty(properties.getUsername()) ? "" : properties.getUsername();
-        String password = StringUtils.isEmpty(properties.getPassword()) ? "" : properties.getPassword();
+        String name = isEmpty(configName.getName()) ? "" : configName.getName();
+        String username = isEmpty(properties.getUsername()) ? "" : properties.getUsername();
+        String password = isEmpty(properties.getPassword()) ? "" : properties.getPassword();
         String key = username + ":" + password + "@" + uri.getAddress() + "/" + name;
         ApolloSharedClientApi api = clients.computeIfAbsent(key, n -> new ApolloSharedClientApi(n, new ApolloClient(properties), clients::remove));
         api.incReference();

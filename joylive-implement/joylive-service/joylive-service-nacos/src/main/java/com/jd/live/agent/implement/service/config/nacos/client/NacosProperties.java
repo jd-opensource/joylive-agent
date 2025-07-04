@@ -56,6 +56,10 @@ public class NacosProperties implements OptionSupplier {
                 config.getProperties());
     }
 
+    public boolean validate() {
+        return url != null && !url.isEmpty();
+    }
+
     @Override
     public Option getOption() {
         return MapOption.of(properties);

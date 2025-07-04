@@ -63,10 +63,10 @@ public abstract class NacosClientFactory {
      * @return Shared Nacos client API instance
      */
     public static NacosClientApi create(NacosProperties config, HealthProbe probe, Timer timer, ObjectParser json, Application application) {
-        URI uri = URI.parse(config.getUrl());
-        if (uri == null) {
+        if (!config.validate()) {
             throw new ConfigException("Invalid config center address: " + config.getUrl());
         }
+        URI uri = URI.parse(config.getUrl());
         String namespace = StringUtils.isEmpty(config.getNamespace()) ? DEFAULT_NAMESPACE_ID : config.getNamespace();
         String username = StringUtils.isEmpty(config.getUsername()) ? "" : config.getUsername();
         String password = StringUtils.isEmpty(config.getPassword()) ? "" : config.getPassword();

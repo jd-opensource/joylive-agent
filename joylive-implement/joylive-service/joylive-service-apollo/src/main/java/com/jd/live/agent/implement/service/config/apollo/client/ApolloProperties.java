@@ -64,6 +64,10 @@ public class ApolloProperties {
         return new ApolloNameFormat(name.getName());
     }
 
+    public boolean validate() {
+        return address != null && !address.isEmpty();
+    }
+
     private String getNamespace() {
         return name.getNamespace();
     }

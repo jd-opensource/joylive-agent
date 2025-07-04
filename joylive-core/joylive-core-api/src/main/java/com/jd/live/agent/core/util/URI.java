@@ -369,7 +369,7 @@ public class URI {
     public static URI parse(String uri) {
         uri = uri == null ? null : uri.trim();
         if (uri == null || uri.isEmpty()) {
-            return null;
+            throw new IllegalArgumentException("uri is empty.");
         }
         char[] chars = uri.toCharArray();
         int[] pos = URIPart.parse(chars, false);

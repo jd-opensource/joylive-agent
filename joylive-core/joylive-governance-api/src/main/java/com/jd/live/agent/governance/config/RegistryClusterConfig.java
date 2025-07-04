@@ -50,7 +50,7 @@ public class RegistryClusterConfig implements OptionSupplier {
             return false;
         }
         URI uri = URI.parse(address);
-        String host = uri == null ? null : uri.getHost();
+        String host = uri.getHost();
         return host != null && !host.isEmpty();
     }
 
