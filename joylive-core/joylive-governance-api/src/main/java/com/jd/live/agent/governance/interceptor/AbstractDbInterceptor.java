@@ -57,7 +57,17 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
      * @param request the DbRequest representing the database operation to be protected
      */
     protected void protect(MethodContext context, DbRequest request) {
-        GovernancePolicy policy = policySupplier.getPolicy();
+        protect(context, request, policySupplier.getPolicy());
+    }
+
+    /**
+     * Enforces access control for database operations based on governance policies.
+     *
+     * @param context the execution context containing method information
+     * @param request the database operation request to validate
+     * @param policy  the governance policy defining access rules
+     */
+    public static void protect(MethodContext context, DbRequest request, GovernancePolicy policy) {
         LiveDatabaseSpec databaseSpec = policy == null ? null : policy.getLocalDatabaseSpec();
         LiveDatabase db = databaseSpec == null ? null : databaseSpec.getDatabase(request.getAddresses());
         if (db != null) {
@@ -66,22 +76,11 @@ public abstract class AbstractDbInterceptor extends InterceptorAdaptor {
             AccessMode requestMode = request.getAccessMode();
             // Check if the operation is allowed based on the access mode
             if (!dbMode.isReadable() && requestMode.isReadable()) {
-                onReject(context, request, request.getType() + " is not readable, address=" + join(request.getAddresses()));
+                context.skipWithThrowable(request.reject(request.getType() + " is not readable, address=" + join(request.getAddresses())));
             } else if (!dbMode.isWriteable() && requestMode.isWriteable()) {
-                onReject(context, request, request.getType() + " is not writeable, address=" + join(request.getAddresses()));
+                context.skipWithThrowable(request.reject(request.getType() + " is not writeable, address=" + join(request.getAddresses())));
             }
         }
-    }
-
-    /**
-     * Handles request rejection by skipping further processing and throwing an exception.
-     *
-     * @param context the method execution context
-     * @param request the database request being processed
-     * @param message rejection reason message
-     */
-    protected void onReject(MethodContext context, DbRequest request, String message) {
-        context.skipWithThrowable(request.reject(message));
     }
 }
 
