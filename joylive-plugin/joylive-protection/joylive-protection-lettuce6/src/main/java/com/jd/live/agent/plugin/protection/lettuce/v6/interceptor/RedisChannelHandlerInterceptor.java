@@ -55,7 +55,7 @@ public abstract class RedisChannelHandlerInterceptor extends AbstractDbIntercept
 
         private static final ClassLoader classloader = RedisChannelHandler.class.getClassLoader();
         private static final Class<?> masterReplicaType = ClassUtils.loadClass("io.lettuce.core.masterreplica.MasterReplicaChannelWriter", classloader);
-        private static final Class<?> clusterDistributionType = ClassUtils.loadClass("io.lettuce.core.cluster.ClusterDistributionChannelWriter", classloader);
+        private static final Class<?> clusterType = ClassUtils.loadClass("io.lettuce.core.cluster.ClusterDistributionChannelWriter", classloader);
         private static final Class<?> masterReplicaConnectionProviderType = ClassUtils.loadClass("io.lettuce.core.masterreplica.MasterReplicaConnectionProvider", classloader);
         private static final Class<?> clusterPubSubConnectionProviderType = ClassUtils.loadClass("io.lettuce.core.cluster.ClusterPubSubConnectionProvider", classloader);
         private static final Class<?> pooledClusterConnectionProvider = ClassUtils.loadClass("io.lettuce.core.cluster.PooledClusterConnectionProvider", classloader);
@@ -66,7 +66,7 @@ public abstract class RedisChannelHandlerInterceptor extends AbstractDbIntercept
         private static final UnsafeFieldAccessor channel = UnsafeFieldAccessorFactory.getAccessor(DefaultEndpoint.class, "channel");
         private static final UnsafeFieldAccessor masterReplicaConnectionProvider = UnsafeFieldAccessorFactory.getAccessor(masterReplicaType, "masterReplicaConnectionProvider");
         private static final UnsafeFieldAccessor initialRedisUri = UnsafeFieldAccessorFactory.getAccessor(masterReplicaConnectionProviderType, "initialRedisUri");
-        private static final UnsafeFieldAccessor clusterConnectionProvider = UnsafeFieldAccessorFactory.getAccessor(clusterDistributionType, "clusterConnectionProvider");
+        private static final UnsafeFieldAccessor clusterConnectionProvider = UnsafeFieldAccessorFactory.getAccessor(clusterType, "clusterConnectionProvider");
         private static final UnsafeFieldAccessor clusterPubSubClient = UnsafeFieldAccessorFactory.getAccessor(clusterPubSubConnectionProviderType, "redisClusterClient");
         private static final UnsafeFieldAccessor pooledClusterClient = UnsafeFieldAccessorFactory.getAccessor(pooledClusterConnectionProvider, "redisClusterClient");
         private static final UnsafeFieldAccessor initialUris = UnsafeFieldAccessorFactory.getAccessor(RedisClusterClient.class, "initialUris");
@@ -96,7 +96,7 @@ public abstract class RedisChannelHandlerInterceptor extends AbstractDbIntercept
                     writer = ((CommandListenerWriter) writer).getDelegate();
                 } else if (writer instanceof DefaultEndpoint) {
                     return getAddressOfEndpoint(writer);
-                } else if (clusterDistributionType != null && clusterDistributionType.isInstance(writer)) {
+                } else if (clusterType != null && clusterType.isInstance(writer)) {
                     return getAddressOfCluster(writer);
                 } else if (masterReplicaType != null && masterReplicaType.isInstance(writer)) {
                     return getAddressOfMasterReplica(writer);
@@ -137,10 +137,10 @@ public abstract class RedisChannelHandlerInterceptor extends AbstractDbIntercept
         private static String[] getAddressOfCluster(Object target) {
             Object provider = clusterConnectionProvider.get(target);
             RedisClusterClient client = null;
-            if (clusterPubSubConnectionProviderType != null && clusterPubSubConnectionProviderType.isInstance(provider)) {
-                client = (RedisClusterClient) clusterPubSubClient.get(provider);
-            } else if (pooledClusterConnectionProvider != null && pooledClusterConnectionProvider.isInstance(provider)) {
+            if (pooledClusterConnectionProvider != null && pooledClusterConnectionProvider.isInstance(provider)) {
                 client = (RedisClusterClient) pooledClusterClient.get(provider);
+            } else if (clusterPubSubConnectionProviderType != null && clusterPubSubConnectionProviderType.isInstance(provider)) {
+                client = (RedisClusterClient) clusterPubSubClient.get(provider);
             }
             if (client == null) {
                 return null;
