@@ -43,6 +43,7 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // TODO address
         TopicPartition partition = Accessors.partition.get(ctx.getArgument(0), TopicPartition.class);
         if (partition != null) {
             ConsumerMetadata metadata = Accessors.metadata.get(ctx.getTarget(), ConsumerMetadata.class);
