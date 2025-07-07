@@ -73,35 +73,49 @@ public interface Interceptor {
 
 ```mermaid
 classDiagram
-direction BT
-class ConstructorContext {
-  + getConstructor() Constructor~?~
-}
-class ExecutableContext {
-  + getId() long
-  + getType() Class~?~
-  + getArguments() Object[]
-  + getDescription() String
-  + getTarget() Object
-  + getThrowable() Throwable
-  + setTarget(Object) void
-  + setThrowable(Throwable) void
-  + isSuccess() boolean
-  + isSkip() boolean
-}
-class MethodContext {
-  + getMethod() Method
-  + getResult() Object
-  + setResult(Object) void
-  + setSkip(boolean) void
-  + success(Object) void
-  + isSkip() boolean
-  + toString() String
-  + invoke() Object
-}
+    direction BT
+    class Attributes {
+        + getAttribute(String) T
+        + setAttribute(String, Object) void
+    }
+    class ConstructorContext {
+        + getConstructor() Constructor~?~
+    }
+    class ExecutableContext {
+        + getId() long
+        + getType() Class~?~
+        + getArguments() Object[]
+        + getArgumentCount() int
+        + getArgument(int) T
+        + getDescription() String
+        + getTarget() Object
+        + getThrowable() Throwable
+        + setArgument(int, Object) void
+        + setThrowable(Throwable) void
+        + isSuccess() boolean
+        + isSkip() boolean
+        + tryLock(LockContext) boolean
+        + unlock() boolean
+        + isLocked() boolean
+    }
+    class MethodContext {
+        + getMethod() Method
+        + getResult() Object
+        + setResult(Object) void
+        + skip() void
+        + skipWithResult(Object) void
+        + skipWithThrowable(Throwable) void
+        + setSkip(boolean) void
+        + success(Object) void
+        + toString() String
+        + invokeOrigin() Object
+        + invokeOrigin(Object) Object
+        + invokeOrigin(Object,Method,Object...)$ Object
+    }
 
-ConstructorContext  -->  ExecutableContext 
-MethodContext  -->  ExecutableContext
+    ExecutableContext --> Attributes
+    ConstructorContext --> ExecutableContext
+    MethodContext --> ExecutableContext
 ```
 
 ## 2. 插件实现
@@ -157,7 +171,7 @@ MethodContext  -->  ExecutableContext
 
 ```java
 @Injectable
-@Extension(value = "ClusterDefinition_v2.7")
+@Extension(value = "ClusterDefinition_v3")
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
 @ConditionalOnProperty(name = GovernanceConfig.CONFIG_LIVE_DUBBO_ENABLED, matchIfMissing = true)
 @ConditionalOnClass(ClusterDefinition.TYPE_ABSTRACT_CLUSTER)
