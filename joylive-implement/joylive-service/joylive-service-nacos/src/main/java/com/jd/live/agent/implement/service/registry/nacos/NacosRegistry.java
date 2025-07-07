@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.service.registry.nacos;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -46,6 +47,7 @@ import java.util.function.Consumer;
 
 import static com.alibaba.nacos.ConnectionListener.LISTENER;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.option.Converts.getInteger;
 
 /**
  * An implementation of the {@link Registry} interface specifically for Nacos.
@@ -93,7 +95,7 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     public void register(ServiceId serviceId, ServiceInstance instance) {
         String service = getService(serviceId, instance);
         String group = getGroup(serviceId.getGroup());
-        Instance target = InstanceConverter.INSTANCE.convert(instance);
+        Instance target = convert(instance);
         ServiceKey key = new ServiceKey(service, group);
         Locks.write(registerLock, () -> {
             if (registers.putIfAbsent(key, target) == null && connected.get()) {
@@ -216,6 +218,32 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
      */
     protected String getService(ServiceId serviceId, ServiceInstance instance) {
         return serviceId.getService();
+    }
+
+    /**
+     * Converts a ServiceInstance to Instance with optional metadata:
+     * - heartbeat.interval (if valid and not already set)
+     * - heartbeat.timeout (if valid and not already set)
+     * - ip.delete.timeout (if valid and not already set)
+     *
+     * @param instance source service instance to convert
+     * @return converted Instance with additional metadata (if configured)
+     */
+    protected Instance convert(ServiceInstance instance) {
+        Instance target = InstanceConverter.INSTANCE.convert(instance);
+        String heartbeatInterval = config.getProperty("heartbeat.interval");
+        if (getInteger(heartbeatInterval, 0) > 0 && !target.containsMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+            target.addMetadata(PreservedMetadataKeys.HEART_BEAT_INTERVAL, heartbeatInterval);
+        }
+        String heartbeatTimeout = config.getProperty("heartbeat.timeout");
+        if (getInteger(heartbeatTimeout, 0) > 0 && !target.containsMetadata(PreservedMetadataKeys.HEART_BEAT_TIMEOUT)) {
+            target.addMetadata(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, heartbeatTimeout);
+        }
+        String ipDeleteTimeout = config.getProperty("ip.delete.timeout");
+        if (getInteger(ipDeleteTimeout, 0) > 0 && !target.containsMetadata(PreservedMetadataKeys.IP_DELETE_TIMEOUT)) {
+            target.addMetadata(PreservedMetadataKeys.IP_DELETE_TIMEOUT, ipDeleteTimeout);
+        }
+        return target;
     }
 
     /**
