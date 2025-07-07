@@ -227,7 +227,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             if (config == null) {
                 throw FaultType.CIRCUIT_BREAK.reject("The traffic circuit break policy rejected the request.");
             } else {
-                throw FaultType.CIRCUIT_BREAK.degrade("The circuit break policy triggers a downgrade response.", config);
+                throw FaultType.CIRCUIT_BREAK.degrade("The circuit break policy triggers a degrade response.", config);
             }
         });
     }

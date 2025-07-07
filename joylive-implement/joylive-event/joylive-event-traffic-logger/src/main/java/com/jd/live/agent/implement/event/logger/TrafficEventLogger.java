@@ -22,11 +22,13 @@ import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 
 @Extension("TrafficEventLogger")
+@ConditionalOnFlowControlEnabled
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAK_LOG_ENABLED)
 public class TrafficEventLogger implements Subscription<TrafficEvent>, EventProcessor<TrafficEvent> {
 

@@ -179,8 +179,8 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
 
         @Override
         public void onStateChange(CircuitBreakerStateEvent event) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("[CircuitBreak]State is transitioned from " + event.getFrom() + " to " + event.getTo() + ", uri=" + event.getUri());
+            if (logger.isInfoEnabled()) {
+                logger.info("CircuitBreak state is transitioned from {} to {}, uri={}", event.getFrom(), event.getTo(), event.getUri());
             }
             long now = System.currentTimeMillis();
             switch (event.getTo()) {
