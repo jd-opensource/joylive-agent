@@ -77,16 +77,4 @@ public interface Attributes {
      */
     void attributes(BiConsumer<String, Object> consumer);
 
-    /**
-     * Copies all source from the provided Attributes instance into this one.
-     * If an attribute with the same key already exists in this instance, its value
-     * is replaced with the value from the provided Attributes instance.
-     *
-     * @param source the Attributes instance from which to copy source
-     */
-    default void copyAttribute(Attributes source) {
-        if (source != null) {
-            source.attributes(this::setAttribute);
-        }
-    }
 }

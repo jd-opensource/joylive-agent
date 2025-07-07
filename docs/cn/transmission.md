@@ -9,74 +9,66 @@
 
 ```mermaid
 classDiagram
-direction BT
-class RequestContext {
-  + get() Carrier
-  + getOrCreate() Carrier
-  + set(Carrier) void
-  + create() Carrier
-  + remove() void
-  + getCargo(String) Cargo?
-  + hasCargo() boolean
-  + cargos(Consumer~Cargo~) void
-  + cargos(BiConsumer~String, String~) void
-  + getAttribute(String) T?
-  + setAttribute(String, Object) void
-  + removeAttribute(String) T?
-  + isTimeout() boolean
-}
+    direction BT
+    class RequestContext {
+        + get() Carrier
+        + getOrCreate() Carrier
+        + set(Carrier) void
+        + create() Carrier
+        + remove() void
+        + getCargo(String) Cargo?
+        + hasCargo() boolean
+        + cargos(Consumer~Cargo~) void
+        + cargos(BiConsumer~String, String~) void
+        + getAttribute(String) T?
+        + setAttribute(String, Object) void
+        + removeAttribute(String) T?
+        + isTimeout() boolean
+    }
 
-class Attributes {
-<<Interface>>
-+ removeAttribute(String) T
-+ hasAttribute(String) boolean
-+ setAttribute(String, Object) void
-+ attributes(BiConsumer~String, Object~) void
-+ getAttribute(String) T
-+ copyAttribute(Attributes) void
-}
+    class Attributes {
+        <<Interface>>
+        + removeAttribute(String) T
+        + hasAttribute(String) boolean
+        + setAttribute(String, Object) void
+        + attributes(BiConsumer~String, Object~) void
+        + getAttribute(String) T
+    }
 
-class Carrier {
-<<Interface>>
-+ getCargos() Collection~Cargo~
-+ getCargo(String) Cargo
-+ addCargo(CargoRequire, Iterable~T~, Function~T, String~, Function~T, String~) void
-+ addCargo(CargoRequire, Enumeration~String~, Function~String, Enumeration~String~~) void
-+ addCargo(Cargo) void
-+ addCargo(CargoRequire, Map~String, Collection~String~~) void
-+ addCargo(CargoRequire, Iterable~String~, Function~String, List~String~~) void
-+ addCargo(CargoRequire, M, Function~String, Collection~String~~) void
-+ addCargo(String, String) void
-+ setCargo(String, String) void
-+ removeCargo(String) void
-+ cargos(BiConsumer~String, String~) void
-+ cargos(Consumer~Cargo~) void
-}
+    class Carrier {
+        <<Interface>>
+        + getCargos() Collection~Cargo~
+        + getCargo(String) Cargo
+        + addCargo(Cargo) void
+        + addCargo(String, String) void
+        + addCargo(Predicate~String~, M, Function~String,Collection~ func) void
+        + setCargo(String, String) void
+        + removeCargo(String) void
+        + cargos(BiConsumer~String, String~) void
+        + cargos(Consumer~Cargo~) void
+    }
 
-class Cargo {
-+ add(String) void
-+ add(Collection~String~) void
-+ add(Enumeration~String~) void
-+ toString() String
-}
+    class Cargo {
+        + add(String) void
+        + add(Collection~String~) void
+    }
 
-class Tag {
-# setKey(String) void
-+ getValues() List~String~
-+ getFirstValue() String
-+ getKey() String
-# add(Enumeration~String~) void
-+ getValue() String
-# add(Collection~String~) void
-+ toString() String
-# add(String) void
-# setValues(List~String~) void
-}
+    class Label {
+        <<Interface>>
+        + getKey() String
+        + getFirstValue() String
+        + getValues() List~String~
+        + getValue() String
+    }
 
-Cargo  -->  Tag
-Carrier  -->  Attributes
-RequestContext ..> Carrier
-Carrier ..> Cargo
+    class Tag {
+       
+    }
+    Tag --> Label
+    Cargo --> Tag
+    Carrier --> Attributes
+    RequestContext ..> Carrier
+    Carrier ..> Cargo
 
 ```
 ## 2. 定义需要透传的信息
@@ -88,21 +80,20 @@ classDiagram
 direction BT
 class CargoRequire {
 <<Interface>>
-
+    getNames() Set~String~
+    getPrefixes() Set~String~
+    test(String) boolean
 }
 class CargoRequires
-class LaneCargoRequire
 class LiveCargoRequire
 
-CargoRequires  ..>  CargoRequire 
-LaneCargoRequire  ..>  CargoRequire 
-LiveCargoRequire  ..>  CargoRequire 
+CargoRequires  -->   CargoRequire 
+LiveCargoRequire  -->   CargoRequire 
 
 ```
 1. `CargoRequire`定义需要透传的信息，并且描述为扩展接口
 2. `LiveCargoRequire`是系统内置的多活透传定义实现
-3. `LaneCargoRequire`是系统内置的多泳道透传定义实现
-4. `CargoRequires`用于包装聚合所有的`CargoRequire`实现
+3. `CargoRequires`用于包装聚合所有的`CargoRequire`实现
 
 | 键               | 说明         |
 |-----------------|------------|
@@ -113,7 +104,47 @@ LiveCargoRequire  ..>  CargoRequire
 | x-lane-space-id | 泳道空间ID     |
 | x-lane-code     | 泳道         |
 
-## 3. 透传实现
+## 3. 透传方式
+
+支持多种透传方式，以扩展方式实现，默认是W3C透传，也保留老的Live透传
+
+```mermaid
+classDiagram
+    direction BT
+    class Propagation {
+        <<Interface>>
+        + write(HeaderWriter) void
+        + write(Carrier, HeaderWriter) void
+        + write(Carrier, Location, HeaderWriter) void
+        + write(HeaderReader, HeaderWriter) void
+        + write(Carrier, HeaderReader) void
+    }
+    
+    class AutoPropagation {
+        -Collection~Propagation~ readers
+        -Propagation writer
+        -AutoDetect autoDetect
+    }
+    
+    class AutoDetect{
+        <<enumeration>>
+        NONE
+        FIRST
+        ALL
+    }
+
+    AutoPropagation --> Propagation
+    W3cPropagation --> Propagation
+    LivePropagation --> Propagation
+    AutoPropagation ..> AutoDetect
+
+```
+
+1. `W3cPropagation`按照W3C标准规范来进行透传
+2. `LivePropagation`按照Live规范来进行透传, 一个Key对应一个Header
+3. `AutoPropagation`用于自动探测透传方式
+
+## 4. 透传实现
 
 在服务调用方，拦截方法请求，把需要透传的上下文变量设置到传输对象里面。在服务提供方法，拦截请求处理，把透传的信息还原到上下文。
 
@@ -123,22 +154,84 @@ LiveCargoRequire  ..>  CargoRequire
 
 下面以Dubbo3为例来说明透传的实现
 
-### 3.1 消费者
+### 4.1 消费者
 
-#### 3.1.1 消费者插件定义
+#### 4.1.1 消费者插件定义
 
 ```java
 @Extension(value = "DubboConsumerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @Injectable
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnDubbo3TransmissionEnabled
+@ConditionalOnClass(DubboConsumerDefinition.TYPE_ABSTRACT_CLUSTER_INVOKER)
 public class DubboConsumerDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_CONTEXT_FILTER = "org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter";
+    public static final String TYPE_ABSTRACT_CLUSTER_INVOKER = "org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker";
+
+    private static final String METHOD_INVOKE = "invoke";
+
+    protected static final String[] ARGUMENT_INVOKE = new String[]{
+            "org.apache.dubbo.rpc.Invocation"
+    };
+
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
+
+    public DubboConsumerDefinition() {
+
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER_INVOKER);
+        this.interceptors = new InterceptorDefinition[]{
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_INVOKE).
+                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
+                        () -> new DubboConsumerInterceptor(propagation))};
+    }
+}
+```
+
+该插件定义描述了拦截类型`org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter`的方法`invoke`
+
+#### 4.1.1 消费者拦截器
+
+```java
+public class DubboConsumerInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public DubboConsumerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
+
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        RpcInvocation invocation = ctx.getArgument(0);
+        Carrier carrier = RequestContext.getOrCreate();
+        // read from rpc context by live propagation
+        LIVE_PROPAGATION.read(carrier, new ObjectMapReader(RpcContext.getClientAttachment().getObjectAttachments()));
+        // write to invocation with live attachments in rpc context
+        propagation.write(carrier, new ObjectMapWriter(invocation.getObjectAttachments(), invocation::setAttachment));
+        ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();
+        String provider = (String) serviceMetadata.getAttachments().get(PROVIDED_BY);
+        if (provider != null && !provider.isEmpty()) {
+            invocation.setAttachmentIfAbsent(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
+        }
+    }
+}
+```
+
+该拦截器在方法进入前，遍历所有`Cargo`对象，设置成为请求的附件，同时从请求里面还原应用程序设置的透传信息到上下文
+
+### 4.2 服务提供者
+
+#### 4.2.1 服务提供者插件定义
+
+```java
+@Injectable
+@Extension(value = "DubboProviderDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
+@ConditionalOnDubbo3TransmissionEnabled
+@ConditionalOnClass(DubboProviderDefinition.TYPE_CONTEXT_FILTER)
+public class DubboProviderDefinition extends PluginDefinitionAdapter {
+
+    protected static final String TYPE_CONTEXT_FILTER = "org.apache.dubbo.rpc.filter.ContextFilter";
 
     private static final String METHOD_INVOKE = "invoke";
 
@@ -147,72 +240,8 @@ public class DubboConsumerDefinition extends PluginDefinitionAdapter {
             "org.apache.dubbo.rpc.Invocation"
     };
 
-    @Inject
-    private List<CargoRequire> requires;
-
-    public DubboConsumerDefinition() {
-
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONTEXT_FILTER);
-        this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE).
-                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new DubboConsumerInterceptor(requires))};
-    }
-}
-```
-
-该插件定义描述了拦截类型`org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter`的方法`invoke`
-
-#### 3.1.1 消费者拦截器
-
-```java
-public class DubboConsumerInterceptor extends InterceptorAdaptor {
-
-    private final CargoRequire require;
-
-    public DubboConsumerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
-    }
-
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        attachTag((RpcInvocation) ctx.getArguments()[1]);
-    }
-
-    private void attachTag(RpcInvocation invocation) {
-        Carrier carrier = RequestContext.getOrCreate();
-        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
-        carrier.addCargo(require, RpcContext.getClientAttachment().getObjectAttachments(), Label::parseValue);
-    }
-
-}
-```
-
-该拦截器在方法进入前，遍历所有`Cargo`对象，设置成为请求的附件，同时从请求里面还原应用程序设置的透传信息到上下文
-
-### 3.2 服务提供者
-
-#### 3.2.1 服务提供者插件定义
-
-```java
-@Injectable
-@Extension(value = "DubboProviderDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
-@ConditionalOnClass(DubboProviderDefinition.TYPE_CONTEXT_FILTER)
-public class DubboProviderDefinition extends PluginDefinitionAdapter {
-
-    protected static final String TYPE_CONTEXT_FILTER = "org.apache.dubbo.rpc.filter.ContextFilter";
-
-    private static final String METHOD_INVOKE = "invoke";
-
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public DubboProviderDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONTEXT_FILTER);
@@ -220,31 +249,28 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new DubboProviderInterceptor(requires))};
+                        () -> new DubboProviderInterceptor(propagation))};
     }
 }
 ```
 
 该插件定义描述了拦截类型`org.apache.dubbo.rpc.filter.ContextFilter`的方法`Invoke`
 
-#### 3.2.1 服务提供者拦截器
+#### 4.2.1 服务提供者拦截器
 
 ```java
 public class DubboProviderInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public DubboProviderInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public DubboProviderInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        restoreTag((RpcInvocation) ctx.getArguments()[1]);
-    }
-
-    private void restoreTag(RpcInvocation invocation) {
-        RequestContext.create().addCargo(require, invocation.getObjectAttachments(), Label::parseValue);
+        RpcInvocation invocation = ctx.getArgument(1);
+        propagation.read(RequestContext.create(), new ObjectMapReader(invocation.getObjectAttachments()));
     }
 
     @Override

@@ -96,26 +96,6 @@ public interface Carrier extends Attributes {
     void removeCargo(String key);
 
     /**
-     * Adds cargos based on a requirement and a map of potential cargos.
-     *
-     * @param predicate The requirement that must be met for a cargo to be added.
-     * @param map       A map where the key is the cargo identifier and the value is a collection of cargo details.
-     * @return A boolean indicating whether any cargos were successfully added.
-     */
-    default boolean addCargo(Predicate<String> predicate, Map<String, ? extends Collection<String>> map) {
-        int counter = 0;
-        if (predicate != null && map != null) {
-            for (Map.Entry<String, ? extends Collection<String>> entry : map.entrySet()) {
-                if (predicate.test(entry.getKey())) {
-                    counter++;
-                    addCargo(new Cargo(entry.getKey(), entry.getValue()));
-                }
-            }
-        }
-        return counter > 0;
-    }
-
-    /**
      * Adds cargos based on a requirement, a map of potential cargos, and a function to transform the map values.
      *
      * @param predicate The requirement that must be met for a cargo to be added.
@@ -139,100 +119,6 @@ public interface Carrier extends Attributes {
                         addCargo(func == null ? new Cargo(entry.getKey(), value.toString()) :
                                 new Cargo(entry.getKey(), func.apply(value.toString()), true));
                     }
-                }
-            }
-        }
-        return counter > 0;
-    }
-
-    /**
-     * Adds cargos based on a requirement, an enumeration of names, and a function to obtain values for those names.
-     *
-     * @param predicate The requirement that must be met for a cargo to be added.
-     * @param names     An enumeration of names to consider for adding as cargos.
-     * @param func      A function to obtain values for the names.
-     * @return A boolean indicating whether any cargos were successfully added.
-     */
-    default boolean addCargo(Predicate<String> predicate, Enumeration<String> names, Function<String, Enumeration<String>> func) {
-        int counter = 0;
-        if (predicate != null && names != null) {
-            String name;
-            List<String> values;
-            Enumeration<String> venum;
-            while (names.hasMoreElements()) {
-                name = names.nextElement();
-                if (predicate.test(name)) {
-                    counter++;
-                    values = null;
-                    if (func != null) {
-                        venum = func.apply(name);
-                        values = venum == null ? null : Collections.list(venum);
-                    }
-                    addCargo(new Cargo(name, values, true));
-                }
-            }
-        }
-        return counter > 0;
-    }
-
-    /**
-     * Adds cargos based on a requirement, an iterable of names, and a function to obtain values for those names.
-     *
-     * @param predicate The requirement that must be met for a cargo to be added.
-     * @param names     An iterable of names to consider for adding as cargos.
-     * @param func      A function to obtain values for the names.
-     * @return A boolean indicating whether any cargos were successfully added.
-     */
-    default boolean addCargo(Predicate<String> predicate, Iterable<String> names, Function<String, List<String>> func) {
-        int counter = 0;
-        if (predicate != null && names != null) {
-            List<String> values;
-            for (String name : names) {
-                if (predicate.test(name)) {
-                    counter++;
-                    values = null;
-                    if (func != null) {
-                        values = func.apply(name);
-                    }
-                    addCargo(new Cargo(name, values, true));
-                }
-            }
-        }
-        return counter > 0;
-    }
-
-    /**
-     * Adds cargos to the carrier based on a requirement, an iterable of target objects, and functions that provide keys and values.
-     * <p>
-     * This method allows adding multiple cargos at once by processing an iterable of target objects. For each target, the key and value
-     * are determined by applying the provided functions. Only cargos with keys that match the requirement are added.
-     * </p>
-     *
-     * @param <T>         The type of the target objects in the iterable.
-     * @param predicate   The requirement that must be met for a cargo to be added.
-     * @param targets     An iterable of target objects to process.
-     * @param keyFunc     A function that generates a key for a cargo based on a target object.
-     * @param valueFunc   A function that generates a value for a cargo based on a target object (may be null).
-     * @return A boolean indicating whether any cargos were successfully added.
-     */
-    default <T> boolean addCargo(Predicate<String> predicate, Iterable<T> targets, Function<T, String> keyFunc, Function<T, String> valueFunc) {
-        int counter = 0;
-        if (predicate != null && targets != null && keyFunc != null) {
-            Map<String, List<String>> tags = new HashMap<>();
-            for (T target : targets) {
-                String key = keyFunc.apply(target);
-                if (key != null) {
-                    List<String> values = tags.computeIfAbsent(key, k -> new ArrayList<>());
-                    String value = valueFunc == null ? null : valueFunc.apply(target);
-                    if (value != null) {
-                        values.add(value);
-                    }
-                }
-            }
-            for (Map.Entry<String, ? extends Collection<String>> entry : tags.entrySet()) {
-                if (predicate.test(entry.getKey())) {
-                    counter++;
-                    addCargo(new Cargo(entry.getKey(), entry.getValue(), true));
                 }
             }
         }

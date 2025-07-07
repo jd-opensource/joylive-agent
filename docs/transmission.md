@@ -9,74 +9,66 @@ The request context `RequestContext` carries information through thread variable
 
 ```mermaid
 classDiagram
-direction BT
-class RequestContext {
-  + get() Carrier
-  + getOrCreate() Carrier
-  + set(Carrier) void
-  + create() Carrier
-  + remove() void
-  + getCargo(String) Cargo?
-  + hasCargo() boolean
-  + cargos(Consumer~Cargo~) void
-  + cargos(BiConsumer~String, String~) void
-  + getAttribute(String) T?
-  + setAttribute(String, Object) void
-  + removeAttribute(String) T?
-  + isTimeout() boolean
-}
+    direction BT
+    class RequestContext {
+        + get() Carrier
+        + getOrCreate() Carrier
+        + set(Carrier) void
+        + create() Carrier
+        + remove() void
+        + getCargo(String) Cargo?
+        + hasCargo() boolean
+        + cargos(Consumer~Cargo~) void
+        + cargos(BiConsumer~String, String~) void
+        + getAttribute(String) T?
+        + setAttribute(String, Object) void
+        + removeAttribute(String) T?
+        + isTimeout() boolean
+    }
 
-class Attributes {
-<<Interface>>
-+ removeAttribute(String) T
-+ hasAttribute(String) boolean
-+ setAttribute(String, Object) void
-+ attributes(BiConsumer~String, Object~) void
-+ getAttribute(String) T
-+ copyAttribute(Attributes) void
-}
+    class Attributes {
+        <<Interface>>
+        + removeAttribute(String) T
+        + hasAttribute(String) boolean
+        + setAttribute(String, Object) void
+        + attributes(BiConsumer~String, Object~) void
+        + getAttribute(String) T
+    }
 
-class Carrier {
-<<Interface>>
-+ getCargos() Collection~Cargo~
-+ getCargo(String) Cargo
-+ addCargo(CargoRequire, Iterable~T~, Function~T, String~, Function~T, String~) void
-+ addCargo(CargoRequire, Enumeration~String~, Function~String, Enumeration~String~~) void
-+ addCargo(Cargo) void
-+ addCargo(CargoRequire, Map~String, Collection~String~~) void
-+ addCargo(CargoRequire, Iterable~String~, Function~String, List~String~~) void
-+ addCargo(CargoRequire, M, Function~String, Collection~String~~) void
-+ addCargo(String, String) void
-+ setCargo(String, String) void
-+ removeCargo(String) void
-+ cargos(BiConsumer~String, String~) void
-+ cargos(Consumer~Cargo~) void
-}
+    class Carrier {
+        <<Interface>>
+        + getCargos() Collection~Cargo~
+        + getCargo(String) Cargo
+        + addCargo(Cargo) void
+        + addCargo(String, String) void
+        + addCargo(Predicate~String~, M, Function~String,Collection~ func) void
+        + setCargo(String, String) void
+        + removeCargo(String) void
+        + cargos(BiConsumer~String, String~) void
+        + cargos(Consumer~Cargo~) void
+    }
 
-class Cargo {
-+ add(String) void
-+ add(Collection~String~) void
-+ add(Enumeration~String~) void
-+ toString() String
-}
+    class Cargo {
+        + add(String) void
+        + add(Collection~String~) void
+    }
 
-class Tag {
-# setKey(String) void
-+ getValues() List~String~
-+ getFirstValue() String
-+ getKey() String
-# add(Enumeration~String~) void
-+ getValue() String
-# add(Collection~String~) void
-+ toString() String
-# add(String) void
-# setValues(List~String~) void
-}
+    class Label {
+        <<Interface>>
+        + getKey() String
+        + getFirstValue() String
+        + getValues() List~String~
+        + getValue() String
+    }
 
-Cargo  -->  Tag
-Carrier  -->  Attributes
-RequestContext ..> Carrier
-Carrier ..> Cargo
+    class Tag {
+
+    }
+    Tag --> Label
+    Cargo --> Tag
+    Carrier --> Attributes
+    RequestContext ..> Carrier
+    Carrier ..> Cargo
 
 ```
 ## 2. Define Information to be Transmitted
@@ -85,24 +77,23 @@ Define the information to be restored to the context based on extensions.
 
 ```mermaid
 classDiagram
-direction BT
-class CargoRequire {
-<<Interface>>
+    direction BT
+    class CargoRequire {
+        <<Interface>>
+        getNames() Set~String~
+        getPrefixes() Set~String~
+        test(String) boolean
+    }
+    class CargoRequires
+    class LiveCargoRequire
 
-}
-class CargoRequires
-class LaneCargoRequire
-class LiveCargoRequire
-
-CargoRequires  ..>  CargoRequire 
-LaneCargoRequire  ..>  CargoRequire 
-LiveCargoRequire  ..>  CargoRequire 
+    CargoRequires  -->   CargoRequire
+    LiveCargoRequire  -->   CargoRequire
 
 ```
 1. `CargoRequire` defines the information to be transmitted and describes it as an extension interface.
 2. `LiveCargoRequire` is a built-in implementation of multi-live transmission definition.
-3. `LaneCargoRequire` is a built-in implementation of multi-lane transmission definition.
-4. `CargoRequires` is used to aggregate all `CargoRequire` implementations.
+3. `CargoRequires` is used to aggregate all `CargoRequire` implementations.
 
 | Key               | Description         |
 |-------------------|---------------------|
@@ -113,7 +104,46 @@ LiveCargoRequire  ..>  CargoRequire
 | x-lane-space-id   | Lane space ID       |
 | x-lane-code       | Lane code           |
 
-## 3. Transmission Implementation
+## 3. Propagation Methods
+
+Supports multiple propagation methods implemented through extensions. Default is W3C propagation while retaining legacy Live propagation.
+
+```mermaid
+classDiagram
+    direction BT
+    class Propagation {
+        <<Interface>>
+        + write(HeaderWriter) void
+        + write(Carrier, HeaderWriter) void
+        + write(Carrier, Location, HeaderWriter) void
+        + write(HeaderReader, HeaderWriter) void
+        + write(Carrier, HeaderReader) void
+    }
+    
+    class AutoPropagation {
+        -Collection~Propagation~ readers
+        -Propagation writer
+        -AutoDetect autoDetect
+    }
+    
+    class AutoDetect{
+        <<enumeration>>
+        NONE
+        FIRST
+        ALL
+    }
+
+    AutoPropagation --> Propagation
+    W3cPropagation --> Propagation
+    LivePropagation --> Propagation
+    AutoPropagation ..> AutoDetect
+```
+
+1. `W3cPropagation` follows W3C standard specifications for propagation
+2. `LivePropagation` follows Live specifications for propagation (one Key corresponds to one Header)
+3. `AutoPropagation` used for automatic detection of propagation methods
+
+## 4. Transmission Implementation
 
 On the service caller side, intercept the method request and set the context variables that need to be transmitted into the transmission object. On the service provider side, intercept the request processing and restore the transmitted information into the context.
 
@@ -123,22 +153,84 @@ On the service caller side, intercept the method request and set the context var
 
 Below is an example of the transmission implementation using Dubbo3.
 
-### 3.1 Consumer
+### 4.1 Consumer
 
-#### 3.1.1 Consumer Plugin Definition
+#### 4.1.1 Consumer Plugin Definition
 
 ```java
 @Extension(value = "DubboConsumerDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
 @Injectable
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
+@ConditionalOnDubbo3TransmissionEnabled
+@ConditionalOnClass(DubboConsumerDefinition.TYPE_ABSTRACT_CLUSTER_INVOKER)
 public class DubboConsumerDefinition extends PluginDefinitionAdapter {
 
-    public static final String TYPE_CONSUMER_CONTEXT_FILTER = "org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter";
+    public static final String TYPE_ABSTRACT_CLUSTER_INVOKER = "org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker";
+
+    private static final String METHOD_INVOKE = "invoke";
+
+    protected static final String[] ARGUMENT_INVOKE = new String[]{
+            "org.apache.dubbo.rpc.Invocation"
+    };
+
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
+
+    public DubboConsumerDefinition() {
+
+        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_ABSTRACT_CLUSTER_INVOKER);
+        this.interceptors = new InterceptorDefinition[]{
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_INVOKE).
+                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
+                        () -> new DubboConsumerInterceptor(propagation))};
+    }
+}
+```
+
+This plugin definition describes intercepting the method `invoke` of the type `org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter`.
+
+#### 4.1.2 Consumer Interceptor
+
+```java
+public class DubboConsumerInterceptor extends InterceptorAdaptor {
+
+    private final Propagation propagation;
+
+    public DubboConsumerInterceptor(Propagation propagation) {
+        this.propagation = propagation;
+    }
+
+    @Override
+    public void onEnter(ExecutableContext ctx) {
+        RpcInvocation invocation = ctx.getArgument(0);
+        Carrier carrier = RequestContext.getOrCreate();
+        // read from rpc context by live propagation
+        LIVE_PROPAGATION.read(carrier, new ObjectMapReader(RpcContext.getClientAttachment().getObjectAttachments()));
+        // write to invocation with live attachments in rpc context
+        propagation.write(carrier, new ObjectMapWriter(invocation.getObjectAttachments(), invocation::setAttachment));
+        ServiceMetadata serviceMetadata = invocation.getServiceModel().getServiceMetadata();
+        String provider = (String) serviceMetadata.getAttachments().get(PROVIDED_BY);
+        if (provider != null && !provider.isEmpty()) {
+            invocation.setAttachmentIfAbsent(REGISTRY_TYPE_KEY, SERVICE_REGISTRY_TYPE);
+        }
+    }
+}
+```
+
+This interceptor, before entering the method, iterates over all `Cargo` objects, setting them as attachments to the request. It also restores the application-set transmission information from the request into the context.
+
+### 4.2 Service Provider
+
+#### 4.2.1 Service Provider Plugin Definition
+
+```java
+@Injectable
+@Extension(value = "DubboProviderDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
+@ConditionalOnDubbo3TransmissionEnabled
+@ConditionalOnClass(DubboProviderDefinition.TYPE_CONTEXT_FILTER)
+public class DubboProviderDefinition extends PluginDefinitionAdapter {
+
+    protected static final String TYPE_CONTEXT_FILTER = "org.apache.dubbo.rpc.filter.ContextFilter";
 
     private static final String METHOD_INVOKE = "invoke";
 
@@ -147,72 +239,8 @@ public class DubboConsumerDefinition extends PluginDefinitionAdapter {
             "org.apache.dubbo.rpc.Invocation"
     };
 
-    @Inject
-    private List<CargoRequire> requires;
-
-    public DubboConsumerDefinition() {
-
-        this.matcher = () -> MatcherBuilder.named(TYPE_CONSUMER_CONTEXT_FILTER);
-        this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE).
-                                and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new DubboConsumerInterceptor(requires))};
-    }
-}
-```
-
-This plugin definition describes intercepting the method `invoke` of the type `org.apache.dubbo.rpc.cluster.filter.support.ConsumerContextFilter`.
-
-#### 3.1.2 Consumer Interceptor
-
-```java
-public class DubboConsumerInterceptor extends InterceptorAdaptor {
-
-    private final CargoRequire require;
-
-    public DubboConsumerInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
-    }
-
-    @Override
-    public void onEnter(ExecutableContext ctx) {
-        attachTag((RpcInvocation) ctx.getArguments()[1]);
-    }
-
-    private void attachTag(RpcInvocation invocation) {
-        Carrier carrier = RequestContext.getOrCreate();
-        carrier.cargos(tag -> invocation.setAttachment(tag.getKey(), tag.getValue()));
-        carrier.addCargo(require, RpcContext.getClientAttachment().getObjectAttachments(), Label::parseValue);
-    }
-
-}
-```
-
-This interceptor, before entering the method, iterates over all `Cargo` objects, setting them as attachments to the request. It also restores the application-set transmission information from the request into the context.
-
-### 3.2 Service Provider
-
-#### 3.2.1 Service Provider Plugin Definition
-
-```java
-@Injectable
-@Extension(value = "DubboProviderDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnProperties(value = {
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LIVE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_LANE_ENABLED, matchIfMissing = true),
-        @ConditionalOnProperty(value = GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED, matchIfMissing = true)
-}, relation = ConditionalRelation.OR)
-@ConditionalOnClass(DubboConsumerDefinition.TYPE_CONSUMER_CONTEXT_FILTER)
-@ConditionalOnClass(DubboProviderDefinition.TYPE_CONTEXT_FILTER)
-public class DubboProviderDefinition extends PluginDefinitionAdapter {
-
-    protected static final String TYPE_CONTEXT_FILTER = "org.apache.dubbo.rpc.filter.ContextFilter";
-
-    private static final String METHOD_INVOKE = "invoke";
-
-    @Inject
-    private List<CargoRequire> requires;
+    @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
+    private Propagation propagation;
 
     public DubboProviderDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_CONTEXT_FILTER);
@@ -220,31 +248,28 @@ public class DubboProviderDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INVOKE).
                                 and(MatcherBuilder.arguments(ARGUMENT_INVOKE)),
-                        () -> new DubboProviderInterceptor(requires))};
+                        () -> new DubboProviderInterceptor(propagation))};
     }
 }
 ```
 
 This plugin definition describes intercepting the method `invoke` of the type `org.apache.dubbo.rpc.filter.ContextFilter`.
 
-#### 3.2.2 Service Provider Interceptor
+#### 4.2.2 Service Provider Interceptor
 
 ```java
 public class DubboProviderInterceptor extends InterceptorAdaptor {
 
-    private final CargoRequire require;
+    private final Propagation propagation;
 
-    public DubboProviderInterceptor(List<CargoRequire> requires) {
-        this.require = new CargoRequires(requires);
+    public DubboProviderInterceptor(Propagation propagation) {
+        this.propagation = propagation;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        restoreTag((RpcInvocation) ctx.getArguments()[1]);
-    }
-
-    private void restoreTag(RpcInvocation invocation) {
-        RequestContext.create().addCargo(require, invocation.getObjectAttachments(), Label::parseValue);
+        RpcInvocation invocation = ctx.getArgument(1);
+        propagation.read(RequestContext.create(), new ObjectMapReader(invocation.getObjectAttachments()));
     }
 
     @Override
