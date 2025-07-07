@@ -23,7 +23,7 @@ import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
+import com.jd.live.agent.core.util.map.MapBuilder;
 import com.jd.live.agent.core.util.map.MapBuilder.LowercaseMapBuilder;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
@@ -41,6 +41,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Represents the governance policy for managing resources and configurations.
@@ -115,18 +116,21 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
         return result;
     });
 
-    private final transient Cache<String, Service> serviceCache = new MapCache<>(new LowercaseListBuilder<>(() -> services, null, Service::getName));
-
-    private final transient Cache<String, Service> serviceAliasCache = new MapCache<>(() -> {
-        Map<String, Service> result = new HashMap<>();
-        if (services != null) {
-            services.forEach(service -> {
-                if (service.getAliases() != null) {
-                    service.getAliases().forEach(alias -> result.put(alias, service));
-                }
-            });
+    private final transient Cache<String, Service> serviceCache = new MapCache<>(new MapBuilder<String, Service>() {
+        @Override
+        public Map<String, Service> build() {
+            Map<String, Service> result = new HashMap<>();
+            if (services != null) {
+                services.forEach(service -> result.putIfAbsent(service.getName().toLowerCase(), service));
+                services.forEach(service -> service.alias(alias -> result.putIfAbsent(alias.toLowerCase(), service)));
+            }
+            return result;
         }
-        return result;
+
+        @Override
+        public Function<String, String> getKeyConverter() {
+            return String::toLowerCase;
+        }
     });
 
     /**
@@ -193,13 +197,23 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
     }
 
     /**
-     * Retrieves a {@link Service} by its unique alias.
+     * Retrieves a service by name(s). Checks each name in order and returns
+     * the first matching service found in the cache. Returns null if none found.
      *
-     * @param alias The unique alias of the service to retrieve.
-     * @return The service with the specified alias, or {@code null} if not found.
+     * @param names one or more service names to look up (nullable)
+     * @return first matching service, or null if no matches found
      */
-    public Service getServiceByAlias(String alias) {
-        return serviceAliasCache.get(alias);
+    public Service getService(String... names) {
+        if (names != null) {
+            Service service;
+            for (String name : names) {
+                service = serviceCache.get(name);
+                if (service != null) {
+                    return service;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -287,7 +301,6 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
         getLaneSpace("");
         getDomain("");
         getService("");
-        getServiceByAlias("");
         getDefaultLaneSpace();
 
         if (liveSpaces != null) {

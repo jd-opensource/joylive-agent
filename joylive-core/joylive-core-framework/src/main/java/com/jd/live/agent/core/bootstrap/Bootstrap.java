@@ -23,6 +23,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
@@ -610,8 +611,9 @@ public class Bootstrap implements AgentLifecycle {
         targets.add("java.net.URI");
         result.export(instrumentation, mapping, classLoaderManager.getCoreImplLoader());
         // access unsafe
-        result.export(instrumentation, "java.util.Map", "jdk.internal.misc", "com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory", classLoader);
-        result.export(instrumentation, "sun.misc.Unsafe", "sun.misc", "com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory", classLoader);
+        result.export(instrumentation, "java.util.Map", "java.util", FieldAccessorFactory.class.getName(), classLoader);
+        result.export(instrumentation, "java.util.Map", "jdk.internal.misc", FieldAccessorFactory.class.getName(), classLoader);
+        result.export(instrumentation, "sun.misc.Unsafe", "sun.misc", FieldAccessorFactory.class.getName(), classLoader);
         return result;
     }
 

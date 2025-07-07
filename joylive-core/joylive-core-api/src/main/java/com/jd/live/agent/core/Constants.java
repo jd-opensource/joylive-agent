@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -198,6 +199,36 @@ public interface Constants {
      * Predicate that tests if a string equals {@link #SCHEME_LB} (case-insensitive).
      */
     Predicate<String> PREDICATE_LB = SCHEME_LB::equalsIgnoreCase;
+
+    String K8S_SERVICE_SUFFIX = ".svc.cluster.local";
+
+    /**
+     * Predicate that tests if a string ends with {@link #K8S_SERVICE_SUFFIX} (case-insensitive).
+     */
+    Predicate<String> PREDICATE_K8S_SERVICE = s -> {
+        int len = s == null ? 0 : s.length();
+        int suffixLength = K8S_SERVICE_SUFFIX.length();
+        len = len - suffixLength;
+        if (len <= 0) {
+            return false;
+        }
+        return s.regionMatches(true, len, K8S_SERVICE_SUFFIX, 0, suffixLength);
+    };
+
+    /**
+     * Extracts the Kubernetes service name
+     */
+    Function<String, String> K8S_SERVICE_NAME_FUNC = s -> {
+        int len = s == null ? 0 : s.length();
+        int suffixLength = K8S_SERVICE_SUFFIX.length();
+        len = len - suffixLength;
+        if (len <= 0 || !s.regionMatches(true, len, K8S_SERVICE_SUFFIX, 0, suffixLength)) {
+            return null;
+        }
+        // skip namespace
+        int pos = s.lastIndexOf('.', len - 1);
+        return pos < 1 ? null : s.substring(0, pos);
+    };
 
 }
 

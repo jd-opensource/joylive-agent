@@ -18,7 +18,7 @@ package com.jd.live.agent.core.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+import static com.jd.live.agent.core.Constants.*;
 
 public class URITest {
 
@@ -127,6 +127,15 @@ public class URITest {
         Assertions.assertEquals(6957, uri.getPort());
         Assertions.assertNull(uri.getUser());
         Assertions.assertEquals("12345", uri.getPassword());
+    }
+
+    @Test
+    void testK8sServiceName() {
+        Assertions.assertFalse(PREDICATE_K8S_SERVICE.test("svc.cluster.local"));
+        Assertions.assertFalse(PREDICATE_K8S_SERVICE.test(".svc.cluster.local"));
+        Assertions.assertTrue(PREDICATE_K8S_SERVICE.test("a.b.svc.cluster.local"));
+        Assertions.assertTrue(PREDICATE_K8S_SERVICE.test("A.B.SVC.CLUSTER.LOCAL"));
+        Assertions.assertEquals("A", K8S_SERVICE_NAME_FUNC.apply("A.B.SVC.CLUSTER.LOCAL"));
     }
 
 

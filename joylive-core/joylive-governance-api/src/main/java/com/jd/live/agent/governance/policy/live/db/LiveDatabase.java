@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_K8S_SERVICE;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
 import static com.jd.live.agent.core.util.URI.getAddress;
@@ -137,8 +138,8 @@ public class LiveDatabase {
             if (first == null) {
                 first = addr;
             }
-            // k8s cluster service address
-            if (!addr.contains("svc.cluster.local")) {
+            // predicate k8s cluster service name
+            if (!PREDICATE_K8S_SERVICE.test(addr)) {
                 return addr;
             }
         }

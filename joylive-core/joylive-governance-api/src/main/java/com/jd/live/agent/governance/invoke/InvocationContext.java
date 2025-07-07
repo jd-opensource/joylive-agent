@@ -17,7 +17,6 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
@@ -73,6 +72,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
 import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -275,12 +275,13 @@ public interface InvocationContext {
         String host = uri.getHost();
         String serviceName = null;
         if (!PREDICATE_LB.test(scheme)) {
+            String alias = K8S_SERVICE_NAME_FUNC.apply(host);
             HostConfig config = getGovernanceConfig().getRegistryConfig().getHostConfig();
             if (config.isEnabled()) {
-                serviceName = config.getService(host);
+                serviceName = config.getService(host, alias);
                 if (serviceName == null || serviceName.isEmpty()) {
                     GovernancePolicy governancePolicy = getPolicySupplier().getPolicy();
-                    Service service = governancePolicy == null ? null : governancePolicy.getServiceByAlias(host);
+                    Service service = governancePolicy == null ? null : governancePolicy.getService(host, alias);
                     serviceName = service == null ? null : service.getName();
                 }
             }

@@ -31,5 +31,20 @@ public class HostConfig {
     public String getService(String host) {
         return host == null || services == null || services.isEmpty() ? null : services.get(host);
     }
+
+    public String getService(String... names) {
+        String result = null;
+        if (names != null && services != null && !services.isEmpty()) {
+            for (String name : names) {
+                if (name != null) {
+                    result = services.get(name);
+                    if (result != null) {
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
 }
 

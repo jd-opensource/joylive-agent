@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Service
@@ -150,6 +151,12 @@ public class Service extends PolicyOwner implements ServiceName {
         ServiceGroup serviceGroup = getGroup(group);
         serviceGroup = serviceGroup == null ? defaultGroup : serviceGroup;
         return serviceGroup == null ? null : serviceGroup.getServicePolicy(path, method);
+    }
+
+    public void alias(Consumer<String> consumer) {
+        if (aliases != null) {
+            aliases.forEach(consumer);
+        }
     }
 
     /**
