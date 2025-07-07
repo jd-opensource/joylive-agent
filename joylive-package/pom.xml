@@ -127,11 +127,15 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-event-logger</artifactId>
+            <artifactId>joylive-event-agent-logger</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-event-opentelemetry</artifactId>
+            <artifactId>joylive-event-traffic-logger</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-event-traffic-opentelemetry</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

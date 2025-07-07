@@ -5,17 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.jd.live</groupId>
-        <artifactId>joylive-implement</artifactId>
+        <artifactId>joylive-event</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-event</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>joylive-event-agent-logger</module>
-        <module>joylive-event-traffic-logger</module>
-        <module>joylive-event-traffic-opentelemetry</module>
-    </modules>
+    <artifactId>joylive-event-agent-logger</artifactId>
 
 </project>
