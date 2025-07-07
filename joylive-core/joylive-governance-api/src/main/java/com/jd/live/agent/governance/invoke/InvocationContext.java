@@ -73,6 +73,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
@@ -270,14 +271,13 @@ public interface InvocationContext {
      * @see GovernancePolicy#getServiceByAlias(String)
      */
     default String getService(URI uri) {
-        String schema = uri.getScheme();
+        String scheme = uri.getScheme();
         String host = uri.getHost();
         String serviceName = null;
-        if (!Constants.PREDICATE_LB.test(schema)) {
-            GovernanceConfig governanceConfig = getGovernanceConfig();
-            HostConfig hostConfig = governanceConfig.getRegistryConfig().getHostConfig();
-            if (hostConfig.isEnabled()) {
-                serviceName = hostConfig.getService(host);
+        if (!PREDICATE_LB.test(scheme)) {
+            HostConfig config = getGovernanceConfig().getRegistryConfig().getHostConfig();
+            if (config.isEnabled()) {
+                serviceName = config.getService(host);
                 if (serviceName == null || serviceName.isEmpty()) {
                     GovernancePolicy governancePolicy = getPolicySupplier().getPolicy();
                     Service service = governancePolicy == null ? null : governancePolicy.getServiceByAlias(host);
