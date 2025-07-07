@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.invoke;
 
 import com.jd.live.agent.bootstrap.exception.RejectException;
 import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderException;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
@@ -55,7 +56,6 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
-import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -273,7 +273,7 @@ public interface InvocationContext {
         String schema = uri.getScheme();
         String host = uri.getHost();
         String serviceName = null;
-        if (!Request.SCHEMA_LB.equalsIgnoreCase(schema)) {
+        if (!Constants.PREDICATE_LB.test(schema)) {
             GovernanceConfig governanceConfig = getGovernanceConfig();
             HostConfig hostConfig = governanceConfig.getRegistryConfig().getHostConfig();
             if (hostConfig.isEnabled()) {
