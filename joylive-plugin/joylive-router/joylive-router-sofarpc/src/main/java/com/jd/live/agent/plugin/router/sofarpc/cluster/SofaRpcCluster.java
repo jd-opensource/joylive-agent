@@ -28,7 +28,7 @@ import com.alipay.sofa.rpc.core.invoke.SofaResponseCallback;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
 import com.alipay.sofa.rpc.transport.ClientTransport;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -62,8 +62,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * Represents a live cluster specifically designed for managing Sofa RPC communications.
@@ -95,7 +95,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
 
     private final ConnectionHolder connectionHolder;
 
-    private final UnsafeFieldAccessor destroyed;
+    private final FieldAccessor destroyed;
 
     private final Method filterChainMethod;
 
@@ -176,7 +176,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
 
     @Override
     public boolean isDestroyed() {
-        return destroyed.getBoolean(cluster);
+        return (Boolean) destroyed.get(cluster);
     }
 
     @Override

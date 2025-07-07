@@ -19,7 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosInstancePublisher;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 import static com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**

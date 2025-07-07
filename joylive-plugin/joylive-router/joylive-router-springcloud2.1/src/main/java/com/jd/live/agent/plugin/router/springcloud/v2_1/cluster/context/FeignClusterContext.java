@@ -22,7 +22,7 @@ import lombok.Getter;
 import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
 import org.springframework.cloud.openfeign.ribbon.CachingSpringLoadBalancerFactory;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * A concrete implementation of cluster context specifically designed for Feign clients,

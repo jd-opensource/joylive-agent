@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.instance.AppService;
@@ -142,7 +142,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
         try {
             Class<?> clazz = classLoader.loadClass("org.springframework.boot.autoconfigure.web.ServerProperties");
             Object bean = context.getBean(clazz);
-            secure = UnsafeFieldAccessorFactory.getQuietly(bean, "ssl") != null;
+            secure = FieldAccessorFactory.getQuietly(bean, "ssl") != null;
         } catch (Throwable ignored) {
         }
         return new PortInfo(port, secure);

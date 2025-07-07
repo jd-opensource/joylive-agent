@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 
 import static com.alibaba.dubbo.common.Constants.CLUSTER_STICKY_KEY;
 import static com.alibaba.dubbo.common.Constants.DEFAULT_CLUSTER_STICKY;
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 
 /**

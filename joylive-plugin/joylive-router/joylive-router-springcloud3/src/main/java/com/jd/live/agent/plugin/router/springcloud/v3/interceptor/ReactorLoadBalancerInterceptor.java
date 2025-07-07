@@ -25,7 +25,7 @@ import org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * ReactorLoadBalancerInterceptor

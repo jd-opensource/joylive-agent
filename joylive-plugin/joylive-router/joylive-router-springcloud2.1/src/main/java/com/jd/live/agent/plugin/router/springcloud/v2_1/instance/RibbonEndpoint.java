@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.instance;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
@@ -27,14 +27,14 @@ import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 /**
  * A class that represents a service endpoint in the context of Ribbon load balancing.
  */
 public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
 
-    private static final Map<Class<?>, CacheObject<UnsafeFieldAccessor>> ACCESSOR_MAP = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, CacheObject<FieldAccessor>> ACCESSOR_MAP = new ConcurrentHashMap<>();
     private static final String FIELD_METADATA = "metadata";
 
     private final String service;
@@ -112,8 +112,8 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
         if (metadata == null) {
             Map<String, String> result = null;
             // for nacos
-            CacheObject<UnsafeFieldAccessor> cache = ACCESSOR_MAP.computeIfAbsent(server.getClass(), c -> new CacheObject<>(getAccessor(c, FIELD_METADATA)));
-            UnsafeFieldAccessor accessor = cache.get();
+            CacheObject<FieldAccessor> cache = ACCESSOR_MAP.computeIfAbsent(server.getClass(), c -> new CacheObject<>(getAccessor(c, FIELD_METADATA)));
+            FieldAccessor accessor = cache.get();
             if (accessor != null) {
                 Object target = accessor.get(server);
                 if (target instanceof Map) {

@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.transmission.servlet.javax.request.tomcat;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class TomcatHeaderParser implements HttpHeaderParser {
 
-    private static final UnsafeFieldAccessor accessor = UnsafeFieldAccessorFactory.getAccessor(RequestFacade.class, "request");
+    private static final FieldAccessor accessor = FieldAccessorFactory.getAccessor(RequestFacade.class, "request");
 
     @Override
     public MultiMap<String, String> parse(Object request) {

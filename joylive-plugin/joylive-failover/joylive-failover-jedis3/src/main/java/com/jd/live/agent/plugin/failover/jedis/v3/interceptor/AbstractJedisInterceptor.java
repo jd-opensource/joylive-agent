@@ -18,8 +18,8 @@ package com.jd.live.agent.plugin.failover.jedis.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.Execution;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.interceptor.AbstractDbConnectionInterceptor;
@@ -84,29 +84,29 @@ public abstract class AbstractJedisInterceptor extends AbstractDbConnectionInter
     // lazy load class to avoid class loading error
     protected static class Accessor {
         @SuppressWarnings("deprecation")
-        protected static final UnsafeFieldAccessor connectionHandler = UnsafeFieldAccessorFactory.getAccessor(BinaryJedisCluster.class, "connectionHandler");
+        protected static final FieldAccessor connectionHandler = FieldAccessorFactory.getAccessor(BinaryJedisCluster.class, "connectionHandler");
 
-        protected static final UnsafeFieldAccessor cache = UnsafeFieldAccessorFactory.getAccessor(JedisClusterConnectionHandler.class, "cache");
+        protected static final FieldAccessor cache = FieldAccessorFactory.getAccessor(JedisClusterConnectionHandler.class, "cache");
         protected static final Method initializeSlotsCache = ClassUtils.getDeclaredMethod(JedisClusterConnectionHandler.class, "initializeSlotsCache");
-        protected static final UnsafeFieldAccessor cacheClientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
-        protected static final UnsafeFieldAccessor poolConfig = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
-        protected static final UnsafeFieldAccessor startNodes = UnsafeFieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
+        protected static final FieldAccessor cacheClientConfig = FieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "clientConfig");
+        protected static final FieldAccessor poolConfig = FieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "poolConfig");
+        protected static final FieldAccessor startNodes = FieldAccessorFactory.getAccessor(JedisClusterInfoCache.class, "startNodes");
 
-        protected static final UnsafeFieldAccessor internalPool = UnsafeFieldAccessorFactory.getAccessor(JedisPool.class, "internalPool");
-        protected static final UnsafeFieldAccessor factory = UnsafeFieldAccessorFactory.getAccessor(GenericObjectPool.class, "factory");
-        protected static final UnsafeFieldAccessor socketFactory = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "jedisSocketFactory");
-        protected static final UnsafeFieldAccessor factoryClientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
-        protected static final UnsafeFieldAccessor hostAndPort = UnsafeFieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPort");
-        protected static final UnsafeFieldAccessor pooledObject = UnsafeFieldAccessorFactory.getAccessor(DefaultPooledObjectInfo.class, "pooledObject");
+        protected static final FieldAccessor internalPool = FieldAccessorFactory.getAccessor(JedisPool.class, "internalPool");
+        protected static final FieldAccessor factory = FieldAccessorFactory.getAccessor(GenericObjectPool.class, "factory");
+        protected static final FieldAccessor socketFactory = FieldAccessorFactory.getAccessor(JedisFactory.class, "jedisSocketFactory");
+        protected static final FieldAccessor factoryClientConfig = FieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
+        protected static final FieldAccessor hostAndPort = FieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPort");
+        protected static final FieldAccessor pooledObject = FieldAccessorFactory.getAccessor(DefaultPooledObjectInfo.class, "pooledObject");
 
-        protected static final UnsafeFieldAccessor sentinelClientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisSentinelPool.class, "sentinelClientConfig");
-        protected static final UnsafeFieldAccessor masterListeners = UnsafeFieldAccessorFactory.getAccessor(JedisSentinelPool.class, "masterListeners");
+        protected static final FieldAccessor sentinelClientConfig = FieldAccessorFactory.getAccessor(JedisSentinelPool.class, "sentinelClientConfig");
+        protected static final FieldAccessor masterListeners = FieldAccessorFactory.getAccessor(JedisSentinelPool.class, "masterListeners");
         protected static final Method initSentinels = ClassUtils.getDeclaredMethod(JedisSentinelPool.class, "initSentinels");
         protected static final Method shutdown = ClassUtils.getDeclaredMethod("redis.clients.jedis.JedisSentinelPool$MasterListener", "shutdown");
 
         protected static final Class<?> jedisConnectionType = org.springframework.data.redis.connection.jedis.JedisConnection.class;
-        protected static final UnsafeFieldAccessor jedis = UnsafeFieldAccessorFactory.getAccessor(jedisConnectionType, "jedis");
-        protected static final UnsafeFieldAccessor pool = UnsafeFieldAccessorFactory.getAccessor(jedisConnectionType, "pool");
+        protected static final FieldAccessor jedis = FieldAccessorFactory.getAccessor(jedisConnectionType, "jedis");
+        protected static final FieldAccessor pool = FieldAccessorFactory.getAccessor(jedisConnectionType, "pool");
 
         /**
          * Invalidates all Jedis objects in the pool during failover.

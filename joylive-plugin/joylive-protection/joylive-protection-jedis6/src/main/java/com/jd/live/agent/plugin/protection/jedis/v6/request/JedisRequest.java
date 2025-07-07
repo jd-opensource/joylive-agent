@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.protection.jedis.v6.request;
 
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.request.DbRequest.CacheRequest;
 import com.jd.live.agent.plugin.protection.jedis.v6.config.JedisHostAndPortMapper;
@@ -94,8 +94,8 @@ public class JedisRequest extends AbstractAttributes implements CacheRequest {
 
     private static class Accessor {
 
-        private static final UnsafeFieldAccessor socketFactory = UnsafeFieldAccessorFactory.getAccessor(Connection.class, "socketFactory");
-        private static final UnsafeFieldAccessor socket = UnsafeFieldAccessorFactory.getAccessor(Connection.class, "socket");
-        private static final UnsafeFieldAccessor hostAndPortMapper = UnsafeFieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPortMapper");
+        private static final FieldAccessor socketFactory = FieldAccessorFactory.getAccessor(Connection.class, "socketFactory");
+        private static final FieldAccessor socket = FieldAccessorFactory.getAccessor(Connection.class, "socket");
+        private static final FieldAccessor hostAndPortMapper = FieldAccessorFactory.getAccessor(DefaultJedisSocketFactory.class, "hostAndPortMapper");
     }
 }

@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static com.jd.live.agent.plugin.router.springgateway.v4.util.WebExchangeUtils.getURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;

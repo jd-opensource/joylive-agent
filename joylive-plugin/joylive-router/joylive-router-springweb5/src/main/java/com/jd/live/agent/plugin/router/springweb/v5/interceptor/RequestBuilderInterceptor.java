@@ -19,8 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 
 import java.net.URI;
 
@@ -57,14 +57,14 @@ public class RequestBuilderInterceptor extends InterceptorAdaptor {
      */
     private static class URIConstructor {
 
-        private final UnsafeFieldAccessor uriField;
+        private final FieldAccessor uriField;
 
-        private final UnsafeFieldAccessor uriPathField;
+        private final FieldAccessor uriPathField;
 
         URIConstructor() throws ClassNotFoundException, NoSuchFieldException {
             Class<?> uriClass = Class.forName("org.springframework.http.server.reactive.DefaultServerHttpRequestBuilder");
-            uriField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "uri");
-            uriPathField = UnsafeFieldAccessorFactory.getAccessor(uriClass, "uriPath");
+            uriField = FieldAccessorFactory.getAccessor(uriClass, "uri");
+            uriPathField = FieldAccessorFactory.getAccessor(uriClass, "uriPath");
         }
 
         /**

@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.protection.kafka.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.auth.Permission;
@@ -28,7 +28,7 @@ import org.apache.kafka.clients.consumer.internals.Fetch;
 import org.apache.kafka.clients.consumer.internals.Fetcher;
 import org.apache.kafka.common.TopicPartition;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
@@ -54,8 +54,8 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
 
     private static class Accessors {
         private static final Class<?> completedFetchType = loadClass("org.apache.kafka.clients.consumer.internals.Fetcher$CompletedFetch", Fetcher.class.getClassLoader());
-        private static final UnsafeFieldAccessor partition = getAccessor(completedFetchType, "partition");
-        private static final UnsafeFieldAccessor networkClient = getAccessor(Fetcher.class, "client");
-        private static final UnsafeFieldAccessor kafkaClient = getAccessor(ConsumerNetworkClient.class, "client");
+        private static final FieldAccessor partition = getAccessor(completedFetchType, "partition");
+        private static final FieldAccessor networkClient = getAccessor(Fetcher.class, "client");
+        private static final FieldAccessor kafkaClient = getAccessor(ConsumerNetworkClient.class, "client");
     }
 }

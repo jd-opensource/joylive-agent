@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.protection.jedis.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.protection.jedis.v4.config.JedisConfig;
 import redis.clients.jedis.HostAndPort;
@@ -43,7 +43,7 @@ public class JedisSentinelProtectInterceptor extends InterceptorAdaptor {
 
     private static class Accessor {
 
-        private static final UnsafeFieldAccessor clientConfig = UnsafeFieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
+        private static final FieldAccessor clientConfig = FieldAccessorFactory.getAccessor(JedisFactory.class, "clientConfig");
 
     }
 }

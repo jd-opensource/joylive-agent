@@ -31,7 +31,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**

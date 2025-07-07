@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.transmission.grpc.request;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.KeyValue;
 import com.jd.live.agent.core.util.LookupIndex;
 import com.jd.live.agent.governance.request.HeaderFeature;
@@ -61,8 +61,8 @@ public class MetadataParser implements HeaderParser {
 
     @Override
     public int read(BiConsumer<String, Iterable<String>> consumer, Predicate<String> predicate) {
-        int length = 2 * FieldGetter.INSTANCE.getSize(metadata);
-        Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
+        int length = 2 * FieldGetter.getSize(metadata);
+        Object[] namesAndValues = FieldGetter.getNamesAndValues(metadata);
         int count = 0;
         String name;
         Object value;
@@ -93,8 +93,8 @@ public class MetadataParser implements HeaderParser {
             return;
         }
 
-        int length = 2 * FieldGetter.INSTANCE.getSize(metadata);
-        Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
+        int length = 2 * FieldGetter.getSize(metadata);
+        Object[] namesAndValues = FieldGetter.getNamesAndValues(metadata);
 
         Key<String> metaKey = getOrCreate(key);
         // update single
@@ -109,8 +109,8 @@ public class MetadataParser implements HeaderParser {
         if (headers == null || headers.isEmpty()) {
             return;
         }
-        int length = 2 * FieldGetter.INSTANCE.getSize(metadata);
-        Object[] namesAndValues = FieldGetter.INSTANCE.getNamesAndValues(metadata);
+        int length = 2 * FieldGetter.getSize(metadata);
+        Object[] namesAndValues = FieldGetter.getNamesAndValues(metadata);
 
         List<KeyValue<Key<String>, String>> multiKeys = null;
         Key<String> metaKey;
@@ -146,7 +146,7 @@ public class MetadataParser implements HeaderParser {
      */
     private boolean updateSingle(Key<String> key, String value, Object[] keyValues, int length) {
 
-        byte[] bytes = FieldGetter.INSTANCE.getNameBytes(key);
+        byte[] bytes = FieldGetter.getNameBytes(key);
 
         LookupIndex index = lookup(keyValues, length, 2, o -> Arrays.equals((byte[]) o, bytes));
         int size = index == null ? 0 : index.size();
@@ -189,37 +189,9 @@ public class MetadataParser implements HeaderParser {
      */
     private static class FieldGetter {
 
-        /**
-         * The singleton instance of FieldGetter.
-         */
-        public static final FieldGetter INSTANCE = new FieldGetter();
-
-        /**
-         * The private field 'namesAndValues' in the {@link Metadata} class.
-         */
-        private UnsafeFieldAccessor headersField;
-
-        /**
-         * The private field 'nameBytes' in the {@link Key} class.
-         */
-        private UnsafeFieldAccessor namesField;
-
-        private UnsafeFieldAccessor sizeField;
-
-        /**
-         * Constructs a new FieldGetter instance and initializes the private fields.
-         * If any field is not found or an exception occurs, it catches the exception and ignores it.
-         */
-        FieldGetter() {
-            try {
-                Class<Metadata> type = Metadata.class;
-                headersField = UnsafeFieldAccessorFactory.getAccessor(type, "namesAndValues");
-                sizeField = UnsafeFieldAccessorFactory.getAccessor(type, "size");
-                namesField = UnsafeFieldAccessorFactory.getAccessor(Key.class, ("nameBytes"));
-            } catch (Throwable ignored) {
-                // Ignore the exception if the field is not found or an error occurs
-            }
-        }
+        private static final FieldAccessor headersField = FieldAccessorFactory.getAccessor(Metadata.class, "namesAndValues");
+        private static final FieldAccessor namesField = FieldAccessorFactory.getAccessor(Key.class, ("nameBytes"));
+        private static final FieldAccessor sizeField = FieldAccessorFactory.getAccessor(Metadata.class, "size");
 
         /**
          * Retrieves the array of names and values from the given {@link Metadata} instance.
@@ -228,7 +200,7 @@ public class MetadataParser implements HeaderParser {
          * @param metadata the Metadata instance from which to retrieve the names and values
          * @return the array of names and values, or an empty array if an error occurs
          */
-        public Object[] getNamesAndValues(Metadata metadata) {
+        public static Object[] getNamesAndValues(Metadata metadata) {
             if (metadata == null || headersField == null) {
                 return new Object[0];
             }
@@ -239,12 +211,12 @@ public class MetadataParser implements HeaderParser {
             }
         }
 
-        public int getSize(Metadata metadata) {
+        public static int getSize(Metadata metadata) {
             if (metadata == null || sizeField == null) {
                 return 0;
             }
             try {
-                return (int) sizeField.getInt(metadata);
+                return (int) sizeField.get(metadata);
             } catch (Throwable e) {
                 return 0;
             }
@@ -257,7 +229,7 @@ public class MetadataParser implements HeaderParser {
          * @param key the key from which to retrieve the name bytes
          * @return the byte array representing the name, or an empty byte array if an error occurs
          */
-        public byte[] getNameBytes(Key<?> key) {
+        public static byte[] getNameBytes(Key<?> key) {
             if (key == null || namesField == null) {
                 return new byte[0];
             }

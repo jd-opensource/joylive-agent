@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.plugin.registry.nacos.v3_0.registry.NacosInstancesChangeNotifier;
 import com.jd.live.agent.plugin.registry.nacos.v3_0.registry.NacosRegistryService;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * NacosNamingServiceConstructorInterceptor

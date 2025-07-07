@@ -17,8 +17,8 @@ package com.jd.live.agent.plugin.protection.postgresql.v9_4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.governance.interceptor.AbstractDbInterceptor;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.plugin.protection.postgresql.v9_4.request.PostgresqlRequest;
@@ -33,11 +33,11 @@ public class QueryExecutorImplInterceptor extends AbstractDbInterceptor {
 
     public static final String FIELD_PROTO_CONNECTION = "protoConnection";
 
-    private final UnsafeFieldAccessor accessor;
+    private final FieldAccessor accessor;
 
     public QueryExecutorImplInterceptor(PolicySupplier policySupplier) {
         super(policySupplier);
-        accessor = UnsafeFieldAccessorFactory.getAccessor(QueryExecutorImpl.class, FIELD_PROTO_CONNECTION);
+        accessor = FieldAccessorFactory.getAccessor(QueryExecutorImpl.class, FIELD_PROTO_CONNECTION);
     }
 
     @Override

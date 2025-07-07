@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.registry.springgateway.v2_2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
@@ -26,7 +26,7 @@ import org.springframework.cloud.gateway.route.RouteDefinition;
 
 import java.net.URI;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 /**
  * RouteInterceptor
@@ -39,7 +39,7 @@ public class RouteInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final UnsafeFieldAccessor accessor = getAccessor(RouteDefinition.class, "metadata");
+    private final FieldAccessor accessor = getAccessor(RouteDefinition.class, "metadata");
 
     public RouteInterceptor(Registry registry) {
         this.registry = registry;

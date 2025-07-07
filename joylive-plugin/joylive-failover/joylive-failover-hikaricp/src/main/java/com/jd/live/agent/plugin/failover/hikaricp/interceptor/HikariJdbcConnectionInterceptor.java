@@ -30,8 +30,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 import java.sql.Connection;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 
 /**
  * HikariCreateConnectionInterceptor

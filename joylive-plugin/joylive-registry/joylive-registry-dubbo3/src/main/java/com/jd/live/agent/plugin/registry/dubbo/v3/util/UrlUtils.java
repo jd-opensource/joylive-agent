@@ -35,7 +35,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.Constants.*;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;

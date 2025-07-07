@@ -22,7 +22,7 @@ import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalan
 
 import java.util.List;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * A concrete implementation of cluster context tailored for reactive programming,

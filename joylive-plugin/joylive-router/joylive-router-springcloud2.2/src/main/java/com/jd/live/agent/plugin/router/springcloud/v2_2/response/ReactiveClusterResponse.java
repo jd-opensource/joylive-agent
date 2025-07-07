@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.response;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -35,7 +35,7 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 /**
@@ -116,7 +116,7 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
         ExchangeStrategies strategies;
         try {
             ExchangeFunction next = request.getNext();
-            UnsafeFieldAccessor fieldAccessor = getAccessor(next.getClass(), "strategies");
+            FieldAccessor fieldAccessor = getAccessor(next.getClass(), "strategies");
             strategies = fieldAccessor == null ? ExchangeStrategies.withDefaults() : (ExchangeStrategies) fieldAccessor.get(next);
         } catch (Throwable ignored) {
             strategies = ExchangeStrategies.withDefaults();

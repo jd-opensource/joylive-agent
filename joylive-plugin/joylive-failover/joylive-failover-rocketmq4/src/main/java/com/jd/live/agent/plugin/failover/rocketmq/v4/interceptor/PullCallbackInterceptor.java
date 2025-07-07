@@ -21,7 +21,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import org.apache.rocketmq.client.consumer.PullCallback;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * PullCallbackInterceptor

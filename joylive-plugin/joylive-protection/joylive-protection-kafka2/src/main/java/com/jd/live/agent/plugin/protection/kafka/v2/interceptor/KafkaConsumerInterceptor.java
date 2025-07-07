@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.protection.kafka.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.protection.kafka.v2.client.LiveKafkaClient;
 import org.apache.kafka.clients.KafkaClient;
@@ -24,7 +24,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.StringUtils.split;
 
 public class KafkaConsumerInterceptor extends InterceptorAdaptor {
@@ -40,7 +40,7 @@ public class KafkaConsumerInterceptor extends InterceptorAdaptor {
     }
 
     private static class Accessors {
-        private static final UnsafeFieldAccessor networkClient = getAccessor(KafkaConsumer.class, "client");
-        private static final UnsafeFieldAccessor kafkaClient = getAccessor(ConsumerNetworkClient.class, "client");
+        private static final FieldAccessor networkClient = getAccessor(KafkaConsumer.class, "client");
+        private static final FieldAccessor kafkaClient = getAccessor(ConsumerNetworkClient.class, "client");
     }
 }

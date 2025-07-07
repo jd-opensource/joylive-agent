@@ -16,49 +16,59 @@
 package com.jd.live.agent.bootstrap.util.type;
 
 import com.jd.live.agent.bootstrap.exception.ReflectException;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * A factory class that provides access to a specific field of an object.
  */
-public class UnsafeFieldAccessorFactory {
+public class FieldAccessorFactory {
 
     private static final Map<Class<?>, Map<String, Optional<Field>>> fields = new ConcurrentHashMap<>();
 
-    private static final Function<Field, UnsafeFieldAccessor> unsafeFieldFunc;
+    private static final Function<Field, FieldAccessor> unsafeFieldFunc;
 
-    private static final Map<Class<?>, BiFunction<Object, UnsafeFieldAccessor, Object>> getters = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, UnsafeGetSetter> unsafeGetSetters = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, ValueSetter> setters = new ConcurrentHashMap<>();
+    private static final UnsafeGetSetter defaultUnsafeGetSetter = new UnsafeGetSetter(
+            (o, accessor) -> accessor.get(o),
+            (o, v, accessor) -> accessor.set(o, v)
+    );
 
     static {
         unsafeFieldFunc = getUnsafe();
 
-        getters.put(int.class, (o, accessor) -> accessor.getInt(o));
-        getters.put(long.class, (o, accessor) -> accessor.getLong(o));
-        getters.put(short.class, (o, accessor) -> accessor.getShort(o));
-        getters.put(byte.class, (o, accessor) -> accessor.getByte(o));
-        getters.put(double.class, (o, accessor) -> accessor.getDouble(o));
-        getters.put(float.class, (o, accessor) -> accessor.getFloat(o));
-        getters.put(boolean.class, (o, accessor) -> accessor.getBoolean(o));
-        getters.put(char.class, (o, accessor) -> accessor.getChar(o));
-
-        setters.put(int.class, (o, v, accessor) -> accessor.setInt(o, (int) v));
-        setters.put(long.class, (o, v, accessor) -> accessor.setLong(o, (long) v));
-        setters.put(short.class, (o, v, accessor) -> accessor.setShort(o, (short) v));
-        setters.put(byte.class, (o, v, accessor) -> accessor.setByte(o, (byte) v));
-        setters.put(double.class, (o, v, accessor) -> accessor.setDouble(o, (double) v));
-        setters.put(float.class, (o, v, accessor) -> accessor.setFloat(o, (float) v));
-        setters.put(boolean.class, (o, v, accessor) -> accessor.setBoolean(o, (boolean) v));
-        setters.put(char.class, (o, v, accessor) -> accessor.setChar(o, (char) v));
+        unsafeGetSetters.put(int.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getInt(o),
+                (o, v, accessor) -> accessor.setInt(o, (int) v)));
+        unsafeGetSetters.put(long.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getLong(o),
+                (o, v, accessor) -> accessor.setLong(o, (long) v)));
+        unsafeGetSetters.put(short.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getShort(o),
+                (o, v, accessor) -> accessor.setShort(o, (short) v)));
+        unsafeGetSetters.put(byte.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getByte(o),
+                (o, v, accessor) -> accessor.setByte(o, (byte) v)));
+        unsafeGetSetters.put(double.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getDouble(o),
+                (o, v, accessor) -> accessor.setDouble(o, (double) v)));
+        unsafeGetSetters.put(float.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getFloat(o),
+                (o, v, accessor) -> accessor.setFloat(o, (float) v)));
+        unsafeGetSetters.put(boolean.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getBoolean(o),
+                (o, v, accessor) -> accessor.setBoolean(o, (boolean) v)));
+        unsafeGetSetters.put(char.class, new UnsafeGetSetter(
+                (o, accessor) -> accessor.getChar(o),
+                (o, v, accessor) -> accessor.setChar(o, (char) v)));
     }
 
     /**
@@ -69,19 +79,16 @@ public class UnsafeFieldAccessorFactory {
      *
      * @return Function that creates field accessors for the best available implementation
      */
-    protected static Function<Field, UnsafeFieldAccessor> getUnsafe() {
+    protected static Function<Field, FieldAccessor> getUnsafe() {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        Function<Field, UnsafeFieldAccessor> result;
+        Function<Field, FieldAccessor> result;
         try {
             result = getJDKUnsafe(classLoader);
-            System.out.println("Use jdk.internal.misc.Unsafe to fast access field");
         } catch (Throwable e) {
             try {
                 result = getSunUnsafe(classLoader);
-                System.out.println("Use sun.misc.Unsafe to fast access field");
-            } catch (Throwable ignore) {
+            } catch (Throwable ex) {
                 result = ReflectFieldAccessor::new;
-                System.out.println("Use reflection to access field");
             }
         }
         return result;
@@ -94,11 +101,17 @@ public class UnsafeFieldAccessorFactory {
      * @return Unsafe accessor function
      * @throws ClassNotFoundException if jdk.internal.misc.Unsafe is unavailable
      */
-    protected static Function<Field, UnsafeFieldAccessor> getJDKUnsafe(ClassLoader classLoader) throws ClassNotFoundException {
-        classLoader.loadClass("jdk.internal.misc.Unsafe");
-        jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
+    protected static Function<Field, FieldAccessor> getJDKUnsafe(ClassLoader classLoader) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        Class<?> type = classLoader.loadClass("jdk.internal.misc.Unsafe");
+        Field field = type.getDeclaredField("theUnsafe");
+        field.setAccessible(true);
+        jdk.internal.misc.Unsafe unsafe = (jdk.internal.misc.Unsafe) field.get(null);
         boolean hasReference = withReference(unsafe);
-        return field -> new OpenUnsafeFieldAccessor(field, unsafe, hasReference);
+        return f -> {
+            long offset = unsafe.objectFieldOffset(f);
+            OpenUnsafeObjectAccessor accessor = new OpenUnsafeObjectAccessor(unsafe, offset, hasReference);
+            return new UnsafeFieldAccessor(f, accessor);
+        };
     }
 
     /**
@@ -110,32 +123,40 @@ public class UnsafeFieldAccessorFactory {
      * @throws NoSuchFieldException   if Unsafe instance field not found
      * @throws IllegalAccessException if access to Unsafe is denied
      */
-    protected static Function<Field, UnsafeFieldAccessor> getSunUnsafe(ClassLoader classLoader) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
-        classLoader.loadClass("sun.misc.Unsafe");
-        Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+    protected static Function<Field, FieldAccessor> getSunUnsafe(ClassLoader classLoader) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        Class<?> type = classLoader.loadClass("sun.misc.Unsafe");
+        Field field = type.getDeclaredField("theUnsafe");
         field.setAccessible(true);
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
-        return f -> new MiscUnsafeFieldAccessor(f, unsafe);
+        return f -> {
+            try {
+                long offset = unsafe.objectFieldOffset(field);
+                MiscUnsafeObjectAccessor accessor = new MiscUnsafeObjectAccessor(unsafe, offset);
+                return new UnsafeFieldAccessor(f, accessor);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     /**
-     * Returns an {@link UnsafeFieldAccessor} for the specified field.
+     * Returns an {@link FieldAccessor} for the specified field.
      *
      * @param field the field to access
-     * @return an {@link UnsafeFieldAccessor} for the specified field
+     * @return an {@link FieldAccessor} for the specified field
      */
-    public static UnsafeFieldAccessor getAccessor(Field field) {
+    public static FieldAccessor getAccessor(Field field) {
         return field == null ? null : unsafeFieldFunc.apply(field);
     }
 
     /**
-     * Returns a {@link UnsafeFieldAccessor} object for the specified field in the given class.
+     * Returns a {@link FieldAccessor} object for the specified field in the given class.
      *
      * @param clazz the class containing the field
      * @param field the name of the field
-     * @return a {@link UnsafeFieldAccessor} object for the specified field
+     * @return a {@link FieldAccessor} object for the specified field
      */
-    public static UnsafeFieldAccessor getAccessor(Class<?> clazz, String field) {
+    public static FieldAccessor getAccessor(Class<?> clazz, String field) {
         return getAccessor(getField(clazz, field));
     }
 
@@ -147,12 +168,13 @@ public class UnsafeFieldAccessorFactory {
      * @param field  The name of the field to retrieve.
      * @return The value of the specified field, or null if the field does not exist or the target object is null.
      */
+    @SuppressWarnings("unchecked")
     public static <T> T getQuietly(Object target, Field field) {
         if (target == null || field == null) {
             return null;
         }
-        UnsafeFieldAccessor accessor = getAccessor(field);
-        return getQuietly(target, field, accessor, null);
+        FieldAccessor accessor = getAccessor(field);
+        return (T) accessor.get(target);
     }
 
     /**
@@ -177,6 +199,7 @@ public class UnsafeFieldAccessorFactory {
      * @param predicate A predicate to filter the field value. If the predicate returns false, the method returns null.
      * @return The value of the specified field, or null if the field does not exist, the target object is null, or the predicate returns false.
      */
+    @SuppressWarnings("unchecked")
     public static <T> T getQuietly(Object target, String field, Predicate<Object> predicate) {
         if (target == null) {
             return null;
@@ -185,8 +208,9 @@ public class UnsafeFieldAccessorFactory {
         if (f == null) {
             return null;
         }
-        UnsafeFieldAccessor accessor = getAccessor(f);
-        return getQuietly(target, f, accessor, predicate);
+        FieldAccessor accessor = getAccessor(f);
+        Object result = accessor.get(target);
+        return result != null && (predicate == null || predicate.test(result)) ? (T) result : null;
     }
 
     /**
@@ -199,9 +223,10 @@ public class UnsafeFieldAccessorFactory {
      * @param <T>       Expected return type
      * @return Field value if found and valid, otherwise null
      */
+    @SuppressWarnings("unchecked")
     protected static <T> T getQuietly(Object target,
                                       String field,
-                                      Function<Field, UnsafeFieldAccessor> function,
+                                      Function<Field, FieldAccessor> function,
                                       Predicate<Object> predicate) {
         if (target == null || field == null || field.isEmpty() || function == null) {
             return null;
@@ -210,30 +235,8 @@ public class UnsafeFieldAccessorFactory {
         if (f == null) {
             return null;
         }
-        UnsafeFieldAccessor accessor = function.apply(f);
-        return getQuietly(target, f, accessor, predicate);
-    }
-
-    /**
-     * Low-level field value access with explicit field and accessor.
-     *
-     * @param target    The object instance to read from (null returns null)
-     * @param field     The specific field to access (null returns null)
-     * @param accessor  Pre-created field accessor (null returns null)
-     * @param predicate Optional validation predicate for the return value
-     * @param <T>       Expected return type
-     * @return Field value if valid, otherwise null
-     */
-    @SuppressWarnings("unchecked")
-    protected static <T> T getQuietly(Object target,
-                                      Field field,
-                                      UnsafeFieldAccessor accessor,
-                                      Predicate<Object> predicate) {
-        if (target == null || field == null || accessor == null) {
-            return null;
-        }
-        BiFunction<Object, UnsafeFieldAccessor, Object> getter = getters.get(field.getType());
-        Object result = getter == null ? accessor.get(target) : getter.apply(target, accessor);
+        FieldAccessor accessor = function.apply(f);
+        Object result = accessor.get(target);
         return result != null && (predicate == null || predicate.test(result)) ? (T) result : null;
     }
 
@@ -280,11 +283,23 @@ public class UnsafeFieldAccessorFactory {
         if (target == null || field == null) {
             return;
         }
-        Field f = getField(target.getClass(), field);
-        if (f == null) {
+        setValue(target, getField(target.getClass(), field), value, unsafeFieldFunc);
+    }
+
+    /**
+     * Sets a field value by name on the target object.
+     * Silently skips if any parameter is null.
+     *
+     * @param target       the object instance to modify
+     * @param field        the name of the field to set
+     * @param value        the new value to assign
+     * @param accessorFunc function that provides field access
+     */
+    protected static void setValue(Object target, String field, Object value, Function<Field, FieldAccessor> accessorFunc) {
+        if (target == null || field == null || accessorFunc == null) {
             return;
         }
-        setValue(target, f, value);
+        setValue(target, getField(target.getClass(), field), value, accessorFunc);
     }
 
     /**
@@ -295,17 +310,24 @@ public class UnsafeFieldAccessorFactory {
      * @param value  The value to set
      */
     public static void setValue(Object target, Field field, Object value) {
-        if (target == null || field == null) {
+        setValue(target, field, value, unsafeFieldFunc);
+    }
+
+    /**
+     * Sets a field value on the target object using an unsafe accessor.
+     * Silently skips if any required parameter is null.
+     *
+     * @param target       the object whose field will be modified
+     * @param field        the field to set
+     * @param value        the new value to assign
+     * @param accessorFunc function that provides the field accessor
+     */
+    protected static void setValue(Object target, Field field, Object value, Function<Field, FieldAccessor> accessorFunc) {
+        if (target == null || field == null || accessorFunc == null) {
             return;
         }
-        UnsafeFieldAccessor accessor = getAccessor(field);
-
-        ValueSetter setter = setters.get(field.getType());
-        if (setter == null) {
-            accessor.set(target, value);
-        } else {
-            setter.set(target, value, accessor);
-        }
+        FieldAccessor accessor = accessorFunc.apply(field);
+        accessor.set(target, value);
     }
 
     /**
@@ -327,7 +349,9 @@ public class UnsafeFieldAccessorFactory {
             Class<?> parent = clazz;
             while (parent != null && parent != Object.class) {
                 try {
-                    return Optional.of(parent.getDeclaredField(k));
+                    Field f = parent.getDeclaredField(k);
+                    f.setAccessible(true);
+                    return Optional.of(f);
                 } catch (NoSuchFieldException e) {
                     parent = parent.getSuperclass();
                 }
@@ -352,135 +376,170 @@ public class UnsafeFieldAccessorFactory {
     }
 
     @FunctionalInterface
-    protected interface ValueSetter {
+    private interface UnsafeSetter {
+        void set(Object target, Object value, UnsafeObjectAccessor accessor);
+    }
 
-        void set(Object target, Object value, UnsafeFieldAccessor accessor);
+    @FunctionalInterface
+    private interface UnsafeGetter {
+        Object get(Object target, UnsafeObjectAccessor accessor);
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class UnsafeGetSetter {
+        private UnsafeGetter getter;
+        private UnsafeSetter setter;
     }
 
     /**
-     * A static inner class that implements the FieldAccessor interface using reflection.
+     * An interface that provides access to a specific field of an object using the Unsafe API.
+     *
+     * @see ObjectAccessor
      */
-    @Getter
-    protected static class ReflectFieldAccessor implements UnsafeFieldAccessor {
+    private interface UnsafeObjectAccessor extends ObjectAccessor {
 
-        private final Field field;
+        /**
+         * Returns the value of the field as a boolean for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a boolean
+         */
+        boolean getBoolean(Object object);
 
-        ReflectFieldAccessor(Field field) {
-            this.field = field;
-            field.setAccessible(true);
-        }
+        /**
+         * Sets the value of the field to the specified boolean value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setBoolean(Object target, boolean value);
 
-        @Override
-        public Object get(Object target) {
-            try {
-                return field.get(target);
-            } catch (Throwable e) {
-                throw new ReflectException("an error occurred while getting field value. " + field.getName(), e);
-            }
-        }
+        /**
+         * Returns the value of the field as a char for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a char
+         */
+        char getChar(Object object);
 
-        @Override
-        public void set(Object target, Object value) {
-            try {
-                field.set(target, value);
-            } catch (Throwable e) {
-                throw new ReflectException("an error occurred while setting field value. " + field.getName(), e);
-            }
-        }
+        /**
+         * Sets the value of the field to the specified char value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setChar(Object target, char value);
 
-        @Override
-        public boolean getBoolean(Object object) {
-            return (Boolean) get(object);
-        }
+        /**
+         * Returns the value of the field as a byte for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a byte
+         */
+        byte getByte(Object object);
 
-        @Override
-        public void setBoolean(Object target, boolean value) {
-            set(target, value);
-        }
+        /**
+         * Sets the value of the field to the specified byte value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setByte(Object target, byte value);
 
-        @Override
-        public char getChar(Object object) {
-            return (char) get(object);
-        }
+        /**
+         * Returns the value of the field as a short for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a short
+         */
+        short getShort(Object object);
 
-        @Override
-        public void setChar(Object target, char value) {
-            set(target, value);
-        }
+        /**
+         * Sets the value of the field to the specified short value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setShort(Object target, short value);
 
-        @Override
-        public byte getByte(Object object) {
-            return (byte) get(object);
-        }
+        /**
+         * Returns the value of the field as an int for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as an int
+         */
+        int getInt(Object object);
 
-        @Override
-        public void setByte(Object target, byte value) {
-            set(target, value);
-        }
+        /**
+         * Sets the value of the field to the specified int value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setInt(Object target, int value);
 
-        @Override
-        public short getShort(Object object) {
-            return (short) get(object);
-        }
+        /**
+         * Returns the value of the field as a long for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a long
+         */
+        long getLong(Object object);
 
-        @Override
-        public void setShort(Object target, short value) {
-            set(target, value);
-        }
+        /**
+         * Sets the value of the field to the specified long value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setLong(Object target, long value);
 
-        @Override
-        public int getInt(Object object) {
-            return (int) get(object);
-        }
+        /**
+         * Returns the value of the field as a float for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a float
+         */
+        float getFloat(Object object);
 
-        @Override
-        public void setInt(Object target, int value) {
-            set(target, value);
-        }
+        /**
+         * Sets the value of the field to the specified float value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setFloat(Object target, float value);
 
-        @Override
-        public long getLong(Object object) {
-            return (long) get(object);
-        }
+        /**
+         * Returns the value of the field as a double for the specified object.
+         *
+         * @param object the object to access
+         * @return the value of the field as a double
+         */
+        double getDouble(Object object);
 
-        @Override
-        public void setLong(Object target, long value) {
-            set(target, value);
-        }
-
-        @Override
-        public float getFloat(Object object) {
-            return (float) get(object);
-        }
-
-        @Override
-        public void setFloat(Object target, float value) {
-            set(target, value);
-        }
-
-        @Override
-        public double getDouble(Object object) {
-            return (double) get(object);
-        }
-
-        @Override
-        public void setDouble(Object target, double value) {
-            set(target, value);
-        }
+        /**
+         * Sets the value of the field to the specified double value for the specified object.
+         *
+         * @param target the object to access
+         * @param value  the new value of the field
+         */
+        void setDouble(Object target, double value);
     }
 
     /**
      * A static inner class that implements the FieldAccessor interface using the sun.misc.Unsafe API.
      */
-    private static class MiscUnsafeFieldAccessor implements UnsafeFieldAccessor {
+    private static class MiscUnsafeObjectAccessor implements UnsafeObjectAccessor {
 
         private final sun.misc.Unsafe unsafe;
 
         private final long offset;
 
-        MiscUnsafeFieldAccessor(Field field, sun.misc.Unsafe unsafe) {
+        MiscUnsafeObjectAccessor(sun.misc.Unsafe unsafe, long offset) {
             this.unsafe = unsafe;
-            this.offset = unsafe.objectFieldOffset(field);
+            this.offset = offset;
         }
 
         @Override
@@ -578,7 +637,7 @@ public class UnsafeFieldAccessorFactory {
     /**
      * A static inner class that implements the FieldAccessor interface using the jdk.internal.misc.Unsafe API.
      */
-    private static class OpenUnsafeFieldAccessor implements UnsafeFieldAccessor {
+    private static class OpenUnsafeObjectAccessor implements UnsafeObjectAccessor {
 
         private final jdk.internal.misc.Unsafe unsafe;
 
@@ -586,9 +645,9 @@ public class UnsafeFieldAccessorFactory {
 
         private final boolean hasReference;
 
-        OpenUnsafeFieldAccessor(Field field, jdk.internal.misc.Unsafe unsafe, boolean hasReference) {
+        OpenUnsafeObjectAccessor(jdk.internal.misc.Unsafe unsafe, long offset, boolean hasReference) {
             this.unsafe = unsafe;
-            this.offset = unsafe.objectFieldOffset(field);
+            this.offset = offset;
             this.hasReference = hasReference;
         }
 
@@ -684,6 +743,70 @@ public class UnsafeFieldAccessorFactory {
         @Override
         public void setDouble(Object target, double value) {
             unsafe.putDouble(target, offset, value);
+        }
+
+    }
+
+    /**
+     * A static inner class that implements the FieldAccessor interface using reflection.
+     */
+    @Getter
+    protected static class ReflectFieldAccessor implements FieldAccessor {
+
+        private final Field field;
+
+        ReflectFieldAccessor(Field field) {
+            this.field = field;
+            field.setAccessible(true);
+        }
+
+        @Override
+        public Object get(Object target) {
+            try {
+                return field.get(target);
+            } catch (Throwable e) {
+                throw new ReflectException("an error occurred while getting field value. " + field.getName(), e);
+            }
+        }
+
+        @Override
+        public void set(Object target, Object value) {
+            try {
+                field.set(target, value);
+            } catch (Throwable e) {
+                throw new ReflectException("an error occurred while setting field value. " + field.getName(), e);
+            }
+        }
+
+    }
+
+    /**
+     * Unsafe-based implementation of field access using {@link jdk.internal.misc.Unsafe}.
+     * Provides get/set operations for fields through direct memory manipulation.
+     */
+    private static class UnsafeFieldAccessor implements FieldAccessor {
+
+        @Getter
+        private final Field field;
+
+        private final UnsafeObjectAccessor objectAccessor;
+
+        private final UnsafeGetSetter unsafeGetSetter;
+
+        UnsafeFieldAccessor(Field field, UnsafeObjectAccessor objectAccessor) {
+            this.field = field;
+            this.objectAccessor = objectAccessor;
+            this.unsafeGetSetter = unsafeGetSetters.getOrDefault(field.getType(), defaultUnsafeGetSetter);
+        }
+
+        @Override
+        public Object get(Object target) {
+            return unsafeGetSetter.getter.get(target, objectAccessor);
+        }
+
+        @Override
+        public void set(Object target, Object value) {
+            unsafeGetSetter.setter.set(target, value, objectAccessor);
         }
 
     }

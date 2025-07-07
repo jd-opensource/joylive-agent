@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.protection.rocketmq.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.auth.Permission;
@@ -29,7 +29,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.ArrayList;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 public class PullInterceptor extends AbstractMessageInterceptor {
 
@@ -51,6 +51,6 @@ public class PullInterceptor extends AbstractMessageInterceptor {
     }
 
     private static class Accessors {
-        private static final UnsafeFieldAccessor mQClientFactory = getAccessor(PullAPIWrapper.class, "mQClientFactory");
+        private static final FieldAccessor mQClientFactory = getAccessor(PullAPIWrapper.class, "mQClientFactory");
     }
 }

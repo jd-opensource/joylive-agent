@@ -26,8 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
-import static com.jd.live.agent.core.util.type.ClassUtils.describe;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
@@ -188,14 +187,7 @@ public class ValuePath implements ObjectGetter {
         } else if (target instanceof ValueSupplier) {
             return ((ValueSupplier) target).getObject(property);
         }
-        Class<?> type = target.getClass();
-        if (ENTITY_PREDICATE.test(type)) {
-            FieldDesc fieldDesc = describe(type).getFieldList().getField(property);
-            if (fieldDesc != null) {
-                return getQuietly(target, fieldDesc.getField());
-            }
-        }
-        return null;
+        return ENTITY_PREDICATE.test(target.getClass()) ? getQuietly(target, property) : null;
     }
 
     /**

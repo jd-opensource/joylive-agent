@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.util.http;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.parser.ObjectReader;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
@@ -38,7 +38,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 /**
  * Utility class for handling HTTP requests with support for gzip and deflate compression.
@@ -544,15 +544,15 @@ public abstract class HttpUtils {
     private static class URIConstructor {
 
         private final Constructor<URI> constructor;
-        private final UnsafeFieldAccessor schemeField;
-        private final UnsafeFieldAccessor authorityField;
-        private final UnsafeFieldAccessor userInfoField;
-        private final UnsafeFieldAccessor hostField;
-        private final UnsafeFieldAccessor portField;
-        private final UnsafeFieldAccessor pathField;
-        private final UnsafeFieldAccessor queryField;
-        private final UnsafeFieldAccessor fragmentField;
-        private final UnsafeFieldAccessor stringField;
+        private final FieldAccessor schemeField;
+        private final FieldAccessor authorityField;
+        private final FieldAccessor userInfoField;
+        private final FieldAccessor hostField;
+        private final FieldAccessor portField;
+        private final FieldAccessor pathField;
+        private final FieldAccessor queryField;
+        private final FieldAccessor fragmentField;
+        private final FieldAccessor stringField;
 
         @SuppressWarnings("unchecked")
         URIConstructor() throws NoSuchFieldException, NoSuchMethodException {
@@ -606,7 +606,7 @@ public abstract class HttpUtils {
             schemeField.set(result, scheme);
             userInfoField.set(result, userInfo);
             hostField.set(result, host);
-            portField.setInt(result, port);
+            portField.set(result, port);
             pathField.set(result, path);
             queryField.set(result, query);
             fragmentField.set(result, fragment);

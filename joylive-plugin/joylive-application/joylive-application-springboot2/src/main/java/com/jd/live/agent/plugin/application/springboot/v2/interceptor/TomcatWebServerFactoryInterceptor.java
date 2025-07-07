@@ -25,7 +25,7 @@ import org.apache.coyote.ProtocolHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.plugin.application.springboot.v2.util.ThreadUtils.ofVirtualExecutor;
 
 /**

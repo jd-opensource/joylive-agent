@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.kafka.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.kafka.v2.message.KafkaMessage;
@@ -27,7 +27,7 @@ import org.apache.kafka.common.TopicPartition;
 
 import java.util.List;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.filter;
 
 public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
@@ -47,7 +47,7 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
     }
 
     private static class Accessors {
-        private static final UnsafeFieldAccessor partition = getAccessor(KafkaProducer.class, "partition");
+        private static final FieldAccessor partition = getAccessor(KafkaProducer.class, "partition");
 
         public static TopicPartition getPartition(Object target) {
             return partition == null || target == null ? null : (TopicPartition) partition.get(target);

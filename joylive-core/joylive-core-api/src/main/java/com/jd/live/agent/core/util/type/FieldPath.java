@@ -15,12 +15,15 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.ObjectGetter;
+import lombok.Getter;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 /**
  * Represents a path to a field within an object, allowing for nested field access.
@@ -29,11 +32,17 @@ import java.util.function.Supplier;
  */
 public class FieldPath implements ObjectGetter {
 
-    protected final String path;
+    @Getter
+    private final Class<?> type;
 
-    protected Field field;
+    @Getter
+    private final String path;
 
-    protected List<Field> fields;
+    private final FieldAccessor field;
+
+    private final List<FieldAccessor> fields;
+
+    private final ObjectGetter getter;
 
     /**
      * Constructs a new FieldPath instance for the specified type and path.
@@ -42,27 +51,11 @@ public class FieldPath implements ObjectGetter {
      * @param path the path to the field (e.g., "field1.field2")
      */
     public FieldPath(Class<?> type, String path) {
+        this.type = type;
         this.path = path;
         this.fields = parse(type, path);
         this.field = fields != null && fields.size() == 1 ? fields.get(0) : null;
-    }
-
-    /**
-     * Constructs a new {@link FieldPath} instance for the specified type and path.
-     * This constructor attempts to load the class specified by the type string and
-     * parse the field path to create a list of fields. If the class cannot be found,
-     * the fields list will be null, and the single field reference will also be null.
-     *
-     * @param type the fully qualified name of the class containing the fields
-     * @param path the path to the field (e.g., "field1.field2")
-     */
-    public FieldPath(String type, String path) {
-        this.path = path;
-        try {
-            this.fields = parse(Thread.currentThread().getContextClassLoader().loadClass(type), path);
-            this.field = fields != null && fields.size() == 1 ? fields.get(0) : null;
-        } catch (ClassNotFoundException ignored) {
-        }
+        this.getter = buildGetter();
     }
 
     @Override
@@ -81,16 +74,9 @@ public class FieldPath implements ObjectGetter {
      */
     public Object get(Object target, Supplier<Object> supplier) {
         try {
-            Object result = null;
-            if (field != null) {
-                result = field.get(target);
-            } else if (fields != null) {
-                for (Field field : fields) {
-                    result = field.get(target);
-                    target = result;
-                }
-            } else {
-                result = supplier == null ? null : supplier.get();
+            Object result = getter.get(target);
+            if (result == null && supplier != null) {
+                result = supplier.get();
             }
             return result;
         } catch (Throwable e) {
@@ -106,56 +92,48 @@ public class FieldPath implements ObjectGetter {
      * @param path the path string to parse
      * @return a list of Field objects representing the parsed path
      */
-    protected List<Field> parse(Class<?> type, String path) {
+    private List<FieldAccessor> parse(Class<?> type, String path) {
         if (path == null || path.isEmpty()) {
             return null;
         }
-        List<Field> result = new ArrayList<>(2);
-        Field field;
+        List<FieldAccessor> result = new ArrayList<>(2);
         int start = 0;
         int pos = path.indexOf('.', start);
+        FieldAccessor accessor;
         while (pos >= start) {
-            field = getField(type, path.substring(start, pos));
-            if (field == null) {
+            accessor = getAccessor(type, path.substring(start, pos));
+            if (accessor == null) {
                 return null;
             }
-            type = field.getType();
-            result.add(field);
+            result.add(accessor);
+            type = accessor.getField().getType();
             start = pos + 1;
             pos = path.indexOf('.', start);
         }
         if (start < path.length() - 1) {
-            field = getField(type, path.substring(start));
-            if (field == null) {
+            accessor = getAccessor(type, path.substring(start));
+            if (accessor == null) {
                 return null;
             }
-            result.add(field);
+            result.add(accessor);
         }
         return result;
-
     }
 
-    /**
-     * Retrieves the Field object for the specified name from the given class type.
-     *
-     * @param type the class type containing the field
-     * @param name the name of the field
-     * @return the Field object
-     */
-    private Field getField(Class<?> type, String name) {
-        if (name.isEmpty()) {
-            return null;
+    private ObjectGetter buildGetter() {
+        if (field != null) {
+            return field;
+        } else if (fields != null && !fields.isEmpty()) {
+            return o -> {
+                Object result = null;
+                for (FieldAccessor field : fields) {
+                    result = field.get(o);
+                    o = result;
+                }
+                return result;
+            };
+        } else {
+            return o -> null;
         }
-        Field field;
-        while (type != null && type != Object.class) {
-            try {
-                field = type.getDeclaredField(name);
-                field.setAccessible(true);
-                return field;
-            } catch (NoSuchFieldException e) {
-                type = type.getSuperclass();
-            }
-        }
-        return null;
     }
 }

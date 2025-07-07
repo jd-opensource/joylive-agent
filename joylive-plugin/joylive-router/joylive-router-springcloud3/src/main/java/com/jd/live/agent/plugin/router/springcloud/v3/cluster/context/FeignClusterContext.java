@@ -19,7 +19,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import feign.Client;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * A concrete implementation of cluster context specifically designed for Feign clients,

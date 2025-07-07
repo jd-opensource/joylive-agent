@@ -29,7 +29,7 @@ import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerIntercepto
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * A concrete implementation of cluster context that provides blocking behavior

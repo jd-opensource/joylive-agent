@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.protection.kafka.v4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -27,7 +27,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.InvalidRequestException;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 public class DoSendInterceptor extends AbstractMessageInterceptor {
 
@@ -48,6 +48,6 @@ public class DoSendInterceptor extends AbstractMessageInterceptor {
     }
 
     private static class Accessors {
-        private static final UnsafeFieldAccessor producerConfig = getAccessor(KafkaProducer.class, "producerConfig");
+        private static final FieldAccessor producerConfig = getAccessor(KafkaProducer.class, "producerConfig");
     }
 }

@@ -28,7 +28,7 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
 import java.util.List;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext.createFactory;
 
 /**

@@ -30,8 +30,8 @@ import org.apache.rocketmq.remoting.RPCHook;
 
 import java.util.List;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 import static com.jd.live.agent.plugin.failover.rocketmq.v4.client.RocketMQConfig.*;
 
 public class ProducerClient extends AbstractMQClient {

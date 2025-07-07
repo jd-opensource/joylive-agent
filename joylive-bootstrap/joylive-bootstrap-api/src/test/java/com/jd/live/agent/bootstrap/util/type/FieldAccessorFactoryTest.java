@@ -20,33 +20,43 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.function.Function;
 
-public class UnsafeFieldAccessorFactoryTest {
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.*;
+
+public class FieldAccessorFactoryTest {
 
     @Test
     void testAccessor() {
         //  --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try {
-            testAccessor(UnsafeFieldAccessorFactory.getJDKUnsafe(classLoader));
+            testAccessor(getJDKUnsafe(classLoader));
         } catch (Throwable ignore) {
         }
         try {
-            testAccessor(UnsafeFieldAccessorFactory.getSunUnsafe(classLoader));
+            testAccessor(getSunUnsafe(classLoader));
         } catch (Throwable ignore) {
         }
-        testAccessor(UnsafeFieldAccessorFactory.ReflectFieldAccessor::new);
+        testAccessor(ReflectFieldAccessor::new);
     }
 
-    protected void testAccessor(Function<Field, UnsafeFieldAccessor> function) {
+    @Test
+    void testURL() {
+        URI uri = URI.create("http://localhost:8080");
+        FieldAccessorFactory.setValue(uri, "port", 8081);
+        Assertions.assertEquals(8081, (int) FieldAccessorFactory.getQuietly(uri, "port"));
+    }
+
+    protected void testAccessor(Function<Field, FieldAccessor> function) {
         Apple apple = new Apple("apple", "red", 1);
-        UnsafeFieldAccessorFactory.setValue(apple, "name", "orange");
-        UnsafeFieldAccessorFactory.setValue(apple, "color", "blue");
-        UnsafeFieldAccessorFactory.setValue(apple, "weight", 2);
-        Assertions.assertEquals("orange", UnsafeFieldAccessorFactory.getQuietly(apple, "name", function, null));
-        Assertions.assertEquals("blue", UnsafeFieldAccessorFactory.getQuietly(apple, "color", function, null));
-        Assertions.assertEquals(2, (int) UnsafeFieldAccessorFactory.getQuietly(apple, "weight", function, null));
+        setValue(apple, "name", "orange", function);
+        setValue(apple, "color", "blue", function);
+        setValue(apple, "weight", 2, function);
+        Assertions.assertEquals("orange", getQuietly(apple, "name", function, null));
+        Assertions.assertEquals("blue", getQuietly(apple, "color", function, null));
+        Assertions.assertEquals(2, (int) getQuietly(apple, "weight", function, null));
 
     }
 

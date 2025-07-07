@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.protection.lettuce.v6.interceptor;
 
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.network.Address;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -62,14 +62,14 @@ public abstract class RedisChannelHandlerInterceptor extends AbstractDbIntercept
 
         private static final AttributeKey<String> REDIS_URI = AttributeKey.valueOf("RedisURI");
 
-        private static final UnsafeFieldAccessor channelWriter = UnsafeFieldAccessorFactory.getAccessor(RedisChannelHandler.class, "channelWriter");
-        private static final UnsafeFieldAccessor channel = UnsafeFieldAccessorFactory.getAccessor(DefaultEndpoint.class, "channel");
-        private static final UnsafeFieldAccessor masterReplicaConnectionProvider = UnsafeFieldAccessorFactory.getAccessor(masterReplicaType, "masterReplicaConnectionProvider");
-        private static final UnsafeFieldAccessor initialRedisUri = UnsafeFieldAccessorFactory.getAccessor(masterReplicaConnectionProviderType, "initialRedisUri");
-        private static final UnsafeFieldAccessor clusterConnectionProvider = UnsafeFieldAccessorFactory.getAccessor(clusterType, "clusterConnectionProvider");
-        private static final UnsafeFieldAccessor clusterPubSubClient = UnsafeFieldAccessorFactory.getAccessor(clusterPubSubConnectionProviderType, "redisClusterClient");
-        private static final UnsafeFieldAccessor pooledClusterClient = UnsafeFieldAccessorFactory.getAccessor(pooledClusterConnectionProvider, "redisClusterClient");
-        private static final UnsafeFieldAccessor initialUris = UnsafeFieldAccessorFactory.getAccessor(RedisClusterClient.class, "initialUris");
+        private static final FieldAccessor channelWriter = FieldAccessorFactory.getAccessor(RedisChannelHandler.class, "channelWriter");
+        private static final FieldAccessor channel = FieldAccessorFactory.getAccessor(DefaultEndpoint.class, "channel");
+        private static final FieldAccessor masterReplicaConnectionProvider = FieldAccessorFactory.getAccessor(masterReplicaType, "masterReplicaConnectionProvider");
+        private static final FieldAccessor initialRedisUri = FieldAccessorFactory.getAccessor(masterReplicaConnectionProviderType, "initialRedisUri");
+        private static final FieldAccessor clusterConnectionProvider = FieldAccessorFactory.getAccessor(clusterType, "clusterConnectionProvider");
+        private static final FieldAccessor clusterPubSubClient = FieldAccessorFactory.getAccessor(clusterPubSubConnectionProviderType, "redisClusterClient");
+        private static final FieldAccessor pooledClusterClient = FieldAccessorFactory.getAccessor(pooledClusterConnectionProvider, "redisClusterClient");
+        private static final FieldAccessor initialUris = FieldAccessorFactory.getAccessor(RedisClusterClient.class, "initialUris");
 
         /**
          * Gets Redis server addresses from the target object.

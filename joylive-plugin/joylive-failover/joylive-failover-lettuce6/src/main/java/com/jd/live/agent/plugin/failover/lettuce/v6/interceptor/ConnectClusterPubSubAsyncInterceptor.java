@@ -19,8 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.db.DbCandidate;
 import com.jd.live.agent.governance.db.DbFailover;
@@ -101,7 +101,7 @@ public class ConnectClusterPubSubAsyncInterceptor extends AbstractLettuceInterce
 
     private static class Accessor {
 
-        private static final UnsafeFieldAccessor uris = UnsafeFieldAccessorFactory.getAccessor(RedisClusterClient.class, "initialUris");
+        private static final FieldAccessor uris = FieldAccessorFactory.getAccessor(RedisClusterClient.class, "initialUris");
 
         private static final Method connect = ClassUtils.getDeclaredMethod(RedisClient.class,
                 "connectClusterAsync", new Class[]{RedisCodec.class});

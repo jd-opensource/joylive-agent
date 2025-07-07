@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.util.CollectionUtils.toSet;
 import static com.jd.live.agent.plugin.failover.rocketmq.v4.client.RocketMQConfig.*;
 

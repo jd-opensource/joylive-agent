@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 

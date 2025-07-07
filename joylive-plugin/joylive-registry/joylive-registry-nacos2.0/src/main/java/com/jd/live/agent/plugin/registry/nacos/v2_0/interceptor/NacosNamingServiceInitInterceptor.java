@@ -24,7 +24,7 @@ import com.jd.live.agent.plugin.registry.nacos.v2_0.registry.NacosRegistryServic
 
 import java.util.Properties;
 
-import static com.jd.live.agent.bootstrap.util.type.UnsafeFieldAccessorFactory.setValue;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 import static com.jd.live.agent.governance.registry.RegistryService.KEY_SYSTEM_REGISTERED;
 import static com.jd.live.agent.governance.registry.RegistryService.SYSTEM_REGISTERED_PREDICATE;
 import static com.jd.live.agent.plugin.registry.nacos.v2_0.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
