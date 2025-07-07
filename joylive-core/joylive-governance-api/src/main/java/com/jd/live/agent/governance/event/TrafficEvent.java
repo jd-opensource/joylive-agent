@@ -329,7 +329,12 @@ public class TrafficEvent {
         /**
          * The traffic event is rejected because the circuit breaker has been triggered.
          */
-        REJECT_CIRCUIT_BREAK
+        REJECT_CIRCUIT_BREAK,
+
+        /**
+         * The traffic event is rejected because degrade has been triggered.
+         */
+        REJECT_DEGRADE,
     }
 
     public static class TrafficEventBuilder {

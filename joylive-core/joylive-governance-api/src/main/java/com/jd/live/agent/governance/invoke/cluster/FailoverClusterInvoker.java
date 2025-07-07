@@ -71,6 +71,8 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getAndIncrement());
         cluster.onStart(request);
+
+        // TODO test degrade when retry
         return retryContext.execute(invocation, supplier).exceptionally(e ->
                 cluster.createResponse(
                         cluster.createException(e, invocation),

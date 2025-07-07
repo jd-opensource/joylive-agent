@@ -19,6 +19,7 @@ import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
+import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.OutboundLiveMetadataParser;
@@ -176,6 +177,13 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         if (listeners != null) {
             listeners.forEach(listener -> listener.onFailure(endpoint, this, throwable));
         }
+    }
+
+    /**
+     * Request was recover successfully by degrade
+     */
+    public void onRecover() {
+        onRejectEvent(RejectType.REJECT_DEGRADE);
     }
 
     /**

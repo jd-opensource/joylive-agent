@@ -25,7 +25,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
-import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
 
 @Extension("TrafficEventLogger")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAK_LOG_ENABLED)
@@ -35,8 +34,17 @@ public class TrafficEventLogger implements Subscription<TrafficEvent>, EventProc
 
     @Override
     public void process(TrafficEvent event) {
-        if (event.getActionType() == ActionType.REJECT && event.getRejectType() == RejectType.REJECT_CIRCUIT_BREAK) {
-            logger.error("Circuit break {} requests, service={}, path={}, method={} ", event.getRequests(), event.getService(), event.getPath(), event.getMethod());
+        if (event.getActionType() == ActionType.REJECT) {
+            switch (event.getRejectType()) {
+                case REJECT_CIRCUIT_BREAK:
+                    logger.error("Circuit break {} requests, service={}, path={}, method={} ",
+                            event.getRequests(), event.getService(), event.getPath(), event.getMethod());
+                    break;
+                case REJECT_DEGRADE:
+                    logger.error("Degrade {} requests, service={}, path={}, method={} ",
+                            event.getRequests(), event.getService(), event.getPath(), event.getMethod());
+                    break;
+            }
         }
     }
 
