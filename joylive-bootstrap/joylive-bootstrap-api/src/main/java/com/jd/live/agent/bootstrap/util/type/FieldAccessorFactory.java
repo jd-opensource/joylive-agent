@@ -107,11 +107,7 @@ public class FieldAccessorFactory {
         field.setAccessible(true);
         jdk.internal.misc.Unsafe unsafe = (jdk.internal.misc.Unsafe) field.get(null);
         boolean hasReference = withReference(unsafe);
-        return f -> {
-            long offset = unsafe.objectFieldOffset(f);
-            OpenUnsafeObjectAccessor accessor = new OpenUnsafeObjectAccessor(unsafe, offset, hasReference);
-            return new UnsafeFieldAccessor(f, accessor);
-        };
+        return f -> new UnsafeFieldAccessor(f, new OpenUnsafeObjectAccessor(unsafe, unsafe.objectFieldOffset(f), hasReference));
     }
 
     /**
@@ -128,15 +124,7 @@ public class FieldAccessorFactory {
         Field field = type.getDeclaredField("theUnsafe");
         field.setAccessible(true);
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
-        return f -> {
-            try {
-                long offset = unsafe.objectFieldOffset(field);
-                MiscUnsafeObjectAccessor accessor = new MiscUnsafeObjectAccessor(unsafe, offset);
-                return new UnsafeFieldAccessor(f, accessor);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
+        return f -> new UnsafeFieldAccessor(f, new MiscUnsafeObjectAccessor(unsafe, unsafe.objectFieldOffset(field)));
     }
 
     /**
