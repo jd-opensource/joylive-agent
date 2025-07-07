@@ -55,6 +55,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -94,6 +95,13 @@ public interface InvocationContext {
      */
     Application getApplication();
 
+    /**
+     * Gets the location from the associated application.
+     * Default implementation delegates to {@link #getApplication()}'s location.
+     *
+     * @return the application's location
+     * @see #getApplication()
+     */
     default Location getLocation() {
         return getApplication().getLocation();
     }
@@ -135,6 +143,11 @@ public interface InvocationContext {
      */
     GovernanceConfig getGovernanceConfig();
 
+    /**
+     * Gets the current registry instance.
+     *
+     * @return the registry instance, never null
+     */
     Registry getRegistry();
 
     /**
@@ -161,6 +174,11 @@ public interface InvocationContext {
      */
     Map<String, DbUrlParser> getDbUrlParsers();
 
+    /**
+     * Gets the database connection supervisor instance.
+     *
+     * @return the DB connection supervisor, manages connection lifecycle
+     */
     DbConnectionSupervisor getDbConnectionSupervisor();
 
     /**
@@ -246,12 +264,7 @@ public interface InvocationContext {
      * </ol>
      *
      * @param uri the service URI to resolve (must include scheme and host)
-     * @return resolved service name, or original host if:
-     * <ul>
-     *   <li>URI uses 'lb' scheme</li>
-     *   <li>HostConfig is disabled</li>
-     *   <li>No matching service found</li>
-     * </ul>
+     * @return resolved service name
      * @throws NullPointerException if uri is null
      * @see HostConfig#isEnabled()
      * @see GovernancePolicy#getServiceByAlias(String)
@@ -260,7 +273,7 @@ public interface InvocationContext {
         String schema = uri.getScheme();
         String host = uri.getHost();
         String serviceName = null;
-        if (!"lb".equalsIgnoreCase(schema)) {
+        if (!Request.SCHEMA_LB.equalsIgnoreCase(schema)) {
             GovernanceConfig governanceConfig = getGovernanceConfig();
             HostConfig hostConfig = governanceConfig.getRegistryConfig().getHostConfig();
             if (hostConfig.isEnabled()) {

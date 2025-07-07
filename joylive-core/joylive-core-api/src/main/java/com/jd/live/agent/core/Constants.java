@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core;
 
+import java.util.function.Predicate;
+
 /**
  * A collection of constant values used as labels or keys in configurations or headers.
  * These constants are typically prefixed to indicate their context (e.g., live, lane, service).
@@ -186,6 +188,16 @@ public interface Constants {
     String LABEL_SECURE = "secure";
 
     String GATEWAY_ROUTE_LIVE_ENABLED = "liveEnabled";
+
+    /**
+     * Scheme constant for load balancing ("lb").
+     */
+    String SCHEME_LB = "lb";
+
+    /**
+     * Predicate that tests if a string equals {@link #SCHEME_LB} (case-insensitive).
+     */
+    Predicate<String> PREDICATE_LB = SCHEME_LB::equalsIgnoreCase;
 
 }
 

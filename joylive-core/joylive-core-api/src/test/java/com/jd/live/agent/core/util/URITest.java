@@ -18,6 +18,8 @@ package com.jd.live.agent.core.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+
 public class URITest {
 
     @Test
@@ -112,7 +114,7 @@ public class URITest {
     @Test
     void testLb() {
         URI uri = URI.parse("lb://com.jd.live.agent.demo.service.SleepService:DEFAULT");
-        Assertions.assertEquals("lb", uri.getScheme());
+        Assertions.assertTrue(PREDICATE_LB.test(uri.getScheme()));
         Assertions.assertEquals("com.jd.live.agent.demo.service.SleepService:DEFAULT", uri.getHost());
     }
 

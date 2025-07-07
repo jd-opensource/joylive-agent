@@ -32,8 +32,6 @@ public class RouteInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(RouteInterceptor.class);
 
-    private static final String SCHEMA_LB = "lb";
-
     private final Registry registry;
 
     public RouteInterceptor(Registry registry) {

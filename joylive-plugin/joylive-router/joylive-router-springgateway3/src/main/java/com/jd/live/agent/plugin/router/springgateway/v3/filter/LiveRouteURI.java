@@ -20,10 +20,10 @@ import lombok.Getter;
 import java.net.URI;
 import java.util.regex.Pattern;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+
 @Getter
 public class LiveRouteURI {
-
-    public static final String SCHEMA_LB = "lb";
 
     private static final Pattern SCHEME_PATTERN = Pattern.compile("[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*");
 
@@ -46,7 +46,7 @@ public class LiveRouteURI {
         }
         this.uri = uri;
         this.schemePrefix = schemePrefix;
-        this.loadBalancer = SCHEMA_LB.equals(uri.getScheme()) || SCHEMA_LB.equals(schemePrefix);
+        this.loadBalancer = PREDICATE_LB.test(uri.getScheme()) || PREDICATE_LB.test(schemePrefix);
     }
 
     public String getScheme() {

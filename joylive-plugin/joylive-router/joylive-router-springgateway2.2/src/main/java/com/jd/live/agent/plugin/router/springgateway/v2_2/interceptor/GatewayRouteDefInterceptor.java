@@ -21,6 +21,8 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 
 import java.net.URI;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+
 /**
  * GatewayRouteConstructorInterceptor
  */
@@ -29,7 +31,7 @@ public class GatewayRouteDefInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         URI uri = ctx.getArgument(0);
-        if (uri != null && uri.getHost() == null && uri.getAuthority() != null && "lb".equalsIgnoreCase(uri.getScheme())) {
+        if (uri != null && uri.getHost() == null && uri.getAuthority() != null && PREDICATE_LB.test(uri.getScheme())) {
             // try fixing special service name. such as "lb://SleepService:DEFAULT"
             String string = uri.toString();
             com.jd.live.agent.core.util.URI u = com.jd.live.agent.core.util.URI.parse(string);

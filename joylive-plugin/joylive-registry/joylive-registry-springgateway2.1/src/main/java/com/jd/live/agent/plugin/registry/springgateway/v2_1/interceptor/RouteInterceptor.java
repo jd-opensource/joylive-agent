@@ -24,14 +24,14 @@ import org.springframework.cloud.gateway.route.RouteDefinition;
 
 import java.net.URI;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+
 /**
  * RouteInterceptor
  */
 public class RouteInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(RouteInterceptor.class);
-
-    private static final String SCHEMA_LB = "lb";
 
     private final Registry registry;
 
@@ -43,7 +43,7 @@ public class RouteInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         RouteDefinition definition = (RouteDefinition) ctx.getArguments()[0];
         URI uri = definition.getUri();
-        if (SCHEMA_LB.equals(uri.getScheme())) {
+        if (PREDICATE_LB.test(uri.getScheme())) {
             // the getMetadata method is not exists in spring cloud greenwich
             String service = uri.getHost();
             if (!registry.isSubscribed(service)) {

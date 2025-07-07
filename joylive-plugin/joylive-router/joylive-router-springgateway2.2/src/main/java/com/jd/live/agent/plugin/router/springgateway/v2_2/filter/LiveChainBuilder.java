@@ -50,7 +50,6 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*
 @Getter
 public class LiveChainBuilder {
 
-    public static final String SCHEMA_LB = "lb";
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
     private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";

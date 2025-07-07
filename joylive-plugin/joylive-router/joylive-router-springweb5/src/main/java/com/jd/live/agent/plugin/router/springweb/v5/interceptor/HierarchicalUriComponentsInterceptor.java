@@ -23,6 +23,8 @@ import org.springframework.web.util.UriComponents;
 
 import java.net.URISyntaxException;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+
 /**
  * HierarchicalUriComponentsInterceptor
  */
@@ -34,7 +36,7 @@ public class HierarchicalUriComponentsInterceptor extends InterceptorAdaptor {
         if (mc.getThrowable() != null) {
             if (mc.getThrowable() instanceof URISyntaxException || mc.getThrowable().getCause() instanceof URISyntaxException) {
                 UriComponents components = (UriComponents) mc.getTarget();
-                if ("lb".equalsIgnoreCase(components.getScheme())) {
+                if (PREDICATE_LB.test(components.getScheme())) {
                     // try fixing special service name. such as "lb://SleepService:DEFAULT"
                     mc.setThrowable(null);
                     mc.setResult(HttpUtils.newURI(
