@@ -282,3 +282,74 @@ public class DubboProviderInterceptor extends InterceptorAdaptor {
 
 ```
 该拦截器在方法进入的时候，从请求里面还原需要的上下文透传信息，同时在链处理完后删除上下文。
+
+## 4. 透传配置
+
+在GovernanceConfig中定义的字段transmitConfig，其配置信息从config.yaml中读取，如下所示:
+
+```yaml
+agent:
+  governance:
+    transmission:
+      type: ${CONFIG_TRANSMISSION_TYPE:live}
+      autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:NONE}
+      keys:
+        - x-live-space-id
+        - x-live-rule-id
+        - x-live-uid
+        - x-lane-space-id
+        - x-lane-code
+      prefixes:
+        - x-live-
+        - x-lane-
+        - x-service-
+      thread:
+        excludeExecutors:
+          - io.netty.channel.MultithreadEventLoopGroup
+          - io.netty.channel.nio.NioEventLoop
+          - io.netty.channel.SingleThreadEventLoop
+          - io.netty.channel.kqueue.KQueueEventLoopGroup
+          - io.netty.channel.kqueue.KQueueEventLoop
+          - org.apache.tomcat.util.threads.ThreadPoolExecutor
+          - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
+          - org.apache.tomcat.util.threads.InlineExecutorService
+          - javax.management.NotificationBroadcasterSupport$1
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory
+          - com.alibaba.druid.pool.DruidAbstractDataSource$SynchronousExecutor
+        excludeTasks:
+          - com.jd.live.agent.core.thread.NamedThreadFactory
+          - com.jd.jr.sgm.client.disruptor.LogEventFactory
+          - com.jd.jr.sgm.client.util.AgentThreadFactory
+          - com.jd.pfinder.profiler.common.util.NamedThreadFactory
+          - io.opentelemetry.sdk.internal.DaemonThreadFactory
+          - io.sermant.dubbo.registry.factory.RegistryNotifyThreadFactory
+          - io.sermant.dynamic.config.init.DynamicConfigThreadFactory
+          - io.sermant.flowcontrol.common.factory.FlowControlThreadFactory
+          - io.sermant.loadbalancer.factory.LoadbalancerThreadFactory
+          - io.sermant.core.utils.ThreadFactoryUtils
+          - io.sermant.implement.service.xds.handler.XdsHandler.NamedThreadFactory
+          - io.sermant.discovery.factory.RealmServiceThreadFactory
+          - org.apache.skywalking.apm.agent.core.boot.DefaultNamedThreadFactory
+          - sun.rmi.runtime.RuntimeUtil$1
+          - sun.rmi.transport.tcp.TCPTransport$1
+          - sun.rmi.transport.DGCImpl$1
+          - sun.rmi.transport.DGCAckHandler$1
+          - org.apache.tomcat.util.threads.TaskThreadFactory
+        excludeExecutorPrefixes:
+          - com.jd.live.agent.shaded.
+          - com.netflix.hystrix.util.HystrixTimer$ScheduledExecutor$
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory$
+          - com.alibaba.nacos.
+        excludeTaskPrefixes:
+          - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
+          - org.springframework.cloud.commons.util.InetUtils$$Lambda$
+          - com.alibaba.nacos.
+          - com.netflix.discovery.
+          - com.jd.live.agent.shaded.
+          - org.apache.catalina.core.ContainerBase$
+          - org.apache.catalina.core.StandardServer$$Lambda$
+          - com.netflix.loadbalancer.PollingServerListUpdater$
+          - com.netflix.hystrix.util.HystrixTimer$
+          - com.netflix.servo.util.ExpiringCache$
+          - com.zaxxer.hikari.pool.HikariPool$
+```
