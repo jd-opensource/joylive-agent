@@ -187,9 +187,9 @@ public class TrafficEvent {
     /**
      * The unique id of policy uri which representing the path where the policy takes effect. such as: <br/>
      * <li>service://service</li>
-     * <li>service://service/group</li>
-     * <li>service://service/group/path</li>
-     * <li>service://service/group/path/method</li>
+     * <li>service://service?group=yyyy</li>
+     * <li>service://service/path?group=yyyy</li>
+     * <li>service://service/path?group=yyyy&method=xxx</li>
      * <li>gateway://domain/</li>
      * <li>gateway://domain/path</li>
      * <li>gateway://domain/path?variable=xxxx</li>

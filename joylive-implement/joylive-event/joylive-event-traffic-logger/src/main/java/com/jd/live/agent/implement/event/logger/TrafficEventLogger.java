@@ -39,14 +39,36 @@ public class TrafficEventLogger implements Subscription<TrafficEvent>, EventProc
         if (event.getActionType() == ActionType.REJECT) {
             switch (event.getRejectType()) {
                 case REJECT_CIRCUIT_BREAK:
-                    logger.error("Circuit break {} requests, service={}, path={}, method={} ",
-                            event.getRequests(), event.getService(), event.getPath(), event.getMethod());
+                    log("CircuitBreak", event.getRequests(), event.getService(), event.getPath(), event.getMethod(), event.getGroup());
                     break;
                 case REJECT_DEGRADE:
-                    logger.error("Degrade {} requests, service={}, path={}, method={} ",
-                            event.getRequests(), event.getService(), event.getPath(), event.getMethod());
+                    log("Degrade", event.getRequests(), event.getService(), event.getPath(), event.getMethod(), event.getGroup());
                     break;
             }
+        }
+    }
+
+    /**
+     * Logs service request errors with formatted URL patterns.
+     *
+     * @param type     Error type/category
+     * @param requests Number of failed requests
+     * @param service  Service name/identifier
+     * @param path     Request path (nullable)
+     * @param method   Request method
+     * @param group    Service group (nullable)
+     */
+    private void log(String type, int requests, String service, String path, String method, String group) {
+        if (path == null || path.isEmpty() || path.equals("/")) {
+            if (group == null || group.isEmpty()) {
+                logger.error("{} {} requests, service://{}?method={}", type, requests, service, path, method);
+            } else {
+                logger.error("{} {} requests, service://{}?group={}&method={}", type, requests, service, path, group, method);
+            }
+        } else if (group == null || group.isEmpty()) {
+            logger.error("{} {} requests, service://{}/{}?method={}", type, requests, service, path, method);
+        } else {
+            logger.error("{} {} requests, service://{}/{}?group={}&method={}", type, requests, service, path, group, method);
         }
     }
 
