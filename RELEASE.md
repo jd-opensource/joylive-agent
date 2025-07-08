@@ -11,9 +11,10 @@
 7. Added dependency service warm-up support when migrating traditional Spring Boot applications to microservices
 8. Added support for XMLPath and JavaPath to extract exception error codes for exception determination in circuit breaking and retry mechanisms
 9. Added support for virtual threads in Tomcat
-10. Enhanced Dubbo framework compatibility and support
-11. Improved message routing in multi-active scenarios
-12. Fixed miscellaneous issues
+10. Added support for JWT authentication 
+11. Enhanced Dubbo framework compatibility and support 
+12. Improved message routing in multi-active scenarios 
+13. Fixed miscellaneous issues
 
 ## 1.7.0
 
