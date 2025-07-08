@@ -206,6 +206,7 @@ agent:
         type: Resilience4j
         cleanInterval: 30000
         expireTime: 60000
+        autoHalfOpenEnabled: ${CONFIG_CIRCUIT_BREAKER_AUTO_HALF_OPEN_ENABLED:false}
       monitor:
         forwardEnabled: ${CONFIG_MONITOR_FORWARD_TRAFFIC_ENABLED:}
         rejectEnabled: true

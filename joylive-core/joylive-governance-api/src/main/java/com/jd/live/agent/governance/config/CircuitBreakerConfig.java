@@ -30,5 +30,7 @@ public class CircuitBreakerConfig extends RecyclerConfig {
      */
     private String type = "Resilience4j";
 
+    private boolean autoHalfOpenEnabled;
+
 }
 

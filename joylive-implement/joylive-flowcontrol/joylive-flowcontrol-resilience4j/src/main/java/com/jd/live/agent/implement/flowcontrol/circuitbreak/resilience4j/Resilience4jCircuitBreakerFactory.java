@@ -16,8 +16,11 @@
 package com.jd.live.agent.implement.flowcontrol.circuitbreak.resilience4j;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.circuitbreak.AbstractCircuitBreakerFactory;
 import com.jd.live.agent.governance.invoke.circuitbreak.CircuitBreaker;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
@@ -37,6 +40,9 @@ import static com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBr
 @Injectable
 @Extension(value = "Resilience4j")
 public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFactory {
+
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
 
     private static final CircuitBreakerRegistry REGISTRY = CircuitBreakerRegistry.ofDefaults();
 
@@ -59,7 +65,9 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
      * @return A configured {@link CircuitBreakerConfig.Builder}.
      */
     private CircuitBreakerConfig.Builder getBuilder(CircuitBreakPolicy policy) {
-        // TODO Uniform time unit. waitDurationInOpenState
+        ServiceConfig serviceConfig = governanceConfig.getServiceConfig();
+        com.jd.live.agent.governance.config.CircuitBreakerConfig config = serviceConfig.getCircuitBreaker();
+
         CircuitBreakerConfig.Builder result = CircuitBreakerConfig.custom()
                 .slidingWindowType(SLIDING_WINDOW_COUNT.equals(policy.getSlidingWindowType()) ? SlidingWindowType.COUNT_BASED : SlidingWindowType.TIME_BASED)
                 .slidingWindowSize(policy.getSlidingWindowSize())
@@ -72,6 +80,9 @@ public class Resilience4jCircuitBreakerFactory extends AbstractCircuitBreakerFac
                 .recordException(e -> true);
         if (policy.getMaxWaitDurationInHalfOpenState() > 0) {
             result.maxWaitDurationInHalfOpenState(Duration.ofMillis(policy.getMaxWaitDurationInHalfOpenState()));
+        }
+        if (config != null && config.isAutoHalfOpenEnabled()) {
+            result.automaticTransitionFromOpenToHalfOpenEnabled(true);
         }
         return result;
     }
