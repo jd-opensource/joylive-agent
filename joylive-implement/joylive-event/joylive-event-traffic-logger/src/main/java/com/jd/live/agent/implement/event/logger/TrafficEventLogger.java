@@ -66,6 +66,8 @@ public class TrafficEventLogger implements Subscription<TrafficEvent>, EventProc
                 } else {
                     logger.error("{} {} requests, policy on service://{}?method={}", type, requests, service, method);
                 }
+            } else if (method == null || method.isEmpty()) {
+                logger.error("{} {} requests, policy on service://{}?group={}", type, requests, service, group);
             } else {
                 logger.error("{} {} requests, policy on service://{}?group={}&method={}", type, requests, service, group, method);
             }
