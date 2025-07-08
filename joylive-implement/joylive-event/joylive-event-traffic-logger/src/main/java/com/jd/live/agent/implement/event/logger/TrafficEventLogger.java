@@ -61,14 +61,24 @@ public class TrafficEventLogger implements Subscription<TrafficEvent>, EventProc
     private void log(String type, int requests, String service, String path, String method, String group) {
         if (path == null || path.isEmpty() || path.equals("/")) {
             if (group == null || group.isEmpty()) {
-                logger.error("{} {} requests, service://{}?method={}", type, requests, service, path, method);
+                if (method == null || method.isEmpty()) {
+                    logger.error("{} {} requests, policy on service://{}", type, requests, service);
+                } else {
+                    logger.error("{} {} requests, policy on service://{}?method={}", type, requests, service, method);
+                }
             } else {
-                logger.error("{} {} requests, service://{}?group={}&method={}", type, requests, service, path, group, method);
+                logger.error("{} {} requests, policy on service://{}?group={}&method={}", type, requests, service, group, method);
             }
         } else if (group == null || group.isEmpty()) {
-            logger.error("{} {} requests, service://{}/{}?method={}", type, requests, service, path, method);
+            if (method == null || method.isEmpty()) {
+                logger.error("{} {} requests, policy on service://{}/{}", type, requests, service, path);
+            } else {
+                logger.error("{} {} requests, policy on service://{}/{}?method={}", type, requests, service, path, method);
+            }
+        } else if (method == null || method.isEmpty()) {
+            logger.error("{} {} requests, policy on service://{}/{}?group={}", type, requests, service, path, group);
         } else {
-            logger.error("{} {} requests, service://{}/{}?group={}&method={}", type, requests, service, path, group, method);
+            logger.error("{} {} requests, policy on service://{}/{}?group={}&method={}", type, requests, service, path, group, method);
         }
     }
 
