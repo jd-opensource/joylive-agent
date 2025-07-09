@@ -272,5 +272,6 @@ public class DbUrlTest {
         Assertions.assertEquals("jdbc:dm://test?test=(192.168.0.96:5236,192.168.0.96:5237)", url.toString());
         url = url.address("192.168.0.97:5236,192.168.0.97:5237");
         Assertions.assertEquals("jdbc:dm://test?test=(192.168.0.97:5236,192.168.0.97:5237)", url.toString());
+        Assertions.assertArrayEquals(new String[]{"192.168.0.97:5236", "192.168.0.97:5237"}, url.getAddresses());
     }
 }
