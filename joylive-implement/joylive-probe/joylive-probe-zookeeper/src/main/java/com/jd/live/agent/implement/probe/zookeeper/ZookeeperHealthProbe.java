@@ -19,8 +19,8 @@ import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.util.SocketDetector;
-import com.jd.live.agent.core.util.SocketDetector.SocketListener;
+import com.jd.live.agent.governance.util.SocketDetector;
+import com.jd.live.agent.governance.util.SocketDetector.SocketListener;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.probe.HealthProbe;
 
