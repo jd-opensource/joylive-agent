@@ -191,7 +191,7 @@ public abstract class AbstractUrlParser implements DbUrlParser {
     }
 
     protected int getParameterIndex(String url, char beginDelimiter) {
-        return url.indexOf(beginDelimiter, url.lastIndexOf('/') + 1);
+        return url.indexOf(beginDelimiter);
     }
 
     protected char getParameterBeginDelimiter() {

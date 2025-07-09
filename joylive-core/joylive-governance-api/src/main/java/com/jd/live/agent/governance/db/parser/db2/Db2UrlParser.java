@@ -28,6 +28,11 @@ public class Db2UrlParser extends AbstractUrlParser {
 
     @Override
     protected int getParameterIndex(String url, char beginDelimiter) {
+        int pos = url.lastIndexOf('/');
+        if (pos > 0 && url.charAt(pos - 1) != '/') {
+            // path
+            return url.indexOf(beginDelimiter, pos + 1);
+        }
         return url.lastIndexOf(beginDelimiter);
     }
 }
