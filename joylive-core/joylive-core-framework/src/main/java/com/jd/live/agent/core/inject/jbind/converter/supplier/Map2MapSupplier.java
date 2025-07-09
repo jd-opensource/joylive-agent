@@ -40,7 +40,7 @@ public class Map2MapSupplier implements ConverterSupplier {
     public static class Map2MapConverter extends AbstractMapConverter {
         protected static final Converter INSTANCE = new Map2MapConverter();
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
         public Object convert(final Conversion conversion) throws Exception {
             TypeInfo typeInfo = conversion.getTargetType();
@@ -51,24 +51,23 @@ public class Map2MapSupplier implements ConverterSupplier {
                 if (type instanceof ParameterizedType) {
                     // parameterized conversion
                     ParameterizedType parameterizedType = (ParameterizedType) type;
-                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                    if (actualTypeArguments != null
-                            && actualTypeArguments.length == 2
-                            && actualTypeArguments[0] instanceof Class
-                            && actualTypeArguments[1] instanceof Class) {
-                        Map<?, ?> source = (Map<?, ?>) conversion.getSource();
-                        TypeInfo targetKeyType = new TypeInfo((Class<?>) actualTypeArguments[0]);
-                        TypeInfo targetValueType = new TypeInfo((Class<?>) actualTypeArguments[1]);
-                        for (Map.Entry<?, ?> entry : source.entrySet()) {
-                            Object key = entry.getKey();
-                            Object value = entry.getValue();
-                            TypeInfo srcKeyType = new TypeInfo(key.getClass());
-                            TypeInfo srcValueType = new TypeInfo(value.getClass());
-                            Converter keyConverter = conversion.getConverter(new ConversionType(srcKeyType, targetKeyType));
-                            Converter valueConverter = conversion.getConverter(new ConversionType(srcValueType, targetValueType));
-                            Conversion keyConversion = conversion.of(srcKeyType, targetKeyType, key);
-                            Conversion valueConversion = conversion.of(srcValueType, targetValueType, value);
-                            result.put(keyConverter.convert(keyConversion), valueConverter.convert(valueConversion));
+                    Type[] argTypes = parameterizedType.getActualTypeArguments();
+                    if (argTypes.length == 2) {
+                        TypeInfo targetKeyType = getTypeInfo(argTypes[0]);
+                        TypeInfo targetValueType = getTypeInfo(argTypes[1]);
+                        if (targetKeyType != null && targetValueType != null) {
+                            Map<?, ?> source = (Map<?, ?>) conversion.getSource();
+                            for (Map.Entry<?, ?> entry : source.entrySet()) {
+                                Object key = entry.getKey();
+                                Object value = entry.getValue();
+                                TypeInfo srcKeyType = new TypeInfo(key.getClass());
+                                TypeInfo srcValueType = value == null ? null : new TypeInfo(value.getClass());
+                                Converter keyConverter = conversion.getConverter(new ConversionType(srcKeyType, targetKeyType));
+                                Converter valueConverter = srcValueType == null ? null : conversion.getConverter(new ConversionType(srcValueType, targetValueType));
+                                Conversion keyConversion = conversion.of(srcKeyType, targetKeyType, key);
+                                Conversion valueConversion = valueConverter == null ? null : conversion.of(srcValueType, targetValueType, value);
+                                result.put(keyConverter.convert(keyConversion), valueConverter == null ? value : valueConverter.convert(valueConversion));
+                            }
                         }
                         return result;
                     }
@@ -77,5 +76,19 @@ public class Map2MapSupplier implements ConverterSupplier {
             }
             return result;
         }
+
+        private TypeInfo getTypeInfo(Type type) {
+            if (type instanceof Class) {
+                return new TypeInfo((Class<?>) type);
+            } else if (type instanceof ParameterizedType) {
+                ParameterizedType parameterizedType = (ParameterizedType) type;
+                Type rawType = parameterizedType.getRawType();
+                if (rawType instanceof Class) {
+                    return new TypeInfo((Class<?>) rawType, (Class<?>) rawType, type);
+                }
+            }
+            return null;
+        }
     }
+
 }

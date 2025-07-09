@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStopInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationCloseInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationContextDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -36,7 +36,7 @@ public class SpringApplicationContextDefinition extends PluginDefinitionAdapter 
 
     protected static final String TYPE_ABSTRACT_APPLICATION_CONTEXT = "org.springframework.context.support.AbstractApplicationContext";
 
-    private static final String METHOD_STOP = "stop";
+    private static final String METHOD_STOP = "doClose";
 
     @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
     private AppListener listener;
@@ -44,7 +44,7 @@ public class SpringApplicationContextDefinition extends PluginDefinitionAdapter 
     public SpringApplicationContextDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_APPLICATION_CONTEXT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ApplicationStopInterceptor(listener))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ApplicationCloseInterceptor(listener))
         };
     }
 }

@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,6 +57,11 @@ public class EnhanceConfig {
      * exclude classes which is loaded by the classloader
      */
     private Set<String> excludeClassLoaders;
+
+    /**
+     * Java add opens
+     */
+    private Map<String, Set<String>> addOpens;
 
     private boolean shutdownOnError;
 

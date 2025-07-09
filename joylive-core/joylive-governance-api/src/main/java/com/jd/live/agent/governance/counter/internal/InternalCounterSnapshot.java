@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.instance.counter.internal;
+package com.jd.live.agent.governance.counter.internal;
 
-import com.jd.live.agent.governance.instance.counter.Counter;
-import com.jd.live.agent.governance.instance.counter.CounterSnapshot;
+import com.jd.live.agent.governance.counter.Counter;
+import com.jd.live.agent.governance.counter.CounterSnapshot;
 import lombok.Getter;
 
 /**

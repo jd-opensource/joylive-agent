@@ -18,8 +18,10 @@ package com.jd.live.agent.governance.invoke.filter.outbound;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
+import com.jd.live.agent.governance.counter.Counter;
+import com.jd.live.agent.governance.counter.FlyingCounter;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
@@ -44,39 +46,57 @@ public class CounterFilter implements OutboundFilter {
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
+        InvocationContext context = invocation.getContext();
+        FlyingCounter flyingRequest = context.getCounterManager().getFlyingCounter();
         Counter counter = invocation.getRequest().getAttribute(Endpoint.ATTRIBUTE_COUNTER);
         if (counter != null) {
+            // TODO improve the performance of the following code
             counter.getParent().getParent().tryClean(invocation.getInstances());
             if (!counter.begin(0)) {
                 return Futures.future(FaultType.LIMIT.reject("Has reached the maximum number of active requests."));
             }
-            long startTime = System.currentTimeMillis();
-            CompletionStage<O> stage = chain.filter(invocation, endpoint);
-            return stage.whenComplete((o, r) -> {
-                if (r == null) {
-                    if (o instanceof Asyncable) {
-                        // fix for async rpc invoke, such as dubbo & sofarpc.
-                        ((Asyncable) o).getFuture().whenComplete((o1, r1) -> {
-                            if (r1 == null) {
-                                counter.success(getElapsed(startTime));
-                            } else {
-                                counter.fail(getElapsed(startTime));
-                            }
-                        });
-                    } else {
-                        counter.success(getElapsed(startTime));
-                    }
-                } else {
-                    counter.fail(getElapsed(startTime));
-                }
-            });
-        } else {
-            return chain.filter(invocation, endpoint);
         }
+        long startTime = System.currentTimeMillis();
+        flyingRequest.increment();
+        CompletionStage<O> stage = chain.filter(invocation, endpoint);
+        return stage.whenComplete((o, t) -> {
+            if (counter != null) {
+                count(o, t, counter, System.currentTimeMillis() - startTime);
+            }
+            if (flyingRequest.decrement() == 0) {
+                if (context.getApplication().getStatus().isDestroy()) {
+                    flyingRequest.done();
+                }
+            }
+        });
     }
 
-    private long getElapsed(final long startTime) {
-        return System.currentTimeMillis() - startTime;
+    /**
+     * Counts the RPC call result (success/failure) with elapsed time.
+     * Handles both synchronous and asynchronous responses.
+     *
+     * @param response    The RPC response (may implement Asyncable)
+     * @param throwable   Exception if call failed, null if succeeded
+     * @param counter     Metrics counter to record results
+     * @param elapsedTime Execution time in nanoseconds
+     */
+    private void count(OutboundResponse response, Throwable throwable, Counter counter, long elapsedTime) {
+        if (throwable == null) {
+            if (response instanceof Asyncable) {
+                // fix for async rpc invoke, such as dubbo & sofarpc.
+                ((Asyncable) response).getFuture().whenComplete((o, t) -> {
+                    if (t == null) {
+                        counter.success(elapsedTime);
+                    } else {
+                        counter.fail(elapsedTime);
+                    }
+                });
+            } else {
+                counter.success(elapsedTime);
+            }
+        } else {
+            counter.fail(elapsedTime);
+        }
     }
 
 }

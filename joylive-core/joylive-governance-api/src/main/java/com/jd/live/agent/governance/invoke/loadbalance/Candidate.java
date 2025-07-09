@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.loadbalance;
 
-import com.jd.live.agent.governance.instance.counter.Counter;
+import com.jd.live.agent.governance.counter.Counter;
 import lombok.Getter;
 import lombok.Setter;
 

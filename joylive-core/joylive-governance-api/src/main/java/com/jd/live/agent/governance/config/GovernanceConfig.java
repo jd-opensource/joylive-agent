@@ -17,6 +17,7 @@ package com.jd.live.agent.governance.config;
 
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -39,6 +40,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GovernanceConfig {
+
+    private static final int DEFAULT_INITIALIZE_TIMEOUT = 10000;
 
     public static final String COMPONENT_GOVERNANCE_CONFIG = "governanceConfig";
     public static final String CONFIG_AGENT_GOVERNANCE = "agent.governance";
@@ -149,13 +152,24 @@ public class GovernanceConfig {
     private RedisConfig redisConfig = new RedisConfig();
 
     @Config
-    private int initializeTimeout = 10 * 1000;
+    private int initializeTimeout = DEFAULT_INITIALIZE_TIMEOUT;
+
+    @Config
+    private int shutdownWaitTime = GracefullyShutdown.DEFAULT_SHUTDOWN_WAIT_TIME;
 
     public GovernanceConfig() {
     }
 
     public GovernanceConfig(LiveConfig liveConfig) {
         this.liveConfig = liveConfig;
+    }
+
+    public int getInitializeTimeout() {
+        return initializeTimeout <= 0 ? DEFAULT_INITIALIZE_TIMEOUT : initializeTimeout;
+    }
+
+    public int getShutdownWaitTime() {
+        return shutdownWaitTime <= 0 ? GracefullyShutdown.DEFAULT_SHUTDOWN_WAIT_TIME : shutdownWaitTime;
     }
 
     public void initialize(Application application) {

@@ -69,7 +69,7 @@ public interface AppListener {
      *
      * @param context The application context.
      */
-    void onStop(AppContext context);
+    void onCLose(AppContext context);
 
     /**
      * A default implementation of the ApplicationListener interface that does nothing.
@@ -99,7 +99,7 @@ public interface AppListener {
         }
 
         @Override
-        public void onStop(AppContext context) {
+        public void onCLose(AppContext context) {
             // Do nothing
         }
     }
@@ -146,9 +146,9 @@ public interface AppListener {
         }
 
         @Override
-        public void onStop(AppContext context) {
+        public void onCLose(AppContext context) {
             for (AppListener listener : listeners) {
-                listener.onStop(context);
+                listener.onCLose(context);
             }
         }
     }

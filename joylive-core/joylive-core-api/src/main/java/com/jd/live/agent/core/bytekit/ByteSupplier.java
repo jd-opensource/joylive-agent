@@ -64,4 +64,21 @@ public interface ByteSupplier {
      * @param loaders         the class loaders to use when resolving the modules
      */
     void export(Instrumentation instrumentation, String sourceType, String sourcePackage, String targetType, ClassLoader... loaders);
+
+    /**
+     * Exports the specified package from the source module to the target module.
+     *
+     * @param instrumentation the instrumentation object used to modify the modules
+     * @param sourceType      the class type in the source module (e.g., "java.util.Map")
+     * @param targetType      the class type in the target module (e.g., "com.jd.live.agent.bootstrap.bytekit.context.MethodContext")
+     * @param loaders         the class loaders to use when resolving the modules
+     */
+    default void export(Instrumentation instrumentation, String sourceType, String targetType, ClassLoader... loaders) {
+        if (sourceType != null) {
+            int pos = sourceType.lastIndexOf('.');
+            if (pos > 0) {
+                export(instrumentation, sourceType, sourceType.substring(0, pos), targetType, loaders);
+            }
+        }
+    }
 }

@@ -22,18 +22,18 @@ import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppConte
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import org.springframework.context.ConfigurableApplicationContext;
 
-public class ApplicationStopInterceptor extends InterceptorAdaptor {
+public class ApplicationCloseInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
-    public ApplicationStopInterceptor(AppListener listener) {
+    public ApplicationCloseInterceptor(AppListener listener) {
         this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppContext context = new SpringAppContext((ConfigurableApplicationContext) ctx.getTarget());
-        InnerListener.foreach(l -> l.onStop(context));
-        listener.onStop(context);
+        InnerListener.foreach(l -> l.onCLose(context));
+        listener.onCLose(context);
     }
 }

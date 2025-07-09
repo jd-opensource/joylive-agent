@@ -17,10 +17,10 @@ package com.jd.live.agent.governance.invoke.loadbalance.active;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.governance.counter.Counter;
+import com.jd.live.agent.governance.counter.CounterManager;
+import com.jd.live.agent.governance.counter.ServiceCounter;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.instance.counter.Counter;
-import com.jd.live.agent.governance.instance.counter.CounterManager;
-import com.jd.live.agent.governance.instance.counter.ServiceCounter;
 import com.jd.live.agent.governance.invoke.Invocation;
 import com.jd.live.agent.governance.invoke.loadbalance.AbstractLoadBalancer;
 import com.jd.live.agent.governance.invoke.loadbalance.Candidate;

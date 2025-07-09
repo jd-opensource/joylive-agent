@@ -23,7 +23,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
@@ -291,7 +290,7 @@ public class Bootstrap implements AgentLifecycle {
             installed.set(true);
             shutdown = new Shutdown();
             shutdown.addHook(new ShutdownHookAdapter(() -> application.setStatus(AppStatus.DESTROYING), 0));
-            shutdown.addHook(() -> serviceManager.stop());
+            shutdown.addHook(serviceManager);
             shutdown.register();
             publisher.offer(AgentEvent.onAgentReady("Success starting LiveAgent."));
         } catch (Throwable e) {
@@ -602,18 +601,10 @@ public class Bootstrap implements AgentLifecycle {
 
     private ByteSupplier createByteSupplier() {
         ByteSupplier result = extensionManager.getOrLoadExtension(ByteSupplier.class, classLoaderManager.getCoreImplLoader());
-
-        // export & open "java.uti & java.net" to core module.
-        Map<String, Set<String>> mapping = new HashMap<>();
-        Set<String> targets = mapping.computeIfAbsent("com.jd.live.agent.governance.invoke.Invocation", key -> new HashSet<>());
-        targets.add("java.util.Map");
-        targets = mapping.computeIfAbsent("com.jd.live.agent.core.util.http.HttpUtils", key -> new HashSet<>());
-        targets.add("java.net.URI");
-        result.export(instrumentation, mapping, classLoaderManager.getCoreImplLoader());
-        // access unsafe
-        result.export(instrumentation, "java.util.Map", "java.util", FieldAccessorFactory.class.getName(), classLoader);
-        result.export(instrumentation, "java.util.Map", "jdk.internal.misc", FieldAccessorFactory.class.getName(), classLoader);
-        result.export(instrumentation, "sun.misc.Unsafe", "sun.misc", FieldAccessorFactory.class.getName(), classLoader);
+        Map<String, Set<String>> addOpens = agentConfig.getEnhanceConfig().getAddOpens();
+        if (addOpens != null) {
+            result.export(instrumentation, addOpens, classLoaderManager.getCoreImplLoader());
+        }
         return result;
     }
 
@@ -717,7 +708,7 @@ public class Bootstrap implements AgentLifecycle {
             case APPLICATION_READY:
                 application.setStatus(AppStatus.READY);
                 break;
-            case APPLICATION_STOP:
+            case APPLICATION_CLOSE:
                 application.setStatus(AppStatus.DESTROYING);
                 break;
         }

@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bootstrap.AppListenerSupplier;
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
@@ -30,8 +31,10 @@ import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
+import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
+import com.jd.live.agent.governance.counter.FlyingCounter;
 import com.jd.live.agent.governance.exception.RegistryException;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
@@ -54,15 +57,13 @@ import java.util.function.Consumer;
  */
 @Extension("LiveRegistry")
 @Injectable
-public class LiveRegistry extends AbstractService implements CompositeRegistry, InjectSourceSupplier, AppListenerSupplier {
+public class LiveRegistry extends AbstractService
+        implements CompositeRegistry, InjectSourceSupplier, AppListenerSupplier, ExtensionInitializer, GracefullyShutdown {
 
     private static final Logger logger = LoggerFactory.getLogger(LiveRegistry.class);
 
-    @Inject(RegistryConfig.COMPONENT_REGISTRY_CONFIG)
-    private RegistryConfig registryConfig;
-
-    @Inject(RegistryConfig.COMPONENT_REGISTRY_CONFIG)
-    private ServiceConfig serviceConfig;
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig governanceConfig;
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
@@ -75,6 +76,12 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Inject
     private Map<String, RegistryFactory> factories;
+
+    private FlyingCounter flyingCounter;
+
+    private RegistryConfig registryConfig;
+
+    private ServiceConfig serviceConfig;
 
     private volatile List<RegistryService> registries;
 
@@ -91,6 +98,18 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
     private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
     private final AtomicBoolean ready = new AtomicBoolean(false);
+
+    @Override
+    public void initialize() {
+        flyingCounter = policySupplier.getCounterManager().getFlyingCounter();
+        serviceConfig = governanceConfig.getServiceConfig();
+        registryConfig = governanceConfig.getRegistryConfig();
+    }
+
+    @Override
+    public int getWaitTime() {
+        return governanceConfig.getShutdownWaitTime();
+    }
 
     @Override
     protected CompletableFuture<Void> doStart() {
@@ -123,12 +142,34 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
 
     @Override
     protected CompletableFuture<Void> doStop() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
         ready.set(false);
-        onApplicationStop();
-        // stop registries
-        Close.instance().close(registries);
-        registries = null;
-        return CompletableFuture.completedFuture(null);
+        logger.info("Unregister services from registry.");
+        // unregister first
+        for (Registration registration : registrations.values()) {
+            registration.unregister();
+        }
+        logger.info("Wait for completing flying requests.");
+        // wait for flying request done
+        flyingCounter.waitDone().whenComplete((v, e) -> {
+            logger.info("Complete flying requests, start closing registry.");
+            // stop and clear registrations
+            for (Registration registration : registrations.values()) {
+                registration.stop();
+            }
+            registrations.clear();
+            // stop and clear subscriptions
+            for (Subscription subscription : subscriptions.values()) {
+                subscription.stop();
+            }
+            subscriptions.clear();
+            // stop registries
+            Close.instance().close(registries);
+            registries = null;
+            future.complete(null);
+        });
+
+        return future;
     }
 
     @Override
@@ -145,10 +186,6 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
             @Override
             public void onReady(AppContext context) {
                 onApplicationReady();
-            }
-
-            public void onStop(AppContext context) {
-                onApplicationStop();
             }
         };
     }
@@ -407,23 +444,6 @@ public class LiveRegistry extends AbstractService implements CompositeRegistry, 
         for (Registration registration : registrations.values()) {
             registration.register();
         }
-    }
-
-    /**
-     * Called when the application is stopping. This method iterates through all registered services and calls their stop method.
-     */
-    private void onApplicationStop() {
-        ready.set(false);
-
-        for (Registration registration : registrations.values()) {
-            registration.stop();
-        }
-        registrations.clear();
-
-        for (Subscription subscription : subscriptions.values()) {
-            subscription.stop();
-        }
-        subscriptions.clear();
     }
 
     /**

@@ -2,17 +2,19 @@ agent:
   enhance:
     javaVersion: '[,1.8);[1.8.0_60,]'
     retransformEnabled: true
+    poolEnabled: true
     loggerEnabled: true
-    exporterEnabled: false
+    exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
     excludePrefixes: null
     excludeTypes: null
-    excludeInterfaces: null
     excludeClassLoaders:
       - com.jd.jr.sgm.agent.loader.ClientLibClassLoader
+      - com.jd.jr.sgm.agent.loader.ClientAppClassLoader
       - com.jd.pfinder.profiler.load.InterceptorClassLoader
       - com.jd.pfinder.profiler.utils.ModuleClassLoader
       - com.jd.pfinder.profiler.load.ModuleInterceptorClassLoader
       - io.opentelemetry.javaagent.bootstrap.AgentClassLoader
+      - io.opentelemetry.javaagent.tooling.ExtensionClassLoader
       - org.apache.skywalking.apm.agent.core.plugin.loader.AgentClassLoader
       - org.apache.skywalking.apm.agent.core.plugin.loader.PluginClassLoader
       - com.navercorp.pinpoint.bootstrap.classloader.AgentClassLoader
@@ -21,33 +23,46 @@ agent:
       - com.huaweicloud.sermant.core.plugin.classloader.PluginClassLoader
       - com.huaweicloud.sermant.core.plugin.classloader.ServiceClassLoader
       - com.alipay.sofa.ark.container.service.classloader.PluginClassLoader
+    addOpens:
+      com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory:
+        - java.util.Map
+        - jdk.internal.misc.Unsafe
+        - sun.misc.Unsafe
+      com.jd.live.agent.governance.invoke.Invocation:
+        - java.util.Map
+      com.jd.live.agent.core.util.http.HttpUtils:
+        - java.net.URI
+  timer:
+    workerThreads: ${CONFIG_TIMER_WORKER_THREADS:4}
   publisher:
     configs:
       traffic:
-        capacity: 20000
+        capacity: ${CONFIG_TRAFFIC_BUFFER_SIZE:40000}
   plugin:
     systems:
       - system
     statics:
       - dubbo
+      - eureka
       - grpc
       - httpclient
+      - jdbc
       - jdk
-      - jmq
-      - jsf
       - kafka
-      - okhttp
-      - netty
-      - phevos
-      - rocketmq
-      - shenyu
-      - sofarpc
-      - spring
       - mariadb
+      - mysql
       - mongodb
+      - nacos
+      - netty
+      - okhttp
       - opengauss
       - postgresql
+      - pulsar
+      - rabbitmq
       - redis
+      - rocketmq
+      - sofarpc
+      - spring
     disables: null
     dynamics: null
     profiles:
@@ -56,58 +71,119 @@ agent:
     profile: null
   sync:
     liveSpace:
-      type: ${CONFIG_LIVE_SPACE_API_TYPE:file} # [file,multilive]
+      type: ${CONFIG_LIVE_SPACE_API_TYPE:file} # [file,multilive,multilive-openapi,nacos]
       url: ${CONFIG_LIVE_SPACE_API_URL:http://api.live.local:9090/v1}
-      #spacesUrl: ${CONFIG_LIVE_SPACE_API_URL}/workspaces
-      #spaceUrl: ${CONFIG_LIVE_SPACE_API_URL}/workspaces/${space_id}/version/${space_version}
-      #serviceUrl: ${CONFIG_LIVE_SPACE_API_URL}/services/${service_name}/version/${service_version}
       service: true
-      interval: 5000
+      interval: 3000
       timeout: 3000
       initialTimeout: 20000
       delay: 0
       fault: 5000
       headers: ${CONFIG_LIVE_SPACE_API_HEADERS}
+      # for multilive
+      multilive:
+        spacesUrl: /workspaces
+        spaceUrl: /workspaces/${space_id}/version/${space_version}
+        serviceUrl: /services/${service_name}/version/${service_version}
+        databaseUrl: /workspaces/${space_id}/databases/${database_version}
+      # for multilive-openapi
+      jdcloud:
+        accessKey: ${CONFIG_MULTILIVE_ACCESS_KEY}
+        secretKey: ${CONFIG_MULTILIVE_SECRET_KEY}
+      # for nacos
+      nacos:
+        username: ${CONFIG_NACOS_USERNAME:nacos}
+        password: ${CONFIG_NACOS_PASSWORD:nacos}
+        namespace: ${CONFIG_NACOS_NAMESPACE:public}
+        liveSpaceGroup: ${CONFIG_NACOS_GROUP_LIVE_SPACE:DEFAULT_GROUP}
+        liveSpacesKey: ${CONFIG_NACOS_KEY_LIVE_SPACES:govern-liveSpaces}
+        liveSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LIVE_SPACE_TEMPLATE:govern-liveSpace-${id}}
+        liveServiceTemplate: ${CONFIG_NACOS_KEY_LIVE_SERVICE_TEMPLATE:govern-liveService-${name}}
+        liveDatabaseTemplate: ${CONFIG_NACOS_KEY_LIVE_DATABASE_TEMPLATE:govern-liveDatabase-${id}}
     laneSpace:
-      type: file
+      type: ${CONFIG_LANE_SPACE_API_TYPE:file} # [file,jmsf,nacos]
+      url: ${CONFIG_LANE_SPACE_API_URL:http://api.jmsf.local:8080/v1}
+      interval: 3000
+      timeout: 3000
+      initialTimeout: 20000
+      delay: 0
+      fault: 5000
+      # for jmsf
+      jmsf:
+        spacesUrl: /laneSpaces
+        spaceUrl: /laneSpace/${space_id}/version/${space_version}
+      # for nacos
+      nacos:
+        username: ${CONFIG_NACOS_USERNAME:nacos}
+        password: ${CONFIG_NACOS_PASSWORD:nacos}
+        namespace: ${CONFIG_NACOS_NAMESPACE:public}
+        laneSpaceGroup: ${CONFIG_NACOS_GROUP_LANE_SPACE:DEFAULT_GROUP}
+        laneSpacesKey: ${CONFIG_NACOS_KEY_LANE_SPACES:govern-laneSpaces}
+        laneSpaceKeyTemplate: ${CONFIG_NACOS_KEY_LANE_SPACE_TEMPLATE:govern-laneSpace-${id}}
     microservice:
-      enabled: true
-      type: ${CONFIG_SERVICE_API_TYPE:file}
+      type: ${CONFIG_SERVICE_API_TYPE:file} # [file,jmsf,nacos]
       url: ${CONFIG_SERVICE_API_URL:http://api.jmsf.local:8080/v1}
       headers: ${CONFIG_SERVICE_API_HEADERS}
+      interval: 3000
+      timeout: 3000
+      initialTimeout: 20000
+      delay: 0
+      fault: 5000
+      # for jmsf
+      jmsf:
+        serviceUrl: /space/${space}/service/${service_name}/version/${service_version}?application=${application}
+      # for nacos
+      nacos:
+        username: ${CONFIG_NACOS_USERNAME:nacos}
+        password: ${CONFIG_NACOS_PASSWORD:nacos}
+        namespace: ${CONFIG_NACOS_NAMESPACE:public}
+        serviceGroup: ${CONFIG_NACOS_GROUP_SERVICE:DEFAULT_GROUP}
+        serviceKeyTemplate: ${CONFIG_NACOS_KEY_SERVICE_TEMPLATE:govern-service-${name}}
   watchdog:
     enabled: true
     delay: 5000
     interval: 100
     timeout: 5000
   switch:
-    live:
-      enabled: ${CONFIG_LIVE_ENABLED:true}
+    govern:
       mq: ${CONFIG_LIVE_MQ_ENABLED:false}
       dubbo: true
+      grpc: true
       sofarpc: true
       jsf: true
       spring: true
+      zuul: true
       phevos: true
       rocketmq: true
+      kafka: true
+    live:
+      enabled: ${CONFIG_LIVE_ENABLED:false}
     lane:
-      enabled: ${CONFIG_LANE_ENABLED:false}
+      enabled: ${CONFIG_LANE_ENABLED:${CONFIG_FLOW_CONTROL_ENABLED}}
     transmission:
       enabled: ${CONFIG_TRANSMISSION_ENABLED:true}
       threadpool: ${CONFIG_TRANSMISSION_THREADPOOL_ENABLED:true}
-    registry:
-      enabled: ${CONFIG_REGISTRY_ENABLED:true}
     flowcontrol:
       enabled: ${CONFIG_FLOW_CONTROL_ENABLED:true}
       localhost: ${CONFIG_LOCALHOST_ENABLED:false}
       virtualthread: ${CONFIG_VIRTUAL_THREAD_ENABLED:false}
+      circuitbreaklog: ${CONFIG_CIRCUIT_BREAK_LOG_ENABLED:false}
+    failover:
+      enabled: ${CONFIG_FAILOVER_ENABLED:false}
+      db: ${CONFIG_FAILOVER_DB_ENABLED:${CONFIG_FAILOVER_ENABLED:false}}
+      mq: ${CONFIG_FAILOVER_MQ_ENABLED:${CONFIG_FAILOVER_ENABLED:false}}
+      mongodb: ${CONFIG_FAILOVER_MONGODB_ENABLED:true}
+      rocketmq: ${CONFIG_FAILOVER_ROCKETMQ_ENABLED:true}
+      redis: ${CONFIG_FAILOVER_REDIS_ENABLED:true}
     protect:
       enabled: ${CONFIG_PROTECT_ENABLED:false}
-      mariadb: true
-      postgresql: true
-      opengauss: true
-      mongodb: true
-      redis: false
+      db: ${CONFIG_PROTECT_DB_ENABLED:${CONFIG_PROTECT_ENABLED:false}}
+      mariadb: ${CONFIG_PROTECT_MARIADB_ENABLED:true}
+      mysql: ${CONFIG_PROTECT_MYSQL_ENABLED:true}
+      postgresql: ${CONFIG_PROTECT_POSTGRESQL_ENABLED:true}
+      opengauss: ${CONFIG_PROTECT_OPENGAUSS_ENABLED:true}
+      mongodb: ${CONFIG_PROTECT_MONGODB_ENABLED:true}
+      redis: ${CONFIG_PROTECT_REDIS_ENABLED:false}
     classloader:
       enabled: ${CONFIG_CLASSLOADER_ENABLED:true}
       springboot: true
@@ -115,29 +191,46 @@ agent:
       enabled: true
   governance:
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
+    shutdownWaitTime: ${CONFIG_SHUTDOWN_WAIT_TIME:10000}
     service:
+      localFirst: ${CONFIG_LOCAL_FIRST:true}
+      localFirstMode: ${CONFIG_LOCAL_FIRST_MODE:CELL}
+      cellFailoverThresholds: ${CELL_FAILOVER_THRESHOLDS}
+      serviceGroups: ${CONFIG_SERVICE_GROUPS:}
+      serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}
+      responseException: ${CONFIG_RESPONSE_EXCEPTION:true}
       warmups: ${CONFIG_WARMUP_SERVICES:}
+      systemPaths: ${CONFIG_SYSTEM_HTTP_PATHS}
       concurrencyLimiter:
         type: Resilience4j
         cleanInterval: 30000
         expireTime: 60000
       rateLimiter:
-        type: Resilience4j
+        type: SmoothBursty
         cleanInterval: 30000
         expireTime: 60000
+      loadLimiter:
+        cpuUsage: ${CONFIG_MAX_CPU_USAGE:}
+        loadUsage: ${CONFIG_MAX_LOAD_USAGE:}
       circuitBreaker:
         type: Resilience4j
         cleanInterval: 30000
         expireTime: 60000
+        autoHalfOpenEnabled: ${CONFIG_CIRCUIT_BREAKER_AUTO_HALF_OPEN_ENABLED:false}
       monitor:
         forwardEnabled: ${CONFIG_MONITOR_FORWARD_TRAFFIC_ENABLED:}
         rejectEnabled: true
+    mq:
+      liveMode: ${CONFIG_LIVE_MQ_MODE:ISOLATION_CLUSTER}
+      laneMode: ${CONFIG_LANE_MQ_MODE:SHARED}
+      groupExpression: ${CONFIG_MQ_GROUP_EXPRESSION:${group}${'_lane_'lane}}
+      topics:
+    db:
+      accessMode: ${CONFIG_DB_ACCESS_MODE:READ_WRITE}
     live:
-      topics: ${CONFIG_LIVE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LIVE_MODIFY_MQ_GROUP:true}
+      fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
     lane:
-      topics: ${CONFIG_LANE_TOPICS}
-      modifyMQGroupEnabled: ${CONFIG_LANE_MODIFY_MQ_GROUP:true}
+      fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
     router:
       spring:
         discovery:
@@ -145,6 +238,8 @@ agent:
       phevos:
         groupExpression: ${unit}-${cell}-${group}
     transmission:
+      type: ${CONFIG_TRANSMISSION_TYPE:live}
+      autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:NONE}
       keys:
         - x-live-space-id
         - x-live-rule-id
@@ -157,69 +252,124 @@ agent:
         - x-service-
       thread:
         excludeExecutors:
-          - org.apache.dubbo.common.threadpool.ThreadlessExecutor
-          - org.apache.tomcat.util.threads.ThreadPoolExecutor
-          - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
-          - org.apache.tomcat.util.threads.InlineExecutorService
-          - javax.management.NotificationBroadcasterSupport$1
-          - io.grpc.stub.ClientCalls.ThreadlessExecutor
-          - io.grpc.SynchronizationContext
           - io.netty.channel.MultithreadEventLoopGroup
           - io.netty.channel.nio.NioEventLoop
           - io.netty.channel.SingleThreadEventLoop
           - io.netty.channel.kqueue.KQueueEventLoopGroup
           - io.netty.channel.kqueue.KQueueEventLoop
-          - io.netty.util.concurrent.MultithreadEventExecutorGroup
-          - io.netty.util.concurrent.AbstractEventExecutorGroup
-          - io.netty.util.concurrent.ThreadPerTaskExecutor
-          - io.netty.util.concurrent.GlobalEventExecutor
-          - io.netty.util.concurrent.AbstractScheduledEventExecutor
-          - io.netty.util.concurrent.AbstractEventExecutor
-          - io.netty.util.concurrent.DefaultEventExecutor
-          - io.netty.util.concurrent.SingleThreadEventExecutor
-          - io.netty.util.internal.ThreadExecutorMap$1
-          - reactor.core.scheduler.BoundedElasticScheduler$BoundedScheduledExecutorService
-          - reactor.netty.resources.ColocatedEventLoopGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoopGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.MultithreadEventLoopGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.MultithreadEventExecutorGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutorGroup
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.ThreadPerTaskExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.GlobalEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractScheduledEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.AbstractEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.nio.NioEventLoop
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.channel.SingleThreadEventLoop
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.concurrent.SingleThreadEventExecutor
-          - com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.netty.util.internal.ThreadExecutorMap$1
-          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$ExecutorHolder
-          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$RestrictedScheduledExecutor
-          - com.alibaba.nacos.shaded.io.grpc.internal.ManagedChannelImpl$2
-          - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
-          - com.alibaba.nacos.shaded.io.grpc.stub.ClientCalls.ThreadlessExecutor
-          - com.alibaba.nacos.shaded.io.grpc.SynchronizationContext
-          - com.alibaba.nacos.shaded.com.google.common.util.concurrent.DirectExecutor
+          - org.apache.tomcat.util.threads.ThreadPoolExecutor
+          - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
+          - org.apache.tomcat.util.threads.InlineExecutorService
+          - javax.management.NotificationBroadcasterSupport$1
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory
+          - com.alibaba.druid.pool.DruidAbstractDataSource$SynchronousExecutor
         excludeTasks:
-          - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver.Resolve
-          - com.alibaba.nacos.client.naming.backups.FailoverReactor$DiskFileWriter
-          - com.alibaba.nacos.client.naming.backups.FailoverReactor.SwitchRefresher
-          - com.alibaba.nacos.client.naming.remote.gprc.redo.RedoScheduledTask
-          - com.alibaba.nacos.shaded.io.grpc.internal.DnsNameResolver$Resolve
-          - com.alibaba.nacos.shaded.io.grpc.internal.DelayedClientTransport$5
-          - com.alibaba.nacos.shaded.io.grpc.internal.SerializingExecutor
-          - com.alibaba.nacos.shaded.io.grpc.internal.LogExceptionRunnable
           - com.jd.live.agent.core.thread.NamedThreadFactory
+          - com.jd.jr.sgm.client.disruptor.LogEventFactory
+          - com.jd.jr.sgm.client.util.AgentThreadFactory
+          - com.jd.pfinder.profiler.common.util.NamedThreadFactory
+          - io.opentelemetry.sdk.internal.DaemonThreadFactory
+          - io.sermant.dubbo.registry.factory.RegistryNotifyThreadFactory
+          - io.sermant.dynamic.config.init.DynamicConfigThreadFactory
+          - io.sermant.flowcontrol.common.factory.FlowControlThreadFactory
+          - io.sermant.loadbalancer.factory.LoadbalancerThreadFactory
+          - io.sermant.core.utils.ThreadFactoryUtils
+          - io.sermant.implement.service.xds.handler.XdsHandler.NamedThreadFactory
+          - io.sermant.discovery.factory.RealmServiceThreadFactory
+          - org.apache.skywalking.apm.agent.core.boot.DefaultNamedThreadFactory
+          - sun.rmi.runtime.RuntimeUtil$1
+          - sun.rmi.transport.tcp.TCPTransport$1
+          - sun.rmi.transport.DGCImpl$1
+          - sun.rmi.transport.DGCAckHandler$1
+          - org.apache.tomcat.util.threads.TaskThreadFactory
+        excludeExecutorPrefixes:
+          - com.jd.live.agent.shaded.
+          - com.netflix.hystrix.util.HystrixTimer$ScheduledExecutor$
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory$
+          - com.alibaba.nacos.
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
           - org.springframework.cloud.commons.util.InetUtils$$Lambda$
-          - com.alibaba.nacos.client.auth.ram.identify.CredentialWatcher$
-          - com.alibaba.nacos.client.naming.backups.FailoverReactor$$Lambda$
-          - com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate$$Lambda$
-          - com.alibaba.nacos.common.remote.client.RpcClient$$Lambda$
-          - com.alibaba.nacos.common.utils.ThreadFactoryBuilder$$Lambda$
-          - sun.rmi.transport.tcp.TCPTransport$
-          - sun.rmi.transport.DGCImpl$
-          - sun.rmi.transport.DGCAckHandler$
+          - com.alibaba.nacos.
+          - com.netflix.discovery.
+          - com.jd.live.agent.shaded.
+          - org.apache.catalina.core.ContainerBase$
+          - org.apache.catalina.core.StandardServer$$Lambda$
+          - com.netflix.loadbalancer.PollingServerListUpdater$
+          - com.netflix.hystrix.util.HystrixTimer$
+          - com.netflix.servo.util.ExpiringCache$
+          - com.zaxxer.hikari.pool.HikariPool$
+    configCenter:
+      enabled: ${CONFIG_CENTER_ENABLED:false}
+      type: ${CONFIG_CENTER_TYPE:nacos}
+      address: ${CONFIG_CENTER_ADDRESS:${CONFIG_EXTERNAL_HOST:${CONFIG_INTERNAL_HOST}}:${CONFIG_EXTERNAL_HTTP_PORT:${CONFIG_INTERNAL_HTTP_PORT:8848}}}
+      username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}
+      password: ${CONFIG_CENTER_PASSWORD:${CONFIG_PASSWORD:nacos}}
+      grayEnabled: ${CONFIG_CENTER_GRAY_ENABLED:true}
+      refresh:
+        environmentEnabled: ${CONFIG_CENTER_REFRESH_ENVIRONMENT_ENABLED:false}
+        beanEnabled: ${CONFIG_CENTER_REFRESH_BEAN_ENABLED:true}
+        beanNames: ${CONFIG_CENTER_REFRESH_BEAN_NAMES:}
+        beanClassPrefixes: ${CONFIG_CENTER_REFRESH_BEAN_CLASS_PREFIXES:}
+        ignoreKeys: ${CONFIG_CENTER_REFRESH_IGNORE_KEYS:spring.application.name}
+        ignoreKeyPrefixes: ${CONFIG_CENTER_REFRESH_IGNORE_KEY_PREFIXES:}
+      names: ${CONFIG_CENTER_NAMES:}
+      name:
+        namespace: ${CONFIG_CENTER_NAMESPACE:public}
+        name: ${CONFIG_CENTER_NAME:${APPLICATION_NAME}}
+        profile: ${CONFIG_CENTER_PROFILE:${APPLICATION_SERVICE_GROUP}}
+    registry:
+      enabled: ${CONFIG_REGISTRY_ENABLED:false}
+      registerAppServiceEnabled: ${CONFIG_REGISTER_APP_SERVICE_ENABLED:${REGISTER_APP_SERVICE_ENABLED:false}}
+      subscribeMode: ${CONFIG_REGISTRY_SUBSCRIBE_MODE:AUTO}
+      host:
+        enabled: ${CONFIG_HOST_SERVICE_ENABLED:true}
+        services: ${CONFIG_HOST_SERVICES}
+      clusters:
+        - type: ${CONFIG_REGISTRY_TYPE_FIRST:nacos}
+          role: ${CONFIG_REGISTRY_ROLE_FIRST:SECONDARY}
+          mode: ${CONFIG_REGISTRY_MODE_FIRST:FULL}
+          address: ${CONFIG_REGISTRY_ADDRESS_FIRST:${REGISTRY_EXTERNAL_HOST:${REGISTRY_INTERNAL_HOST}}:${REGISTRY_EXTERNAL_HTTP_PORT:${REGISTRY_INTERNAL_HTTP_PORT:8848}}}
+          username: ${CONFIG_REGISTRY_USERNAME_FIRST:${REGISTRY_USERNAME:}}
+          password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:}}
+          properties: ${CONFIG_REGISTRY_PROPERTIES_FIRST}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:${REGISTRY_NAMESPACE:public}}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
+          denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
+        - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
+          role: ${CONFIG_REGISTRY_ROLE_SECOND:SECONDARY}
+          mode: ${CONFIG_REGISTRY_MODE_SECOND:FULL}
+          address: ${CONFIG_REGISTRY_ADDRESS_SECOND}
+          username: ${CONFIG_REGISTRY_USERNAME_SECOND:${REGISTRY_USERNAME:}}
+          password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:}}
+          properties: ${CONFIG_REGISTRY_PROPERTIES_SECOND}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:${REGISTRY_NAMESPACE:public}}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
+          denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
+        - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
+          role: ${CONFIG_REGISTRY_ROLE_THIRD:SECONDARY}
+          mode: ${CONFIG_REGISTRY_MODE_THIRD:FULL}
+          address: ${CONFIG_REGISTRY_ADDRESS_THIRD}
+          username: ${CONFIG_REGISTRY_USERNAME_THIRD:${REGISTRY_USERNAME:}}
+          properties: ${CONFIG_REGISTRY_PROPERTIES_THIRD}
+          password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:}}
+          namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:${REGISTRY_NAMESPACE:public}}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD:DEFAULT_GROUP}
+          groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
+          denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
+    probe:
+      zookeeper:
+        command: ${CONFIG_PROBE_ZOOKEEPER_COMMAND:srvr}
+        response: ${CONFIG_PROBE_ZOOKEEPER_RESPONSE:}
+      nacos:
+        path: ${CONFIG_PROBE_NACOS_PATH:/nacos/v1/console/health/liveness}
+        response: ${CONFIG_PROBE_NACOS_RESPONSE:OK}
+    redis:
+      command:
+        manage: ${CONFIG_REDIS_MANAGE_COMMANDS:ACL,AUTH,AUTH2,HELLO,PING,QUIT,SELECT,SWAPDB,DBSIZE,FLUSHDB,FLUSHALL,TIME,CONFIG,INFO,SHUTDOWN,MONITOR,SLAVEOF,REPLICAOF,CLIENT,ASKING,READONLY,READWRITE,CLUSTER,SENTINEL,MODULE,LASTSAVE,SAVE,BGSAVE,BGREWRITEAOF,ROLE,FAILOVER,SLOWLOG,LOLWUT,COMMAND,RESET,LATENCY,WAIT,WAITAOF,MULTI,DISCARD,WATCH,UNWATCH}
+        readonly: ${CONFIG_REDIS_READONLY_COMMANDS:GET,GETEX,GETDEL,GETBIT,GETRANGE,MGET,HGET,HMGET,HGETALL,HSTRLEN,HEXISTS,HLEN,HKEYS,HVALS,HRANDFIELD,EXISTS,TYPE,STRLEN,LLEN,LRANGE,LINDEX,LPOS,SCARD,SMEMBERS,SISMEMBER,SMISMEMBER,SRANDMEMBER,ZCARD,ZCOUNT,ZLEXCOUNT,ZRANGE,ZRANGEBYLEX,ZRANGEBYSCORE,ZRANK,ZREVRANGE,ZREVRANGEBYLEX,ZREVRANGEBYSCORE,ZREVRANK,ZSCORE,ZMSCORE,XLEN,XRANGE,XREVRANGE,XINFO,PFCOUNT,BITCOUNT,BITPOS,BITFIELD_RO,LCS,GEODIST,GEOHASH,GEOPOS,GEORADIUS_RO,GEOSEARCH,GEORADIUSBYMEMBER_RO}
   counter:
     gateway: true
     service: true

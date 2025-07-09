@@ -19,11 +19,6 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Functional interface representing a shutdown hook.
- * <p>
- * A shutdown hook is a thread that is executed when the program is shutting down.
- * This interface defines a method to run during the shutdown process with an optional
- * priority that determines the order of execution if multiple hooks are present.
- * </p>
  */
 @FunctionalInterface
 public interface ShutdownHook {
@@ -35,23 +30,13 @@ public interface ShutdownHook {
 
     /**
      * Executes the shutdown hook logic asynchronously.
-     * <p>
-     * This method should contain the logic to be performed during the shutdown
-     * process. It returns a {@link CompletableFuture} which can be used to
-     * track the completion of the hook execution.
-     * </p>
      *
      * @return a CompletableFuture representing the pending completion of the hook
      */
-    CompletableFuture<Void> run();
+    CompletableFuture<Void> stop();
 
     /**
      * Returns the priority of this shutdown hook.
-     * <p>
-     * The priority is used to determine the order in which shutdown hooks are called.
-     * A lower number indicates a higher priority. If not overridden, the default
-     * priority ({@value #DEFAULT_PRIORITY}) is returned.
-     * </p>
      *
      * @return the priority of the hook
      */

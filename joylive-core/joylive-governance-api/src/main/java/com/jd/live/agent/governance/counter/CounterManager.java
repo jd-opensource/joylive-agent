@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.instance.counter;
+package com.jd.live.agent.governance.counter;
 
 /**
  * An interface that provides methods to manage and retrieve {@link ServiceCounter} instances
@@ -22,6 +22,14 @@ package com.jd.live.agent.governance.instance.counter;
  * for individual services within a group.
  */
 public interface CounterManager {
+
+    /**
+     * Gets the current flying request instance.
+     *
+     * @return the flying request object, or null if not available
+     */
+    FlyingCounter getFlyingCounter();
+
     /**
      * Retrieves an existing {@link ServiceCounter} associated with the specified service and group,
      * or creates a new one if it does not already exist.

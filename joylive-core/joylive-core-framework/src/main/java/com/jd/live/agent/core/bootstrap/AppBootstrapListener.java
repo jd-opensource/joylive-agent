@@ -58,8 +58,8 @@ public class AppBootstrapListener extends AppListenerAdapter {
     }
 
     @Override
-    public void onStop(AppContext context) {
-        publisher.offer(AgentEvent.onApplicationStop("Application is stopping"));
+    public void onCLose(AppContext context) {
+        publisher.offer(AgentEvent.onApplicationCLose("Application is closing"));
     }
 
 }

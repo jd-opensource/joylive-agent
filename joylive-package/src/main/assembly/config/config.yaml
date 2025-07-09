@@ -23,6 +23,15 @@ agent:
       - com.huaweicloud.sermant.core.plugin.classloader.PluginClassLoader
       - com.huaweicloud.sermant.core.plugin.classloader.ServiceClassLoader
       - com.alipay.sofa.ark.container.service.classloader.PluginClassLoader
+    addOpens:
+      com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory:
+        - java.util.Map
+        - jdk.internal.misc.Unsafe
+        - sun.misc.Unsafe
+      com.jd.live.agent.governance.invoke.Invocation:
+        - java.util.Map
+      com.jd.live.agent.core.util.http.HttpUtils:
+        - java.net.URI
   timer:
     workerThreads: ${CONFIG_TIMER_WORKER_THREADS:4}
   publisher:
@@ -182,6 +191,7 @@ agent:
       enabled: true
   governance:
     initializeTimeout: ${CONFIG_POLICY_INITIALIZE_TIMEOUT:10000}
+    shutdownWaitTime: ${CONFIG_SHUTDOWN_WAIT_TIME:10000}
     service:
       localFirst: ${CONFIG_LOCAL_FIRST:true}
       localFirstMode: ${CONFIG_LOCAL_FIRST_MODE:CELL}

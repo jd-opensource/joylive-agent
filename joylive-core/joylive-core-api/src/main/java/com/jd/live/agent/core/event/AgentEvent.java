@@ -178,8 +178,8 @@ public class AgentEvent {
      * @param message the message describing the event
      * @return a new AgentEvent of type APPLICATION_STOP
      */
-    public static AgentEvent onApplicationStop(String message) {
-        return new AgentEvent(EventType.APPLICATION_STOP, message);
+    public static AgentEvent onApplicationCLose(String message) {
+        return new AgentEvent(EventType.APPLICATION_CLOSE, message);
     }
 
     /**
@@ -239,9 +239,9 @@ public class AgentEvent {
         APPLICATION_READY,
 
         /**
-         * Indicates that the application is stopping.
+         * Indicates that the application is closing.
          */
-        APPLICATION_STOP
+        APPLICATION_CLOSE
 
     }
 

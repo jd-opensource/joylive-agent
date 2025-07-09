@@ -22,10 +22,15 @@ import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
+import com.jd.live.agent.core.util.shutdown.ShutdownHook;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWaitTime;
 
 /**
  * The ServiceManager class is responsible for managing a collection of services that implement the
@@ -35,7 +40,7 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 @Injectable
-public class ServiceManager implements ServiceSupervisor {
+public class ServiceManager implements ServiceSupervisor, ShutdownHook, GracefullyShutdown {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
@@ -51,30 +56,49 @@ public class ServiceManager implements ServiceSupervisor {
     @Inject
     private List<AgentService> services;
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+
     @Override
     public List<AgentService> getServices() {
         return services;
     }
 
+    /**
+     * Starts all services asynchronously. Returns immediately if already started.
+     * Upon successful start, publishes AGENT_SERVICE_READY event.
+     *
+     * @return Future that completes when services are started,
+     * or completed future if already running
+     */
     public CompletableFuture<Void> start() {
-        return execute(this::startService, s -> "Service " + s.getName() + " is started.").whenComplete((v, t) -> {
-            if (t == null) {
-                publisher.offer(new AgentEvent(EventType.AGENT_SERVICE_READY, "All services are started."));
-            }
-        });
+        if (started.compareAndSet(false, true)) {
+            return execute(this::startService, s -> "Service " + s.getName() + " is started.").whenComplete((v, t) -> {
+                if (t == null) {
+                    publisher.offer(new AgentEvent(EventType.AGENT_SERVICE_READY, "All services are started."));
+                }
+            });
+        } else {
+            return CompletableFuture.completedFuture(null);
+        }
+
     }
 
+    /**
+     * Stops all services asynchronously. Returns immediately if not running.
+     *
+     * @return Future that completes when services are stopped,
+     * or completed future if already stopped
+     */
     public CompletableFuture<Void> stop() {
-        return execute(AgentService::stop, s -> "Service " + s.getName() + " is stopped.");
+        if (started.compareAndSet(true, false)) {
+            return execute(AgentService::stop, s -> "Service " + s.getName() + " is stopped.");
+        } else {
+            return CompletableFuture.completedFuture(null);
+        }
     }
 
     /**
      * Gracefully shuts down the service.
-     * <p>
-     * This method attempts to stop the service by calling its {@code stop} method and then waits for the
-     * termination process to complete. It ensures that the service is properly shut down by joining the
-     * termination process, thereby blocking until the service has fully stopped.
-     * </p>
      */
     public void close() {
         try {
@@ -82,6 +106,11 @@ public class ServiceManager implements ServiceSupervisor {
         } catch (Throwable e) {
             logger.warn("Failed to shutdown service, caused by " + e.getMessage());
         }
+    }
+
+    @Override
+    public int getWaitTime() {
+        return getMaxWaitTime(services);
     }
 
     /**

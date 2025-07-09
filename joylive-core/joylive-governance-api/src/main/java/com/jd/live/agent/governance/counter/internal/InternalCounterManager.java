@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.instance.counter.internal;
+package com.jd.live.agent.governance.counter.internal;
 
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.instance.counter.ServiceCounter;
-import com.jd.live.agent.governance.instance.counter.CounterManager;
+import com.jd.live.agent.governance.counter.CounterManager;
+import com.jd.live.agent.governance.counter.FlyingCounter;
+import com.jd.live.agent.governance.counter.ServiceCounter;
+import lombok.Getter;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InternalCounterManager implements CounterManager {
 
     private final Timer timer;
+
+    @Getter
+    private final FlyingCounter flyingCounter = new InternalFlyingCounter();
 
     private final Map<String, ServiceCounter> counter = new ConcurrentHashMap<>();
 

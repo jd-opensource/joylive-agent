@@ -65,17 +65,17 @@ public class ShutdownHookGroup implements ShutdownHook {
 
     @SuppressWarnings("unchecked")
     @Override
-    public CompletableFuture<Void> run() {
+    public CompletableFuture<Void> stop() {
         switch (hooks.size()) {
             case 0:
                 return CompletableFuture.completedFuture(null);
             case 1:
-                return hooks.get(0).run();
+                return hooks.get(0).stop();
             default:
                 CompletableFuture<Void>[] futures = new CompletableFuture[hooks.size()];
                 int i = 0;
                 for (ShutdownHook hook : hooks) {
-                    futures[i++] = hook.run();
+                    futures[i++] = hook.stop();
                 }
                 return CompletableFuture.allOf(futures);
         }

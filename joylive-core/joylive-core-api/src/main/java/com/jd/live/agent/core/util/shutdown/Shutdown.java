@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWaitTime;
+
 /**
  * Manages the orderly shutdown of application components, ensuring that all registered
  * {@link ShutdownHook} instances are executed within a specified timeout period.
@@ -38,27 +40,27 @@ public class Shutdown {
 
     private static final Logger logger = LoggerFactory.getLogger(Shutdown.class);
 
-    private static final int DEFAULT_TIMEOUT = 10 * 1000;
-
     private final List<ShutdownHook> hooks = new CopyOnWriteArrayList<>();
 
     private final AtomicBoolean register = new AtomicBoolean();
 
     private final AtomicBoolean shutdown = new AtomicBoolean();
 
-    private final long timeout;
+    private final int waitTime;
 
     private final Thread shutdownTask;
 
     public Shutdown() {
-        this(DEFAULT_TIMEOUT);
+        this(GracefullyShutdown.DEFAULT_SHUTDOWN_WAIT_TIME);
     }
 
-    public Shutdown(long timeout) {
-        this.timeout = timeout;
+    public Shutdown(int waitTime) {
+        this.waitTime = waitTime <= 0 ? GracefullyShutdown.DEFAULT_SHUTDOWN_WAIT_TIME : waitTime;
         this.shutdownTask = new Thread(() -> {
             try {
-                doShutdown().get(this.timeout, TimeUnit.MILLISECONDS);
+                int maxWaitTime = getMaxWaitTime(hooks, this.waitTime);
+                logger.info("Shutdown after waiting for a maximum of {} ms", maxWaitTime);
+                doShutdown().get(maxWaitTime, TimeUnit.MILLISECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException ignored) {
             }
         }, "LiveAgent-Shutdown");
@@ -80,20 +82,18 @@ public class Shutdown {
             return CompletableFuture.completedFuture(null);
         }
         logger.info("LiveAgent shutdown....");
-        CompletableFuture<Void> result = null;
+        CompletableFuture<Void> result;
         if (!hooks.isEmpty()) {
             List<ShutdownHookGroup> groups = sortGroup();
-
+            List<CompletableFuture<Void>> futures = new ArrayList<>(groups.size());
             // Sequentially execute hooks
             for (ShutdownHookGroup group : groups) {
-                if (result == null) {
-                    result = group.run();
-                } else {
-                    result = result.handle((t, r) -> group.run().join());
-                }
+                futures.add(group.stop());
             }
+            result = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        } else {
+            result = CompletableFuture.completedFuture(null);
         }
-        result = result == null ? CompletableFuture.completedFuture(null) : result;
         return result.whenComplete((r, t) -> {
             if (t == null) {
                 logger.info("LiveAgent shutdown successfully.");
@@ -155,17 +155,6 @@ public class Shutdown {
     public void addHook(ShutdownHook hook) {
         if (hook != null) {
             hooks.add(hook);
-        }
-    }
-
-    /**
-     * Adds a {@link Runnable} as a shutdown hook to be executed during the shutdown process.
-     *
-     * @param runnable the {@code Runnable} to add as a shutdown hook
-     */
-    public void addHook(Runnable runnable) {
-        if (runnable != null) {
-            addHook(new ShutdownHookAdapter(runnable));
         }
     }
 

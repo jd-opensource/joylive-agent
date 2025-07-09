@@ -70,14 +70,24 @@ public class ShutdownHookAdapter implements ShutdownHook {
         this.priority = priority;
     }
 
+    public ShutdownHookAdapter(ShutdownHook hook) {
+        this.hook = hook;
+        this.priority = hook.priority();
+    }
+
+    public ShutdownHookAdapter(ShutdownHook hook, int priority) {
+        this.hook = hook;
+        this.priority = priority;
+    }
+
     /**
      * Executes the wrapped shutdown logic.
      *
      * @return a CompletableFuture representing the pending completion of the hook
      */
     @Override
-    public CompletableFuture<Void> run() {
-        return hook.run();
+    public CompletableFuture<Void> stop() {
+        return hook.stop();
     }
 
     /**

@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.policy;
 
+import com.jd.live.agent.governance.counter.CounterManager;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -80,5 +82,7 @@ public interface PolicySupplier {
      * {@code false} otherwise
      */
     boolean isReady(String namespace, String service);
+
+    CounterManager getCounterManager();
 }
 
