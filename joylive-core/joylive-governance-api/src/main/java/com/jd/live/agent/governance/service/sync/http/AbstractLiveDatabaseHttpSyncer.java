@@ -47,7 +47,6 @@ public abstract class AbstractLiveDatabaseHttpSyncer extends AbstractLiveDatabas
         return new Template(((LiveSpaceAddress) getSyncConfig()).getLiveSpaceUrl());
     }
 
-
     @Override
     protected HttpLiveDatabaseKey createSpaceKey(String spaceId) {
         return new HttpLiveDatabaseKey(new HttpResource() {

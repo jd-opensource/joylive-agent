@@ -17,10 +17,11 @@ package com.jd.live.agent.core.inject.jbind.converter.supplier;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.jbind.*;
-import com.jd.live.agent.core.util.StringUtils;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.StringUtils.split;
 
 @Extension(value = "String2MapSupplier", order = ConverterSupplier.STRING_TO_MAP_ORDER)
 public class String2MapSupplier implements ConverterSupplier {
@@ -35,10 +36,11 @@ public class String2MapSupplier implements ConverterSupplier {
         return String2MapConverter.INSTANCE;
     }
 
-    public static class String2MapConverter extends AbstractMapConverter {
+    private static class String2MapConverter extends AbstractMapConverter {
 
-        protected static final Converter INSTANCE = new String2MapConverter();
+        private static final Converter INSTANCE = new String2MapConverter();
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         public Object convert(Conversion conversion) throws Exception {
             TypeInfo typeInfo = conversion.getTargetType();
@@ -47,12 +49,15 @@ public class String2MapSupplier implements ConverterSupplier {
             if (result != null) {
                 String value = conversion.getSource().toString();
                 if (value != null && !value.isEmpty()) {
-                    //TODO Support standard JSON format
-                    String[] keyValues = StringUtils.split(value, ';');
-                    for (String keyValue : keyValues) {
-                        int pos = keyValue.indexOf('=');
-                        if (pos > 0) {
-                            result.put(keyValue.substring(0, pos), keyValue.substring(pos + 1));
+                    if (value.startsWith("{") && value.endsWith("}")) {
+                        // TODO Support standard JSON format
+                    } else {
+                        String[] keyValues = split(value, ';');
+                        for (String keyValue : keyValues) {
+                            int pos = keyValue.indexOf('=');
+                            if (pos > 0) {
+                                result.put(keyValue.substring(0, pos), keyValue.substring(pos + 1));
+                            }
                         }
                     }
                 }

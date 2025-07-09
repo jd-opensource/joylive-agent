@@ -48,7 +48,7 @@ public abstract class AbstractLiveDatabaseSyncer<K1 extends LiveSpaceKey> extend
     protected void startSync() throws Exception {
         Location location = application.getLocation();
         String liveSpaceId = location == null ? null : location.getLiveSpaceId();
-        if (liveSpaceId != null && liveSpaceId.isEmpty()) {
+        if (liveSpaceId != null && !liveSpaceId.isEmpty()) {
             syncDatabase(liveSpaceId);
         }
     }
