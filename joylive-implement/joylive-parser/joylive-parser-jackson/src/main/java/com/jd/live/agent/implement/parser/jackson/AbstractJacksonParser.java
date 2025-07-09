@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.parser.jackson;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.parser.ConfigParser;
@@ -64,10 +65,12 @@ public abstract class AbstractJacksonParser implements ConfigParser, ObjectParse
      * @param mapper the ObjectMapper to configure.
      * @return the configured ObjectMapper.
      */
+    @SuppressWarnings("deprecation")
     protected ObjectMapper configure(ObjectMapper mapper) {
-        return mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).
-                setSerializationInclusion(JsonInclude.Include.NON_NULL).
-                setAnnotationIntrospector(new JsonAnnotationIntrospector());
+        return mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(MapperFeature.PROPAGATE_TRANSIENT_MARKER, true)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .setAnnotationIntrospector(new JsonAnnotationIntrospector());
     }
 
     @SuppressWarnings("unchecked")

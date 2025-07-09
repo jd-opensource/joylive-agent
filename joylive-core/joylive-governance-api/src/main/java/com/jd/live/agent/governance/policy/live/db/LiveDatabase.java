@@ -61,7 +61,6 @@ public class LiveDatabase {
     private AccessMode accessMode;
 
     @Getter
-    @Setter
     private transient LiveDatabaseGroup group;
 
     @Getter
@@ -69,6 +68,13 @@ public class LiveDatabase {
 
     @Getter
     private transient Set<String> nodes;
+
+    // @JacksonIgnore for getWriteDatabase
+    private transient LiveDatabase writeDatabase;
+
+    protected void setGroup(LiveDatabaseGroup group) {
+        this.group = group;
+    }
 
     public LiveDatabase getWriteDatabase() {
         if (role == LiveDatabaseRole.MASTER) {
