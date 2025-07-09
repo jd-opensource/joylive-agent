@@ -69,7 +69,7 @@ public class H2UrlParser extends AbstractUrlParser {
     }
 
     @Override
-    protected char getParameterDelimiter() {
+    protected char getParameterBeginDelimiter() {
         return ';';
     }
 

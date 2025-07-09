@@ -16,8 +16,8 @@
 package com.jd.live.agent.governance.db.parser.postgresql;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.db.parser.AbstractUrlParser;
 import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
+import com.jd.live.agent.governance.db.parser.AbstractUrlParser;
 
 @Extension("postgresql")
 public class PostgresqlUrlParser extends AbstractUrlParser {
@@ -45,7 +45,7 @@ public class PostgresqlUrlParser extends AbstractUrlParser {
     }
 
     @Override
-    protected String getDefaultHost() {
+    protected String getDefaultHost(DbUrlBuilder builder) {
         return "localhost";
     }
 }

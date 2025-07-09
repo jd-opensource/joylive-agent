@@ -24,7 +24,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.StringUtils.*;
+import static com.jd.live.agent.core.util.StringUtils.split;
+import static com.jd.live.agent.core.util.StringUtils.splitMap;
 
 /**
  * Abstract base class for parsing database connection URLs.
@@ -124,12 +125,15 @@ public abstract class AbstractUrlParser implements DbUrlParser {
      */
     protected String parserParameter(String url, DbUrlBuilder builder) {
         // query
-        int pos = url == null ? -1 : url.indexOf(getParameterDelimiter());
+        char beginDelimiter = getParameterBeginDelimiter();
+        char delimiter = getParameterDelimiter();
+        int pos = url == null ? -1 : getParameterIndex(url, beginDelimiter);
         if (pos >= 0) {
             String parameter = url.substring(pos + 1);
-            builder.parameter(parameter);
-            builder.parameters(splitMap(parameter, QUERY));
-            builder.parameterPart(url.substring(pos));
+            builder.parameterBeginDelimiter(beginDelimiter)
+                    .parameterDelimiter(delimiter)
+                    .parameters(splitMap(parameter, o -> o == delimiter))
+                    .parameterPart(url.substring(pos));
             url = url.substring(0, pos);
         }
         return url;
@@ -141,8 +145,7 @@ public abstract class AbstractUrlParser implements DbUrlParser {
     protected String parserScheme(String url, DbUrlBuilder builder) {
         int pos = url == null ? -1 : url.indexOf("://");
         if (pos >= 0) {
-            builder.scheme(url.substring(0, pos));
-            builder.schemePart(url.substring(0, pos + 3));
+            builder.scheme(url.substring(0, pos)).schemePart(url.substring(0, pos + 3));
             url = url.substring(pos + 3);
         }
         return url;
@@ -163,8 +166,7 @@ public abstract class AbstractUrlParser implements DbUrlParser {
             url = url.substring(pos + 1);
             pos = secure.indexOf(':');
             if (pos >= 0) {
-                builder.user(secure.substring(0, pos));
-                builder.password(secure.substring(pos + 1));
+                builder.user(secure.substring(0, pos)).password(secure.substring(pos + 1));
             }
         }
         return url;
@@ -176,7 +178,7 @@ public abstract class AbstractUrlParser implements DbUrlParser {
     protected void parseHosts(String url, DbUrlBuilder builder) {
         // jdbc:mysql://[host:port],[host:port].../[database]
         if (url == null || url.isEmpty()) {
-            url = getDefaultHost();
+            url = getDefaultHost(builder);
         }
         String[] hosts = split(url, ',');
         if (hosts.length != 0) {
@@ -188,11 +190,19 @@ public abstract class AbstractUrlParser implements DbUrlParser {
         }
     }
 
-    protected char getParameterDelimiter() {
+    protected int getParameterIndex(String url, char beginDelimiter) {
+        return url.indexOf(beginDelimiter, url.lastIndexOf('/') + 1);
+    }
+
+    protected char getParameterBeginDelimiter() {
         return '?';
     }
 
-    protected String getDefaultHost() {
+    protected char getParameterDelimiter() {
+        return '&';
+    }
+
+    protected String getDefaultHost(DbUrlBuilder builder) {
         return null;
     }
 

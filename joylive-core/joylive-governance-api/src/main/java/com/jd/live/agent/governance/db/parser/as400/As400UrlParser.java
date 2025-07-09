@@ -22,7 +22,7 @@ import com.jd.live.agent.governance.db.parser.AbstractUrlParser;
 public class As400UrlParser extends AbstractUrlParser {
 
     @Override
-    protected char getParameterDelimiter() {
+    protected char getParameterBeginDelimiter() {
         return ';';
     }
 }

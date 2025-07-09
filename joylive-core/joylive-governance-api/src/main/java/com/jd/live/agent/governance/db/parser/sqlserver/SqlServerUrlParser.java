@@ -16,10 +16,8 @@
 package com.jd.live.agent.governance.db.parser.sqlserver;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.db.parser.AbstractUrlParser;
 import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
-
-import static com.jd.live.agent.core.util.StringUtils.splitMap;
+import com.jd.live.agent.governance.db.parser.AbstractUrlParser;
 
 @Extension("sqlserver")
 public class SqlServerUrlParser extends AbstractUrlParser {
@@ -31,16 +29,16 @@ public class SqlServerUrlParser extends AbstractUrlParser {
         if (pos >= 0) {
             builder.database(path.substring(pos + 1));
         } else {
-            String parameter = builder.getParameter();
-            if (parameter != null && !parameter.isEmpty()) {
-                splitMap(parameter, c -> c == ';', true, (key, value) -> {
-                    if (key.equalsIgnoreCase("databaseName")) {
-                        builder.database(value);
-                    }
-                    return true;
-                });
+            String database = builder.getParameter("databaseName");
+            if (database != null && !database.isEmpty()) {
+                builder.database(database);
             }
         }
+    }
+
+    @Override
+    protected char getParameterBeginDelimiter() {
+        return ';';
     }
 
     @Override

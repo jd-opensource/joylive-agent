@@ -466,10 +466,10 @@ public class StringUtils {
      *
      * @param source    The source string to be split.
      * @param predicate A character predicate that determines whether a character should be considered a key-value separator.
-     * @return A map of key-value pairs.
+     * @return A linked hashmap of key-value pairs.
      */
     public static Map<String, String> splitMap(final String source, final Predicate<Character> predicate) {
-        Map<String, String> result = new HashMap<>();
+        Map<String, String> result = new LinkedHashMap<>();
         splitMap(source, predicate, true, (key, value) -> {
             result.put(key, value);
             return true;

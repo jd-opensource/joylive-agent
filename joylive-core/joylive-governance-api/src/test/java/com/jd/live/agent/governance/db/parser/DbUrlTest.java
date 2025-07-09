@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.db;
+package com.jd.live.agent.governance.db.parser;
 
-import com.jd.live.agent.governance.db.parser.DefaultUrlParser;
+import com.jd.live.agent.governance.db.DbUrl;
+import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.db.parser.as400.As400UrlParser;
 import com.jd.live.agent.governance.db.parser.clickhouse.ClickhouselParser;
 import com.jd.live.agent.governance.db.parser.db2.Db2UrlParser;
@@ -171,7 +172,7 @@ public class DbUrlTest {
         Assertions.assertEquals("jdbc:db2", url.getScheme());
         Assertions.assertEquals("localhost:50000", url.getAddress());
         Assertions.assertEquals("test", url.getDatabase());
-        Assertions.assertEquals("a=true", url.getParameter());
+        Assertions.assertEquals("true", url.getParameter("a"));
         Assertions.assertEquals("jdbc:db2://localhost:50000/test:a=true", url.toString());
     }
 
@@ -242,5 +243,34 @@ public class DbUrlTest {
         Assertions.assertEquals("127.0.0.1:1001", url.getAddress());
         Assertions.assertEquals("database1", url.getDatabase());
         Assertions.assertEquals("jdbc:sybase:Tds:127.0.0.1:1001/database1?property_name=value", url.toString());
+    }
+
+    @Test
+    void testDm() {
+        DbUrl url = DbUrlParser.parse("jdbc:dm://127.0.0.1:1111/database", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:dm", url.getScheme());
+        Assertions.assertEquals("dm", url.getType());
+        Assertions.assertEquals("127.0.0.1:1111", url.getAddress());
+        Assertions.assertEquals("database", url.getDatabase());
+        Assertions.assertEquals("jdbc:dm://127.0.0.1:1111/database", url.toString());
+
+        url = DbUrlParser.parse("jdbc:dm://?host=192.168.0.96&port=5236", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:dm", url.getScheme());
+        Assertions.assertEquals("dm", url.getType());
+        Assertions.assertEquals("192.168.0.96:5236", url.getAddress());
+        Assertions.assertEquals("jdbc:dm://?host=192.168.0.96&port=5236", url.toString());
+        url = url.address("192.168.0.97:5236");
+        Assertions.assertEquals("jdbc:dm://?host=192.168.0.97&port=5236", url.toString());
+
+        url = DbUrlParser.parse("jdbc:dm://test?test=(192.168.0.96:5236,192.168.0.96:5237)", PARSERS::get);
+        Assertions.assertNotNull(url);
+        Assertions.assertEquals("jdbc:dm", url.getScheme());
+        Assertions.assertEquals("dm", url.getType());
+        Assertions.assertEquals("test", url.getAddress());
+        Assertions.assertEquals("jdbc:dm://test?test=(192.168.0.96:5236,192.168.0.96:5237)", url.toString());
+        url = url.address("192.168.0.97:5236,192.168.0.97:5237");
+        Assertions.assertEquals("jdbc:dm://test?test=(192.168.0.97:5236,192.168.0.97:5237)", url.toString());
     }
 }

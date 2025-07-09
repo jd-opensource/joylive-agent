@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.db.parser.db2;
+package com.jd.live.agent.governance.db;
 
-import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.db.parser.AbstractUrlParser;
+import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 
-@Extension("db2")
-public class Db2UrlParser extends AbstractUrlParser {
+@FunctionalInterface
+public interface DbUrlAddressUpdater {
 
-    @Override
-    protected char getParameterBeginDelimiter() {
-        return ':';
-    }
+    void update(String address, DbUrlBuilder builder);
 
-    @Override
-    protected int getParameterIndex(String url, char beginDelimiter) {
-        return url.lastIndexOf(beginDelimiter);
-    }
 }
