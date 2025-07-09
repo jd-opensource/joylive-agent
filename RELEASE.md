@@ -14,7 +14,8 @@
 10. Added support for JWT authentication 
 11. Enhanced Dubbo framework compatibility and support 
 12. Improved message routing in multi-active scenarios 
-13. Fixed miscellaneous issues
+13. Improved the graceful shutdown process by rejecting new requests, deregistering instances first, and waiting for existing requests to complete before shutting down the thread pool, with a default timeout of 10 seconds.
+14. Fixed miscellaneous issues
 
 ## 1.7.0
 
