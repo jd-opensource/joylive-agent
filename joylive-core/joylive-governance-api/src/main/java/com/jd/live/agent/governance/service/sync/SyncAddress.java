@@ -69,6 +69,19 @@ public interface SyncAddress {
          */
         String getServiceUrl();
     }
+
+    /**
+     * An interface that defines the configuration for an HTTP service.
+     */
+    interface DatabaseAddress {
+
+        /**
+         * Returns the URL of the HTTP service.
+         *
+         * @return The URL of the HTTP service.
+         */
+        String getDatabaseUrl();
+    }
 }
 
 

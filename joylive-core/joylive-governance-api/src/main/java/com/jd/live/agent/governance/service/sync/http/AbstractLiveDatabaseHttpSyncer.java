@@ -21,7 +21,6 @@ import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.template.Template;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.service.sync.*;
-import com.jd.live.agent.governance.service.sync.SyncAddress.LiveSpaceAddress;
 import com.jd.live.agent.governance.service.sync.SyncKey.HttpSyncKey;
 import com.jd.live.agent.governance.service.sync.SyncKey.LiveSpaceKey;
 import com.jd.live.agent.governance.service.sync.api.ApiResponse;
@@ -38,13 +37,13 @@ public abstract class AbstractLiveDatabaseHttpSyncer extends AbstractLiveDatabas
 
     protected static final String SPACE_ID = "space_id";
 
-    protected static final String SPACE_VERSION = "space_version";
+    protected static final String DATABASE_VERSION = "database_version";
 
     protected HttpWatcher watcher;
 
     @Override
     protected Template createTemplate() {
-        return new Template(((LiveSpaceAddress) getSyncConfig()).getLiveSpaceUrl());
+        return new Template(((SyncAddress.DatabaseAddress) getSyncConfig()).getDatabaseUrl());
     }
 
     @Override
@@ -60,7 +59,7 @@ public abstract class AbstractLiveDatabaseHttpSyncer extends AbstractLiveDatabas
                 Subscription<AbstractLiveDatabaseHttpSyncer.HttpLiveDatabaseKey, LiveDatabaseSpec> subscription = subscriptions.get(spaceId);
                 Map<String, Object> context = new HashMap<>(2);
                 context.put(SPACE_ID, spaceId);
-                context.put(SPACE_VERSION, subscription == null ? 0 : subscription.getVersion());
+                context.put(DATABASE_VERSION, subscription == null ? 0 : subscription.getVersion());
                 context.put(APPLICATION, application.getName());
                 return template.render(context);
             }

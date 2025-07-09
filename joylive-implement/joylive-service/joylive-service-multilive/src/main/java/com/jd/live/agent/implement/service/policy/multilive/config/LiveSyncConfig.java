@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.service.policy.multilive.config;
 
 import com.jd.live.agent.governance.config.SyncConfig;
+import com.jd.live.agent.governance.service.sync.SyncAddress.DatabaseAddress;
 import com.jd.live.agent.governance.service.sync.SyncAddress.LiveSpaceAddress;
 import com.jd.live.agent.governance.service.sync.SyncAddress.ServiceAddress;
 import lombok.Setter;
@@ -26,7 +27,7 @@ import lombok.Setter;
  * @since 1.0.0
  */
 @Setter
-public class LiveSyncConfig extends SyncConfig implements ServiceAddress, LiveSpaceAddress {
+public class LiveSyncConfig extends SyncConfig implements ServiceAddress, LiveSpaceAddress, DatabaseAddress {
 
     private LiveConfig multilive = new LiveConfig();
 

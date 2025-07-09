@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.live.db;
 
+import com.jd.live.agent.core.parser.json.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.MapBuilder;
@@ -30,6 +31,7 @@ public class LiveDatabaseSpec implements LiveDatabaseSupervisor {
 
     @Getter
     @Setter
+    @JsonAlias("spaceId")
     private String id;
 
     @Getter
