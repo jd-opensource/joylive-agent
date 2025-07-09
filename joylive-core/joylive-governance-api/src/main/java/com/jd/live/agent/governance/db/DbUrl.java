@@ -22,7 +22,6 @@ import lombok.Getter;
 import java.util.*;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.StringUtils.split;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 @AllArgsConstructor
@@ -107,23 +106,11 @@ public class DbUrl {
         DbUrl.DbUrlBuilder builder = DbUrl.builder(this);
         if (addressUpdater != null) {
             addressUpdater.update(address, builder);
-            builder.nodes(getList(address));
+            builder.nodes(parse(address));
         } else {
-            builder.address(address).nodes(getList(address));
+            builder.address(address).nodes(parse(address));
         }
         return builder.build();
-    }
-
-    public static List<Address> parseNodes(String address) {
-        if (address == null || address.isEmpty()) {
-            return null;
-        }
-        String[] hosts = split(address, ',');
-        List<Address> nodes = new ArrayList<>(hosts.length);
-        for (String host : hosts) {
-            nodes.add(Address.parse(host));
-        }
-        return nodes;
     }
 
     public String getParameter(String key) {
@@ -138,6 +125,13 @@ public class DbUrl {
         return address != null && !address.isEmpty();
     }
 
+    public String[] getAddresses() {
+        if (nodes == null) {
+            return null;
+        }
+        return toList(nodes, Address::getAddress).toArray(new String[0]);
+    }
+
     public static DbUrlBuilder builder() {
         return new DbUrlBuilder();
     }
@@ -146,7 +140,7 @@ public class DbUrl {
         return new DbUrlBuilder(url);
     }
 
-    public static List<Address> getList(String address) {
+    public static List<Address> parse(String address) {
         return toList(splitList(address), Address::parse);
     }
 

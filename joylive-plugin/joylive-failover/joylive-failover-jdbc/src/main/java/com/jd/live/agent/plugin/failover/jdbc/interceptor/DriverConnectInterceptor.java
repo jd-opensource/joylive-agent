@@ -49,7 +49,7 @@ public class DriverConnectInterceptor extends AbstractDbConnectionInterceptor<Db
         // none tcp address, such as jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
         DbUrl dbUrl = ds.getUrl();
         AccessMode accessMode = getAccessMode(ds.getPoolName(), dbUrl, ctx.getArgument(1));
-        DbCandidate candidate = connectionSupervisor.getCandidate(dbUrl.getType(), dbUrl.getAddress(), accessMode, PRIMARY_ADDRESS_RESOLVER);
+        DbCandidate candidate = connectionSupervisor.getCandidate(dbUrl.getType(), dbUrl.getAddresses(), accessMode, PRIMARY_ADDRESS_RESOLVER);
         String newAddress = candidate.getNewAddress();
         // redirect new address
         if (candidate.isRedirected()) {
