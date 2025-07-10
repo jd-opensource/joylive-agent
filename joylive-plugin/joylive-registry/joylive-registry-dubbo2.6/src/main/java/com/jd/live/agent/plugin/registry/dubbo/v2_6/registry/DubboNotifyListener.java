@@ -40,6 +40,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
 
     private static final Logger logger = LoggerFactory.getLogger(DubboNotifyListener.class);
 
+    @Getter
     private final URL url;
 
     private final ServiceId serviceId;

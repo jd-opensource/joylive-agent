@@ -23,6 +23,7 @@ import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
+import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.plugin.registry.nacos.v2_4.instance.NacosEndpoint;
 import lombok.Setter;
 
@@ -64,6 +65,11 @@ public class NacosRegistryService extends AbstractSystemRegistryService implemen
     @Override
     protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
         return client == null ? new ArrayList<>() : convert(client.getAllInstances(serviceId.getService(), serviceId.getGroup()));
+    }
+
+    @Override
+    public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
+        client.deregisterInstance(serviceId.getService(), serviceId.getGroup(), instance.getHost(), instance.getPort());
     }
 
     @Override
