@@ -668,6 +668,11 @@
                 <artifactId>joylive-failover-lettuce6</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-failover-redisson3</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

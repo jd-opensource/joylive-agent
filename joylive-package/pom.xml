@@ -517,6 +517,10 @@
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-failover-lettuce6</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-failover-redisson3</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
