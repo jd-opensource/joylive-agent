@@ -18,6 +18,8 @@ package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.Registry;
@@ -27,6 +29,7 @@ import org.apache.dubbo.rpc.model.ScopeModelUtil;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.*;
@@ -54,11 +57,13 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     private final Map<URL, Map<NotifyListener, DubboNotifyListener>> subscribes = new ConcurrentHashMap<>(16);
 
-    private final Map<String, URL> registerUrls = new ConcurrentHashMap<>(16);
+    private final Map<String, URLVersion> registerUrls = new ConcurrentHashMap<>(16);
 
     private final AtomicBoolean registered = new AtomicBoolean(false);
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
+    private final AtomicLong version = new AtomicLong(0);
 
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
         super(getClusterName(delegate.getUrl()));
@@ -99,10 +104,12 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
         // Delay to ensure this registry is used.
         registerSystemRegistry();
         ServiceInstance instance = toInstance(url);
-        registerUrls.put(instance.getUniqueName(), url);
+        String id = instance.getUniqueName();
+        URLVersion ver = new URLVersion(url, version.incrementAndGet());
+        registerUrls.put(id, ver);
         registry.register(instance, new RegistryRunnable(this, () -> {
-            URL newUrl = registerUrls.get(instance.getUniqueName());
-            if (newUrl != url) {
+            URLVersion newVer = registerUrls.get(id);
+            if (newVer != ver) {
                 // reregister
                 return;
             }
@@ -113,18 +120,18 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     @Override
     public void unregister(URL url) {
         ServiceInstance instance = toInstance(url, true);
-        URL u = registerUrls.remove(instance.getUniqueName());
-        if (u != null) {
+        URLVersion ver = registerUrls.remove(instance.getUniqueName());
+        if (ver != null) {
             registry.unregister(instance);
-            delegate.unregister(u);
+            delegate.unregister(ver.getUrl());
         }
     }
 
     @Override
     public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
-        URL u = registerUrls.remove(serviceId.getUniqueName());
-        if (u != null) {
-            delegate.unregister(u);
+        URLVersion ver = registerUrls.remove(serviceId.getUniqueName());
+        if (ver != null) {
+            delegate.unregister(ver.getUrl());
         }
     }
 
@@ -178,7 +185,7 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
         }
         // doReExport will call reExportUnregister -> reExportUnregister
         ServiceInstance instance = toInstance(url, true);
-        registerUrls.put(instance.getUniqueName(), url);
+        registerUrls.put(instance.getUniqueName(), new URLVersion(url, version.incrementAndGet()));
         // TODO check register twice.
         registry.register(instance);
         delegate.reExportRegister(url);
@@ -190,11 +197,12 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
             return;
         }
         ServiceInstance instance = toInstance(url, true);
-        if (registerUrls.remove(instance.getUniqueName()) != null) {
+        URLVersion ver = registerUrls.remove(instance.getUniqueName());
+        if (ver != null) {
             // unregister will call method unregister(ServiceId serviceId, ServiceInstance instance)
             // registerUrls is removed first
             registry.unregister(instance);
-            delegate.reExportUnregister(url);
+            delegate.reExportUnregister(ver.getUrl());
         }
     }
 
@@ -231,5 +239,15 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
         if (registered.compareAndSet(false, true)) {
             registry.addSystemRegistry(this);
         }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class URLVersion {
+
+        private URL url;
+
+        private long version;
+
     }
 }
