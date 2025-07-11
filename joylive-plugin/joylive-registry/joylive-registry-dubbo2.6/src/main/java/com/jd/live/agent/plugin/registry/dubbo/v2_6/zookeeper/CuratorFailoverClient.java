@@ -15,6 +15,10 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper;
 
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.remoting.zookeeper.ChildListener;
+import com.alibaba.dubbo.remoting.zookeeper.StateListener;
+import com.alibaba.dubbo.remoting.zookeeper.ZookeeperClient;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.Converts;
@@ -31,31 +35,27 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.retry.RetryNTimes;
-import org.apache.dubbo.common.URL;
-import org.apache.dubbo.remoting.zookeeper.ChildListener;
-import org.apache.dubbo.remoting.zookeeper.DataListener;
-import org.apache.dubbo.remoting.zookeeper.StateListener;
-import org.apache.dubbo.remoting.zookeeper.ZookeeperClient;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.alibaba.dubbo.common.Constants.TIMEOUT_KEY;
 import static com.jd.live.agent.core.util.StringUtils.join;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
-import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
 
 /**
  * ZooKeeper client with failover support using Apache Curator framework.
  */
-@SuppressWarnings("deprecation")
 public class CuratorFailoverClient implements ZookeeperClient {
 
     private static final Logger logger = LoggerFactory.getLogger(CuratorFailoverClient.class);
@@ -84,7 +84,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
 
     private final Map<String, PathData> paths = new ConcurrentHashMap<>(16);
     private final Map<String, PathChildListener> childListeners = new ConcurrentHashMap<>(16);
-    private final Map<String, PathDataListener> dataListeners = new ConcurrentHashMap<>();
 
     private final CountDownLatch connectLatch = new CountDownLatch(1);
     private final AtomicLong versions = new AtomicLong(0);
@@ -125,34 +124,14 @@ public class CuratorFailoverClient implements ZookeeperClient {
         }
     }
 
-    @Override
-    public void addDataListener(String path, DataListener listener) {
-        addDataListener(path, listener, null);
-    }
-
-    @Override
-    public void addDataListener(String path, DataListener listener, Executor executor) {
-        PathDataListener dataListener = dataListeners.computeIfAbsent(path, p -> new PathDataListener(p, cacheFactory, executor));
-        if (dataListener.addListener(listener) && isConnected()) {
-            dataListener.start();
-        }
-    }
-
-    @Override
-    public void removeDataListener(String path, DataListener listener) {
-        PathDataListener dataListener = dataListeners.get(path);
-        if (dataListener != null && dataListener.removeListener(listener) && dataListener.isEmpty()) {
-            dataListeners.remove(path);
-            dataListener.close();
-        }
-    }
 
     @Override
     public List<String> addChildListener(String path, ChildListener listener) {
         PathChildListener children = childListeners.computeIfAbsent(path, p -> new PathChildListener(path, watcher));
-        if (children.addListener(listener) && isConnected()) {
+        if (isConnected()) {
             children.start();
         }
+        children.addListener(listener);
         // use cached data
         return children.getChildren();
     }
@@ -182,18 +161,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
     }
 
     @Override
-    public String getContent(String path) {
-        return CuratorTask.of(client).execute(new PathData(path), (pathData, client) -> {
-            try {
-                byte[] dataBytes = client.getData().forPath(path);
-                return (dataBytes == null || dataBytes.length == 0) ? null : new String(dataBytes, StandardCharsets.UTF_8);
-            } catch (KeeperException.NoNodeException e) {
-                return null;
-            }
-        });
-    }
-
-    @Override
     public boolean isConnected() {
         return client.getZookeeperClient().isConnected();
     }
@@ -201,7 +168,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
     @Override
     public void close() {
         if (started.compareAndSet(true, false)) {
-            dataListeners.forEach((k, v) -> v.close());
             childListeners.forEach((k, v) -> v.close());
             client.close();
         }
@@ -210,12 +176,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
     @Override
     public void create(String path, boolean ephemeral) {
         createOrUpdate(path, null, ephemeral);
-    }
-
-    @Override
-    public void create(String path, String content, boolean ephemeral) {
-        byte[] data = content == null ? null : content.getBytes(StandardCharsets.UTF_8);
-        createOrUpdate(path, data, ephemeral);
     }
 
     @Override
@@ -339,21 +299,21 @@ public class CuratorFailoverClient implements ZookeeperClient {
         @Override
         public void stateChanged(int state) {
             switch (state) {
-                case StateListener.CONNECTED:
+                case ClientStateListener.CONNECTED:
                     doConnected();
                     // Notify main thread which is waiting for connection
                     connectLatch.countDown();
                     break;
-                case StateListener.SESSION_LOST:
+                case ClientStateListener.SESSION_LOST:
                     doSessionLost();
                     break;
-                case StateListener.RECONNECTED:
+                case ClientStateListener.RECONNECTED:
                     doReconnected();
                     break;
-                case StateListener.NEW_SESSION_CREATED:
+                case ClientStateListener.NEW_SESSION_CREATED:
                     doReconnectedNewSession();
                     break;
-                case StateListener.SUSPENDED:
+                case ClientStateListener.SUSPENDED:
                 default:
                     doSuspended();
                     break;
@@ -481,8 +441,7 @@ public class CuratorFailoverClient implements ZookeeperClient {
         protected void doRecreate(long version) {
             AtomicInteger pathCounter = new AtomicInteger(paths.size());
             AtomicInteger childCounter = new AtomicInteger(childListeners.size());
-            AtomicInteger cacheCounter = new AtomicInteger(dataListeners.size());
-            logger.info("Try recreating paths {}, children watchers {}, caches {} at {}", pathCounter.get(), childCounter.get(), cacheCounter.get(), ensembleProvider.current());
+            logger.info("Try recreating paths {}, children watchers {} at {}", pathCounter.get(), childCounter.get(), ensembleProvider.current());
 
             paths.forEach((path, data) -> {
                 RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.path", new RecreatePath(data, pathCounter), version, predicate, timer);
@@ -492,12 +451,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
             // recreate all children
             childListeners.forEach((path, data) -> {
                 RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.children", new RecreateChildren(path, childCounter), version, predicate, timer);
-                task.delay(Timer.getRetryInterval(100, 500));
-            });
-
-            // recreate all caches
-            dataListeners.forEach((path, data) -> {
-                RetryVersionTimerTask task = new RetryVersionTimerTask("zookeeper.recreate.cache", new RecreateCache(path, cacheCounter), version, predicate, timer);
                 task.delay(Timer.getRetryInterval(100, 500));
             });
         }
@@ -528,38 +481,6 @@ public class CuratorFailoverClient implements ZookeeperClient {
             createOrUpdate(data.getPath(), data.getData(), !data.isPersistent());
             if (counter.decrementAndGet() == 0) {
                 logger.info("Complete recreate paths at {}", ensembleProvider.current());
-            }
-            return true;
-        }
-    }
-
-    /**
-     * Retryable task for recreating a path cache with its listeners.
-     */
-    private class RecreateCache implements RetryExecution {
-
-        private final String path;
-
-        private final AtomicInteger counter;
-
-        RecreateCache(String path, AtomicInteger counter) {
-            this.path = path;
-            this.counter = counter;
-        }
-
-        @Override
-        public long getRetryInterval() {
-            return Timer.getRetryInterval(200, 500);
-        }
-
-        @Override
-        public Boolean call() {
-            PathDataListener dataListener = dataListeners.get(path);
-            if (dataListener != null) {
-                dataListener.recreate();
-            }
-            if (counter.decrementAndGet() == 0) {
-                logger.info("Complete recreate caches at {}", ensembleProvider.current());
             }
             return true;
         }

@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.util;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * A utility class that provides methods to facilitate the closing of resources and threads.
@@ -94,7 +94,7 @@ public class Close {
      * @param resources The AutoCloseable resources to close.
      * @return This Close instance for method chaining.
      */
-    public Close close(List<? extends AutoCloseable> resources) {
+    public Close close(Collection<? extends AutoCloseable> resources) {
         if (resources != null) {
             for (AutoCloseable resource : resources) {
                 if (resource != null) {

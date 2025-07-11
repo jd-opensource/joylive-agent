@@ -240,7 +240,6 @@ public class LiveRegistry extends AbstractService
             return;
         }
         customize(instance);
-        // TODO only remove the instance.
         Registration registration = registrations.remove(instance.getUniqueName());
         if (registration != null) {
             registration.unregister();

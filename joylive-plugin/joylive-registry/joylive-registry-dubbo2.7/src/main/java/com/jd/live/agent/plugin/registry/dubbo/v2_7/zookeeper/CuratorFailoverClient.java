@@ -55,7 +55,6 @@ import static org.apache.dubbo.common.constants.CommonConstants.TIMEOUT_KEY;
 /**
  * ZooKeeper client with failover support using Apache Curator framework.
  */
-@SuppressWarnings("deprecation")
 public class CuratorFailoverClient implements ZookeeperClient {
 
     private static final Logger logger = LoggerFactory.getLogger(CuratorFailoverClient.class);
@@ -150,9 +149,10 @@ public class CuratorFailoverClient implements ZookeeperClient {
     @Override
     public List<String> addChildListener(String path, ChildListener listener) {
         PathChildListener children = childListeners.computeIfAbsent(path, p -> new PathChildListener(path, watcher));
-        if (children.addListener(listener) && isConnected()) {
+        if (isConnected()) {
             children.start();
         }
+        children.addListener(listener);
         // use cached data
         return children.getChildren();
     }

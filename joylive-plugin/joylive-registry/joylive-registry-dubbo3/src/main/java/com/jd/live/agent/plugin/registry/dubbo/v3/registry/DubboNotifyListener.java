@@ -49,8 +49,10 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
 
     private static final Logger logger = LoggerFactory.getLogger(DubboNotifyListener.class);
 
+    @Getter
     private final URL url;
 
+    @Getter
     private final ServiceId serviceId;
 
     private final String generic;
@@ -159,6 +161,18 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     @Override
     public void close() {
         unsubscribe();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof DubboNotifyListener)) return false;
+        DubboNotifyListener that = (DubboNotifyListener) o;
+        return Objects.equals(delegate, that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(delegate);
     }
 
     /**

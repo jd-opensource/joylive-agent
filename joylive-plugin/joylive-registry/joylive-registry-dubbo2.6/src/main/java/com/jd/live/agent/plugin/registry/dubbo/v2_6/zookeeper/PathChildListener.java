@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper;
 
+import com.alibaba.dubbo.remoting.zookeeper.ChildListener;
 import lombok.Getter;
 import org.apache.curator.framework.api.CuratorWatcher;
-import org.apache.dubbo.remoting.zookeeper.ChildListener;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;

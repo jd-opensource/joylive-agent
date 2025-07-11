@@ -15,19 +15,21 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.registry;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Close;
+import com.jd.live.agent.core.util.Locks;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.RegistryRunnable;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.dubbo.v2_7.instance.DubboInstance;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils;
 import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.lang.Prioritized;
+import org.apache.dubbo.common.utils.DefaultPage;
 import org.apache.dubbo.common.utils.Page;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.client.ServiceDiscovery;
@@ -39,10 +41,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.getClusterName;
-import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.toInstance;
+import static com.jd.live.agent.plugin.registry.dubbo.v2_7.util.UrlUtils.*;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 
 public class DubboServiceDiscovery extends AbstractSystemRegistryService implements ServiceDiscovery {
@@ -55,7 +56,9 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     private static final int REGISTERED = 1;
 
-    private static final int DESTROYED = 2;
+    private static final int REGISTERED_SUCCESS = 2;
+
+    private static final int DESTROYED = 3;
 
     private final URL url;
 
@@ -74,6 +77,8 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Getter
     private final String defaultGroup;
 
+    private volatile ServiceInstance serviceInstance;
+
     public DubboServiceDiscovery(URL url, ServiceDiscovery delegate, CompositeRegistry registry, Application application, ObjectParser parser) {
         super(getClusterName(url));
         this.url = url;
@@ -87,7 +92,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     @Override
     protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
-        List<ServiceInstance> instances = delegate.getInstances(serviceId.getService());
+        List<ServiceInstance> instances = isDestroy() ? new ArrayList<>() : delegate.getInstances(serviceId.getService());
         String group = serviceId.getGroup();
         return toList(instances, instance -> {
             ServiceEndpoint endpoint = new DubboInstance(instance);
@@ -106,34 +111,66 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     @Override
     public void destroy() throws Exception {
-        status.set(DESTROYED);
-        registry.removeSystemRegistry(this);
-        delegate.destroy();
-    }
-
-    @Override
-    public void register(ServiceInstance serviceInstance) throws RuntimeException {
-        registry.register(toInstance(serviceInstance, application, parser),
-                new RegistryRunnable(this, () -> {
-                    if (status.get() == UNREGISTER) {
-                        delegate.register(serviceInstance);
-                        status.compareAndSet(UNREGISTER, REGISTERED);
-                    }
-                }));
-    }
-
-    @Override
-    public void update(ServiceInstance serviceInstance) throws RuntimeException {
-        if (status.get() == REGISTERED) {
-            registry.reregister(toInstance(serviceInstance, application, parser));
-            delegate.update(serviceInstance);
+        if (!isDestroy()) {
+            status.set(DESTROYED);
+            registry.removeSystemRegistry(this);
+            delegate.destroy();
         }
     }
 
     @Override
+    public void register(ServiceInstance serviceInstance) throws RuntimeException {
+        // org.apache.dubbo.config.bootstrap.DubboBootstrap.registerServiceInstance() will invoke this method
+        if (isDestroy()) {
+            return;
+        }
+        if (status.compareAndSet(UNREGISTER, REGISTERED)) {
+            this.serviceInstance = serviceInstance;
+            registry.register(convert(serviceInstance), new RegistryRunnable(this, () -> Locks.read(lock, () -> {
+                // Async invoke
+                if (status.compareAndSet(REGISTERED, REGISTERED_SUCCESS)) {
+                    // Retrieve new instances to avoid concurrent modification issues
+                    delegate.register(this.serviceInstance);
+                }
+            })));
+        }
+    }
+
+    @Override
+    public void update(ServiceInstance serviceInstance) throws RuntimeException {
+        Locks.write(lock, () -> {
+            this.serviceInstance = serviceInstance;
+            if (status.get() == REGISTERED_SUCCESS) {
+                registry.reregister(convert(serviceInstance));
+                delegate.update(serviceInstance);
+                // org.apache.dubbo.registry.nacos.NacosServiceDiscovery#update
+                // super.update(serviceInstance);
+                // unregister(serviceInstance);
+                // register(serviceInstance);
+            }
+        });
+    }
+
+    @Override
     public void unregister(ServiceInstance serviceInstance) throws RuntimeException {
-        registry.unregister(toInstance(serviceInstance, application, parser));
-        delegate.unregister(serviceInstance);
+        // org.apache.dubbo.config.bootstrap.DubboBootstrap.unregisterServiceInstance() will invoke this method
+        Locks.read(lock, () -> {
+            com.jd.live.agent.governance.registry.ServiceInstance instance = convert(serviceInstance);
+            if (status.compareAndSet(REGISTERED_SUCCESS, UNREGISTER)) {
+                registry.unregister(instance);
+                delegate.unregister(serviceInstance);
+            }
+        });
+    }
+
+    @Override
+    public void unregister(ServiceId serviceId, com.jd.live.agent.governance.registry.ServiceInstance instance) {
+        // called by live registry when shutdown
+        Locks.read(lock, () -> {
+            if (status.compareAndSet(REGISTERED_SUCCESS, UNREGISTER)) {
+                delegate.unregister(serviceInstance);
+            }
+        });
     }
 
     @Override
@@ -143,7 +180,7 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     @Override
     public ServiceInstance getLocalInstance() {
-        return delegate.getLocalInstance();
+        return serviceInstance;
     }
 
     @Override
@@ -153,30 +190,34 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
 
     @Override
     public List<ServiceInstance> getInstances(String serviceName) throws NullPointerException {
-        return delegate.getInstances(serviceName);
+        return isDestroy() ? new ArrayList<>() : delegate.getInstances(serviceName);
     }
 
     @Override
     public Page<ServiceInstance> getInstances(String serviceName, int offset, int pageSize) throws NullPointerException, IllegalArgumentException {
-        return delegate.getInstances(serviceName, offset, pageSize);
+        return isDestroy() ? emptyPage() : delegate.getInstances(serviceName, offset, pageSize);
     }
 
     @Override
     public Page<ServiceInstance> getInstances(String serviceName, int offset, int pageSize, boolean healthyOnly) throws NullPointerException, IllegalArgumentException, UnsupportedOperationException {
-        return delegate.getInstances(serviceName, offset, pageSize, healthyOnly);
+        return isDestroy() ? emptyPage() : delegate.getInstances(serviceName, offset, pageSize, healthyOnly);
     }
 
     @Override
     public Map<String, Page<ServiceInstance>> getInstances(Iterable<String> serviceNames, int offset, int requestSize) throws NullPointerException, IllegalArgumentException {
-        return delegate.getInstances(serviceNames, offset, requestSize);
+        return isDestroy() ? new HashMap<>() : delegate.getInstances(serviceNames, offset, requestSize);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void addServiceInstancesChangedListener(ServiceInstancesChangedListener listener) throws NullPointerException, IllegalArgumentException {
+        if (isDestroy()) {
+            return;
+        }
         URL url = listener.getUrl();
-        ServiceId serviceId = UrlUtils.toServiceId(url);
+        ServiceId serviceId = toServiceId(url);
         String protocolServiceKey = url.getServiceKey() + GROUP_CHAR_SEPARATOR + url.getParameter(PROTOCOL_KEY, DUBBO);
-        Map<String, Set<NotifyListener>> delegates = getQuietly(listener, "listeners");
+        Map<String, Set<NotifyListener>> delegates = Accessor.listeners.get(listener, Map.class);
         listeners.computeIfAbsent(listener, l -> {
             Set<NotifyListener> notifiers = delegates.get(protocolServiceKey);
             NotifyListener old = notifiers.iterator().next();
@@ -239,5 +280,22 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
     @Override
     public int hashCode() {
         return Objects.hashCode(delegate);
+    }
+
+    private boolean isDestroy() {
+        return status.get() == DESTROYED;
+    }
+
+    private com.jd.live.agent.governance.registry.ServiceInstance convert(ServiceInstance serviceInstance) {
+        return toInstance(serviceInstance, application, parser);
+    }
+
+    private DefaultPage<ServiceInstance> emptyPage() {
+        return new DefaultPage<>(0, 10, new ArrayList<>(), 0);
+    }
+
+    private static class Accessor {
+
+        private static final FieldAccessor listeners = getAccessor(ServiceInstancesChangedListener.class, "listeners");
     }
 }

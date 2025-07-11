@@ -15,11 +15,8 @@
  */
 package com.jd.live.agent.plugin.registry.eureka.registry;
 
-import com.jd.live.agent.governance.registry.RegistryEvent;
-import com.jd.live.agent.governance.registry.RegistryListener;
+import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClientConfig;
@@ -53,6 +50,11 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     @Override
     protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
         return getEndpoints(client.getApplication(serviceId.getService()), serviceId.getGroup());
+    }
+
+    @Override
+    public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
+        // shutdown
     }
 
     @Override

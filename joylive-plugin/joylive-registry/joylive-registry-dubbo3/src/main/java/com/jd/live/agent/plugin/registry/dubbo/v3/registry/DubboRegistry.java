@@ -15,12 +15,11 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.registry;
 
-import com.jd.live.agent.governance.registry.CompositeRegistry;
-import com.jd.live.agent.governance.registry.RegistryRunnable;
+import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.plugin.registry.dubbo.v3.instance.DubboEndpoint;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.NotifyListener;
 import org.apache.dubbo.registry.Registry;
@@ -30,6 +29,8 @@ import org.apache.dubbo.rpc.model.ScopeModelUtil;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.*;
@@ -53,11 +54,17 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     private final ApplicationModel model;
 
-    private final Map<String, URL> urls = new ConcurrentHashMap<>(16);
+    private final Map<String, URL> subscribeUrls = new ConcurrentHashMap<>(16);
 
-    private final Map<URL, DubboNotifyListener> listeners = new ConcurrentHashMap<>(16);
+    private final Map<URL, Map<NotifyListener, DubboNotifyListener>> subscribes = new ConcurrentHashMap<>(16);
+
+    private final Map<String, URLVersion> registerUrls = new ConcurrentHashMap<>(16);
 
     private final AtomicBoolean registered = new AtomicBoolean(false);
+
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
+    private final AtomicLong version = new AtomicLong(0);
 
     public DubboRegistry(Registry delegate, CompositeRegistry registry) {
         super(getClusterName(delegate.getUrl()));
@@ -68,53 +75,71 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
     }
 
     @Override
-    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) throws Exception {
-        URL url = urls.get(serviceId.getUniqueName());
-        return url == null ? new ArrayList<>() : toList(delegate.lookup(url), DubboEndpoint::new);
-    }
-
-    @Override
     public URL getUrl() {
         return delegate.getUrl();
     }
 
     @Override
     public boolean isAvailable() {
-        return delegate.isAvailable();
+        return !isDestroy() && delegate.isAvailable();
     }
 
     @Override
     public void destroy() {
-        registry.removeSystemRegistry(this);
-        listeners.forEach((k, v) -> v.close());
-        delegate.destroy();
+        if (destroyed.compareAndSet(false, true)) {
+            registry.removeSystemRegistry(this);
+            subscribes.forEach((url, listeners) -> listeners.forEach((k, v) -> v.close()));
+            subscribes.clear();
+            subscribeUrls.clear();
+            registerUrls.clear();
+            delegate.destroy();
+        }
     }
 
     @Override
     public void register(URL url) {
-        // Delay to ensure this registry is used.
-        addSystemRegistry();
-        registry.register(toInstance(url, true), new RegistryRunnable(this, () -> delegate.register(url)));
+        if (isDestroy()) {
+            return;
+        }
+        doRegister(url, delegate::register);
     }
 
     @Override
     public void unregister(URL url) {
-        registry.unregister(toInstance(url, true));
-        delegate.unregister(url);
+        if (isDestroy()) {
+            return;
+        }
+        doUnregister(url, delegate::unregister);
+    }
+
+    @Override
+    public void unregister(ServiceId serviceId, ServiceInstance instance) {
+        if (isDestroy()) {
+            return;
+        }
+        URLVersion ver = registerUrls.remove(serviceId.getUniqueName());
+        if (ver != null) {
+            delegate.unregister(ver.getUrl());
+        }
     }
 
     @Override
     public void subscribe(URL url, NotifyListener listener) {
+        if (isDestroy()) {
+            return;
+        }
         // Delay to ensure this registry is used.
-        addSystemRegistry();
+        registerSystemRegistry();
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            ServiceId serviceId = toServiceId(url, true);
-            String key = serviceId.getUniqueName();
-            urls.put(key, url);
-            DubboNotifyListener dubboListener = listeners.computeIfAbsent(url,
-                    u -> new DubboNotifyListener(u, serviceId, listener, this, defaultGroup, registry, model, null, null));
-            dubboListener.start();
-            delegate.subscribe(url, dubboListener);
+            DubboNotifyListener listen = createListener(url, listener);
+            ServiceId serviceId = listen.getServiceId();
+            subscribeUrls.put(serviceId.getUniqueName(), url);
+            Map<NotifyListener, DubboNotifyListener> listeners = subscribes.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
+            if (listeners.putIfAbsent(listener, listen) == null) {
+                // Start first to prevent notification loss during subscription
+                listen.start();
+                delegate.subscribe(listen.getUrl(), listen);
+            }
         } else {
             delegate.subscribe(url, listener);
         }
@@ -122,32 +147,43 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     @Override
     public void unsubscribe(URL url, NotifyListener listener) {
+        if (isDestroy()) {
+            return;
+        }
         if (CONSUMER_PROTOCOL.equals(url.getProtocol())) {
-            DubboNotifyListener dubboListener = listeners.remove(url);
-            if (dubboListener != null) {
-                dubboListener.close();
-                listener = dubboListener;
+            Map<NotifyListener, DubboNotifyListener> listeners = subscribes.get(url);
+            if (listeners != null) {
+                DubboNotifyListener listen = listeners.remove(listener);
+                if (listen != null) {
+                    listen.close();
+                    delegate.unsubscribe(url, listen);
+                }
             }
+            return;
         }
         delegate.unsubscribe(url, listener);
     }
 
     @Override
     public List<URL> lookup(URL url) {
-        return delegate.lookup(url);
+        return isDestroy() ? new ArrayList<>() : delegate.lookup(url);
     }
 
     @Override
     public void reExportRegister(URL url) {
-        // TODO reexport register
-        // unregister(url);
-        // register(url);
-        delegate.reExportRegister(url);
+        if (isDestroy()) {
+            return;
+        }
+        // doReExport will call reExportUnregister -> reExportUnregister
+        doRegister(url, delegate::reExportRegister);
     }
 
     @Override
     public void reExportUnregister(URL url) {
-        delegate.reExportUnregister(url);
+        if (isDestroy()) {
+            return;
+        }
+        doUnregister(url, delegate::reExportUnregister);
     }
 
     @Override
@@ -162,9 +198,90 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
         return Objects.hashCode(delegate);
     }
 
-    private void addSystemRegistry() {
+    @Override
+    protected List<ServiceEndpoint> getEndpoints(ServiceId serviceId) {
+        URL url = subscribeUrls.get(serviceId.getUniqueName());
+        return url == null || isDestroy()
+                ? new ArrayList<>()
+                : toList(delegate.lookup(url), DubboEndpoint::new);
+    }
+
+    /**
+     * Registers a service instance if not already registered.
+     *
+     * @param url      service URL to register
+     * @param consumer callback to execute after successful registration
+     */
+    private void doRegister(URL url, Consumer<URL> consumer) {
+        ServiceInstance instance = toInstance(url);
+        String id = instance.getUniqueName();
+        URLVersion ver = new URLVersion(url, version.incrementAndGet());
+        if (registerUrls.putIfAbsent(id, ver) == null) {
+            registry.register(instance, new RegistryRunnable(this, () -> {
+                if (isDestroy()) {
+                    return;
+                }
+                URLVersion newVer = registerUrls.get(id);
+                if (newVer != ver) {
+                    // reregister
+                    return;
+                }
+                consumer.accept(url);
+            }));
+        }
+    }
+
+    /**
+     * Unregisters a service instance and cleans up related resources.
+     * @param url service URL to unregister
+     * @param consumer callback to execute after successful unregistration
+     */
+    private void doUnregister(URL url, Consumer<URL> consumer) {
+        ServiceInstance instance = toInstance(url, true);
+        URLVersion ver = registerUrls.remove(instance.getUniqueName());
+        if (ver != null) {
+            // registry unregister will call unregister(ServiceId serviceId, ServiceInstance instance)
+            // Remove from registerUrls first to prevent accidental calls
+            registry.unregister(instance);
+            consumer.accept(ver.getUrl());
+        }
+    }
+
+    /**
+     * Creates a notification listener for service discovery events.
+     * @param url subscribed service URL
+     * @param listener notification callback
+     * @return configured DubboNotifyListener instance
+     */
+    private DubboNotifyListener createListener(URL url, NotifyListener listener) {
+        return new DubboNotifyListener(url, toServiceId(url), listener, this, defaultGroup, registry, model, null, null);
+    }
+
+    /**
+     * Checks if registry client is destroyed.
+     * @return true if registry client is shutdown
+     */
+    private boolean isDestroy() {
+        return destroyed.get();
+    }
+
+    /**
+     * Registers this instance as system registry if not already registered.
+     */
+    private void registerSystemRegistry() {
+        // Delay to ensure this registry is used.
         if (registered.compareAndSet(false, true)) {
             registry.addSystemRegistry(this);
         }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class URLVersion {
+
+        private URL url;
+
+        private long version;
+
     }
 }

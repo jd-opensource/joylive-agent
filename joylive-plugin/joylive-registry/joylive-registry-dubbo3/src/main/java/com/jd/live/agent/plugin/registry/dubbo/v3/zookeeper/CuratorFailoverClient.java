@@ -153,9 +153,14 @@ public class CuratorFailoverClient implements ZookeeperClient {
     @Override
     public List<String> addChildListener(String path, ChildListener listener) {
         PathChildListener children = childListeners.computeIfAbsent(path, p -> new PathChildListener(path, watcher));
-        if (children.addListener(listener) && isConnected()) {
+        if (isConnected()) {
+            // refresh cache
             children.start();
         }
+        // add listener after start to avoid bocking the initializing listener.
+        // see org.apache.dubbo.registry.zookeeper.ZookeeperRegistry.RegistryChildListenerImpl.childChanged
+        // latch.await();
+        children.addListener(listener);
         // use cached data
         return children.getChildren();
     }
