@@ -149,9 +149,10 @@ public class CuratorFailoverClient implements ZookeeperClient {
     @Override
     public List<String> addChildListener(String path, ChildListener listener) {
         PathChildListener children = childListeners.computeIfAbsent(path, p -> new PathChildListener(path, watcher));
-        if (children.addListener(listener) && isConnected()) {
+        if (isConnected()) {
             children.start();
         }
+        children.addListener(listener);
         // use cached data
         return children.getChildren();
     }
