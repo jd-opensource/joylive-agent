@@ -25,5 +25,7 @@ import java.lang.reflect.Field;
 public interface FieldAccessor extends ObjectAccessor {
 
     Field getField();
+
+    boolean isUnsafe();
 }
 

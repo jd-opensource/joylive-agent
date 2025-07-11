@@ -31,7 +31,7 @@ public class Accessible {
      * @param accessible true if the accessible object should be accessible, false otherwise
      */
     public static void setAccessible(AccessibleObject target, boolean accessible) {
-        if (unsafe != null) {
+        if (unsafe != null && unsafe.isUnsafe()) {
             unsafe.set(target, accessible);
         } else {
             target.setAccessible(accessible);

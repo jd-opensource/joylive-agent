@@ -124,7 +124,15 @@ public class FieldAccessorFactory {
         Field field = type.getDeclaredField("theUnsafe");
         field.setAccessible(true);
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
-        return f -> new UnsafeFieldAccessor(f, new MiscUnsafeObjectAccessor(unsafe, unsafe.objectFieldOffset(field)));
+
+        return f -> {
+            try {
+                long offset = unsafe.objectFieldOffset(f);
+                return new UnsafeFieldAccessor(f, new MiscUnsafeObjectAccessor(unsafe, offset));
+            } catch (Exception e) {
+                return new ReflectFieldAccessor(f);
+            }
+        };
     }
 
     /**
@@ -766,6 +774,10 @@ public class FieldAccessorFactory {
             }
         }
 
+        @Override
+        public boolean isUnsafe() {
+            return false;
+        }
     }
 
     /**
@@ -797,5 +809,9 @@ public class FieldAccessorFactory {
             unsafeGetSetter.setter.set(target, value, objectAccessor);
         }
 
+        @Override
+        public boolean isUnsafe() {
+            return true;
+        }
     }
 }
