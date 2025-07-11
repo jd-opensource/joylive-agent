@@ -15,11 +15,16 @@
  */
 package com.jd.live.agent.plugin.failover.redisson.v3.config;
 
+import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.network.Address;
 import org.redisson.config.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Extends Redisson's Config to provide unified address resolution for different server configurations.
@@ -72,7 +77,7 @@ public class RedissonConfig extends Config {
     }
 
     public boolean isSingleAddress() {
-        return isSingleConfig();
+        return addressResolver instanceof SingleServerConfigResolver;
     }
 
     /**
@@ -90,9 +95,13 @@ public class RedissonConfig extends Config {
         /**
          * Sets server addresses
          *
-         * @param address array of server addresses
+         * @param addresses array of server addresses
          */
-        void setAddress(String[] address);
+        void setAddress(String[] addresses);
+
+        static Address getAddress(String address) {
+            return Address.parse(address, true, 6379);
+        }
 
     }
 
@@ -103,111 +112,138 @@ public class RedissonConfig extends Config {
 
         private final SingleServerConfig singleServerConfig;
 
-        public SingleServerConfigResolver(SingleServerConfig singleServerConfig) {
+        private URI uri;
+
+        SingleServerConfigResolver(SingleServerConfig singleServerConfig) {
             this.singleServerConfig = singleServerConfig;
+            this.uri = URI.parse(singleServerConfig.getAddress());
         }
 
         @Override
         public String[] getAddress() {
-            return new String[]{singleServerConfig.getAddress()};
+            return new String[]{uri.getAddress()};
         }
 
         @Override
-        public void setAddress(String[] address) {
-            singleServerConfig.setAddress(address[0]);
+        public void setAddress(String[] addresses) {
+            Address addr = AddressResolver.getAddress(addresses[0]);
+            uri = uri.address(addr.getHost(), addr.getPort());
+            singleServerConfig.setAddress(uri.getAddress(true));
         }
     }
 
     /**
      * Address resolver for sentinel configuration
      */
-    private static class SentinelServersConfigResolver implements AddressResolver {
-        private final SentinelServersConfig sentinelServersConfig;
+    private static abstract class MultiAddressResolver<T> implements AddressResolver {
 
-        public SentinelServersConfigResolver(SentinelServersConfig sentinelServersConfig) {
-            this.sentinelServersConfig = sentinelServersConfig;
+        protected T config;
+
+        private List<URI> uris;
+
+        MultiAddressResolver(T config) {
+            this.config = config;
+            this.uris = toList(getAddress(config), URI::parse);
         }
 
         @Override
         public String[] getAddress() {
-            return sentinelServersConfig.getSentinelAddresses().toArray(new String[0]);
+            return toList(uris, URI::getAddress).toArray(new String[0]);
         }
 
         @Override
-        public void setAddress(String[] address) {
-            sentinelServersConfig.setSentinelAddresses(Arrays.asList(address));
+        public void setAddress(String[] addresses) {
+            URI uri = uris.get(0);
+            uris = toList(toList(Arrays.asList(addresses), AddressResolver::getAddress), addr -> uri.address(addr.getHost(), addr.getPort()));
+            setAddress(config, toList(uris, u -> u.getAddress(true)));
+        }
+
+        protected abstract List<String> getAddress(T config);
+
+        protected abstract void setAddress(T config, List<String> addresses);
+    }
+
+    /**
+     * Address resolver for sentinel configuration
+     */
+    private static class SentinelServersConfigResolver extends MultiAddressResolver<SentinelServersConfig> {
+
+        SentinelServersConfigResolver(SentinelServersConfig sentinelServersConfig) {
+            super(sentinelServersConfig);
+        }
+
+        @Override
+        protected List<String> getAddress(SentinelServersConfig config) {
+            return config.getSentinelAddresses();
+        }
+
+        @Override
+        protected void setAddress(SentinelServersConfig config, List<String> addresses) {
+            config.setSentinelAddresses(addresses);
         }
     }
 
     /**
      * Address resolver for cluster configuration
      */
-    private static class ClusterServersConfigResolver implements AddressResolver {
-        private final ClusterServersConfig clusterServersConfig;
+    private static class ClusterServersConfigResolver extends MultiAddressResolver<ClusterServersConfig> {
 
-        public ClusterServersConfigResolver(ClusterServersConfig clusterServersConfig) {
-            this.clusterServersConfig = clusterServersConfig;
+        ClusterServersConfigResolver(ClusterServersConfig clusterServersConfig) {
+            super(clusterServersConfig);
         }
 
         @Override
-        public String[] getAddress() {
-            return clusterServersConfig.getNodeAddresses().toArray(new String[0]);
+        protected List<String> getAddress(ClusterServersConfig config) {
+            return config.getNodeAddresses();
         }
 
         @Override
-        public void setAddress(String[] address) {
-            clusterServersConfig.setNodeAddresses(Arrays.asList(address));
+        protected void setAddress(ClusterServersConfig config, List<String> addresses) {
+            config.setNodeAddresses(addresses);
         }
     }
 
     /**
      * Address resolver for master/slave configuration
      */
-    private static class MasterSlaveServersConfigResolver implements AddressResolver {
-        private final MasterSlaveServersConfig masterSlaveServersConfig;
+    private static class MasterSlaveServersConfigResolver extends MultiAddressResolver<MasterSlaveServersConfig> {
 
-        public MasterSlaveServersConfigResolver(MasterSlaveServersConfig masterSlaveServersConfig) {
-            this.masterSlaveServersConfig = masterSlaveServersConfig;
+        MasterSlaveServersConfigResolver(MasterSlaveServersConfig config) {
+            super(config);
         }
 
         @Override
-        public String[] getAddress() {
-            Set<String> addresses = new HashSet<>();
-            addresses.add(masterSlaveServersConfig.getMasterAddress());
-            addresses.addAll(masterSlaveServersConfig.getSlaveAddresses());
-            return addresses.toArray(new String[0]);
+        protected List<String> getAddress(MasterSlaveServersConfig config) {
+            List<String> result = new ArrayList<>();
+            result.add(config.getMasterAddress());
+            result.addAll(config.getSlaveAddresses());
+            return result;
         }
 
         @Override
-        public void setAddress(String[] address) {
-            masterSlaveServersConfig.setMasterAddress(address[0]);
-            Set<String> addresses = new HashSet<>();
-            for (int i = 1; i < address.length; i++) {
-                addresses.add(address[i]);
-            }
-            masterSlaveServersConfig.setSlaveAddresses(addresses);
+        protected void setAddress(MasterSlaveServersConfig config, List<String> addresses) {
+            config.setMasterAddress(addresses.get(0));
+            config.setSlaveAddresses(new HashSet<>(addresses.subList(1, addresses.size())));
         }
     }
 
     /**
      * Address resolver for replicated servers configuration
      */
-    private static class ReplicatedServersConfigResolver implements AddressResolver {
+    private static class ReplicatedServersConfigResolver extends MultiAddressResolver<ReplicatedServersConfig> {
 
-        private final ReplicatedServersConfig replicatedServersConfig;
-
-        public ReplicatedServersConfigResolver(ReplicatedServersConfig replicatedServersConfig) {
-            this.replicatedServersConfig = replicatedServersConfig;
+        ReplicatedServersConfigResolver(ReplicatedServersConfig clusterServersConfig) {
+            super(clusterServersConfig);
         }
 
         @Override
-        public String[] getAddress() {
-            return replicatedServersConfig.getNodeAddresses().toArray(new String[0]);
+        protected List<String> getAddress(ReplicatedServersConfig config) {
+            return config.getNodeAddresses();
         }
 
         @Override
-        public void setAddress(String[] address) {
-            replicatedServersConfig.setNodeAddresses(Arrays.asList(address));
+        protected void setAddress(ReplicatedServersConfig config, List<String> addresses) {
+            config.setNodeAddresses(addresses);
         }
     }
 }

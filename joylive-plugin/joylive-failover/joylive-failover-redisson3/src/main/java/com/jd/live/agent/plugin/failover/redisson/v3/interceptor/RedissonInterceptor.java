@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
+import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.db.DbCandidate;
 import com.jd.live.agent.governance.db.DbConnection;
 import com.jd.live.agent.governance.db.DbFailover;
@@ -29,11 +30,17 @@ import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.plugin.failover.redisson.v3.config.RedissonConfig;
 import com.jd.live.agent.plugin.failover.redisson.v3.connection.RedissonConnection;
 import org.redisson.Redisson;
-import org.redisson.command.CommandAsyncExecutor;
+import org.redisson.config.Config;
+import org.redisson.config.ConfigSupport;
 import org.redisson.connection.ConnectionManager;
 import org.redisson.liveobject.core.RedissonObjectBuilder;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredConstructor;
+import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 
 public class RedissonInterceptor extends AbstractDbConnectionInterceptor<DbConnection> {
 
@@ -71,14 +78,12 @@ public class RedissonInterceptor extends AbstractDbConnectionInterceptor<DbConne
             config.setAddress(addr.getNodes());
             // update connection manager
             ConnectionManager oldConnectionManager = Accessor.connectionManager.get(redisson, ConnectionManager.class);
-            ConnectionManager newConnectionManager = ConnectionManager.create(new RedissonConfig(config));
+            ConnectionManager newConnectionManager = (ConnectionManager) Accessor.createConnectionManager(new RedissonConfig(config));
             Accessor.connectionManager.set(redisson, newConnectionManager);
             // update command executor
-            CommandAsyncExecutor oldExecutor = Accessor.commandExecutor.get(redisson, CommandAsyncExecutor.class);
-            CommandAsyncExecutor newExecutor = newConnectionManager.createCommandExecutor(
+            Accessor.commandExecutor.set(redisson, Accessor.createCommandExecutor(newConnectionManager,
                     config.isReferenceEnabled() ? new RedissonObjectBuilder(redisson) : null,
-                    RedissonObjectBuilder.ReferenceType.DEFAULT);
-            Accessor.commandExecutor.set(redisson, newExecutor);
+                    RedissonObjectBuilder.ReferenceType.DEFAULT));
             oldConnectionManager.shutdown();
         });
         checkFailover(createConnection(() -> connection), candidate.getAddressResolver());
@@ -88,6 +93,34 @@ public class RedissonInterceptor extends AbstractDbConnectionInterceptor<DbConne
 
         private static final FieldAccessor connectionManager = FieldAccessorFactory.getAccessor(Redisson.class, "connectionManager");
         private static final FieldAccessor commandExecutor = FieldAccessorFactory.getAccessor(Redisson.class, "commandExecutor");
+        private static final Method createMethod1 = getDeclaredMethod(ConnectionManager.class, "create", new Class[]{Config.class});
+        private static final Method createMethod2 = getDeclaredMethod(ConfigSupport.class, "createConnectionManager", new Class[]{Config.class});
+        private static final Method createCommandExecutor = getDeclaredMethod(ConnectionManager.class, "createCommandExecutor",
+                new Class[]{RedissonObjectBuilder.class, RedissonObjectBuilder.ReferenceType.class});
+        private static final Class<?> type = ClassUtils.loadClass("org.redisson.command.CommandSyncService", Config.class.getClassLoader());
+        private static final Constructor<?> constructor = getDeclaredConstructor(type, new Class[]{ConnectionManager.class, RedissonObjectBuilder.class});
 
+        public static Object createConnectionManager(Object config) {
+            try {
+                Method method = createMethod1 == null ? createMethod2 : createMethod1;
+                return method.invoke(null, config);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        public static Object createCommandExecutor(Object connectionManager, Object builder, Object type) {
+            try {
+                if (createCommandExecutor != null) {
+                    return createCommandExecutor.invoke(connectionManager, builder, type);
+                } else if (constructor != null) {
+                    return constructor.newInstance(connectionManager, builder);
+                } else {
+                    throw new IllegalStateException();
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
     }
 }
