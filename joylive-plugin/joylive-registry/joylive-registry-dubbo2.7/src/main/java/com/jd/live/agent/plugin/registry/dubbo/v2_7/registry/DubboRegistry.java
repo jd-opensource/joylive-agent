@@ -43,8 +43,6 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
         put("org.apache.dubbo.registry.nacos.NacosRegistry", "DEFAULT_GROUP");
     }};
 
-    private static final String ATTR_VERSION = "version";
-
     private final Registry delegate;
 
     private final CompositeRegistry registry;
