@@ -49,7 +49,7 @@ public class RedissonInterceptor extends AbstractDbConnectionInterceptor<DbConne
     public void onEnter(ExecutableContext ctx) {
         RedissonConfig config = new RedissonConfig(ctx.getArgument(0));
         ctx.setArgument(0, config);
-        Function<LiveDatabase, String> addressResolver = config.isSingleConfig() ? PRIMARY_ADDRESS_RESOLVER : MULTI_ADDRESS_SEMICOLON_RESOLVER;
+        Function<LiveDatabase, String> addressResolver = config.isSingleAddress() ? PRIMARY_ADDRESS_RESOLVER : MULTI_ADDRESS_SEMICOLON_RESOLVER;
         DbCandidate candidate = connectionSupervisor.getCandidate(TYPE_REDIS, config.getAddress(), getAccessMode(null), addressResolver);
         if (candidate.isRedirected()) {
             config.setAddress(candidate.getNewNodes());
