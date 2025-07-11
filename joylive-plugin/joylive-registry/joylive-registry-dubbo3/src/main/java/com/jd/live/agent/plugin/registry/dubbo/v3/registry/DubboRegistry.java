@@ -206,24 +206,36 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
                 : toList(delegate.lookup(url), DubboEndpoint::new);
     }
 
+    /**
+     * Registers a service instance if not already registered.
+     *
+     * @param url      service URL to register
+     * @param consumer callback to execute after successful registration
+     */
     private void doRegister(URL url, Consumer<URL> consumer) {
         ServiceInstance instance = toInstance(url);
         String id = instance.getUniqueName();
         URLVersion ver = new URLVersion(url, version.incrementAndGet());
-        registerUrls.put(id, ver);
-        registry.register(instance, new RegistryRunnable(this, () -> {
-            if (isDestroy()) {
-                return;
-            }
-            URLVersion newVer = registerUrls.get(id);
-            if (newVer != ver) {
-                // reregister
-                return;
-            }
-            consumer.accept(url);
-        }));
+        if (registerUrls.putIfAbsent(id, ver) == null) {
+            registry.register(instance, new RegistryRunnable(this, () -> {
+                if (isDestroy()) {
+                    return;
+                }
+                URLVersion newVer = registerUrls.get(id);
+                if (newVer != ver) {
+                    // reregister
+                    return;
+                }
+                consumer.accept(url);
+            }));
+        }
     }
 
+    /**
+     * Unregisters a service instance and cleans up related resources.
+     * @param url service URL to unregister
+     * @param consumer callback to execute after successful unregistration
+     */
     private void doUnregister(URL url, Consumer<URL> consumer) {
         ServiceInstance instance = toInstance(url, true);
         URLVersion ver = registerUrls.remove(instance.getUniqueName());
@@ -235,14 +247,27 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
         }
     }
 
+    /**
+     * Creates a notification listener for service discovery events.
+     * @param url subscribed service URL
+     * @param listener notification callback
+     * @return configured DubboNotifyListener instance
+     */
     private DubboNotifyListener createListener(URL url, NotifyListener listener) {
         return new DubboNotifyListener(url, toServiceId(url), listener, this, defaultGroup, registry, model, null, null);
     }
 
+    /**
+     * Checks if registry client is destroyed.
+     * @return true if registry client is shutdown
+     */
     private boolean isDestroy() {
         return destroyed.get();
     }
 
+    /**
+     * Registers this instance as system registry if not already registered.
+     */
     private void registerSystemRegistry() {
         // Delay to ensure this registry is used.
         if (registered.compareAndSet(false, true)) {
