@@ -27,6 +27,7 @@ import org.redisson.config.Config;
 import org.redisson.config.TransportMode;
 import org.redisson.connection.ConnectionListener;
 
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -138,34 +139,8 @@ public class RedisClient implements AutoCloseable {
     private RedissonClient createClient() {
         RedissonClient result = null;
         if (config.validate()) {
+            Config cfg = createConfig(config);
             try {
-                Config cfg = new Config();
-                RedisType redisType = RedisType.parse(config.type);
-                redisType.configure(cfg, config);
-                cfg.setConnectionListener(new ConnectionListener() {
-                    @Override
-                    public void onConnect(InetSocketAddress addr) {
-                        connected = true;
-                        logger.info("Redis client is connected to {}", addr);
-                    }
-
-                    @Override
-                    public void onDisconnect(InetSocketAddress addr) {
-                        connected = false;
-                        logger.info("Redis client is disconnected from {}", addr);
-                    }
-                });
-                if (config.transportMode != null) {
-                    cfg.setTransportMode(config.transportMode);
-                } else if (NativeDetector.isIoUringAvailable()) {
-                    cfg.setTransportMode(TransportMode.IO_URING);
-                } else if (NativeDetector.isEpollAvailable()) {
-                    cfg.setTransportMode(TransportMode.EPOLL);
-                } else if (NativeDetector.isKqueueAvailable()) {
-                    cfg.setTransportMode(TransportMode.KQUEUE);
-                } else {
-                    cfg.setTransportMode(TransportMode.NIO);
-                }
                 result = Redisson.create(cfg);
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
@@ -174,4 +149,79 @@ public class RedisClient implements AutoCloseable {
         return result;
     }
 
+    private Config createConfig(RedisConfig config) {
+        Config result = new Config();
+        RedisType redisType = RedisType.parse(config.type);
+        redisType.configure(result, config);
+        result.setConnectionListener(new ConnectionListener() {
+            @Override
+            public void onConnect(InetSocketAddress addr) {
+                connected = true;
+                logger.info("Redis client is connected to {}", addr);
+            }
+
+            @Override
+            public void onDisconnect(InetSocketAddress addr) {
+                connected = false;
+                logger.info("Redis client is disconnected from {}", addr);
+            }
+        });
+        if (config.transportMode == TransportMode.EPOLL && NativeDetector.isEpollAvailable()) {
+            result.setTransportMode(TransportMode.EPOLL);
+        } else if (config.transportMode == TransportMode.KQUEUE && NativeDetector.isKqueueAvailable()) {
+            result.setTransportMode(TransportMode.KQUEUE);
+        } else if (config.transportMode == TransportMode.IO_URING && NativeDetector.isIoUringAvailable()) {
+            result.setTransportMode(TransportMode.IO_URING);
+        } else if (config.transportMode == TransportMode.NIO) {
+            result.setTransportMode(TransportMode.NIO);
+        } else if (NativeDetector.isIoUringAvailable()) {
+            result.setTransportMode(TransportMode.IO_URING);
+        } else if (NativeDetector.isEpollAvailable()) {
+            result.setTransportMode(TransportMode.EPOLL);
+        } else if (NativeDetector.isKqueueAvailable()) {
+            result.setTransportMode(TransportMode.KQUEUE);
+        } else {
+            result.setTransportMode(TransportMode.NIO);
+        }
+        return result;
+    }
+
+    /**
+     * Detects availability of native transport implementations.
+     * Uses reflection to check if specified Netty native transports are available.
+     */
+    private static class NativeDetector {
+
+        @Getter
+        private static final boolean isIoUringAvailable = detect("io.netty.channel.uring.IoUring");
+
+        @Getter
+        private static final boolean isEpollAvailable = detect("io.netty.channel.epoll.Epoll");
+
+        @Getter
+        private static final boolean isKqueueAvailable = detect("io.netty.channel.kqueue.Kqueue");
+
+        /**
+         * Detects if specified native transport is available by reflection
+         *
+         * @param type Fully qualified class name of the transport to check
+         * @return true if the transport is available, false otherwise
+         */
+        private static boolean detect(String type) {
+            try {
+                Class<?> clazz = Class.forName(type);
+                Method method = clazz.getDeclaredMethod("isAvailable");
+                method.setAccessible(true);
+                return (Boolean) method.invoke(null);
+            } catch (Throwable e) {
+                return false;
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(NativeDetector.isIoUringAvailable());
+        System.out.println(NativeDetector.isEpollAvailable());
+        System.out.println(NativeDetector.isKqueueAvailable());
+    }
 }
