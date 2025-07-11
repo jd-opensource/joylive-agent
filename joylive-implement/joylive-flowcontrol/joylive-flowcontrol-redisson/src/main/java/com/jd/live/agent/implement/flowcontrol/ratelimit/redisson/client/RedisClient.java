@@ -218,10 +218,4 @@ public class RedisClient implements AutoCloseable {
             }
         }
     }
-
-    public static void main(String[] args) {
-        System.out.println(NativeDetector.isIoUringAvailable());
-        System.out.println(NativeDetector.isEpollAvailable());
-        System.out.println(NativeDetector.isKqueueAvailable());
-    }
 }
