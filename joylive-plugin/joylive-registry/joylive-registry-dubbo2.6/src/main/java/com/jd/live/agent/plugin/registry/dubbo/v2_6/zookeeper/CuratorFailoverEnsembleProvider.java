@@ -18,11 +18,8 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper;
 import com.jd.live.agent.governance.probe.FailoverAddressList;
 import org.apache.curator.ensemble.EnsembleProvider;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 /**
  * Provides ZooKeeper ensemble connection strings with failover support.
@@ -36,19 +33,12 @@ import static com.jd.live.agent.core.util.StringUtils.splitList;
  */
 public class CuratorFailoverEnsembleProvider implements EnsembleProvider, FailoverAddressList {
 
-    private volatile List<String> addresses;
+    private final List<String> addresses;
 
     private final AtomicLong counter = new AtomicLong(0);
 
-    private final boolean updateEnabled;
-
     public CuratorFailoverEnsembleProvider(List<String> addresses) {
-        this(addresses, false);
-    }
-
-    public CuratorFailoverEnsembleProvider(List<String> addresses, boolean updateEnabled) {
         this.addresses = addresses;
-        this.updateEnabled = updateEnabled;
     }
 
     @Override
@@ -79,7 +69,7 @@ public class CuratorFailoverEnsembleProvider implements EnsembleProvider, Failov
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
 
     }
 
@@ -91,20 +81,7 @@ public class CuratorFailoverEnsembleProvider implements EnsembleProvider, Failov
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
-    }
-
-    @Override
-    public void setConnectionString(String connectionString) {
-        List<String> addresses = splitList(connectionString, ";");
-        if (!addresses.isEmpty()) {
-            this.addresses = addresses;
-        }
-    }
-
-    @Override
-    public boolean updateServerListEnabled() {
-        return updateEnabled;
     }
 }

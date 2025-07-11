@@ -43,6 +43,7 @@ public class DubboNotifyListener implements NotifyListener, Consumer<RegistryEve
     @Getter
     private final URL url;
 
+    @Getter
     private final ServiceId serviceId;
 
     private final String generic;

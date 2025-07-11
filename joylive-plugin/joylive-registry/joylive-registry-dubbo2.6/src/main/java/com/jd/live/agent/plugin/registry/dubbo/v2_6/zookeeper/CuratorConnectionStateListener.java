@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.zookeeper;
 
+import com.alibaba.dubbo.remoting.zookeeper.StateListener;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
-import org.apache.dubbo.remoting.zookeeper.StateListener;
 
 import java.util.Set;
 
@@ -73,12 +73,12 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
         if (lastSessionId == sessionId && sessionId != UNKNOWN_SESSION_ID) {
             logger.warn("Curator zookeeper connection recovered from connection lose, " +
                     "reuse the old session {}", Long.toHexString(sessionId));
-            notify(StateListener.RECONNECTED);
+            notify(ClientStateListener.RECONNECTED);
         } else {
             logger.warn("New session created after old session lost, " +
                     "old session {}, new session {}", Long.toHexString(lastSessionId), Long.toHexString(sessionId));
             lastSessionId = sessionId;
-            notify(StateListener.NEW_SESSION_CREATED);
+            notify(ClientStateListener.NEW_SESSION_CREATED);
         }
     }
 
@@ -90,7 +90,7 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
     private void onConnected(long sessionId) {
         lastSessionId = sessionId;
         logger.info("Curator zookeeper client instance initiated successfully, session id is {}", Long.toHexString(sessionId));
-        notify(StateListener.CONNECTED);
+        notify(ClientStateListener.CONNECTED);
     }
 
     /**
@@ -101,7 +101,7 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
     private void onSuspended(long sessionId) {
         logger.warn("Curator zookeeper connection of session {} timed out. " +
                 "connection timeout value is {}, session expire timeout value is {}", Long.toHexString(sessionId), timeout, sessionExpireMs);
-        notify(StateListener.SUSPENDED);
+        notify(ClientStateListener.SUSPENDED);
     }
 
     /**
@@ -109,7 +109,7 @@ public class CuratorConnectionStateListener implements ConnectionStateListener {
      */
     private void onLost() {
         logger.warn("Curator zookeeper session {} expired.", Long.toHexString(lastSessionId));
-        notify(StateListener.SESSION_LOST);
+        notify(ClientStateListener.SESSION_LOST);
     }
 
     /**

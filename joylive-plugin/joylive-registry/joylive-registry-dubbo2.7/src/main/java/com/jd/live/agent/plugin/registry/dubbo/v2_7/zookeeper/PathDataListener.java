@@ -35,7 +35,6 @@ import java.util.function.Function;
 /**
  * A container class that holds the configuration for a ZooKeeper path data listener.
  */
-@SuppressWarnings("deprecation")
 public class PathDataListener implements TreeCacheListener {
 
     @Getter
