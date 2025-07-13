@@ -28,18 +28,23 @@ import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.*;
 public class FieldAccessorFactoryTest {
 
     @Test
-    void testAccessor() {
-        //  --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        try {
-            testAccessor(getJDKUnsafe(classLoader));
-        } catch (Throwable ignore) {
-        }
-        try {
-            testAccessor(getSunUnsafe(classLoader));
-        } catch (Throwable ignore) {
-        }
+    void testReflect() {
         testAccessor(ReflectFieldAccessor::new);
+    }
+
+    @Test
+    void testSunUnsafe() throws Exception {
+        Function<Field, FieldAccessor> unsafe = getSunUnsafe(ClassLoader.getSystemClassLoader());
+        testAccessor(unsafe);
+    }
+
+    @Test
+    void testJdkUnsafe() throws Exception {
+        if (isJava9OrHigher()) {
+            Function<Field, FieldAccessor> unsafe = getJDKUnsafe(ClassLoader.getSystemClassLoader());
+            Assertions.assertNotNull(unsafe);
+            testAccessor(unsafe);
+        }
     }
 
     @Test
@@ -47,6 +52,16 @@ public class FieldAccessorFactoryTest {
         URI uri = URI.create("http://localhost:8080");
         FieldAccessorFactory.setValue(uri, "port", 8081);
         Assertions.assertEquals(8081, (int) FieldAccessorFactory.getQuietly(uri, "port"));
+    }
+
+    protected boolean isJava9OrHigher() {
+        try {
+            // 尝试加载Java 9+特有的类
+            Class.forName("java.lang.Module");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     protected void testAccessor(Function<Field, FieldAccessor> function) {
