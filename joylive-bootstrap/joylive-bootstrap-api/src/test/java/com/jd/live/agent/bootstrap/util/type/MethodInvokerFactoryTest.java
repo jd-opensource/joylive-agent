@@ -89,50 +89,26 @@ public class MethodInvokerFactoryTest {
     @Nested
     @DisplayName("Reflection-specific Tests")
     class ReflectionTests {
+
         @Test
         @DisplayName("Should invoke public instance method")
         void publicInstanceMethod() throws Throwable {
-            MethodInvoker invoker = MethodInvokerFactory.getReflectInvoker(ADD_METHOD);
+            MethodInvoker invoker = MethodInvokerFactory.getInvoker(ADD_METHOD, MethodVersion.REFLECT);
             assertEquals(5, invoker.invoke(new TestClass(), 2, 3));
         }
 
         @Test
         @DisplayName("Should invoke private method when made accessible")
         void privateMethod() throws Throwable {
-            MethodInvoker invoker = MethodInvokerFactory.getReflectInvoker(PREFIX_METHOD);
+            MethodInvoker invoker = MethodInvokerFactory.getInvoker(PREFIX_METHOD, MethodVersion.REFLECT);
             assertEquals("test_value", invoker.invoke(new TestClass(), "value"));
         }
 
         @Test
         @DisplayName("Should invoke static method")
         void staticMethod() throws Throwable {
-            MethodInvoker invoker = MethodInvokerFactory.getReflectInvoker(SQUARE_METHOD);
+            MethodInvoker invoker = MethodInvokerFactory.getInvoker(SQUARE_METHOD, MethodVersion.REFLECT);
             assertEquals(9.0, invoker.invoke(null, 3.0));
-        }
-    }
-
-    // === Version Compatibility Tests ===
-    @Nested
-    @DisplayName("Version Compatibility Tests")
-    class VersionTests {
-        @Test
-        @DisplayName("Should detect Java 7+ MethodHandle availability")
-        void testVersionDetection() {
-            boolean expected = !System.getProperty("java.version").startsWith("1.6");
-            assertEquals(expected, MethodInvokerFactory.Version.isJava7OrHigher());
-        }
-
-        @Test
-        @DisplayName("Should fallback to reflection when MethodHandle unavailable")
-        void testFallback() throws Throwable {
-            boolean original = MethodInvokerFactory.Version.JAVA7_OR_HIGHER;
-            MethodInvokerFactory.Version.JAVA7_OR_HIGHER = false;
-            try {
-                MethodInvoker invoker = MethodInvokerFactory.getInvoker(ADD_METHOD);
-                assertEquals(5, invoker.invoke(new TestClass(), 2, 3));
-            } finally {
-                MethodInvokerFactory.Version.JAVA7_OR_HIGHER = original;
-            }
         }
     }
 
@@ -142,7 +118,7 @@ public class MethodInvokerFactoryTest {
     void performanceComparison() throws Throwable {
         // Setup
         TestClass instance = new TestClass();
-        MethodInvoker reflectInvoker = MethodInvokerFactory.getReflectInvoker(ADD_METHOD);
+        MethodInvoker reflectInvoker = MethodInvokerFactory.getInvoker(ADD_METHOD, MethodVersion.REFLECT);
         MethodInvoker handleInvoker = MethodInvokerFactory.getInvoker(ADD_METHOD);
 
         // Reflection Test

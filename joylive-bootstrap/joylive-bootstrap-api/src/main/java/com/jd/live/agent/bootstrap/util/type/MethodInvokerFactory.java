@@ -30,53 +30,27 @@ public class MethodInvokerFactory {
      * @return appropriate invoker implementation
      */
     public static MethodInvoker getInvoker(Method method) {
+        return getInvoker(method, MethodVersion.AUTO);
+    }
+
+    /**
+     * Gets an optimized method invoker appropriate for the runtime environment.
+     *
+     * @param method the method to create an invoker for
+     * @param version the method version support checker
+     * @return optimized method invoker (MethodHandle-based if supported)
+     */
+    public static MethodInvoker getInvoker(Method method, MethodVersion version) {
         if (!method.isAccessible()) {
             Accessible.setAccessible(method, true);
         }
-        if (Version.isJava7OrHigher()) {
+        if (version != null && version.supportMethodHandle()) {
             try {
                 return MethodHandleFactory.getHandle(method);
             } catch (IllegalAccessException ignored) {
             }
         }
         return method::invoke;
-    }
-
-    /**
-     * Creates a method invoker using Java reflection.
-     *
-     * @param method the method to create invoker for
-     * @return a functional invoker that calls {@link Method#invoke}
-     * @throws SecurityException if access cannot be granted
-     */
-    public static MethodInvoker getReflectInvoker(Method method) {
-        if (!method.isAccessible()) {
-            Accessible.setAccessible(method, true);
-        }
-        return method::invoke;
-    }
-
-    /**
-     * Version detection utility for Java 7+ MethodHandle availability.
-     */
-    protected static class Version {
-
-        // for test
-        protected static boolean JAVA7_OR_HIGHER = detectJava7();
-
-        private static boolean detectJava7() {
-            try {
-                Class.forName("java.lang.invoke.MethodHandle", true, ClassLoader.getSystemClassLoader());
-                return true;
-            } catch (ClassNotFoundException e) {
-                return false;
-            }
-        }
-
-        static boolean isJava7OrHigher() {
-            return JAVA7_OR_HIGHER;
-        }
-
     }
 
 }
