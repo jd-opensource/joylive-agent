@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.jd.live</groupId>
-        <artifactId>joylive-failover</artifactId>
+        <artifactId>joylive-protection</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-failover-redisson3</artifactId>
+    <artifactId>joylive-protection-redisson3</artifactId>
 
     <properties>
         <redisson.version>3.49.0</redisson.version>

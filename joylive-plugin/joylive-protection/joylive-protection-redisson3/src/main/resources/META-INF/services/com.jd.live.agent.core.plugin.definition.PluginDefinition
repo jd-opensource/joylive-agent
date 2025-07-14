@@ -1,0 +1,3 @@
+com.jd.live.agent.plugin.protection.redisson.v3.definition.CommandAsyncServiceDefinition
+com.jd.live.agent.plugin.protection.redisson.v3.definition.JedisSentinelProtectDefinition
+com.jd.live.agent.plugin.protection.redisson.v3.definition.JedisClusterProtectDefinition

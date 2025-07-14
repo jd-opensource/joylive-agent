@@ -630,6 +630,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-protection-redisson3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-failover-jdbc</artifactId>
                 <version>${revision}</version>
             </dependency>

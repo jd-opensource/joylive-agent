@@ -352,6 +352,7 @@
                 <include>com.jd.live:joylive-protection-jedis5</include>
                 <include>com.jd.live:joylive-protection-jedis6</include>
                 <include>com.jd.live:joylive-protection-lettuce6</include>
+                <include>com.jd.live:joylive-protection-redisson3</include>
                 <include>com.jd.live:joylive-failover-jedis3</include>
                 <include>com.jd.live:joylive-failover-jedis4</include>
                 <include>com.jd.live:joylive-failover-jedis5</include>
