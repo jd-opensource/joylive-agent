@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.protection.redisson.v3.config;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
-import com.jd.live.agent.plugin.protection.redisson.v3.config.AddressResolver.*;
 import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.MasterSlaveServersConfig;
 import org.redisson.config.ReplicatedServersConfig;
@@ -41,15 +40,15 @@ public class AddressResolverFactory {
     public static AddressResolver getResolver(ConnectionManager connectionManager) {
         AddressResolver resolver = null;
         if (connectionManager instanceof ClusterConnectionManager) {
-            resolver = new ClusterServersAddressResolver((ClusterServersConfig) configAccessor.get(connectionManager));
+            resolver = new AddressResolver.ClusterServersAddressResolver((ClusterServersConfig) configAccessor.get(connectionManager));
         } else if (connectionManager instanceof SentinelConnectionManager) {
-            resolver = new SentinelServersAddressResolver((SentinelServersConfig) configAccessor.get(connectionManager));
+            resolver = new AddressResolver.SentinelServersAddressResolver((SentinelServersConfig) configAccessor.get(connectionManager));
         } else if (connectionManager instanceof ReplicatedConnectionManager) {
-            resolver = new ReplicatedServersAddressResolver((ReplicatedServersConfig) configAccessor.get(connectionManager));
+            resolver = new AddressResolver.ReplicatedServersAddressResolver((ReplicatedServersConfig) configAccessor.get(connectionManager));
         } else if (connectionManager instanceof SingleConnectionManager) {
-            resolver = new SingleServerAddressResolver((MasterSlaveServersConfig) configAccessor.get(connectionManager));
+            resolver = new AddressResolver.SingleServerAddressResolver((MasterSlaveServersConfig) configAccessor.get(connectionManager));
         } else if (connectionManager instanceof MasterSlaveConnectionManager) {
-            resolver = new MasterSlaveServersAddressResolver((MasterSlaveServersConfig) configAccessor.get(connectionManager));
+            resolver = new AddressResolver.MasterSlaveServersAddressResolver((MasterSlaveServersConfig) configAccessor.get(connectionManager));
         }
         return resolver;
     }

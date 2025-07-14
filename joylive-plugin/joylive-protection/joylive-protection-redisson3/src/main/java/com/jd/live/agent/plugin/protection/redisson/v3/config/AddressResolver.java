@@ -47,7 +47,7 @@ public interface AddressResolver {
 
         private final URI uri;
 
-        SingleServerAddressResolver(MasterSlaveServersConfig config) {
+        public SingleServerAddressResolver(MasterSlaveServersConfig config) {
             this.config = config;
             this.uri = URI.parse(config.getMasterAddress());
         }
@@ -68,7 +68,7 @@ public interface AddressResolver {
 
         private final List<URI> uris;
 
-        MultiAddressResolver(T config) {
+        public MultiAddressResolver(T config) {
             this.config = config;
             this.uris = toList(getAddress(config), URI::parse);
         }
@@ -87,7 +87,7 @@ public interface AddressResolver {
      */
     class SentinelServersAddressResolver extends MultiAddressResolver<SentinelServersConfig> {
 
-        SentinelServersAddressResolver(SentinelServersConfig sentinelServersConfig) {
+        public SentinelServersAddressResolver(SentinelServersConfig sentinelServersConfig) {
             super(sentinelServersConfig);
         }
 
@@ -103,7 +103,7 @@ public interface AddressResolver {
      */
     class ClusterServersAddressResolver extends MultiAddressResolver<ClusterServersConfig> {
 
-        ClusterServersAddressResolver(ClusterServersConfig config) {
+        public ClusterServersAddressResolver(ClusterServersConfig config) {
             super(config);
         }
 
@@ -119,7 +119,7 @@ public interface AddressResolver {
      */
     class MasterSlaveServersAddressResolver extends MultiAddressResolver<MasterSlaveServersConfig> {
 
-        MasterSlaveServersAddressResolver(MasterSlaveServersConfig config) {
+        public MasterSlaveServersAddressResolver(MasterSlaveServersConfig config) {
             super(config);
         }
 
@@ -137,7 +137,7 @@ public interface AddressResolver {
      */
     class ReplicatedServersAddressResolver extends MultiAddressResolver<ReplicatedServersConfig> {
 
-        ReplicatedServersAddressResolver(ReplicatedServersConfig config) {
+        public ReplicatedServersAddressResolver(ReplicatedServersConfig config) {
             super(config);
         }
 
