@@ -131,7 +131,7 @@ public class MethodInvokerFactoryTest {
                     }
                 },
                 10,    // Warmup iterations
-                10000  // Test iterations
+                100000  // Test iterations
         );
 
         // MethodHandle Test
@@ -144,7 +144,7 @@ public class MethodInvokerFactoryTest {
                     }
                 },
                 10,    // Warmup iterations
-                10000  // Test iterations
+                100000  // Test iterations
         );
     }
 

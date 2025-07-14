@@ -15,7 +15,12 @@
  */
 package com.jd.live.agent.bootstrap.util.type;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Factory for creating optimized method invokers using either MethodHandle (Java 7+) or reflection.
@@ -46,11 +51,40 @@ public class MethodInvokerFactory {
         }
         if (version != null && version.supportMethodHandle()) {
             try {
-                return MethodHandleFactory.getHandle(method);
+                return MethodHandleCache.getHandle(method);
             } catch (IllegalAccessException ignored) {
             }
         }
         return method::invoke;
     }
 
+    /**
+     * Factory for creating and caching MethodHandle instances.
+     * Thread-safe implementation using concurrent hash map.
+     */
+    private static class MethodHandleCache {
+
+        private static final Map<Method, MethodInvoker> CACHE =
+                new ConcurrentHashMap<>(256, 0.9f, 32);
+        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+        private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
+
+        /**
+         * Gets or creates a MethodHandle for the specified method.
+         * Caches handles to avoid repeated lookup operations.
+         *
+         * @param method the reflection method to convert
+         * @return the corresponding MethodHandle
+         * @throws IllegalAccessException if method access is restricted
+         */
+        public static MethodInvoker getHandle(Method method) throws IllegalAccessException {
+            MethodInvoker result = CACHE.get(method);
+            if (result == null) {
+                MethodHandle handle = Modifier.isPublic(method.getModifiers()) ? PUBLIC_LOOKUP.unreflect(method) : LOOKUP.unreflect(method);
+                MethodHandleCaller caller = new MethodHandleCaller(handle, Modifier.isStatic(method.getModifiers()));
+                result = CACHE.computeIfAbsent(method, k -> caller);
+            }
+            return result;
+        }
+    }
 }
