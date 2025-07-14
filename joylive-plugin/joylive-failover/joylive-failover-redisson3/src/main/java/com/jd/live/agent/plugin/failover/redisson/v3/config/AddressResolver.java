@@ -49,7 +49,6 @@ interface AddressResolver {
         return Address.parse(address, true, 6379);
     }
 
-
     /**
      * Address resolver for single server configuration
      */
@@ -59,7 +58,7 @@ interface AddressResolver {
 
         private URI uri;
 
-        public SingleServerConfigResolver(SingleServerConfig singleServerConfig) {
+        SingleServerConfigResolver(SingleServerConfig singleServerConfig) {
             this.singleServerConfig = singleServerConfig;
             this.uri = URI.parse(singleServerConfig.getAddress());
         }
@@ -86,7 +85,7 @@ interface AddressResolver {
 
         private List<URI> uris;
 
-        public MultiAddressResolver(T config) {
+        MultiAddressResolver(T config) {
             this.config = config;
             this.uris = toList(getAddress(config), URI::parse);
         }
@@ -113,7 +112,7 @@ interface AddressResolver {
      */
     class SentinelServersConfigResolver extends MultiAddressResolver<SentinelServersConfig> {
 
-        public SentinelServersConfigResolver(SentinelServersConfig sentinelServersConfig) {
+        SentinelServersConfigResolver(SentinelServersConfig sentinelServersConfig) {
             super(sentinelServersConfig);
         }
 
@@ -133,7 +132,7 @@ interface AddressResolver {
      */
     class ClusterServersConfigResolver extends MultiAddressResolver<ClusterServersConfig> {
 
-        public ClusterServersConfigResolver(ClusterServersConfig clusterServersConfig) {
+        ClusterServersConfigResolver(ClusterServersConfig clusterServersConfig) {
             super(clusterServersConfig);
         }
 
@@ -153,7 +152,7 @@ interface AddressResolver {
      */
     class MasterSlaveServersConfigResolver extends MultiAddressResolver<MasterSlaveServersConfig> {
 
-        public MasterSlaveServersConfigResolver(MasterSlaveServersConfig config) {
+        MasterSlaveServersConfigResolver(MasterSlaveServersConfig config) {
             super(config);
         }
 
@@ -177,7 +176,7 @@ interface AddressResolver {
      */
     class ReplicatedServersConfigResolver extends MultiAddressResolver<ReplicatedServersConfig> {
 
-        public ReplicatedServersConfigResolver(ReplicatedServersConfig clusterServersConfig) {
+        ReplicatedServersConfigResolver(ReplicatedServersConfig clusterServersConfig) {
             super(clusterServersConfig);
         }
 

@@ -31,6 +31,8 @@ public class AddressResolverFactory {
 
     private static final FieldAccessor configAccessor = FieldAccessorFactory.getAccessor(MasterSlaveConnectionManager.class, "config");
 
+    private static final Class<?> clusterType = getClusterType();
+
     /**
      * Creates an appropriate address resolver for the given connection manager.
      *
@@ -39,7 +41,7 @@ public class AddressResolverFactory {
      */
     public static AddressResolver getResolver(ConnectionManager connectionManager) {
         AddressResolver resolver = null;
-        if (connectionManager instanceof ClusterConnectionManager) {
+        if (clusterType != null && clusterType.isInstance(connectionManager)) {
             resolver = new AddressResolver.ClusterServersAddressResolver((ClusterServersConfig) configAccessor.get(connectionManager));
         } else if (connectionManager instanceof SentinelConnectionManager) {
             resolver = new AddressResolver.SentinelServersAddressResolver((SentinelServersConfig) configAccessor.get(connectionManager));
@@ -63,5 +65,24 @@ public class AddressResolverFactory {
     public static String[] getAddresses(ConnectionManager connectionManager) {
         AddressResolver resolver = getResolver(connectionManager);
         return resolver == null ? null : resolver.getAddress();
+    }
+
+    /**
+     * Attempts to locate the cluster connection manager class.
+     * Checks both legacy and current package locations.
+     *
+     * @return the ClusterConnectionManager class if found, null otherwise
+     */
+    private static Class<?> getClusterType() {
+        ClassLoader classLoader = ConnectionManager.class.getClassLoader();
+        try {
+            return Class.forName("org.redisson.connection.ClusterConnectionManager", true, classLoader);
+        } catch (ClassNotFoundException e) {
+            try {
+                return Class.forName("org.redisson.cluster.ClusterConnectionManager", true, classLoader);
+            } catch (ClassNotFoundException ex) {
+                return null;
+            }
+        }
     }
 }
