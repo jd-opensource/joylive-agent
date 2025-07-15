@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.trie;
 
+import com.jd.live.agent.core.util.trie.PathMatcher.MatchResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +34,24 @@ public class PathMatcherTest {
         matcher.addPath("/product/{name}/add", "ProductAddHandler");
         matcher.addPath("/product/{id}/update", "ProductUpdateHandler");
         matcher.addPath("/org/", "OrgHandler");
+        matcher.addPath("/test/{a}/add", "TestAddHandler");
+        matcher.addPath("/test/{a}/{b}/delete", "TestDeleteHandler");
+        matcher.addPath("/test/order/update", "TestUpdateHandler");
 
         Assertions.assertEquals("RootHandler", matcher.match("/").getValue());
         Assertions.assertEquals("UserHandler", matcher.match("/user").getValue());
-        Assertions.assertEquals("UserHandler", matcher.match("/user/500").getValue());
+        MatchResult<String> match = matcher.match("/user/500");
+        Assertions.assertEquals("UserHandler", match.getValue());
+        Assertions.assertEquals(PathMatchType.PREFIX, match.getType());
         Assertions.assertEquals("OrderCreateHandler", matcher.match("/order/1/create").getValue());
         Assertions.assertEquals("OrderHandler", matcher.match("/order/2").getValue());
         Assertions.assertEquals("2", matcher.match("/order/2/update").getVariable("orderId"));
         Assertions.assertEquals("OrderHandler", matcher.match("/order/2/update").getValue());
         Assertions.assertEquals("RootHandler", matcher.match("/test").getValue());
-        Assertions.assertEquals("ServiceCreateHandler", matcher.match("/space/1/service/service-consumer").getValue());
+        match = matcher.match("/space/1/service/service-consumer");
+        Assertions.assertEquals("ServiceCreateHandler", match.getValue());
+        Assertions.assertEquals("1", match.getVariable("spaceId"));
+        Assertions.assertEquals("service-consumer", match.getVariable("service"));
         Assertions.assertEquals("ServiceCreateHandler", matcher.match("/space/1/service/service-provider").getValue());
         Assertions.assertEquals("RouteCreateHandler", matcher.match("/space/1/service/service-provider/route/abc").getValue());
         Assertions.assertEquals("abc", matcher.match("/space/1/service/service-provider/route/abc").getVariable("route"));
@@ -51,6 +60,15 @@ public class PathMatcherTest {
         Assertions.assertEquals("ProductAddHandler", matcher.match("/product/123/add").getValue());
         Assertions.assertEquals("123", matcher.match("/product/123/add").getVariable("name"));
         Assertions.assertEquals("OrgHandler", matcher.match("/org").getValue());
-        Assertions.assertEquals("OrgHandler", matcher.match("/org/").getValue());
+        Assertions.assertEquals("TestAddHandler", matcher.match("/test/order/add").getValue());
+        match = matcher.match("/test/order/update");
+        Assertions.assertEquals("TestUpdateHandler", match.getValue());
+        Assertions.assertEquals(PathMatchType.EQUAL, match.getType());
+        match = matcher.match("/test/order/1/delete");
+        Assertions.assertEquals("TestDeleteHandler", match.getValue());
+        Assertions.assertEquals("order", match.getVariable("a"));
+        Assertions.assertEquals("1", match.getVariable("b"));
+        Assertions.assertEquals(PathMatchType.EQUAL, match.getType());
+        Assertions.assertEquals("RootHandler", matcher.match("/test/order/1/add").getValue());
     }
 }

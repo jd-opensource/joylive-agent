@@ -19,11 +19,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * A class that provides functionality to add and match paths with variables and static segments.
@@ -56,26 +54,18 @@ public class PathMatcher<T> {
             return;
         }
         final TrieNode<T>[] current = new TrieNode[]{root};
-        preprocessPath(path, part -> {
-            if (part.isEmpty()) {
-                return true;
+        split(path, matcher -> {
+            if (!matcher.isEmpty()) {
+                Part part = parsePart(matcher.part);
+                TrieNode<T> parent = current[0];
+                TrieNode<T> child = parent.getOrCreateChild(part.value);
+                child.addVariable(part);
+                current[0] = child;
+                parent.variableChild = parent.variableChild || part.variable;
             }
-            String variableName = null;
-            if (isVariable(part)) {
-                variableName = part.substring(1, part.length() - 1);
-                part = VARIABLE;
-            } else if (part.equals("*")) {
-                part = VARIABLE;
-            }
-            TrieNode<T> parent = current[0];
-            int level = parent.level + 1;
-            current[0] = parent.getOrCreateChild(part);
-            current[0].addVariable(variableName);
-            current[0].level = level;
-            parent.hasVariable = parent.hasVariable || VARIABLE.equals(part);
-            return true;
+            matcher.success();
         });
-        current[0].isEnd = true;
+        current[0].end = true;
         current[0].value = value;
     }
 
@@ -89,62 +79,157 @@ public class PathMatcher<T> {
         if (path == null || path.isEmpty()) {
             return null;
         }
-        // TODO match the max length?
-        // /user/*/a/b
-        // /user/order/a
-        // /user/order/a/b/c now match /user/order/a, maybe the best result is /user/*/a/b.
+        // /user/*/b/a match /user/order/b/a/c
+        // /user/order/a match /user/order/a/b/c
         MatchState<T> state = new MatchState<>(root);
-        int count = preprocessPath(path, state::next);
+        int count = split(path, state::match);
         return state.getResult(count);
     }
 
     /**
-     * Processes a given path by splitting it into parts based on a specified delimiter and applying a function to each part.
+     * Splits a path and processes segments via callback.
      *
-     * @param path The path to be processed. If the path is exactly "/", a single empty string will be passed to the function.
-     * @param func The function to be applied to each part of the path. The function should return {@code true} to continue processing,
-     *             or {@code false} to terminate processing early.
-     * @return The number of parts processed. If the function terminates early, the count will reflect the number of parts processed up to that point.
+     * <p>For "/" path: processes single empty segment.
+     * For other paths: splits by delimiter and processes each segment sequentially.
+     *
+     * @param path input path to process ("/" gets special handling)
+     * @param consumer callback that receives each segment in a Matcher
+     * @return number of successfully processed segments
      */
-    private int preprocessPath(String path, Function<String, Boolean> func) {
+    private int split(String path, Consumer<Matcher> consumer) {
         if (path.equals("/")) {
-            func.apply("");
+            consumer.accept(new Matcher("", 0, Matched.SUCCESS, 0));
             return 0;
         }
 
         int count = 0;
+        // ignore the first '/'
         int start = 0;
         int end;
-        String part;
+        int max = path.length() - 1;
 
-        while ((end = path.indexOf(delimiter, start)) != -1) {
-            if (start != end) {
-                count++;
-                part = path.substring(start, end);
-                if (!func.apply(part)) {
-                    return count;
-                }
+        Matcher matcher = new Matcher();
+        while (true) {
+            end = path.indexOf(delimiter, start);
+            if (end == start) {
+                start = end + 1;
+                continue;
             }
-            start = end + 1;
-        }
+            matcher.part = end == -1 ? path.substring(start) : path.substring(start, end);
+            matcher.start = start;
+            matcher.level = ++count;
+            consumer.accept(matcher);
+            switch (matcher.matched) {
+                case SUCCESS:
+                    if (end == -1 || end == max) {
+                        return count;
+                    }
+                    start = end + 1;
+                    break;
+                case FAILED:
+                    return count;
+                case RESET:
+                default:
+                    start = matcher.start;
+                    count = matcher.level;
 
-        if (start < path.length()) {
-            count++;
-            part = path.substring(start);
-            func.apply(part);
+            }
         }
-        return count;
     }
 
     /**
-     * Checks if a path segment is a variable.
+     * Parses string into a {@link Part}, detecting variable patterns:
+     * - "*" → empty variable
+     * - "{name}" → variable with content
+     * - Other strings → literal part
      *
-     * @param part The path segment to check.
-     * @return True if the segment is a variable, false otherwise.
+     * @param part String to parse
+     * @return Part with variable flag set appropriately
      */
-    private boolean isVariable(String part) {
-        // Check if part starts with '{' and ends with '}'
-        return part.length() > 1 && part.charAt(0) == '{' && part.charAt(part.length() - 1) == '}';
+    private Part parsePart(String part) {
+        int length = part.length();
+        if (length == 1 && part.equals("*")) {
+            return new Part(VARIABLE, true, null);
+        } else if (length > 1 && part.charAt(0) == '{' && part.charAt(length - 1) == '}') {
+            // Check if part starts with '{' and ends with '}'
+            return new Part(VARIABLE, true, part.substring(1, length - 1));
+        }
+        return new Part(part, false, null);
+    }
+
+    /**
+     * Tracks matching state for path segments during trie traversal.
+     */
+    private static class Matcher {
+
+        private String part;
+
+        private int start;
+
+        private Matched matched;
+
+        private int level;
+
+        Matcher() {
+        }
+
+        Matcher(String part, int start, Matched matched, int level) {
+            this.part = part;
+            this.start = start;
+            this.matched = matched;
+            this.level = level;
+        }
+
+        /**
+         * @return true if no segment remains to match
+         */
+        public boolean isEmpty() {
+            return part == null || part.isEmpty();
+        }
+
+        /**
+         * Marks current match as successful
+         */
+        public void success() {
+            matched = Matched.SUCCESS;
+        }
+
+        /**
+         * Marks current match as failed
+         */
+        public void fail() {
+            matched = Matched.FAILED;
+        }
+
+        /**
+         * Resets matcher for new matching attempt
+         *
+         * @param start new starting index
+         * @param level new recursion depth
+         */
+        public void reset(int start, int level) {
+            matched = Matched.RESET;
+            this.start = start;
+            this.level = level;
+        }
+    }
+
+    /**
+     * Represents a parsed variable with its name.
+     */
+    private static class Part {
+
+        private final String value;
+
+        private final boolean variable;
+
+        private final String variableName;
+
+        Part(String value, boolean variable, String variableName) {
+            this.value = value;
+            this.variable = variable;
+            this.variableName = variableName;
+        }
     }
 
     /**
@@ -158,8 +243,10 @@ public class PathMatcher<T> {
         private Map<String, TrieNode<T>> children;
         private int size;
         private int level;
-        private boolean hasVariable;
-        private boolean isEnd;
+        // {name} or *
+        private boolean variableChild;
+        private boolean end;
+        private String variable;
         private List<String> variables;
         private T value;
 
@@ -167,25 +254,54 @@ public class PathMatcher<T> {
             this.name = name;
         }
 
+        TrieNode(String name, int level) {
+            this.name = name;
+            this.level = level;
+        }
+
+        /**
+         * Gets or creates a child node with the given name.
+         * <p>
+         * Efficiently handles three cases:
+         * - No children exist (creates single child)
+         * - Single child exists (converts to map if name differs)
+         * - Multiple children exist (uses map lookup)
+         *
+         * @param name Name of the child node to get/create
+         * @return Existing or newly created child node
+         * @implNote Maintains size counter and optimizes storage
+         */
         public TrieNode<T> getOrCreateChild(String name) {
             TrieNode<T> result;
             if (children == null && child == null) {
-                child = new TrieNode<>(name);
+                child = new TrieNode<>(name, level + 1);
                 size = 1;
                 result = child;
             } else if (child != null) {
-                children = new HashMap<>();
-                children.put(child.name, child);
-                child = null;
-                result = children.computeIfAbsent(name, TrieNode::new);
-                size = children.size();
+                if (child.name.equals(name)) {
+                    // the same child, return directly
+                    result = child;
+                } else {
+                    // multiple children, create a map to store them
+                    children = new HashMap<>();
+                    children.put(child.name, child);
+                    child = null;
+                    result = children.computeIfAbsent(name, n -> new TrieNode<>(n, level + 1));
+                    size = children.size();
+                }
             } else {
-                result = children.computeIfAbsent(name, TrieNode::new);
+                result = children.computeIfAbsent(name, n -> new TrieNode<>(n, level + 1));
                 size = children.size();
             }
             return result;
         }
 
+        /**
+         * Gets the child node with the specified name.
+         *
+         * @param name the name of the child node to retrieve
+         * @return the matching child node, or {@code null} if no match is found
+         */
         public TrieNode<T> getChild(String name) {
             if (children == null) {
                 return child == null || !child.name.equals(name) ? null : child;
@@ -197,68 +313,245 @@ public class PathMatcher<T> {
             return size;
         }
 
-        public void addVariable(String variable) {
+        /**
+         * Adds a variable part to this node's variable collection.
+         * <p>
+         * Optimizes storage for common cases:
+         * - First variable: stored directly
+         * - Second variable: converts to list
+         * - Subsequent variables: appends to list
+         *
+         * @param part The variable part to add (ignored if null or non-variable)
+         * @implNote Deduplicates variables in list mode
+         */
+        public void addVariable(Part part) {
+            if (part != null && part.variable && part.variableName != null) {
+                // In most cases, there is only one variable
+                if (variable == null && variables == null) {
+                    variable = part.variableName;
+                } else if (variable != null) {
+                    if (!part.variableName.equals(variable)) {
+                        variables = new ArrayList<>();
+                        variables.add(variable);
+                        variables.add(part.variableName);
+                        variable = null;
+                    }
+                } else if (!variables.contains(part.variableName)) {
+                    variables.add(part.variableName);
+                }
+            }
+        }
+
+        /**
+         * Checks whether this node contains any variable(s).
+         *
+         * @return {@code true} if either a single variable or multiple variables exist,
+         * {@code false} otherwise
+         */
+        public boolean hasVariable() {
+            return variable != null || variables != null && !variables.isEmpty();
+        }
+
+        /**
+         * Applies the given action to all variables in this node.
+         *
+         * @param consumer Action to execute for each variable name
+         */
+        public void variable(Consumer<String> consumer) {
             if (variable != null) {
-                if (variables == null) {
-                    variables = new ArrayList<>(1);
-                }
-                if (!variables.contains(variable)) {
-                    variables.add(variable);
-                }
+                consumer.accept(variable);
+            } else if (variables != null) {
+                variables.forEach(consumer);
             }
         }
     }
 
+    /**
+     * Represents a path in a trie with optional variable bindings.
+     * <p>
+     * Tracks current node, path variables, and provides matching functionality.
+     * Supports branching paths through {@code stack} parameter during matching.
+     */
+    private static class TreePath<T> {
+
+        private TrieNode<T> node;
+
+        private int start;
+
+        private Map<String, String> variables;
+
+        private TrieNode<T> candidate;
+
+        private Map<String, String> candidateVariables;
+
+        TreePath(TrieNode<T> node) {
+            this.node = node;
+        }
+
+        TreePath(TrieNode<T> node, int start, Map<String, String> variables) {
+            this.node = node;
+            this.start = start;
+            this.variables = variables;
+        }
+
+        /**
+         * Attempts to match the next path segment against current trie node.
+         *
+         * @param matcher  contains current segment and matching state
+         * @param supplier provides storage for alternative paths
+         * @return true if segment matched (either literally or as variable)
+         */
+        public boolean match(Matcher matcher, Supplier<Deque<TreePath<T>>> supplier) {
+            TrieNode<T> current = node;
+            int size = current.size();
+            if (size == 0) {
+                return false;
+            }
+            TrieNode<T> child = size > 1 || !current.variableChild ? current.getChild(matcher.part) : null;
+            if (child != null) {
+                node = child;
+                // add path to stack before candidate check
+                addPath(current, matcher, supplier);
+                candidate(child);
+                return true;
+            } else if (node.variableChild) {
+                child = node.getChild(VARIABLE);
+                if (child != null) {
+                    child.variable(v -> {
+                        if (variables == null) {
+                            variables = new HashMap<>(4);
+                        }
+                        variables.put(v, matcher.part);
+                    });
+                    node = child;
+                    candidate(child);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Sets current best match candidate if the node is a valid endpoint.
+         *
+         * @param child potential endpoint node to evaluate
+         */
+        private void candidate(TrieNode<T> child) {
+            if (!child.end) {
+                return;
+            }
+            candidate = child;
+            if (variables != null) {
+                if (candidateVariables == null) {
+                    candidateVariables = variables;
+                } else {
+                    candidateVariables.putAll(variables);
+                }
+                variables = null;
+            }
+        }
+
+        /**
+         * Registers alternative matching paths for variable path segments.
+         *
+         * @param node     current trie node being evaluated
+         * @param matcher  contains current matching state and segment
+         * @param supplier provides stack for storing alternative paths
+         */
+        private void addPath(TrieNode<T> node, Matcher matcher, Supplier<Deque<TreePath<T>>> supplier) {
+            TrieNode<T> child;
+            if (node.variableChild) {
+                // another candidate path
+                child = node.getChild(VARIABLE);
+                if (child != null) {
+                    Map<String, String> newVariables = variables != null ? new HashMap<>(variables) : (child.hasVariable() ? new HashMap<>(4) : null);
+                    child.variable(v -> newVariables.put(v, matcher.part));
+                    supplier.get().add(new TreePath<>(child, matcher.start + matcher.part.length() + 1, newVariables));
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Internal state tracker for trie path matching, handling:
+     * - Node traversal
+     * - Variable capture
+     * - Best-match tracking
+     */
     private static class MatchState<T> {
         private final TrieNode<T> root;
-        private TrieNode<T> current;
-        private TrieNode<T> bestNode;
-        private Map<String, String> variables;
-        private Map<String, String> bestVariables;
+        private TreePath<T> current;
+        private Deque<TreePath<T>> stack;
 
         MatchState(TrieNode<T> root) {
             this.root = root;
-            this.current = root;
+            this.current = new TreePath<>(root);
         }
 
-        public boolean next(String part) {
-            int size = current.size();
-            TrieNode<T> nextNode = size == 0 || (size == 1 && current.hasVariable) ? null : current.getChild(part);
-            if (nextNode == null && current.hasVariable) {
-                nextNode = current.getChild(VARIABLE);
-                if (nextNode != null && nextNode.variables != null) {
-                    if (variables == null) {
-                        variables = new HashMap<>(1);
-                    }
-                    nextNode.variables.forEach(v -> variables.put(v, part));
-                }
-            }
-            if (nextNode != null) {
-                current = nextNode;
-                if (nextNode.isEnd) {
-                    bestNode = nextNode;
-                    if (variables != null) {
-                        if (bestVariables == null) {
-                            bestVariables = new HashMap<>(variables);
-                        } else {
-                            bestVariables.clear();
-                            bestVariables.putAll(variables);
-                        }
-                    }
-                }
-            }
-
-            return nextNode != null;
-        }
-
-        public MatchResult<T> getResult(int level) {
-            if (bestNode == null) {
-                // Special case: if there is no specific match, check if the root node has a value
-                return !root.isEnd ? null : new MatchResult<>(level == 0 ? PathMatchType.EQUAL : PathMatchType.PREFIX, root.value, null);
+        /**
+         * Attempts to match the current path segment using trie navigation.
+         *
+         * @param matcher tracks matching state and segment position
+         */
+        public void match(Matcher matcher) {
+            if (current.match(matcher, this::getStack)) {
+                matcher.success();
+            } else if (current.candidate == null && stack != null && !stack.isEmpty()) {
+                current = stack.pop();
+                matcher.reset(current.start, current.node.level);
             } else {
-                return new MatchResult<>(level == bestNode.level ? PathMatchType.EQUAL : PathMatchType.PREFIX, bestNode.value, bestVariables);
+                matcher.fail();
             }
         }
+
+        /**
+         * Generates the final match result after traversal.
+         * <p>
+         * Returns:
+         * - {@code null} if no match found
+         * - Result with {@code EQUAL} (full path match) or {@code PREFIX} (partial match)
+         * - Captured variables (if any)
+         *
+         * @param level Depth of the current path (0 = root)
+         * @return Match result, or null if unmatched
+         */
+        public MatchResult<T> getResult(int level) {
+            TrieNode<T> candidate = current.candidate;
+            if (candidate == null) {
+                // Special case: if there is no specific match, check if the root node has a value
+                return !root.end ? null : new MatchResult<>(level == 0 ? PathMatchType.EQUAL : PathMatchType.PREFIX, root.value, null);
+            } else {
+                return new MatchResult<>(level == candidate.level ? PathMatchType.EQUAL : PathMatchType.PREFIX, candidate.value, current.candidateVariables);
+            }
+        }
+
+        private Deque<TreePath<T>> getStack() {
+            if (stack == null) {
+                stack = new LinkedList<>();
+            }
+            return stack;
+        }
+    }
+
+    /**
+     * Represents the possible matching states during path resolution.
+     */
+    private enum Matched {
+        /**
+         * Path segment was successfully matched
+         */
+        SUCCESS,
+
+        /**
+         * No matching path segment found
+         */
+        FAILED,
+
+        /**
+         * Matching state was reset for new attempt
+         */
+        RESET
     }
 
     /**
