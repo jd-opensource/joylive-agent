@@ -21,28 +21,48 @@ import lombok.Setter;
 
 import java.util.Set;
 
-@Getter
-@Setter
 public class RefreshConfig {
 
+    @Getter
+    @Setter
     private boolean environmentEnabled;
 
+    @Getter
+    @Setter
     private boolean beanEnabled = true;
 
+    @Getter
+    @Setter
     private Set<String> beanNames;
 
+    @Getter
+    @Setter
     private Set<String> beanClassPrefixes;
 
+    @Getter
+    @Setter
     private Set<String> ignoreKeys;
 
+    @Getter
+    @Setter
     private Set<String> ignoreKeyPrefixes;
 
+    private transient Inclusion beanInclusion;
+
+    private transient Inclusion ignoreInclusion;
+
     public boolean isEnabled(String beanName, Object bean) {
-        return Inclusion.test(beanNames, beanClassPrefixes, true, beanName, n -> bean.getClass().getName());
+        if (beanInclusion == null) {
+            beanInclusion = new Inclusion(beanNames, beanClassPrefixes, true);
+        }
+        return beanInclusion.test(beanName, n -> bean.getClass().getName());
     }
 
     public boolean isEnabled(String key) {
-        return key != null && !Inclusion.test(ignoreKeys, ignoreKeyPrefixes, false, key);
+        if (ignoreInclusion == null) {
+            ignoreInclusion = new Inclusion(ignoreKeys, ignoreKeyPrefixes);
+        }
+        return key != null && !ignoreInclusion.test(key);
     }
 
     public boolean isEmpty() {

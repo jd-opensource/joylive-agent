@@ -64,8 +64,10 @@ public class UnitRoute {
 
     private final transient Cache<String, CellRoute> cellRouteCache = new MapCache<>(new ListBuilder<>(() -> cells, CellRoute::getCode));
 
+    private transient Inclusion inclusion;
+
     public InclusionType allow(String variable) {
-        return Inclusion.execute(allows, prefixes, false, variable, null);
+        return inclusion.include(variable);
     }
 
     public boolean contains(int value) {
@@ -122,6 +124,7 @@ public class UnitRoute {
             }
         }
         getCellRoute("");
+        inclusion = new Inclusion(allows, prefixes);
     }
 
 }

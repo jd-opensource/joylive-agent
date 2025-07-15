@@ -122,6 +122,8 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
 
     private transient final Cache<String, RemoteCnd> cellRemoteCache = new MapCache<>(new ListBuilder<>(() -> cellRemotes, RemoteCnd::getName));
 
+    private transient Inclusion inclusion;
+
     /**
      * Retrieves the threshold for a specific unit based on its name.
      * If the unit is not found, returns the default unit threshold.
@@ -155,6 +157,7 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
     public void cache() {
         unitRemoteCache.get("");
         cellRemoteCache.get("");
+        inclusion = new Inclusion(methods, methodPrefixes, true);
     }
 
     @Override
@@ -208,7 +211,7 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
         if (writeProtect == null || !writeProtect) {
             return false;
         }
-        return Inclusion.test(methods, methodPrefixes, true, methodName);
+        return inclusion.test(methodName);
     }
 
     public ServiceLivePolicy clone() {

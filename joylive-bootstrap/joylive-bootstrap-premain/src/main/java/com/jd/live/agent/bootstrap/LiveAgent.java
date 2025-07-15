@@ -596,15 +596,15 @@ public class LiveAgent {
          * @return A set of strings representing the excluded applications.
          */
         private static Inclusion getExcludeApps(Function<String, Object> env) {
-            Inclusion result = new Inclusion();
+            Inclusion.Builder builder = Inclusion.builder();
             String config = (String) env.apply(EXCLUDE_APP);
             if (config != null) {
                 String[] values = config.split(ARRAY_DELIMITER_PATTERN);
                 for (String value : values) {
-                    result.addClassName(value);
+                    builder.addClassName(value);
                 }
             }
-            return result;
+            return builder.build();
         }
 
     }

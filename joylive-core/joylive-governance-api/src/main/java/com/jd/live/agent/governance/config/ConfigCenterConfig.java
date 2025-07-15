@@ -53,10 +53,6 @@ public class ConfigCenterConfig {
 
     private transient List<ConfigName> configs;
 
-    public boolean isEnabled(String beanName, Object bean) {
-        return refresh == null || refresh.isEnabled(beanName, bean);
-    }
-
     public String getProperty(String key) {
         return key == null || properties == null ? null : properties.get(key);
     }

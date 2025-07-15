@@ -16,10 +16,13 @@
 package com.jd.live.agent.bootstrap.util;
 
 import lombok.Getter;
+import lombok.Setter;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -32,222 +35,109 @@ public class Inclusion implements Predicate<String> {
      * Set of exact names to exclude (case-sensitive)
      */
     @Getter
+    @Setter
     private Set<String> names;
 
     /**
      * Set of name prefixes to exclude (case-sensitive)
      */
     @Getter
+    @Setter
     private Set<String> prefixes;
 
-    private boolean nullable;
+    private final boolean nullable;
+
+    private final Predicate<String> prefixPredicate;
 
     public Inclusion() {
-    }
-
-    public Inclusion(boolean nullable) {
-        this.nullable = nullable;
+        this(null, null, false, null);
     }
 
     public Inclusion(Set<String> names, Set<String> prefixes) {
-        this(names, prefixes, false);
+        this(names, prefixes, false, null);
     }
 
     public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable) {
+        this(names, prefixes, nullable, null);
+    }
+
+    public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable, PrefixPredicateFactory factory) {
         this.names = names;
         this.prefixes = prefixes;
         this.nullable = nullable;
-    }
-
-    /**
-     * Adds an exact name to the inclusion list
-     *
-     * @param name the exact class name to exclude (must not be null)
-     */
-    public void addName(String name) {
-        if (name == null) {
-            return;
-        }
-        if (names == null) {
-            names = new HashSet<>(8);
-        }
-        names.add(name);
-    }
-
-    /**
-     * Adds multiple names to the inclusion list.
-     *
-     * @param names collection of names to add (ignored if null)
-     */
-    public void addNames(Collection<String> names) {
-        if (names == null) {
-            return;
-        }
-        if (this.names == null) {
-            this.names = new HashSet<>(8);
-        }
-        this.names.addAll(names);
-    }
-
-    /**
-     * Adds a name prefix to the inclusion list
-     *
-     * @param prefix the class name prefix to include (must not be null)
-     */
-    public void addPrefix(String prefix) {
-        if (prefixes == null) {
-            prefixes = new HashSet<>(8);
-        }
-        prefixes.add(prefix);
-    }
-
-    /**
-     * Adds multiple prefixes to the inclusion list.
-     *
-     * @param prefixes collection of prefixes to add (ignored if null)
-     */
-    public void addPrefixes(Collection<String> prefixes) {
-        if (prefixes == null) {
-            return;
-        }
-        if (this.prefixes == null) {
-            this.prefixes = new HashSet<>(8);
-        }
-        this.prefixes.addAll(prefixes);
-    }
-
-    /**
-     * Processes and adds a class name based on its suffix pattern.
-     * <p>
-     * Handles special cases for class names ending with:
-     * <ul>
-     *   <li>'/', '.', or '$' - treats as a prefix match</li>
-     *   <li>'*' - treats as a wildcard prefix match (excluding the '*')</li>
-     *   <li>Other characters - treats as exact match</li>
-     * </ul>
-     *
-     * @param className the class name to process (null or empty values are ignored)
-     */
-    public void addClassName(String className) {
-        className = className == null ? null : className.trim();
-        int length = className == null ? 0 : className.length();
-        if (length > 0) {
-            char ch = className.charAt(length - 1);
-            switch (ch) {
-                case '/':
-                case '.':
-                case '$':
-                    if (length > 1) {
-                        addPrefix(className);
-                    }
-                    break;
-                case '*':
-                    if (length > 1) {
-                        addPrefix(className.substring(0, length - 1));
-                    }
-                    break;
-                default:
-                    addName(className);
-            }
-        }
+        this.prefixPredicate = factory != null ? factory.create(prefixes) : DefaultPrefixPredicateFactory.INSTANCE.create(prefixes);
     }
 
     @Override
     public boolean test(String name) {
-        // TODO use a trie to improve performance
-        return execute(names, prefixes, nullable, name, null, null) != InclusionType.EXCLUDE;
-    }
-
-    public boolean test(String name, Predicate<String> otherPredicate) {
-        return execute(names, prefixes, nullable, name, otherPredicate, null) != InclusionType.EXCLUDE;
+        return include(name, null) != InclusionType.EXCLUDE;
     }
 
     /**
-     * Tests whether a given name matches any inclusion pattern in the provided sets.
+     * Tests if a name matches the inclusion rules with prefix transformation.
      *
-     * @param names    the set of exact names to match against.
-     * @param prefixes the set of prefixes to match against.
-     * @param nullable whether empty sets should match any name
-     * @param name     the name to test (may be {@code null})
-     * @return {@code true} if the name matches any exclusion rule, {@code false} otherwise
+     * @param name            the name to test
+     * @param prefixConverter optional name transformer for prefix matching
+     * @return true if name is included (not EXCLUDE)
      */
-    public static boolean test(Set<String> names, Set<String> prefixes, boolean nullable, String name) {
-        return execute(names, prefixes, nullable, name, null, null) != InclusionType.EXCLUDE;
+    public boolean test(String name, Function<String, String> prefixConverter) {
+        return include(name, prefixConverter) != InclusionType.EXCLUDE;
     }
 
     /**
-     * Checks if a name matches any inclusion rule in the given sets.
+     * Determines the inclusion type for a name.
      *
-     * @param names      set of exact names to match
-     * @param prefixes   set of prefixes to match
-     * @param nullable   whether empty sets should match any name
-     * @param name       the name to test
-     * @param prefixFunc optional function to transform name before prefix check
-     * @return true if name matches any rule, false otherwise
+     * @param name the name to check
+     * @return the inclusion classification (INCLUDE/EXCLUDE/NEUTRAL)
      */
-    public static boolean test(Set<String> names,
-                               Set<String> prefixes,
-                               boolean nullable,
-                               String name,
-                               Function<String, String> prefixFunc) {
-        return execute(names, prefixes, nullable, name, null, prefixFunc) != InclusionType.EXCLUDE;
-    }
-
-
-    /**
-     * Determines how a name should be included based on matching rules.
-     *
-     * @param names      exact names to match (null/empty means no exact matches)
-     * @param prefixes   prefixes to match (null/empty means no prefix matches)
-     * @param nullable   whether to include when both sets are empty
-     * @param name       name to check (null/empty always returns EXCLUDE)
-     * @param prefixFunc optional name transformer for prefix matching
-     * @return inclusion type indicating match result (never null)
-     */
-    public static InclusionType execute(Set<String> names,
-                                        Set<String> prefixes,
-                                        boolean nullable,
-                                        String name,
-                                        Function<String, String> prefixFunc) {
-        return execute(names, prefixes, nullable, name, null, prefixFunc);
+    public InclusionType include(String name) {
+        return include(name, null);
     }
 
     /**
-     * Determines the inclusion type of a name based on matching rules against name and other sets.
+     * Determines how to include a name based on exact matches and prefix rules.
      *
-     * @param names          set of exact names to match
-     * @param others         set of other patterns to match against
-     * @param nullable       whether to include when both sets are empty
-     * @param name           name to check
-     * @param otherPredicate predicate to test other patterns
-     * @param otherNameFunc  function to transform name before other matching
-     * @return inclusion type indicating the match result
-     * @see InclusionType
+     * @param name            the name to evaluate (null/empty returns EXCLUDE)
+     * @param prefixConverter optional name transformer for prefix matching
+     * @return the inclusion decision based on matching rules
+     * @see InclusionType for possible return values
      */
-    public static InclusionType execute(Set<String> names,
-                                        Set<String> others,
-                                        boolean nullable,
-                                        String name,
-                                        Predicate<String> otherPredicate,
-                                        Function<String, String> otherNameFunc) {
+    private InclusionType include(String name, Function<String, String> prefixConverter) {
         if (name == null || name.isEmpty()) {
             return InclusionType.EXCLUDE;
         } else {
             boolean nameEmpty = names == null || names.isEmpty();
-            boolean otherEmpty = others == null || others.isEmpty();
+            boolean prefixEmpty = prefixes == null || prefixes.isEmpty();
             if (!nameEmpty && names.contains(name)) {
                 return InclusionType.INCLUDE_EXACTLY;
-            } else if (!otherEmpty) {
-                String otherName = otherNameFunc == null ? name : otherNameFunc.apply(name);
-                Predicate<String> predicate = otherPredicate == null ? otherName::startsWith : otherPredicate;
-                for (String other : others) {
-                    if (predicate.test(other)) {
-                        return InclusionType.INCLUDE_OTHER;
-                    }
+            } else if (!prefixEmpty && prefixPredicate != null) {
+                String prefix = prefixConverter == null ? name : prefixConverter.apply(name);
+                if (prefixPredicate.test(prefix)) {
+                    return InclusionType.INCLUDE_OTHER;
                 }
             }
-            return nullable && nameEmpty && otherEmpty ? InclusionType.INCLUDE_EMPTY : InclusionType.EXCLUDE;
+            return nullable && nameEmpty && prefixEmpty ? InclusionType.INCLUDE_EMPTY : InclusionType.EXCLUDE;
         }
+    }
+
+    /**
+     * Creates a new builder for constructing inclusion rules.
+     *
+     * @return a fresh builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Creates a new builder with nullability and prefix matching configuration.
+     *
+     * @param nullable whether null values should be included by default
+     * @param factory  the strategy for creating prefix matchers (null allowed)
+     * @return a new builder instance with specified configurations
+     */
+    public static Builder builder(boolean nullable, PrefixPredicateFactory factory) {
+        return new Builder().nullable(nullable).factory(factory);
     }
 
     /**
@@ -274,4 +164,247 @@ public class Inclusion implements Predicate<String> {
          */
         EXCLUDE
     }
+
+    /**
+     * Factory for creating prefix matcher instances.
+     */
+    // TODO use a trie to improve performance
+    public interface PrefixPredicateFactory {
+        /**
+         * Creates a new matcher for the given prefix set.
+         *
+         * @param prefixes the prefixes to match against
+         * @return a configured prefix matcher instance
+         */
+        Predicate<String> create(Set<String> prefixes);
+    }
+
+    /**
+     * Default implementation that creates predicates checking string prefixes.
+     */
+    public static class DefaultPrefixPredicateFactory implements PrefixPredicateFactory {
+
+        public static final PrefixPredicateFactory INSTANCE = new DefaultPrefixPredicateFactory();
+
+        @Override
+        public Predicate<String> create(Set<String> prefixes) {
+            return s -> {
+                if (prefixes != null && !prefixes.isEmpty()) {
+                    for (String prefix : prefixes) {
+                        if (s.startsWith(prefix)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+        }
+    }
+
+    /**
+     * Factory that creates predicates checking exact string matches (not prefixes).
+     */
+    public static class ContainsPredicateFactory implements PrefixPredicateFactory {
+
+        public static final PrefixPredicateFactory INSTANCE = new ContainsPredicateFactory();
+
+        @Override
+        public Predicate<String> create(Set<String> prefixes) {
+            return s -> {
+                if (s != null && !s.isEmpty() && prefixes != null && !prefixes.isEmpty()) {
+                    return prefixes.contains(s);
+                }
+                return false;
+            };
+        }
+    }
+
+
+    /**
+     * Builder for constructing {@link Inclusion} rules with class name patterns.
+     */
+    public static class Builder {
+        private Set<String> names;
+        private Set<String> prefixes;
+        private boolean nullable;
+        private PrefixPredicateFactory factory;
+
+        public Builder nullable(boolean nullable) {
+            this.nullable = nullable;
+            return this;
+        }
+
+        public Builder factory(PrefixPredicateFactory factory) {
+            this.factory = factory;
+            return this;
+        }
+
+        /**
+         * Adds an exact name to the inclusion list
+         *
+         * @param name the exact class name to exclude (must not be null)
+         * @return this builder for method chaining
+         */
+        public Builder addName(String name) {
+            if (name != null && !name.isEmpty()) {
+                if (names == null) {
+                    names = new HashSet<>(8);
+                }
+                names.add(name);
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple elements to the builder by applying a consumer to each.
+         *
+         * @param <T>        the type of elements to add
+         * @param collection elements to process (ignored if null)
+         * @param consumer   operation to perform for each element
+         * @return this builder for chaining
+         */
+        public <T> Builder add(Collection<T> collection, BiConsumer<Builder, T> consumer) {
+            if (collection != null) {
+                collection.forEach(t -> consumer.accept(this, t));
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple names to the inclusion list.
+         *
+         * @param names collection of names to add (ignored if null)
+         * @return this builder for method chaining
+         */
+        public Builder addNames(Collection<String> names) {
+            if (names != null) {
+                if (this.names == null) {
+                    this.names = new HashSet<>(names);
+                } else {
+                    this.names.addAll(names);
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple names to the inclusion list.
+         *
+         * @param names array of names to add (ignored if null)
+         * @return this builder for method chaining
+         */
+        public Builder addNames(String[] names) {
+            return names == null ? this : addNames(Arrays.asList(names));
+        }
+
+        /**
+         * Adds a name prefix to the inclusion list
+         *
+         * @param prefix the class name prefix to include (must not be null)
+         * @return this builder for method chaining
+         */
+        public Builder addPrefix(String prefix) {
+            if (prefix != null && !prefix.isEmpty()) {
+                if (prefixes == null) {
+                    prefixes = new HashSet<>(8);
+                }
+                prefixes.add(prefix);
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple prefixes to the inclusion list.
+         *
+         * @param prefixes collection of prefixes to add (ignored if null)
+         * @return this builder for method chaining
+         */
+        public Builder addPrefixes(Collection<String> prefixes) {
+            if (prefixes != null) {
+                if (this.prefixes == null) {
+                    this.prefixes = new HashSet<>(prefixes);
+                } else {
+                    this.prefixes.addAll(prefixes);
+                }
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple prefixes to the inclusion list.
+         *
+         * @param prefixes array of prefixes to add (ignored if null)
+         * @return this builder for method chaining
+         */
+        public Builder addPrefixes(String[] prefixes) {
+            return prefixes == null ? this : addPrefixes(Arrays.asList(prefixes));
+        }
+
+        /**
+         * Adds multiple class name prefixes with optional transformation.
+         *
+         * @param prefixes  array of class name prefixes (ignored if null)
+         * @param converter function to transform each prefix (optional, may be null)
+         * @return this builder for fluent chaining
+         */
+        public Builder addPrefixes(String[] prefixes, Function<String, String> converter) {
+            if (prefixes == null) {
+                return this;
+            }
+            if (converter == null) {
+                return addPrefixes(Arrays.asList(prefixes));
+            }
+            for (String prefix : prefixes) {
+                addPrefix(converter.apply(prefix));
+            }
+            return this;
+        }
+
+        /**
+         * Processes and adds a class name based on its suffix pattern.
+         * <p>
+         * Handles special cases for class names ending with:
+         * <ul>
+         *   <li>'/', '.', or '$' - treats as a prefix match</li>
+         *   <li>'*' - treats as a wildcard prefix match (excluding the '*')</li>
+         *   <li>Other characters - treats as exact match</li>
+         * </ul>
+         *
+         * @param className the class name to process (null or empty values are ignored)
+         * @return this builder for method chaining
+         */
+        public Builder addClassName(String className) {
+            if (className == null || className.isEmpty()) {
+                return this;
+            }
+            className = className.trim();
+            int length = className.length();
+            if (length > 0) {
+                char ch = className.charAt(length - 1);
+                switch (ch) {
+                    case '/':
+                    case '.':
+                    case '$':
+                        if (length > 1) {
+                            addPrefix(className);
+                        }
+                        break;
+                    case '*':
+                        if (length > 1) {
+                            addPrefix(className.substring(0, length - 1));
+                        }
+                        break;
+                    default:
+                        addName(className);
+                }
+            }
+            return this;
+        }
+
+        public Inclusion build() {
+            return new Inclusion(names, prefixes, nullable, factory);
+        }
+    }
+
+
 }

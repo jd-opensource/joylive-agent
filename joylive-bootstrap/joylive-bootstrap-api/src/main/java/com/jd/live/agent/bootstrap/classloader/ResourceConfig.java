@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
@@ -104,14 +103,10 @@ public class ResourceConfig {
                           String[] selfPrefixes,
                           String[] isolationResources,
                           String[] isolationPrefixes) {
-        config = new Inclusion(configResources == null ? null : new HashSet<>(Arrays.asList(configResources)),
-                configExtensions == null ? null : new HashSet<>(Arrays.asList(configExtensions)));
-        parent = new Inclusion(parentResources == null ? null : new HashSet<>(Arrays.asList(parentResources)),
-                parentPrefixes == null ? null : new HashSet<>(Arrays.asList(parentPrefixes)));
-        self = new Inclusion(selfResources == null ? null : new HashSet<>(Arrays.asList(selfResources)),
-                selfPrefixes == null ? null : new HashSet<>(Arrays.asList(selfPrefixes)));
-        isolation = new Inclusion(isolationResources == null ? null : new HashSet<>(Arrays.asList(isolationResources)),
-                isolationPrefixes == null ? null : new HashSet<>(Arrays.asList(isolationPrefixes)));
+        config = Inclusion.builder().factory(Inclusion.ContainsPredicateFactory.INSTANCE).addNames(configResources).addPrefixes(configExtensions, String::toLowerCase).build();
+        parent = Inclusion.builder().addNames(parentResources).addPrefixes(parentPrefixes).build();
+        self = Inclusion.builder().addNames(selfResources).addPrefixes(selfPrefixes).build();
+        isolation = Inclusion.builder().addNames(isolationResources).addPrefixes(isolationPrefixes).build();
     }
 
     public boolean isConfig(String name) {
@@ -119,8 +114,8 @@ public class ResourceConfig {
             return false;
         } else {
             int pos = name.lastIndexOf('.');
-            String extension = pos > 0 ? name.substring(pos + 1) : "";
-            return config.test(name, extension::equalsIgnoreCase);
+            String extension = pos > 0 ? name.substring(pos + 1).toLowerCase() : "";
+            return config.test(name, n -> extension);
         }
     }
 

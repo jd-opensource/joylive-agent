@@ -40,60 +40,80 @@ import java.util.Set;
  *
  * @since 1.0.0
  */
-@Setter
-@Getter
 @Consumer
 public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy>, ErrorPolicy {
     /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
      * to attempt to recover from transient failures by retrying the failed operation.
      */
+    @Setter
+    @Getter
     private Integer retry;
 
     /**
      * Retry waiting interval, in milliseconds.
      */
+    @Setter
+    @Getter
     private Long interval;
 
     /**
      * Retry execution timeout, in milliseconds.
      */
+    @Setter
+    @Getter
     private Long timeout;
 
     /**
      * Error code policy
      */
+    @Setter
+    @Getter
     private ErrorParserPolicy codePolicy;
 
     /**
      * Collection of retry error codes. This parameter specifies which status codes should be considered retryable.
      */
+    @Setter
+    @Getter
     private Set<String> errorCodes;
 
     /**
      * Error message policy
      */
+    @Setter
+    @Getter
     private ErrorParserPolicy messagePolicy;
 
     /**
      * Collection of retry error messages. This parameter specifies which status codes should be considered retryable.
      */
+    @Setter
+    @Getter
     private Set<String> errorMessages;
 
     /**
      * A collection of retryable exception class names.
      */
+    @Setter
+    @Getter
     private Set<String> exceptions;
 
     /**
      * A set of method names that should be retried in case of failure.
      */
+    @Setter
+    @Getter
     private Set<String> methods;
 
     /**
      * A set of method name prefixes that should be retried in case of failure.
      */
+    @Setter
+    @Getter
     private Set<String> methodPrefixes;
+
+    private transient Inclusion inclusion;
 
     @Override
     public void supplement(RetryPolicy source) {
@@ -166,13 +186,14 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
      * @return true if the method name should be retried, false otherwise.
      */
     public boolean containsMethod(String methodName) {
-        return Inclusion.test(methods, methodPrefixes, true, methodName);
+        return inclusion.test(methodName);
     }
 
     public void cache() {
         if (codePolicy != null) {
             codePolicy.cache();
         }
+        inclusion = new Inclusion(methods, methodPrefixes, true);
     }
 
 }

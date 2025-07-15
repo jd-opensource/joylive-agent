@@ -24,47 +24,76 @@ import lombok.Setter;
 import java.util.HashSet;
 import java.util.Set;
 
-@Getter
-@Setter
 public class TransmitConfig {
 
     /**
      * A collection of keys that need to be transmitted.
      */
+    @Getter
+    @Setter
     private Set<String> keys;
 
     /**
      * A collection of key prefixes that need to be transmitted.
      */
+    @Getter
+    @Setter
     private Set<String> prefixes;
 
     /**
      * Transmit type, W3cBaggage as the default selection
      */
+    @Getter
+    @Setter
     private String type = "w3c";
 
     /**
      * Auto-detect transmit type when reading.
      */
+    @Getter
+    @Setter
     private AutoDetect autoDetect = AutoDetect.NONE;
 
     /**
      * Thread transmit config
      */
     @Config("thread")
-    private ThreadConfig threadConfig = new ThreadConfig();
-
     @Getter
     @Setter
+    private ThreadConfig threadConfig = new ThreadConfig();
+
+    private transient Inclusion inclusion;
+
+    public boolean include(String key) {
+        return inclusion.test(key);
+    }
+
+    protected void initialize() {
+        inclusion = new Inclusion(keys, prefixes);
+        threadConfig.initialize();
+    }
+
     public static class ThreadConfig {
 
+        @Getter
+        @Setter
         private Set<String> excludeExecutors = new HashSet<>();
 
+        @Getter
+        @Setter
         private Set<String> excludeExecutorPrefixes = new HashSet<>();
 
+        @Getter
+        @Setter
         private Set<String> excludeTasks = new HashSet<>();
 
+        @Getter
+        @Setter
         private Set<String> excludeTaskPrefixes = new HashSet<>();
+
+        private transient Inclusion executorInclusion;
+
+        private transient Inclusion taskInclusion;
 
         /**
          * Checks if the given executor type is excluded.
@@ -83,7 +112,7 @@ public class TransmitConfig {
          * @return {@code true} if the executor name is excluded, {@code false} otherwise.
          */
         public boolean isExcludedExecutor(String name) {
-            return Inclusion.test(excludeExecutors, excludeExecutorPrefixes, false, name);
+            return executorInclusion.test(name);
         }
 
         /**
@@ -103,7 +132,12 @@ public class TransmitConfig {
          * @return {@code true} if the task name is excluded or matches any excluded prefix, {@code false} otherwise.
          */
         public boolean isExcludedTask(String name) {
-            return Inclusion.test(excludeTasks, excludeTaskPrefixes, false, name);
+            return taskInclusion.test(name);
+        }
+
+        protected void initialize() {
+            executorInclusion = new Inclusion(excludeExecutors, excludeExecutorPrefixes);
+            taskInclusion = new Inclusion(excludeTasks, excludeTaskPrefixes);
         }
 
     }

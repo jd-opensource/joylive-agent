@@ -22,36 +22,15 @@ import java.util.Set;
 
 /**
  * Composite implementation of {@link CargoRequire} that aggregates multiple {@link CargoRequire} instances.
- * <p>
- * This class combines the requirements from a list of {@link CargoRequire} instances into a single set of names
- * and prefixes to match against. It is useful when multiple sets of criteria are needed to determine the cargos to be included.
- * </p>
  */
 public class CargoRequires implements CargoRequire {
 
     private final Inclusion inclusion;
 
     public CargoRequires(List<CargoRequire> requires) {
-        int size = requires == null ? 0 : requires.size();
-        switch (size) {
-            case 0:
-                inclusion = new Inclusion();
-                break;
-            case 1:
-                CargoRequire req = requires.get(0);
-                inclusion = new Inclusion(req.getNames(), req.getPrefixes());
-                break;
-            default:
-                inclusion = new Inclusion();
-                for (CargoRequire require : requires) {
-                    if (require.getNames() != null) {
-                        inclusion.addNames(require.getNames());
-                    }
-                    if (require.getPrefixes() != null) {
-                        inclusion.addPrefixes(require.getPrefixes());
-                    }
-                }
-        }
+        inclusion = Inclusion.builder()
+                .add(requires, (b, r) -> b.addNames(r.getNames()).addPrefixes(r.getPrefixes()))
+                .build();
     }
 
     @Override

@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.context.bag.live;
 
-import com.jd.live.agent.bootstrap.util.Inclusion;
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -35,31 +35,38 @@ import java.util.Set;
  */
 @Injectable
 @Extension("LiveCargoRequire")
-public class LiveCargoRequire implements CargoRequire {
+public class LiveCargoRequire implements CargoRequire, ExtensionInitializer {
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig governanceConfig;
+
+    private TransmitConfig transmitConfig;
 
     public LiveCargoRequire() {
     }
 
     public LiveCargoRequire(GovernanceConfig governanceConfig) {
         this.governanceConfig = governanceConfig;
+        this.transmitConfig = governanceConfig.getTransmitConfig();
     }
 
     @Override
     public Set<String> getNames() {
-        return governanceConfig.getTransmitConfig().getKeys();
+        return transmitConfig.getKeys();
     }
 
     @Override
     public Set<String> getPrefixes() {
-        return governanceConfig.getTransmitConfig().getPrefixes();
+        return transmitConfig.getPrefixes();
     }
 
     @Override
     public boolean test(String name) {
-        TransmitConfig config = governanceConfig.getTransmitConfig();
-        return Inclusion.test(config.getKeys(), config.getPrefixes(), false, name);
+        return transmitConfig.include(name);
+    }
+
+    @Override
+    public void initialize() {
+        transmitConfig = governanceConfig.getTransmitConfig();
     }
 }

@@ -182,5 +182,6 @@ public class GovernanceConfig {
         }
         serviceConfig.initialize();
         redisConfig.initialize();
+        transmitConfig.initialize();
     }
 }

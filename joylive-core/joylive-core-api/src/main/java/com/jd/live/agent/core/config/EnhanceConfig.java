@@ -27,8 +27,6 @@ import java.util.Set;
  *
  * @since 1.0.0
  */
-@Setter
-@Getter
 public class EnhanceConfig {
 
     public static final String SUPPORT_JAVA_VERSION = "[,1.8);[1.8.0_60,]";
@@ -37,36 +35,56 @@ public class EnhanceConfig {
 
     private static final int DEFAULT_POOL_CLEAN_INTERVAL = 60 * 1000;
 
+    @Setter
+    @Getter
     private String javaVersion = SUPPORT_JAVA_VERSION;
 
+    @Setter
+    @Getter
     private long poolExpireTime = 10 * 60 * 1000;
 
+    @Setter
     private long poolCleanInterval = DEFAULT_POOL_CLEAN_INTERVAL;
 
     /**
      * exclude class names
      */
+    @Setter
+    @Getter
     private Set<String> excludeTypes;
 
     /**
      * exclude class name prefix
      */
+    @Setter
+    @Getter
     private Set<String> excludePrefixes;
 
     /**
      * exclude classes which is loaded by the classloader
      */
+    @Setter
+    @Getter
     private Set<String> excludeClassLoaders;
 
     /**
      * Java add opens
      */
+    @Setter
+    @Getter
     private Map<String, Set<String>> addOpens;
 
+    @Setter
+    @Getter
     private boolean shutdownOnError;
 
+    private transient Inclusion inclusion;
+
     public boolean isExclude(String className, ClassLoader classLoader) {
-        if (Inclusion.test(excludeTypes, excludePrefixes, false, className)) {
+        if (inclusion == null) {
+            inclusion = new Inclusion(excludeTypes, excludePrefixes);
+        }
+        if (inclusion.test(className)) {
             return true;
         }
         if (excludeClassLoaders != null && classLoader != null) {

@@ -18,23 +18,21 @@ package com.jd.live.agent.bootstrap.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
 public class InclusionTest {
 
     @Test
     void testInclusion() {
-
-        Inclusion inclusion = new Inclusion();
-        inclusion.addName("a");
-        inclusion.addNames(Arrays.asList("b", "c"));
-        inclusion.addPrefix("d");
-        inclusion.addPrefixes(Arrays.asList("e", "f"));
-        inclusion.addClassName("a.b.c");
-        inclusion.addClassName("a.b.d*");
-        inclusion.addClassName("a.b.e/");
-        inclusion.addClassName("a.b.f$");
-        inclusion.addClassName("a.b.g.");
+        Inclusion inclusion = Inclusion.builder()
+                .addName("a")
+                .addNames(new String[]{"b", "c"})
+                .addPrefix("d")
+                .addPrefixes(new String[]{"e", "f"})
+                .addClassName("a.b.c")
+                .addClassName("a.b.d*")
+                .addClassName("a.b.e/")
+                .addClassName("a.b.f$")
+                .addClassName("a.b.g.")
+                .build();
 
         Assertions.assertTrue(inclusion.test("a"));
         Assertions.assertTrue(inclusion.test("b"));
@@ -48,6 +46,13 @@ public class InclusionTest {
         Assertions.assertTrue(inclusion.test("a.b.f$a"));
         Assertions.assertTrue(inclusion.test("a.b.g.k"));
         Assertions.assertFalse(inclusion.test("a.b"));
+
+        inclusion = Inclusion.builder()
+                .addName("a")
+                .addPrefix("ext")
+                .factory(Inclusion.ContainsPredicateFactory.INSTANCE)
+                .build();
+        Assertions.assertTrue(inclusion.test("c", s -> "ext"));
 
     }
 }
