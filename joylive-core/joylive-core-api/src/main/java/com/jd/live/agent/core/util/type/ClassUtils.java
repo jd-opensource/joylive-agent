@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util.type;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -240,6 +241,40 @@ public class ClassUtils {
         } catch (ClassNotFoundException e) {
             return null;
         }
+    }
+
+    /**
+     * Gets a declared constructor by name from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type           the class to search
+     * @param parameterTypes the method parameter types
+     * @return the method if found, null otherwise
+     */
+    public static Constructor<?> getDeclaredConstructor(Class<?> type, Class<?>[] parameterTypes) {
+        return getDeclaredConstructor(type, c -> Arrays.equals(parameterTypes, c.getParameterTypes()));
+    }
+
+    /**
+     * Gets a declared constructor from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type      the class to search
+     * @param predicate the predicate to match
+     * @return the method if found, null otherwise
+     */
+    public static Constructor<?> getDeclaredConstructor(Class<?> type, Predicate<Constructor<?>> predicate) {
+        if (type == null) {
+            return null;
+        }
+        Constructor<?>[] constructors = type.getDeclaredConstructors();
+        for (Constructor<?> constructor : constructors) {
+            if (predicate.test(constructor)) {
+                constructor.setAccessible(true);
+                return constructor;
+            }
+        }
+        return null;
     }
 
 }

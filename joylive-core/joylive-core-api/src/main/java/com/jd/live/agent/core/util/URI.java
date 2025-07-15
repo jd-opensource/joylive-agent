@@ -191,6 +191,17 @@ public class URI {
     }
 
     /**
+     * Sets the address component of the URI.
+     *
+     * @param host the new host name or IP address.
+     * @param port the new port number.
+     * @return a new URI instance with the updated host.
+     */
+    public URI address(String host, Integer port) {
+        return new URI(scheme, user, password, host, port, path, parameters);
+    }
+
+    /**
      * Sets the path component of the URI.
      *
      * @param path the new path.

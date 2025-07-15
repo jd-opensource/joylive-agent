@@ -23,5 +23,6 @@
         <module>joylive-failover-jedis5</module>
         <module>joylive-failover-jedis6</module>
         <module>joylive-failover-lettuce6</module>
+        <module>joylive-failover-redisson3</module>
     </modules>
 </project>
