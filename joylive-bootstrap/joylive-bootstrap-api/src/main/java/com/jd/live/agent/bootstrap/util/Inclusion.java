@@ -154,7 +154,6 @@ public class Inclusion implements Predicate<String> {
     /**
      * Factory for creating prefix matcher instances.
      */
-    // TODO use a trie to improve performance
     public interface PredicateFactory {
         /**
          * Creates a new matcher for the given prefix set.
