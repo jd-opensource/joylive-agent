@@ -306,6 +306,7 @@ agent:
       username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}
       password: ${CONFIG_CENTER_PASSWORD:${CONFIG_PASSWORD:nacos}}
       grayEnabled: ${CONFIG_CENTER_GRAY_ENABLED:true}
+      cipher: ${CONFIG_CENTER_CIPHER:}
       refresh:
         environmentEnabled: ${CONFIG_CENTER_REFRESH_ENVIRONMENT_ENABLED:false}
         beanEnabled: ${CONFIG_CENTER_REFRESH_BEAN_ENABLED:true}

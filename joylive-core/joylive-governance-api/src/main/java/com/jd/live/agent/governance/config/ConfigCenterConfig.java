@@ -45,6 +45,8 @@ public class ConfigCenterConfig {
 
     private RefreshConfig refresh = new RefreshConfig();
 
+    private String cipher;
+
     private long timeout = 3000;
 
     private boolean grayEnabled;

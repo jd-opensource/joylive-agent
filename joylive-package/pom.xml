@@ -59,6 +59,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-cipher-jasypt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-parser-jackson</artifactId>
         </dependency>
         <dependency>

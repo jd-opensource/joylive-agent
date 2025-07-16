@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.service.config;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -23,7 +25,12 @@ import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.security.Cipher;
+import com.jd.live.agent.governance.security.CipherDetector;
+import com.jd.live.agent.governance.security.CipherDetector.DefaultCipherDetector;
+import com.jd.live.agent.governance.security.CipherFactory;
 import com.jd.live.agent.governance.service.ConfigService;
+import com.jd.live.agent.governance.subscription.config.ConfigListener;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
 import com.jd.live.agent.governance.subscription.config.Configurator;
 
@@ -37,11 +44,16 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractConfigService<T extends ConfigClientApi> extends AbstractService implements ConfigService, InjectSourceSupplier {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractConfigService.class);
+
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     protected GovernanceConfig governanceConfig;
 
     @Inject
     protected Map<String, ConfigParser> parsers;
+
+    @Inject
+    protected Map<String, CipherFactory> ciphers;
 
     protected Configurator configurator;
 
@@ -76,7 +88,13 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
                     }
                 }
             }
-            configurator = createConfigurator(subscriptions);
+            // add cipher
+            String cipherType = config.getCipher();
+            CipherFactory factory = cipherType == null || cipherType.isEmpty() ? null : ciphers.get(cipherType);
+            Cipher cipher = factory == null ? null : factory.create(config.getProperties());
+            configurator = cipher == null
+                    ? createConfigurator(subscriptions)
+                    : new CipherConfigurator(createConfigurator(subscriptions), cipher, new DefaultCipherDetector(config.getProperties()));
             configurator.subscribe();
             return CompletableFuture.completedFuture(null);
         } catch (Throwable e) {
@@ -120,4 +138,59 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
      * @return A {@link Configurator} instance.
      */
     protected abstract Configurator createConfigurator(List<ConfigSubscription<T>> subscriptions);
+
+    /**
+     * Helper class that configures {@link Cipher} instances using a delegate {@link Configurator}.
+     */
+    protected static class CipherConfigurator implements Configurator {
+
+        private final Configurator configurator;
+
+        private final Cipher cipher;
+
+        private final CipherDetector detector;
+
+        public CipherConfigurator(Configurator configurator, Cipher cipher, CipherDetector detector) {
+            this.configurator = configurator;
+            this.cipher = cipher;
+            this.detector = detector;
+        }
+
+        @Override
+        public String getName() {
+            return configurator.getName();
+        }
+
+        @Override
+        public void subscribe() throws Exception {
+            configurator.subscribe();
+        }
+
+        @Override
+        public Object getProperty(String name) {
+            Object result = configurator.getProperty(name);
+            if (result instanceof String) {
+                String text = (String) result;
+                if (detector.isEncrypted(name, text)) {
+                    try {
+                        return cipher.encrypt(detector.unwrap(text));
+                    } catch (Exception e) {
+                        logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public void addListener(String name, ConfigListener listener) {
+            configurator.addListener(name, listener);
+        }
+
+        @Override
+        public void removeListener(String name, ConfigListener listener) {
+            configurator.removeListener(name, listener);
+        }
+    }
+
 }
