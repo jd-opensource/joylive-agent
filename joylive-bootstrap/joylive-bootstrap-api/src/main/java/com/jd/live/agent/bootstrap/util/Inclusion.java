@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -45,9 +46,7 @@ public class Inclusion implements Predicate<String> {
     @Setter
     private Set<String> prefixes;
 
-    private final boolean nullable;
-
-    private final Predicate<String> prefixPredicate;
+    private final BiFunction<String, Function<String, String>, InclusionType> predicate;
 
     public Inclusion() {
         this(null, null, false, null);
@@ -61,27 +60,28 @@ public class Inclusion implements Predicate<String> {
         this(names, prefixes, nullable, null);
     }
 
-    public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable, PrefixPredicateFactory factory) {
+    public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable, PredicateFactory factory) {
         this.names = names;
         this.prefixes = prefixes;
-        this.nullable = nullable;
-        this.prefixPredicate = factory != null ? factory.create(prefixes) : DefaultPrefixPredicateFactory.INSTANCE.create(prefixes);
+        this.predicate = factory != null
+                ? factory.create(names, prefixes, nullable)
+                : DefaultPredicateFactory.INSTANCE.create(names, prefixes, nullable);
     }
 
     @Override
     public boolean test(String name) {
-        return include(name, null) != InclusionType.EXCLUDE;
+        return include(name) != InclusionType.EXCLUDE;
     }
 
     /**
-     * Tests if a name matches the inclusion rules with prefix transformation.
+     * Tests if a name should be included based on matching rules.
      *
-     * @param name            the name to test
-     * @param prefixConverter optional name transformer for prefix matching
-     * @return true if name is included (not EXCLUDE)
+     * @param name      the name to test (null/empty automatically excluded)
+     * @param converter optional name transformer for matching
+     * @return true if name matches any inclusion criteria, false otherwise
      */
-    public boolean test(String name, Function<String, String> prefixConverter) {
-        return include(name, prefixConverter) != InclusionType.EXCLUDE;
+    public boolean test(String name, Function<String, String> converter) {
+        return include(name, converter) != InclusionType.EXCLUDE;
     }
 
     /**
@@ -91,33 +91,19 @@ public class Inclusion implements Predicate<String> {
      * @return the inclusion classification (INCLUDE/EXCLUDE/NEUTRAL)
      */
     public InclusionType include(String name) {
-        return include(name, null);
+        return predicate.apply(name, null);
     }
 
     /**
      * Determines how to include a name based on exact matches and prefix rules.
      *
-     * @param name            the name to evaluate (null/empty returns EXCLUDE)
-     * @param prefixConverter optional name transformer for prefix matching
+     * @param name      the name to evaluate (null/empty returns EXCLUDE)
+     * @param converter optional name transformer for prefix matching
      * @return the inclusion decision based on matching rules
      * @see InclusionType for possible return values
      */
-    private InclusionType include(String name, Function<String, String> prefixConverter) {
-        if (name == null || name.isEmpty()) {
-            return InclusionType.EXCLUDE;
-        } else {
-            boolean nameEmpty = names == null || names.isEmpty();
-            boolean prefixEmpty = prefixes == null || prefixes.isEmpty();
-            if (!nameEmpty && names.contains(name)) {
-                return InclusionType.INCLUDE_EXACTLY;
-            } else if (!prefixEmpty && prefixPredicate != null) {
-                String prefix = prefixConverter == null ? name : prefixConverter.apply(name);
-                if (prefixPredicate.test(prefix)) {
-                    return InclusionType.INCLUDE_OTHER;
-                }
-            }
-            return nullable && nameEmpty && prefixEmpty ? InclusionType.INCLUDE_EMPTY : InclusionType.EXCLUDE;
-        }
+    private InclusionType include(String name, Function<String, String> converter) {
+        return predicate.apply(name, converter);
     }
 
     /**
@@ -136,7 +122,7 @@ public class Inclusion implements Predicate<String> {
      * @param factory  the strategy for creating prefix matchers (null allowed)
      * @return a new builder instance with specified configurations
      */
-    public static Builder builder(boolean nullable, PrefixPredicateFactory factory) {
+    public static Builder builder(boolean nullable, PredicateFactory factory) {
         return new Builder().nullable(nullable).factory(factory);
     }
 
@@ -169,56 +155,75 @@ public class Inclusion implements Predicate<String> {
      * Factory for creating prefix matcher instances.
      */
     // TODO use a trie to improve performance
-    public interface PrefixPredicateFactory {
+    public interface PredicateFactory {
         /**
          * Creates a new matcher for the given prefix set.
          *
          * @param prefixes the prefixes to match against
          * @return a configured prefix matcher instance
          */
-        Predicate<String> create(Set<String> prefixes);
+        BiFunction<String, Function<String, String>, InclusionType> create(Set<String> names, Set<String> prefixes, boolean nullable);
     }
 
     /**
      * Default implementation that creates predicates checking string prefixes.
      */
-    public static class DefaultPrefixPredicateFactory implements PrefixPredicateFactory {
+    public static class DefaultPredicateFactory implements PredicateFactory {
 
-        public static final PrefixPredicateFactory INSTANCE = new DefaultPrefixPredicateFactory();
+        public static final PredicateFactory INSTANCE = new DefaultPredicateFactory();
 
         @Override
-        public Predicate<String> create(Set<String> prefixes) {
-            return s -> {
-                if (prefixes != null && !prefixes.isEmpty()) {
-                    for (String prefix : prefixes) {
-                        if (s.startsWith(prefix)) {
-                            return true;
+        public BiFunction<String, Function<String, String>, InclusionType> create(Set<String> names, Set<String> prefixes, boolean nullable) {
+            return (s, f) -> {
+                if (s == null || s.isEmpty()) {
+                    return InclusionType.EXCLUDE;
+                } else {
+                    boolean nameEmpty = names == null || names.isEmpty();
+                    if (!nameEmpty && names.contains(s)) {
+                        return InclusionType.INCLUDE_EXACTLY;
+                    } else {
+                        boolean prefixEmpty = prefixes == null || prefixes.isEmpty();
+                        if (!prefixEmpty) {
+                            s = f == null ? s : f.apply(s);
+                            if (isPrefix(prefixes, s)) {
+                                return InclusionType.INCLUDE_OTHER;
+                            }
                         }
+                        return nullable && nameEmpty && prefixEmpty ? InclusionType.INCLUDE_EMPTY : InclusionType.EXCLUDE;
                     }
                 }
-                return false;
             };
+        }
+
+        /**
+         * Checks if any prefix in the set matches the beginning of the value.
+         *
+         * @param prefixes set of prefixes to check (null-safe)
+         * @param value    the string to test (null-safe)
+         * @return true if value starts with any prefix, false otherwise
+         */
+        protected boolean isPrefix(Set<String> prefixes, String value) {
+            for (String prefix : prefixes) {
+                if (value.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
     /**
      * Factory that creates predicates checking exact string matches (not prefixes).
      */
-    public static class ContainsPredicateFactory implements PrefixPredicateFactory {
+    public static class ContainsPredicateFactory extends DefaultPredicateFactory {
 
-        public static final PrefixPredicateFactory INSTANCE = new ContainsPredicateFactory();
+        public static final PredicateFactory INSTANCE = new ContainsPredicateFactory();
 
         @Override
-        public Predicate<String> create(Set<String> prefixes) {
-            return s -> {
-                if (s != null && !s.isEmpty() && prefixes != null && !prefixes.isEmpty()) {
-                    return prefixes.contains(s);
-                }
-                return false;
-            };
+        protected boolean isPrefix(Set<String> prefixes, String value) {
+            return prefixes.contains(value);
         }
     }
-
 
     /**
      * Builder for constructing {@link Inclusion} rules with class name patterns.
@@ -227,14 +232,14 @@ public class Inclusion implements Predicate<String> {
         private Set<String> names;
         private Set<String> prefixes;
         private boolean nullable;
-        private PrefixPredicateFactory factory;
+        private PredicateFactory factory;
 
         public Builder nullable(boolean nullable) {
             this.nullable = nullable;
             return this;
         }
 
-        public Builder factory(PrefixPredicateFactory factory) {
+        public Builder factory(PredicateFactory factory) {
             this.factory = factory;
             return this;
         }
@@ -331,6 +336,26 @@ public class Inclusion implements Predicate<String> {
         }
 
         /**
+         * Adds multiple class name prefixes with optional transformation.
+         *
+         * @param prefixes  collection of prefixes to add (ignored if null)
+         * @param converter function to transform each prefix (optional, may be null)
+         * @return this builder for method chaining
+         */
+        public Builder addPrefixes(Collection<String> prefixes, Function<String, String> converter) {
+            if (prefixes == null) {
+                return this;
+            }
+            if (converter == null) {
+                return addPrefixes(prefixes);
+            }
+            for (String prefix : prefixes) {
+                addPrefix(converter.apply(prefix));
+            }
+            return this;
+        }
+
+        /**
          * Adds multiple prefixes to the inclusion list.
          *
          * @param prefixes array of prefixes to add (ignored if null)
@@ -405,6 +430,5 @@ public class Inclusion implements Predicate<String> {
             return new Inclusion(names, prefixes, nullable, factory);
         }
     }
-
 
 }
