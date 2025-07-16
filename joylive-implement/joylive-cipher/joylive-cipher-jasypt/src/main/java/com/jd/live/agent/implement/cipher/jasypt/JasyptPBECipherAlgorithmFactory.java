@@ -32,7 +32,7 @@ public class JasyptPBECipherAlgorithmFactory implements CipherAlgorithmFactory {
 
     @Override
     public String[] getNames() {
-        return new String[]{"PBEWITHHMACSHA512ANDAES_256"};
+        return new String[]{"PBEWITHHMACSHA512ANDAES_256", "PBEWithMD5AndDES"};
     }
 
     private boolean validate(JasyptConfig config) {
