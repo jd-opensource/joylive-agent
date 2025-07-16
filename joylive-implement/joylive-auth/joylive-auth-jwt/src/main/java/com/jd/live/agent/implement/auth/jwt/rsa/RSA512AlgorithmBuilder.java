@@ -29,4 +29,9 @@ public class RSA512AlgorithmBuilder extends RSAAlgorithmBuilder {
     protected Algorithm doCreate(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
         return Algorithm.RSA512(publicKey, privateKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"RS512", "RSA512", "SHA512withRSA"};
+    }
 }

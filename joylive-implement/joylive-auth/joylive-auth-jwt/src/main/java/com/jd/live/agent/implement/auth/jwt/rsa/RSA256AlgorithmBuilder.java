@@ -29,4 +29,9 @@ public class RSA256AlgorithmBuilder extends RSAAlgorithmBuilder {
     protected Algorithm doCreate(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
         return Algorithm.RSA256(publicKey, privateKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"RS256", "RSA256", "SHA256withRSA"};
+    }
 }

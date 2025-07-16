@@ -26,4 +26,9 @@ public class HAMC256AlgorithmBuilder extends HAMCAlgorithmBuilder {
     protected Algorithm doCreate(String secretKey) throws Exception {
         return Algorithm.HMAC256(secretKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"HS256", "HMAC256", "HmacSHA256"};
+    }
 }

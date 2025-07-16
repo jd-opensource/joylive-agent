@@ -25,4 +25,9 @@ public class HAMC384AlgorithmBuilder extends HAMCAlgorithmBuilder {
     protected Algorithm doCreate(String secretKey) throws Exception {
         return Algorithm.HMAC384(secretKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"HS384", "HMAC384", "HmacSHA384"};
+    }
 }

@@ -15,12 +15,9 @@ import java.security.spec.X509EncodedKeySpec;
 
 /**
  * Base class for asymmetric JWT algorithm builders using public/private key pairs.
- * <p>
- * Handles key conversion from DER format and delegates algorithm-specific
- * creation to concrete implementations.
  *
  * @param <T> Type of public key
- * @param <T> Type of private key
+ * @param <V> Type of private key
  */
 public abstract class AsymmetricAlgorithmBuilder<T extends PublicKey, V extends PrivateKey> implements JWTAlgorithmBuilder {
 

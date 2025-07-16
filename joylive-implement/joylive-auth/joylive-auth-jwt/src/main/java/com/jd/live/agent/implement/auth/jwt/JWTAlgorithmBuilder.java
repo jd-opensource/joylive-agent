@@ -34,4 +34,11 @@ public interface JWTAlgorithmBuilder {
      *                   unsupported configuration, or key material issues)
      */
     Algorithm create(JWTAlgorithmContext context) throws Exception;
+
+    /**
+     * Returns an array of names.
+     *
+     * @return array of name strings, or empty array if none
+     */
+    String[] getNames();
 }

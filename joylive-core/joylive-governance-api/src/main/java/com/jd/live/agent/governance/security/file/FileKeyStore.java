@@ -29,8 +29,6 @@ import java.nio.file.Paths;
  * Each key is stored as a separate file, where the {@code keyId} parameter
  * represents the file path. Supports raw binary (DER) or Base64-encoded (PEM) keys.
  *
- * @implNote Returns {@code null} if the key file does not exist
- * @throws IOException If the key file cannot be read
  */
 @Extension(value = KeyStore.TYPE_FILE, order = KeyStore.ORDER_FILE)
 public class FileKeyStore implements KeyStore {

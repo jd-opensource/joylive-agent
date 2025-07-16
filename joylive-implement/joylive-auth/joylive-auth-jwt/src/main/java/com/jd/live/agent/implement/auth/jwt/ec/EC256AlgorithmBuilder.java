@@ -29,4 +29,9 @@ public class EC256AlgorithmBuilder extends ECPAlgorithmBuilder {
     protected Algorithm doCreate(ECPublicKey publicKey, ECPrivateKey privateKey) {
         return Algorithm.ECDSA256(publicKey, privateKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"ES256", "ECDSA256", "SHA256withECDSA"};
+    }
 }

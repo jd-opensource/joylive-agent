@@ -29,4 +29,9 @@ public class EC384AlgorithmBuilder extends ECPAlgorithmBuilder {
     protected Algorithm doCreate(ECPublicKey publicKey, ECPrivateKey privateKey) {
         return Algorithm.ECDSA384(publicKey, privateKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"ES384", "ECDSA384", "SHA384withECDSA"};
+    }
 }

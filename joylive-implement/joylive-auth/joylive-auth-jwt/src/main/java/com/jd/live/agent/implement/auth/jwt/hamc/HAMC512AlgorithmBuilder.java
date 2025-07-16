@@ -26,4 +26,9 @@ public class HAMC512AlgorithmBuilder extends HAMCAlgorithmBuilder {
     protected Algorithm doCreate(String secretKey) throws Exception {
         return Algorithm.HMAC512(secretKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"HS512", "HMAC512", "HmacSHA512"};
+    }
 }

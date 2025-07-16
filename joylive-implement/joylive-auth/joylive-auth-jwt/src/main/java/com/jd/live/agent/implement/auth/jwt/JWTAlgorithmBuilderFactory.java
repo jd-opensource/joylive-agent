@@ -39,44 +39,28 @@ public class JWTAlgorithmBuilderFactory {
     private static final Map<String, JWTAlgorithmBuilder> factories = new HashMap<>();
 
     static {
-        JWTAlgorithmBuilder builder = new RSA256AlgorithmBuilder();
-        factories.put("RS256", builder);
-        factories.put("RSA256", builder);
-        factories.put("SHA256withRSA", builder);
-        builder = new RSA384AlgorithmBuilder();
-        factories.put("RS384", builder);
-        factories.put("RSA384", builder);
-        factories.put("SHA384withRSA", builder);
-        builder = new RSA512AlgorithmBuilder();
-        factories.put("RS512", builder);
-        factories.put("RSA512", builder);
-        factories.put("SHA512withRSA", builder);
+        register(new RSA256AlgorithmBuilder());
+        register(new RSA384AlgorithmBuilder());
+        register(new RSA512AlgorithmBuilder());
 
-        builder = new EC256AlgorithmBuilder();
-        factories.put("ES256", builder);
-        factories.put("ECDSA256", builder);
-        factories.put("SHA256withECDSA", builder);
-        builder = new EC384AlgorithmBuilder();
-        factories.put("ES384", builder);
-        factories.put("ECDSA384", builder);
-        factories.put("SHA384withECDSA", builder);
-        builder = new EC512AlgorithmBuilder();
-        factories.put("ES512", builder);
-        factories.put("ECDSA512", builder);
-        factories.put("SHA512withECDSA", builder);
+        register(new EC256AlgorithmBuilder());
+        register(new EC384AlgorithmBuilder());
+        register(new EC512AlgorithmBuilder());
 
-        builder = new HAMC256AlgorithmBuilder();
-        factories.put("HS256", builder);
-        factories.put("HMAC256", builder);
-        factories.put("HmacSHA256", builder);
-        builder = new HAMC384AlgorithmBuilder();
-        factories.put("HS384", builder);
-        factories.put("HMAC384", builder);
-        factories.put("HmacSHA384", builder);
-        builder = new HAMC512AlgorithmBuilder();
-        factories.put("HS512", builder);
-        factories.put("HMAC512", builder);
-        factories.put("HmacSHA512", builder);
+        register(new HAMC256AlgorithmBuilder());
+        register(new HAMC384AlgorithmBuilder());
+        register(new HAMC512AlgorithmBuilder());
+    }
+
+    /**
+     * Adds the builder to the factories map using all its names as keys.
+     *
+     * @param builder the algorithm builder to register
+     */
+    private static void register(JWTAlgorithmBuilder builder) {
+        for (String name : builder.getNames()) {
+            factories.put(name, builder);
+        }
     }
 
     /**

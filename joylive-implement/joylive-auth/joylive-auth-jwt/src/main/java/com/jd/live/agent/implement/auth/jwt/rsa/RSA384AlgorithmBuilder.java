@@ -29,4 +29,9 @@ public class RSA384AlgorithmBuilder extends RSAAlgorithmBuilder {
     protected Algorithm doCreate(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
         return Algorithm.RSA384(publicKey, privateKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"RS384", "RSA384", "SHA384withRSA"};
+    }
 }

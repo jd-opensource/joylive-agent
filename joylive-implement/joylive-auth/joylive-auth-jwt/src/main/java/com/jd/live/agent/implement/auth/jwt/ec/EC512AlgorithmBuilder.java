@@ -29,4 +29,9 @@ public class EC512AlgorithmBuilder extends ECPAlgorithmBuilder {
     protected Algorithm doCreate(ECPublicKey publicKey, ECPrivateKey privateKey) {
         return Algorithm.ECDSA512(publicKey, privateKey);
     }
+
+    @Override
+    public String[] getNames() {
+        return new String[]{"ES512", "ECDSA512", "SHA512withECDSA"};
+    }
 }

@@ -16,8 +16,8 @@
 package com.jd.live.agent.core.util.trie.hanks;
 
 import com.jd.live.agent.bootstrap.util.Inclusion;
-import com.jd.live.agent.core.util.trie.hankcs.AhoCorasickDoubleArrayTrie;
 import com.jd.live.agent.core.util.trie.hankcs.AhoCorasickPredicateFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -25,11 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class HankcsTest {
-
-    private static AhoCorasickDoubleArrayTrie<Boolean> trie;
 
     private static final Set<String> names = new HashSet<>(Arrays.asList("x-live-space-id", "x-live-rule-id", "x-live-uid", "x-lane-space-id", "x-lane-code"));
     private static final Set<String> prefixes = new HashSet<>(Arrays.asList("x-live-", "x-service-", "x-lane-"));
@@ -52,7 +48,7 @@ public class HankcsTest {
         testCases.forEach(testCase -> {
             boolean defaultResult = defaultInclusion.test(testCase);
             boolean hanksResult = hanksInclusion.test(testCase);
-            assertEquals(defaultResult, hanksResult, () ->
+            Assertions.assertEquals(defaultResult, hanksResult, () ->
                     "Mismatch for case: " + testCase);
         });
     }
