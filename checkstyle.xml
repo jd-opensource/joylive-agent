@@ -89,14 +89,6 @@
         <!-- Modifiers -->
         <module name="com.puppycrawl.tools.checkstyle.checks.modifier.RedundantModifierCheck"/>
 
-        <module name="com.puppycrawl.tools.checkstyle.checks.regexp.RegexpSinglelineJavaCheck">
-            <property name="maximum" value="0"/>
-            <property name="format"
-                      value="org\.junit\.(Assert|jupiter\.api\.Assertions)\.assert"/>
-            <property name="message"
-                      value="Please use AssertJ imports."/>
-            <property name="ignoreComments" value="true"/>
-        </module>
         <module name="com.puppycrawl.tools.checkstyle.checks.regexp.RegexpCheck">
             <property name="format" value="[ \t]+$"/>
             <property name="illegalPattern" value="true"/>
