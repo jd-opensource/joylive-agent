@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.cipher.jasypt;
+package com.jd.live.agent.governance.security.base64;
 
-import com.jd.live.agent.governance.security.CipherAlgorithm;
-import com.jd.live.agent.governance.security.CipherAlgorithmFactory;
+import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.governance.security.StringCodec;
 
-public class JasyptPBECipherAlgorithmFactory implements CipherAlgorithmFactory<JasyptConfig> {
+import java.util.Base64;
+
+@Extension(Base64StringCodec.name)
+public class Base64StringCodec implements StringCodec {
+
+    public static final String name = "base64";
+
+    public static final Base64StringCodec INSTANCE = new Base64StringCodec();
 
     @Override
-    public CipherAlgorithm create(JasyptConfig config) {
-        return config == null || !config.validate() ? null : new JasyptPBECipherAlgorithm(config);
+    public String encode(byte[] data) {
+        return Base64.getEncoder().encodeToString(data);
     }
 
     @Override
-    public String[] getNames() {
-        return new String[]{"PBEWITHHMACSHA512ANDAES_256", "PBEWithMD5AndDES"};
+    public byte[] decode(String data) {
+        return Base64.getDecoder().decode(data);
     }
 }

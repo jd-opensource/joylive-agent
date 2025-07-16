@@ -15,23 +15,26 @@
  */
 package com.jd.live.agent.governance.security;
 
+import com.jd.live.agent.core.extension.annotation.Extensible;
+
 /**
- * Factory for creating configured cipher algorithm instances.
- *
- * @param <T> Type of configuration object required by the factory
+ * Bidirectional converter between strings and byte arrays.
  */
-public interface CipherAlgorithmFactory<T> {
+@Extensible("StringCodec")
+public interface StringCodec {
     /**
-     * Creates a new cipher algorithm instance with given configuration.
-     * @param config Algorithm-specific configuration parameters
-     * @return Initialized, ready-to-use cipher instance (non-null)
+     * Encodes binary data into a string representation.
+     *
+     * @param data raw byte array to encode (non-null)
+     * @return encoded string
      */
-    CipherAlgorithm create(T config);
+    String encode(byte[] data);
 
     /**
-     * Gets all supported algorithm names by this factory.
+     * Decodes a string back into its original byte array.
      *
-     * @return Array of supported algorithm identifiers
+     * @param data encoded string to decode (non-null)
+     * @return original byte array
      */
-    String[] getNames();
+    byte[] decode(String data);
 }

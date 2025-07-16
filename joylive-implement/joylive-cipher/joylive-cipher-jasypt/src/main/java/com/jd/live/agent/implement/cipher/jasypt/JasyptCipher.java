@@ -17,29 +17,35 @@ package com.jd.live.agent.implement.cipher.jasypt;
 
 import com.jd.live.agent.governance.security.Cipher;
 import com.jd.live.agent.governance.security.CipherAlgorithm;
+import com.jd.live.agent.governance.security.StringCodec;
+import com.jd.live.agent.governance.security.base64.Base64StringCodec;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 /**
- * Cipher implementation that combines {@link CipherAlgorithm} with Base64 encoding.
- * <p>Provides string-based encryption/decryption by handling charset conversion and Base64 wrapping.
+ * Combines cryptographic operations with string encoding/decoding.
+ * <p>Automatically handles UTF-8 text conversion and Base64 processing.
  */
 public class JasyptCipher implements Cipher {
 
     private final CipherAlgorithm algorithm;
 
+    private final StringCodec codec;
+
     public JasyptCipher(CipherAlgorithm algorithm) {
         this.algorithm = algorithm;
+        this.codec = algorithm instanceof JasyptCipherAlgorithm
+                ? ((JasyptCipherAlgorithm) algorithm).getConfig().getCodec()
+                : new Base64StringCodec();
     }
 
     @Override
     public String encrypt(String source) throws Exception {
-        return Base64.getEncoder().encodeToString(algorithm.encrypt(source.getBytes(StandardCharsets.UTF_8)));
+        return codec.encode(algorithm.encrypt(source.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override
     public String decrypt(String encoded) throws Exception {
-        return new String(algorithm.decrypt(Base64.getDecoder().decode(encoded)), StandardCharsets.UTF_8);
+        return new String(algorithm.decrypt(codec.decode(encoded)), StandardCharsets.UTF_8);
     }
 }

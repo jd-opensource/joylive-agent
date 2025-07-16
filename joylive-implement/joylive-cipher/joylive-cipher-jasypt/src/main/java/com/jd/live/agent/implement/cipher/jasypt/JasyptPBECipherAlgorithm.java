@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.cipher.jasypt;
 
-import com.jd.live.agent.governance.security.CipherAlgorithm;
+import lombok.Getter;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -24,7 +24,8 @@ import javax.crypto.spec.PBEKeySpec;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 
-public class JasyptPBECipherAlgorithm implements CipherAlgorithm {
+@Getter
+public class JasyptPBECipherAlgorithm implements JasyptCipherAlgorithm {
 
     private final JasyptConfig config;
 

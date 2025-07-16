@@ -16,17 +16,15 @@
 package com.jd.live.agent.implement.cipher.jasypt;
 
 import com.jd.live.agent.governance.security.CipherAlgorithm;
-import com.jd.live.agent.governance.security.CipherAlgorithmFactory;
 
-public class JasyptPBECipherAlgorithmFactory implements CipherAlgorithmFactory<JasyptConfig> {
-
-    @Override
-    public CipherAlgorithm create(JasyptConfig config) {
-        return config == null || !config.validate() ? null : new JasyptPBECipherAlgorithm(config);
-    }
-
-    @Override
-    public String[] getNames() {
-        return new String[]{"PBEWITHHMACSHA512ANDAES_256", "PBEWithMD5AndDES"};
-    }
+/**
+ * Extended cipher algorithm with Jasypt configuration capability.
+ */
+public interface JasyptCipherAlgorithm extends CipherAlgorithm {
+    /**
+     * Gets the encryption configuration for this algorithm.
+     *
+     * @return the current cipher configuration (never null)
+     */
+    JasyptConfig getConfig();
 }

@@ -28,6 +28,12 @@ public interface CipherAlgorithm {
 
     String CIPHER_SALT_GENERATOR = "cipher.saltGenerator";
 
+    String CIPHER_CODEC = "cipher.codec";
+
+    String CIPHER_SALT = "cipher.salt";
+
+    String ENV_CIPHER_CODEC = "CONFIG_CIPHER_CODEC";
+
     String ENV_CIPHER_ALGORITHM = "CONFIG_CIPHER_ALGORITHM";
 
     String CONFIG_CIPHER_PASSWORD = "CONFIG_CIPHER_PASSWORD";
