@@ -174,24 +174,21 @@ public class Inclusion implements Predicate<String> {
 
         @Override
         public BiFunction<String, Function<String, String>, InclusionType> create(Set<String> names, Set<String> prefixes, boolean nullable) {
+            boolean nameEmpty = names == null || names.isEmpty();
+            boolean prefixEmpty = prefixes == null || prefixes.isEmpty();
+            InclusionType failback = nullable && nameEmpty && prefixEmpty ? InclusionType.INCLUDE_EMPTY : InclusionType.EXCLUDE;
             return (s, f) -> {
                 if (s == null || s.isEmpty()) {
                     return InclusionType.EXCLUDE;
-                } else {
-                    boolean nameEmpty = names == null || names.isEmpty();
-                    if (!nameEmpty && names.contains(s)) {
-                        return InclusionType.INCLUDE_EXACTLY;
-                    } else {
-                        boolean prefixEmpty = prefixes == null || prefixes.isEmpty();
-                        if (!prefixEmpty) {
-                            s = f == null ? s : f.apply(s);
-                            if (isPrefix(prefixes, s)) {
-                                return InclusionType.INCLUDE_OTHER;
-                            }
-                        }
-                        return nullable && nameEmpty && prefixEmpty ? InclusionType.INCLUDE_EMPTY : InclusionType.EXCLUDE;
+                } else if (!nameEmpty && names.contains(s)) {
+                    return InclusionType.INCLUDE_EXACTLY;
+                } else if (!prefixEmpty) {
+                    s = f == null ? s : f.apply(s);
+                    if (isPrefix(prefixes, s)) {
+                        return InclusionType.INCLUDE_OTHER;
                     }
                 }
+                return failback;
             };
         }
 
@@ -233,6 +230,16 @@ public class Inclusion implements Predicate<String> {
         private Set<String> prefixes;
         private boolean nullable;
         private PredicateFactory factory;
+
+        public Builder names(Set<String> names) {
+            this.names = names;
+            return this;
+        }
+
+        public Builder prefixes(Set<String> prefixes) {
+            this.prefixes = prefixes;
+            return this;
+        }
 
         public Builder nullable(boolean nullable) {
             this.nullable = nullable;

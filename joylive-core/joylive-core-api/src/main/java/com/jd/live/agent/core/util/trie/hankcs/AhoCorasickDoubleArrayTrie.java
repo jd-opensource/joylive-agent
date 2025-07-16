@@ -17,7 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.jd.live.agent.core.util.trie.hankcs;
 
 import com.jd.live.agent.core.util.trie.Trie;
@@ -73,17 +72,15 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @return a list of outputs
      */
     public List<Hit<V>> parseText(CharSequence text) {
-        int position = 1;
-        int currentState = 0;
-        List<Hit<V>> collectedEmits = new ArrayList<Hit<V>>();
+        int state = 0;
+        List<Hit<V>> emits = new ArrayList<>();
         int length = text.length();
         for (int i = 0; i < length; ++i) {
-            currentState = getState(currentState, text.charAt(i));
-            storeEmits(position, currentState, collectedEmits);
-            ++position;
+            state = getState(state, text.charAt(i));
+            storeEmits(i + 1, state, emits);
         }
 
-        return collectedEmits;
+        return emits;
     }
 
     /**
@@ -92,19 +89,18 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @param text      The text
      * @param processor A processor which handles the output
      */
-    public void parseText(CharSequence text, IHit<V> processor) {
-        int position = 1;
-        int currentState = 0;
+    public void parseText(CharSequence text, HitHandler<V> processor) {
+        int state = 0;
         int length = text.length();
+        int[] hits;
         for (int i = 0; i < length; ++i) {
-            currentState = getState(currentState, text.charAt(i));
-            int[] hitArray = output[currentState];
-            if (hitArray != null) {
-                for (int hit : hitArray) {
-                    processor.hit(position - l[hit], position, v[hit]);
+            state = getState(state, text.charAt(i));
+            hits = output[state];
+            if (hits != null) {
+                for (int hit : hits) {
+                    processor.hit(i + 1 - l[hit], i + 1, v[hit]);
                 }
             }
-            ++position;
         }
     }
 
@@ -114,17 +110,16 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @param text      The text
      * @param processor A processor which handles the output
      */
-    public void parseText(CharSequence text, IHitCancellable<V> processor) {
-        int currentState = 0;
+    public void parseText(CharSequence text, HitCancellableHandler<V> processor) {
+        int state = 0;
         int length = text.length();
+        int[] hits;
         for (int i = 0; i < length; i++) {
-            final int position = i + 1;
-            currentState = getState(currentState, text.charAt(i));
-            int[] hitArray = output[currentState];
-            if (hitArray != null) {
-                for (int hit : hitArray) {
-                    boolean proceed = processor.hit(position - l[hit], position, v[hit]);
-                    if (!proceed) {
+            state = getState(state, text.charAt(i));
+            hits = output[state];
+            if (hits != null) {
+                for (int hit : hits) {
+                    if (!processor.hit(i + 1 - l[hit], i + 1, v[hit])) {
                         return;
                     }
                 }
@@ -138,18 +133,17 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @param text      The text
      * @param processor A processor which handles the output
      */
-    public void parseText(char[] text, IHit<V> processor) {
-        int position = 1;
-        int currentState = 0;
-        for (char c : text) {
-            currentState = getState(currentState, c);
-            int[] hitArray = output[currentState];
-            if (hitArray != null) {
-                for (int hit : hitArray) {
-                    processor.hit(position - l[hit], position, v[hit]);
+    public void parseText(char[] text, HitHandler<V> processor) {
+        int state = 0;
+        int[] hits;
+        for (int i = 0; i < text.length; i++) {
+            state = getState(state, text[i]);
+            hits = output[state];
+            if (hits != null) {
+                for (int hit : hits) {
+                    processor.hit(i + 1 - l[hit], i + 1, v[hit]);
                 }
             }
-            ++position;
         }
     }
 
@@ -159,18 +153,17 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @param text      The text
      * @param processor A processor which handles the output
      */
-    public void parseText(char[] text, IHitFull<V> processor) {
-        int position = 1;
-        int currentState = 0;
-        for (char c : text) {
-            currentState = getState(currentState, c);
-            int[] hitArray = output[currentState];
-            if (hitArray != null) {
-                for (int hit : hitArray) {
-                    processor.hit(position - l[hit], position, v[hit], hit);
+    public void parseText(char[] text, HitFullHandler<V> processor) {
+        int state = 0;
+        int[] hits;
+        for (int i = 0; i < text.length; i++) {
+            state = getState(state, text[i]);
+            hits = output[state];
+            if (hits != null) {
+                for (int hit : hits) {
+                    processor.hit(i + 1 - l[hit], i + 1, v[hit], hit);
                 }
             }
-            ++position;
         }
     }
 
@@ -181,12 +174,13 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @return {@code true} if string contains at least one substring
      */
     public boolean matches(CharSequence text) {
-        int currentState = 0;
+        int state = 0;
         int length = text.length();
+        int[] hits;
         for (int i = 0; i < length; ++i) {
-            currentState = getState(currentState, text.charAt(i));
-            int[] hitArray = output[currentState];
-            if (hitArray != null) {
+            state = getState(state, text.charAt(i));
+            hits = output[state];
+            if (hits != null) {
                 return true;
             }
         }
@@ -200,17 +194,15 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @return first match or {@code null} if there are no matches
      */
     public Hit<V> findFirst(CharSequence text) {
-        int position = 1;
-        int currentState = 0;
+        int state = 0;
         int length = text.length();
+        int[] hits;
         for (int i = 0; i < length; ++i) {
-            currentState = getState(currentState, text.charAt(i));
-            int[] hitArray = output[currentState];
-            if (hitArray != null) {
-                int hitIndex = hitArray[0];
-                return new Hit<V>(position - l[hitIndex], position, v[hitIndex]);
+            state = getState(state, text.charAt(i));
+            hits = output[state];
+            if (hits != null) {
+                return new Hit<>(i + 1 - l[hits[0]], i + 1, v[hits[0]]);
             }
-            ++position;
         }
         return null;
     }
@@ -238,6 +230,7 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @throws IOException            If can't read the file from path
      * @throws ClassNotFoundException If the class doesn't exist or matched
      */
+    @SuppressWarnings("unchecked")
     public void load(ObjectInputStream in) throws IOException, ClassNotFoundException {
         base = (int[]) in.readObject();
         check = (int[]) in.readObject();
@@ -254,7 +247,7 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @return value if exist otherwise it return null
      */
     public V get(CharSequence key) {
-        int index = exactMatchSearch(key);
+        int index = fullMatch(key);
         if (index >= 0) {
             return v[index];
         }
@@ -269,8 +262,8 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
      * @param value the value
      * @return successful or not（failure if there is no key）
      */
-    public boolean set(CharSequence key, V value) {
-        int index = exactMatchSearch(key);
+    protected boolean set(CharSequence key, V value) {
+        int index = fullMatch(key);
         if (index >= 0) {
             v[index] = value;
             return true;
@@ -293,31 +286,31 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
     /**
      * transmit state, supports failure function
      *
-     * @param currentState current state
-     * @param character    character
+     * @param state     current state
+     * @param character character
      * @return state
      */
-    private int getState(int currentState, char character) {
-        int newCurrentState = transitionWithRoot(currentState, character);
-        while (newCurrentState == -1) {
-            currentState = fail[currentState];
-            newCurrentState = transitionWithRoot(currentState, character);
+    private int getState(int state, char character) {
+        int newState = transitionWithRoot(state, character);
+        while (newState == -1) {
+            state = fail[state];
+            newState = transitionWithRoot(state, character);
         }
-        return newCurrentState;
+        return newState;
     }
 
     /**
      * store output
      *
-     * @param position       position
-     * @param currentState   current state
-     * @param collectedEmits collected emits
+     * @param position position
+     * @param state    current state
+     * @param emits    collected emits
      */
-    private void storeEmits(int position, int currentState, List<Hit<V>> collectedEmits) {
-        int[] hitArray = output[currentState];
-        if (hitArray != null) {
-            for (int hit : hitArray) {
-                collectedEmits.add(new Hit<V>(position - l[hit], position, v[hit]));
+    private void storeEmits(int position, int state, List<Hit<V>> emits) {
+        int[] hits = output[state];
+        if (hits != null) {
+            for (int hit : hits) {
+                emits.add(new Hit<V>(position - l[hit], position, v[hit]));
             }
         }
     }
@@ -364,55 +357,23 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
     }
 
     /**
-     * Build a AhoCorasickDoubleArrayTrie from a map
-     *
-     * @param map a map containing key-value pairs
-     */
-    public void build(Map<String, V> map) {
-        new Builder().build(map);
-    }
-
-    /**
      * match exactly by a key
      *
      * @param key the key
      * @return the index of the key, you can use it as a perfect hash function
      */
-    public int exactMatchSearch(CharSequence key) {
-        return exactMatchSearch(key, 0, 0, 0);
-    }
-
-    /**
-     * match exactly by a key
-     *
-     * @param key     key
-     * @param pos     postioon
-     * @param len     length
-     * @param nodePos node poistion
-     * @return position
-     */
-    private int exactMatchSearch(CharSequence key, int pos, int len, int nodePos) {
-        if (len <= 0)
-            len = key.length();
-        if (nodePos <= 0)
-            nodePos = 0;
-
+    protected int fullMatch(CharSequence key) {
         int result = -1;
-
-
-        return getMatched(pos, len, result, key, base[nodePos]);
-    }
-
-    private int getMatched(int pos, int len, int result, CharSequence key, int b1) {
-        int b = b1;
+        int b = base[0];
         int p;
 
-        for (int i = pos; i < len; i++) {
+        for (int i = 0; i < key.length(); i++) {
             p = b + (int) (key.charAt(i)) + 1;
             if (b == check[p])
                 b = base[p];
-            else
+            else {
                 return result;
+            }
         }
 
         p = b; // transition through '\0' to check if it's the end of a word
@@ -446,84 +407,12 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
     }
 
     /**
-     * Processor handles the output when hit a keyword
+     * Build a AhoCorasickDoubleArrayTrie from a map
      *
-     * @param <V> the value type
+     * @param map a map containing key-value pairs
      */
-    public interface IHit<V> {
-        /**
-         * Hit a keyword, you can use some code like text.substring(begin, end) to get the keyword
-         *
-         * @param begin the beginning index, inclusive.
-         * @param end   the ending index, exclusive.
-         * @param value the value assigned to the keyword
-         */
-        void hit(int begin, int end, V value);
-    }
-
-    /**
-     * Processor handles the output when hit a keyword, with more detail
-     *
-     * @param <V> the value type
-     */
-    public interface IHitFull<V> {
-        /**
-         * Hit a keyword, you can use some code like text.substring(begin, end) to get the keyword
-         *
-         * @param begin the beginning index, inclusive.
-         * @param end   the ending index, exclusive.
-         * @param value the value assigned to the keyword
-         * @param index the index of the value assigned to the keyword, you can use the integer as a perfect hash value
-         */
-        void hit(int begin, int end, V value, int index);
-    }
-
-    /**
-     * Callback that allows to cancel the search process.
-     *
-     * @param <V> the value type
-     */
-    public interface IHitCancellable<V> {
-        /**
-         * Hit a keyword, you can use some code like text.substring(begin, end) to get the keyword
-         *
-         * @param begin the beginning index, inclusive.
-         * @param end   the ending index, exclusive.
-         * @param value the value assigned to the keyword
-         * @return Return true for continuing the search and false for stopping it.
-         */
-        boolean hit(int begin, int end, V value);
-    }
-
-    /**
-     * A result output
-     *
-     * @param <V> the value type
-     */
-    public static class Hit<V> {
-        /**
-         * the beginning index, inclusive.
-         */
-        public final int begin;
-        /**
-         * the ending index, exclusive.
-         */
-        public final int end;
-        /**
-         * the value assigned to the keyword
-         */
-        public final V value;
-
-        public Hit(int begin, int end, V value) {
-            this.begin = begin;
-            this.end = end;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("[%d:%d]=%s", begin, end, value);
-        }
+    public void build(Map<String, V> map) {
+        new Builder().build(map);
     }
 
     /**
@@ -667,7 +556,7 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
          */
         private void constructOutput(State targetState) {
             Collection<Integer> emit = targetState.emit();
-            if (emit == null || emit.size() == 0) return;
+            if (emit == null || emit.isEmpty()) return;
             int[] output = new int[emit.size()];
             Iterator<Integer> it = emit.iterator();
             for (int i = 0; i < output.length; ++i) {
@@ -724,7 +613,7 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
          */
         private void insert(List<Map.Entry<Integer, State>> firstSiblings) {
             Queue<Map.Entry<Integer, List<Map.Entry<Integer, State>>>> siblingQueue = new ArrayDeque<Map.Entry<Integer, List<Map.Entry<Integer, State>>>>();
-            siblingQueue.add(new AbstractMap.SimpleEntry<Integer, List<Map.Entry<Integer, State>>>(null, firstSiblings));
+            siblingQueue.add(new AbstractMap.SimpleEntry<>(null, firstSiblings));
 
             while (!siblingQueue.isEmpty()) {
                 insert(siblingQueue);
@@ -793,21 +682,21 @@ public class AhoCorasickDoubleArrayTrie<V> implements Serializable, Trie<V> {
                 nextCheckPos = pos; // Starting from position next_check_pos to pos, if the occupied space exceeds 95%, the next node insertion should start searching directly from the position pos.
             used[begin] = true;
 
-            size = (size > begin + siblings.get(siblings.size() - 1).getKey() + 1) ? size : begin + siblings.get(siblings.size() - 1).getKey() + 1;
+            size = Math.max(size, begin + siblings.get(siblings.size() - 1).getKey() + 1);
 
             for (Map.Entry<Integer, State> sibling : siblings) {
                 check[begin + sibling.getKey()] = begin;
             }
 
             for (Map.Entry<Integer, State> sibling : siblings) {
-                List<Map.Entry<Integer, State>> new_siblings = new ArrayList<Map.Entry<Integer, State>>(sibling.getValue().getSuccess().entrySet().size() + 1);
+                List<Map.Entry<Integer, State>> new_siblings = new ArrayList<Map.Entry<Integer, State>>(sibling.getValue().getSuccess().size() + 1);
 
                 if (fetch(sibling.getValue(), new_siblings) == 0) {
                     // The termination of a word that is not a prefix for any other word is essentially a leaf node.
                     base[begin + sibling.getKey()] = (-sibling.getValue().getLargestValueId() - 1);
                     progress++;
                 } else {
-                    siblingQueue.add(new AbstractMap.SimpleEntry<Integer, List<Map.Entry<Integer, State>>>(begin + sibling.getKey(), new_siblings));
+                    siblingQueue.add(new AbstractMap.SimpleEntry<>(begin + sibling.getKey(), new_siblings));
                 }
                 sibling.getValue().setIndex(begin + sibling.getKey());
             }

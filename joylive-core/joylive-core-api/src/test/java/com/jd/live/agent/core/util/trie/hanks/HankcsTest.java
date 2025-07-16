@@ -15,40 +15,89 @@
  */
 package com.jd.live.agent.core.util.trie.hanks;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.util.trie.hankcs.AhoCorasickDoubleArrayTrie;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import com.jd.live.agent.core.util.trie.hankcs.AhoCorasickPredicateFactory;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HankcsTest {
 
     private static AhoCorasickDoubleArrayTrie<Boolean> trie;
 
-    @BeforeAll
-    public static void init() {
-        trie = new AhoCorasickDoubleArrayTrie<>();
-        Map<String, Boolean> map = new HashMap<>();
-        map.put("x-live-", Boolean.TRUE);
-        map.put("x-service-", Boolean.TRUE);
-        map.put("x-lane-", Boolean.TRUE);
-        map.put("x-live-space-id", Boolean.TRUE);
-        map.put("x-live-rule-id", Boolean.TRUE);
-        map.put("x-live-uid", Boolean.TRUE);
-        map.put("x-lane-space-id", Boolean.TRUE);
-        map.put("x-lane-code", Boolean.TRUE);
+    private static final Set<String> names = new HashSet<>(Arrays.asList("x-live-space-id", "x-live-rule-id", "x-live-uid", "x-lane-space-id", "x-lane-code"));
+    private static final Set<String> prefixes = new HashSet<>(Arrays.asList("x-live-", "x-service-", "x-lane-"));
+    private static final Inclusion defaultInclusion = Inclusion.builder().names(names).prefixes(prefixes).build();
+    private static final Inclusion hanksInclusion = Inclusion.builder().factory(AhoCorasickPredicateFactory.INSTANCE).names(names).prefixes(prefixes).build();
 
-        trie.build(map);
+    // Test data
+    private static final List<String> testCases = Arrays.asList(
+            "x-live-space-id",  // exact match
+            "x-live-extra",     // prefix match
+            "invalid-header1",  // no match
+            "invalid-header2",  // no match
+            "invalid-header3",  // no match
+            "invalid-header4",  // no match
+            "x-service-123"     // prefix match
+    );
+
+    @Test
+    void testCorrectness() {
+        testCases.forEach(testCase -> {
+            boolean defaultResult = defaultInclusion.test(testCase);
+            boolean hanksResult = hanksInclusion.test(testCase);
+            assertEquals(defaultResult, hanksResult, () ->
+                    "Mismatch for case: " + testCase);
+        });
     }
 
     @Test
-    void testTrie() {
-        Assertions.assertTrue(trie.matches("x-live-space-id"));
-        Assertions.assertTrue(trie.matches("x-live-service-id"));
-        Assertions.assertTrue(trie.matches("x-lane-space-id"));
-        Assertions.assertFalse(trie.matches("x-lane1-space-id"));
+    void testDefaultPerformance() {
+        // Warmup
+        for (int i = 0; i < 1000; i++) {
+            testCases.forEach(defaultInclusion::test);
+        }
+
+        // Benchmark
+        long start = System.nanoTime();
+        int iterations = 100_000;
+        for (int i = 0; i < iterations; i++) {
+            testCases.forEach(defaultInclusion::test);
+        }
+        long duration = System.nanoTime() - start;
+
+        System.out.printf("Default impl: %d ops in %d ms (%.2f ops/ms)%n",
+                iterations * testCases.size(),
+                duration / 1_000_000,
+                (iterations * testCases.size()) / (duration / 1_000_000.0));
+    }
+
+    @Test
+    void testHanksPerformance() {
+        // Warmup
+        for (int i = 0; i < 1000; i++) {
+            testCases.forEach(hanksInclusion::test);
+        }
+
+        // Benchmark
+        long start = System.nanoTime();
+        int iterations = 100_000;
+        for (int i = 0; i < iterations; i++) {
+            testCases.forEach(hanksInclusion::test);
+        }
+        long duration = System.nanoTime() - start;
+
+        // For small rule sets, the performance is lower than the default prefix matching implementation.
+        System.out.printf("Aho-Corasick impl: %d ops in %d ms (%.2f ops/ms)%n",
+                iterations * testCases.size(),
+                duration / 1_000_000,
+                (iterations * testCases.size()) / (duration / 1_000_000.0));
     }
 
 
