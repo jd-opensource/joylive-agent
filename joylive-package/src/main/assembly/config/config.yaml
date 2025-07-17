@@ -299,6 +299,17 @@ agent:
           - com.netflix.hystrix.util.HystrixTimer$
           - com.netflix.servo.util.ExpiringCache$
           - com.zaxxer.hikari.pool.HikariPool$
+    cipher:
+      enabled: ${CONFIG_CIPHER_ENABLED:false}
+      cipher: ${CONFIG_CIPHER_TYPE:jasypt}
+      algorithm: ${CONFIG_CIPHER_ALGORITHM:PBEWithMD5AndDES}
+      password: ${CONFIG_CIPHER_PASSWORD}
+      codec: ${CONFIG_CIPHER_CODEC:base64}
+      prefix: ${CONFIG_CIPHER_PREFIX:ENC(}
+      suffix: ${CONFIG_CIPHER_SUFFIX:)}
+      salt: ${CONFIG_CIPHER_SALT}
+      iterations: ${CONFIG_CIPHER_ITERATIONS:1000}
+      properties: ${CONFIG_CIPHER_PROPERTIES}
     configCenter:
       enabled: ${CONFIG_CENTER_ENABLED:false}
       type: ${CONFIG_CENTER_TYPE:nacos}
@@ -306,7 +317,6 @@ agent:
       username: ${CONFIG_CENTER_USERNAME:${CONFIG_USERNAME:nacos}}
       password: ${CONFIG_CENTER_PASSWORD:${CONFIG_PASSWORD:nacos}}
       grayEnabled: ${CONFIG_CENTER_GRAY_ENABLED:true}
-      cipher: ${CONFIG_CENTER_CIPHER:}
       refresh:
         environmentEnabled: ${CONFIG_CENTER_REFRESH_ENVIRONMENT_ENABLED:false}
         beanEnabled: ${CONFIG_CENTER_REFRESH_BEAN_ENABLED:true}

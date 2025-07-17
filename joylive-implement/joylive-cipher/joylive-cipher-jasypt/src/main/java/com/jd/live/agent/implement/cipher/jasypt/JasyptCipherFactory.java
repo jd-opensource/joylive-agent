@@ -20,9 +20,8 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.security.*;
 import com.jd.live.agent.governance.security.base64.Base64StringCodec;
 import org.jasypt.salt.RandomSaltGenerator;
@@ -32,7 +31,7 @@ import org.jasypt.salt.StringFixedSaltGenerator;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jd.live.agent.governance.security.CipherAlgorithm.*;
+import static com.jd.live.agent.governance.security.CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM;
 
 /**
  * {@link CipherFactory} implementation using Jasypt library.
@@ -53,8 +52,8 @@ public class JasyptCipherFactory implements CipherFactory {
     private Map<String, StringCodec> codecs;
 
     @Override
-    public Cipher create(Map<String, String> config) {
-        String algorithm = config == null ? null : config.get(KEY_CIPHER_ALGORITHM);
+    public Cipher create(CipherConfig config) {
+        String algorithm = config.getAlgorithm();
         algorithm = algorithm == null || algorithm.isEmpty() ? CIPHER_DEFAULT_ALGORITHM : algorithm;
         CipherAlgorithmFactory<JasyptConfig> factory = factories.get(algorithm);
         CipherAlgorithm ca = factory == null ? null : factory.create(createConfig(config));
@@ -67,21 +66,17 @@ public class JasyptCipherFactory implements CipherFactory {
      * @param config Raw configuration input (can be null)
      * @return Fully configured JasyptConfig instance
      */
-    private JasyptConfig createConfig(Map<String, String> config) {
-        Option option = MapOption.of(config);
-        String algorithm = getString(option, KEY_CIPHER_ALGORITHM, ENV_CIPHER_ALGORITHM, CIPHER_DEFAULT_ALGORITHM);
-        int iterations = getPositive(option, KEY_CIPHER_ITERATIONS, ENV_CIPHER_ITERATIONS, CIPHER_DEFAULT_ITERATIONS);
-        SaltGenerator salt = getSaltGenerator(option);
-        String password = getString(option, KEY_CIPHER_PASSWORD, ENV_CIPHER_PASSWORD, "");
-        if (password.isEmpty()) {
-            logger.warn("cipher password is empty, you can set it by environment variable: " + ENV_CIPHER_PASSWORD);
+    private JasyptConfig createConfig(CipherConfig config) {
+        String password = config.getPassword();
+        if (password == null || password.isEmpty()) {
+            logger.warn("cipher password is empty, you can set it by environment variable: " + CipherConfig.ENV_CIPHER_PASSWORD);
         }
         return JasyptConfig.builder()
-                .algorithm(algorithm)
-                .password(password)
-                .iterations(iterations)
-                .saltGenerator(salt)
-                .codec(getCodec(option))
+                .algorithm(config.getAlgorithm())
+                .password(config.getPassword())
+                .iterations(config.getIterations())
+                .saltGenerator(getSaltGenerator(config))
+                .codec(getCodec(config))
                 .build();
     }
 
@@ -97,22 +92,10 @@ public class JasyptCipherFactory implements CipherFactory {
     }
 
     /**
-     * Gets a positive integer configuration with same fallback logic as getString().
-     * Ensures returned value is always positive (uses default if conversion fails).
-     */
-    private int getPositive(Option option, String key, String env, int defaultValue) {
-        String value = option.getString(key);
-        if (value == null || value.isEmpty()) {
-            value = System.getenv(env);
-        }
-        return Converts.getPositive(value, defaultValue);
-    }
-
-    /**
      * Creates salt generator - fixed salt if configured, random salt otherwise.
      */
-    private SaltGenerator getSaltGenerator(Option option) {
-        String salt = getString(option, KEY_CIPHER_SALT, ENV_CIPHER_SALT, "");
+    private SaltGenerator getSaltGenerator(CipherConfig config) {
+        String salt = config.getSalt();
         return salt != null && !salt.isEmpty() ? new StringFixedSaltGenerator(salt) : new RandomSaltGenerator();
     }
 
@@ -120,9 +103,9 @@ public class JasyptCipherFactory implements CipherFactory {
      * Gets the string codec implementation by name.
      * Falls back to Base64 if specified codec isn't found.
      */
-    private StringCodec getCodec(Option option) {
-        String type = getString(option, KEY_CIPHER_CODEC, ENV_CIPHER_CODEC, Base64StringCodec.name);
-        StringCodec result = codecs == null ? null : codecs.get(type);
+    private StringCodec getCodec(CipherConfig config) {
+        String codec = config.getCodec();
+        StringCodec result = codecs == null ? null : codecs.get(codec);
         return result == null ? Base64StringCodec.INSTANCE : result;
     }
 

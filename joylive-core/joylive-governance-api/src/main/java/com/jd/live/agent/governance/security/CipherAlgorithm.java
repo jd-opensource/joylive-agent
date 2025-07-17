@@ -20,31 +20,7 @@ package com.jd.live.agent.governance.security;
  */
 public interface CipherAlgorithm {
 
-    String KEY_CIPHER_ALGORITHM = "cipher.algorithm";
-
-    String KEY_CIPHER_PASSWORD = "cipher.password";
-
-    String KEY_CIPHER_ITERATIONS = "cipher.iterations";
-
-    String KEY_CIPHER_SALT_GENERATOR = "cipher.saltGenerator";
-
-    String KEY_CIPHER_CODEC = "cipher.codec";
-
-    String KEY_CIPHER_SALT = "cipher.salt";
-
-    String ENV_CIPHER_CODEC = "CONFIG_CENTER_CIPHER_CODEC";
-
-    String ENV_CIPHER_ALGORITHM = "CONFIG_CENTER_CIPHER_ALGORITHM";
-
-    String ENV_CIPHER_PASSWORD = "CONFIG_CENTER_CIPHER_PASSWORD";
-
-    String ENV_CIPHER_ITERATIONS = "CONFIG_CENTER_CIPHER_ITERATIONS";
-
-    String ENV_CIPHER_SALT = "CONFIG_CENTER_CIPHER_SALT";
-
     String CIPHER_DEFAULT_ALGORITHM = "PBEWithMD5AndDES";
-
-    int CIPHER_DEFAULT_ITERATIONS = 1000;
 
     /**
      * Decrypts data to its original form.

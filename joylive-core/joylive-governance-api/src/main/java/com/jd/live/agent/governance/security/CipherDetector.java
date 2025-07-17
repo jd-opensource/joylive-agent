@@ -15,17 +15,10 @@
  */
 package com.jd.live.agent.governance.security;
 
-import java.util.Map;
-import java.util.function.Predicate;
-
 /**
  * Detects and handles encrypted string content.
  */
 public interface CipherDetector {
-
-    String CIPHER_PREFIX = "cipher.prefix";
-
-    String CIPHER_SUFFIX = "cipher.suffix";
 
     String CIPHER_KEYS = "cipher.keys";
 
@@ -60,40 +53,4 @@ public interface CipherDetector {
      */
     String unwrap(String encoded);
 
-    /**
-     * Default implementation of {@link CipherDetector} that uses prefix/suffix markers.
-     * <p>Detects encryption by checking for wrapping markers and removes them during unwrap.
-     */
-    class DefaultCipherDetector implements CipherDetector {
-
-        private final String prefix;
-
-        private final String suffix;
-
-        private final Predicate<String> predicate;
-
-        public DefaultCipherDetector(Map<String, String> config) {
-            this.prefix = config == null ? CIPHER_DEFAULT_PREFIX : config.getOrDefault(CIPHER_PREFIX, CIPHER_DEFAULT_PREFIX);
-            this.suffix = config == null ? CIPHER_DEFAULT_SUFFIX : config.getOrDefault(CIPHER_SUFFIX, CIPHER_DEFAULT_SUFFIX);
-            int prefixLen = prefix.length();
-            int suffixLen = suffix.length();
-            this.predicate = prefixLen + suffixLen == 0
-                    ? null
-                    : (prefixLen == 0
-                    ? s -> s.endsWith(suffix)
-                    : (suffixLen == 0
-                    ? s -> s.startsWith(prefix)
-                    : s -> s.startsWith(prefix) && s.endsWith(prefix)));
-        }
-
-        @Override
-        public boolean isEncrypted(String key, String data) {
-            return data != null && !data.isEmpty() && predicate != null && predicate.test(data);
-        }
-
-        @Override
-        public String unwrap(String encoded) {
-            return encoded.substring(prefix.length(), encoded.length() - suffix.length());
-        }
-    }
 }

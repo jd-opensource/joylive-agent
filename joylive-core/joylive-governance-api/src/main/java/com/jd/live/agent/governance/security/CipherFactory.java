@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.security;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.config.CipherConfig;
 
 import java.util.Map;
 
@@ -32,5 +33,18 @@ public interface CipherFactory {
      *               (e.g., "algorithm", "mode", "padding")
      * @return initialized and configured cipher instance
      */
-    Cipher create(Map<String, String> config);
+    Cipher create(CipherConfig config);
+
+    /**
+     * Creates a cipher instance based on configuration.
+     *
+     * @param factories Available cipher factories (keyed by cipher type)
+     * @param config    Cipher configuration
+     * @return Configured cipher instance:
+     */
+    static Cipher create(Map<String, CipherFactory> factories, CipherConfig config) {
+        String cipherType = config.getCipher();
+        CipherFactory factory = !config.isEnabled() || cipherType == null ? null : factories.get(cipherType);
+        return factory == null ? null : factory.create(config);
+    }
 }

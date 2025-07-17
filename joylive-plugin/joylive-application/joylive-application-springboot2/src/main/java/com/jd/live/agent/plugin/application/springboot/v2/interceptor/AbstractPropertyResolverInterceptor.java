@@ -19,12 +19,11 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.security.Cipher;
 import com.jd.live.agent.governance.security.CipherDetector;
-import com.jd.live.agent.governance.security.CipherDetector.DefaultCipherDetector;
 import com.jd.live.agent.governance.security.CipherFactory;
+import com.jd.live.agent.governance.security.DefaultCipherDetector;
 
 import java.util.Map;
 
@@ -37,11 +36,8 @@ public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
     private final CipherDetector detector;
 
     public AbstractPropertyResolverInterceptor(GovernanceConfig config, Map<String, CipherFactory> ciphers) {
-        ConfigCenterConfig cfg = config.getConfigCenterConfig();
-        String cipherType = cfg.getCipher();
-        CipherFactory factory = cipherType == null || cipherType.isEmpty() ? null : ciphers.get(cipherType);
-        this.cipher = factory == null ? null : factory.create(cfg.getProperties());
-        this.detector = new DefaultCipherDetector(cfg.getProperties());
+        this.cipher = CipherFactory.create(ciphers, config.getCipherConfig());
+        this.detector = new DefaultCipherDetector(config.getCipherConfig());
     }
 
     @Override

@@ -119,6 +119,8 @@ public class GovernanceConfig {
 
     public static final String CONFIG_CENTER = CONFIG_AGENT_GOVERNANCE + ".configCenter";
     public static final String CONFIG_CENTER_ENABLED = CONFIG_CENTER + ENABLED;
+    public static final String CONFIG_CIPHER = CONFIG_AGENT_GOVERNANCE + ".cipher";
+    public static final String CONFIG_CIPHER_ENABLED = CONFIG_CIPHER + ENABLED;
 
     public static final String CONFIG_PROBE = CONFIG_AGENT_GOVERNANCE + ".probe";
     public static final String CONFIG_PROBE_ZOOKEEPER = CONFIG_PROBE + ".zookeeper";
@@ -144,6 +146,9 @@ public class GovernanceConfig {
 
     @Config("configCenter")
     private ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
+
+    @Config("cipher")
+    private CipherConfig cipherConfig = new CipherConfig();
 
     @Config("db")
     private DbConfig dbConfig = new DbConfig();

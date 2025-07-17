@@ -27,8 +27,8 @@ import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.security.Cipher;
 import com.jd.live.agent.governance.security.CipherDetector;
-import com.jd.live.agent.governance.security.CipherDetector.DefaultCipherDetector;
 import com.jd.live.agent.governance.security.CipherFactory;
+import com.jd.live.agent.governance.security.DefaultCipherDetector;
 import com.jd.live.agent.governance.service.ConfigService;
 import com.jd.live.agent.governance.subscription.config.ConfigListener;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
@@ -76,9 +76,8 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
     protected CompletableFuture<Void> doStart() {
         try {
             // TODO Wait config ready
-            ConfigCenterConfig config = governanceConfig.getConfigCenterConfig();
             Set<ConfigName> uniqueNames = new HashSet<>();
-            List<ConfigName> names = config.getConfigs();
+            List<ConfigName> names = governanceConfig.getConfigCenterConfig().getConfigs();
             List<ConfigSubscription<T>> subscriptions = new ArrayList<>(names.size());
             for (ConfigName name : names) {
                 if (name.validate() && uniqueNames.add(name)) {
@@ -89,12 +88,10 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
                 }
             }
             // add cipher
-            String cipherType = config.getCipher();
-            CipherFactory factory = cipherType == null || cipherType.isEmpty() ? null : ciphers.get(cipherType);
-            Cipher cipher = factory == null ? null : factory.create(config.getProperties());
+            Cipher cipher = CipherFactory.create(ciphers, governanceConfig.getCipherConfig());
             configurator = cipher == null
                     ? createConfigurator(subscriptions)
-                    : new CipherConfigurator(createConfigurator(subscriptions), cipher, new DefaultCipherDetector(config.getProperties()));
+                    : new CipherConfigurator(createConfigurator(subscriptions), cipher, new DefaultCipherDetector(governanceConfig.getCipherConfig()));
             configurator.subscribe();
             return CompletableFuture.completedFuture(null);
         } catch (Throwable e) {

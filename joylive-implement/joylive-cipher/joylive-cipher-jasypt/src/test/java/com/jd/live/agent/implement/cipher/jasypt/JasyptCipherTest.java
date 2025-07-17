@@ -15,20 +15,20 @@
  */
 package com.jd.live.agent.implement.cipher.jasypt;
 
+import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.security.Cipher;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
 
 public class JasyptCipherTest {
 
     @Test
     void testJasypt() throws Exception {
         JasyptCipherFactory factory = new JasyptCipherFactory();
-        HashMap<String, String> config = new HashMap<>();
-        config.put(JasyptPBECipherAlgorithm.KEY_CIPHER_PASSWORD, "test");
-        config.put(JasyptPBECipherAlgorithm.KEY_CIPHER_ALGORITHM, JasyptPBECipherAlgorithm.CIPHER_DEFAULT_ALGORITHM);
+        CipherConfig config = new CipherConfig();
+        config.setCipher("jasypt");
+        config.setPassword("test");
+        config.setAlgorithm(JasyptPBECipherAlgorithm.CIPHER_DEFAULT_ALGORITHM);
         Cipher cipher = factory.create(config);
         String source = "abcde";
         String encoded = cipher.encrypt(source);
