@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationLoadInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnLoadInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -50,7 +50,7 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor()
                                 .and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new ApplicationLoadInterceptor(listener))
+                        () -> new ApplicationOnLoadInterceptor(listener))
         };
     }
 }

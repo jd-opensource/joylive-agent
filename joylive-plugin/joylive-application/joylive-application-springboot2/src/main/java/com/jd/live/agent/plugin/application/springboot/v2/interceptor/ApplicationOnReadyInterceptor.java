@@ -41,7 +41,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ApplicationReadyInterceptor extends InterceptorAdaptor {
+public class ApplicationOnReadyInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
@@ -51,7 +51,7 @@ public class ApplicationReadyInterceptor extends InterceptorAdaptor {
 
     private final Application application;
 
-    public ApplicationReadyInterceptor(AppListener listener, GovernanceConfig config, Registry registry, Application application) {
+    public ApplicationOnReadyInterceptor(AppListener listener, GovernanceConfig config, Registry registry, Application application) {
         this.listener = listener;
         this.config = config;
         this.registry = registry;

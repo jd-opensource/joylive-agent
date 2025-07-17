@@ -22,11 +22,11 @@ import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppConte
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import org.springframework.context.ConfigurableApplicationContext;
 
-public class ApplicationCloseInterceptor extends InterceptorAdaptor {
+public class ApplicationOnCloseInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
-    public ApplicationCloseInterceptor(AppListener listener) {
+    public ApplicationOnCloseInterceptor(AppListener listener) {
         this.listener = listener;
     }
 

@@ -23,11 +23,11 @@ import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.ClassUtils;
 
-public class ApplicationLoadInterceptor extends InterceptorAdaptor {
+public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
-    public ApplicationLoadInterceptor(AppListener listener) {
+    public ApplicationOnLoadInterceptor(AppListener listener) {
         this.listener = listener;
     }
 

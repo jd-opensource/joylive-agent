@@ -33,7 +33,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
  *
  * @since 1.6.0
  */
-public class ApplicationEnvironmentPreparedInterceptor extends InterceptorAdaptor {
+public class ApplicationOnEnvironmentPreparedInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
@@ -43,7 +43,7 @@ public class ApplicationEnvironmentPreparedInterceptor extends InterceptorAdapto
 
     private final Application application;
 
-    public ApplicationEnvironmentPreparedInterceptor(AppListener listener, GovernanceConfig config, Registry registry, Application application) {
+    public ApplicationOnEnvironmentPreparedInterceptor(AppListener listener, GovernanceConfig config, Registry registry, Application application) {
         this.listener = listener;
         this.config = config;
         this.registry = registry;

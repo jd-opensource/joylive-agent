@@ -29,9 +29,9 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationEnvironmentPreparedInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationReadyInterceptor;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationStartedInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnEnvironmentPreparedInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnReadyInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnStartedInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationRunListenersDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -67,11 +67,11 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationStartedInterceptor(listener)),
+                        () -> new ApplicationOnStartedInterceptor(listener)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
-                        () -> new ApplicationReadyInterceptor(listener, config, registry, application)),
+                        () -> new ApplicationOnReadyInterceptor(listener, config, registry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
-                        () -> new ApplicationEnvironmentPreparedInterceptor(listener, config, registry, application))
+                        () -> new ApplicationOnEnvironmentPreparedInterceptor(listener, config, registry, application))
         };
     }
 }

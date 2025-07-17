@@ -319,6 +319,7 @@ agent:
         namespace: ${CONFIG_CENTER_NAMESPACE:public}
         name: ${CONFIG_CENTER_NAME:${APPLICATION_NAME}}
         profile: ${CONFIG_CENTER_PROFILE:${APPLICATION_SERVICE_GROUP}}
+      properties: ${CONFIG_CENTER_PROPERTIES}
     registry:
       enabled: ${CONFIG_REGISTRY_ENABLED:false}
       registerAppServiceEnabled: ${CONFIG_REGISTER_APP_SERVICE_ENABLED:${CONFIG_REGISTRY_ENABLED:false}}

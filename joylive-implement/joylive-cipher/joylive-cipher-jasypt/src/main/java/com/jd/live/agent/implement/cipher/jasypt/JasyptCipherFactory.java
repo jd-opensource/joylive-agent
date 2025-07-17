@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.implement.cipher.jasypt;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -38,6 +40,8 @@ import static com.jd.live.agent.governance.security.CipherAlgorithm.*;
 @Injectable
 @Extension("jasypt")
 public class JasyptCipherFactory implements CipherFactory {
+
+    private static final Logger logger = LoggerFactory.getLogger(JasyptCipherFactory.class);
 
     private static final Map<String, CipherAlgorithmFactory<JasyptConfig>> factories = new HashMap<>();
 
@@ -65,9 +69,13 @@ public class JasyptCipherFactory implements CipherFactory {
      */
     private JasyptConfig createConfig(Map<String, String> config) {
         Option option = MapOption.of(config);
+        String password = getString(option, CIPHER_PASSWORD, CONFIG_CIPHER_PASSWORD, "");
+        if (password.isEmpty()) {
+            logger.warn("cipher password is empty, you can set it by environment variable: " + CONFIG_CIPHER_PASSWORD);
+        }
         return JasyptConfig.builder()
                 .algorithm(getString(option, CIPHER_ALGORITHM, ENV_CIPHER_ALGORITHM, CIPHER_DEFAULT_ALGORITHM))
-                .password(getString(option, CIPHER_PASSWORD, CONFIG_CIPHER_PASSWORD, ""))
+                .password(password)
                 .iterations(getPositive(option, CIPHER_ITERATIONS, CONFIG_CIPHER_ITERATIONS, CIPHER_DEFAULT_ITERATIONS))
                 .saltGenerator(getSaltGenerator(option))
                 .codec(getCodec(option))

@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationCloseInterceptor;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnCloseInterceptor;
 
 @Injectable
 @Extension(value = "SpringApplicationContextDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -44,7 +44,7 @@ public class SpringApplicationContextDefinition extends PluginDefinitionAdapter 
     public SpringApplicationContextDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_ABSTRACT_APPLICATION_CONTEXT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ApplicationCloseInterceptor(listener))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STOP), () -> new ApplicationOnCloseInterceptor(listener))
         };
     }
 }

@@ -22,11 +22,11 @@ import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppConte
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 
-public class ApplicationStartedInterceptor extends InterceptorAdaptor {
+public class ApplicationOnStartedInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
-    public ApplicationStartedInterceptor(AppListener listener) {
+    public ApplicationOnStartedInterceptor(AppListener listener) {
         this.listener = listener;
     }
 
