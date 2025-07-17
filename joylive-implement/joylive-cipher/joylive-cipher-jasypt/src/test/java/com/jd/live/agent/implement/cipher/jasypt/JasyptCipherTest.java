@@ -27,8 +27,8 @@ public class JasyptCipherTest {
     void testJasypt() throws Exception {
         JasyptCipherFactory factory = new JasyptCipherFactory();
         HashMap<String, String> config = new HashMap<>();
-        config.put(JasyptPBECipherAlgorithm.CIPHER_PASSWORD, "test");
-        config.put(JasyptPBECipherAlgorithm.CIPHER_ALGORITHM, JasyptPBECipherAlgorithm.CIPHER_DEFAULT_ALGORITHM);
+        config.put(JasyptPBECipherAlgorithm.KEY_CIPHER_PASSWORD, "test");
+        config.put(JasyptPBECipherAlgorithm.KEY_CIPHER_ALGORITHM, JasyptPBECipherAlgorithm.CIPHER_DEFAULT_ALGORITHM);
         Cipher cipher = factory.create(config);
         String source = "abcde";
         String encoded = cipher.encrypt(source);
