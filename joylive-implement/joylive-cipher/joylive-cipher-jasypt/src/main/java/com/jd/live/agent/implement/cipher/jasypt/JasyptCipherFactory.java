@@ -20,10 +20,9 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.security.*;
-import com.jd.live.agent.governance.security.base64.Base64StringCodec;
+import com.jd.live.agent.governance.security.codec.Base64StringCodec;
 import org.jasypt.salt.RandomSaltGenerator;
 import org.jasypt.salt.SaltGenerator;
 import org.jasypt.salt.StringFixedSaltGenerator;
@@ -78,17 +77,6 @@ public class JasyptCipherFactory implements CipherFactory {
                 .saltGenerator(getSaltGenerator(config))
                 .codec(getCodec(config))
                 .build();
-    }
-
-    /**
-     * Gets a configuration string with fallback logic:
-     */
-    private String getString(Option option, String key, String env, String defaultValue) {
-        String value = option.getString(key);
-        if (value == null || value.isEmpty()) {
-            value = System.getenv(env);
-        }
-        return value == null || value.isEmpty() ? defaultValue : value;
     }
 
     /**

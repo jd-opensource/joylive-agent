@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.security;
+package com.jd.live.agent.governance.security.detector;
 
 import com.jd.live.agent.governance.config.CipherConfig;
+import com.jd.live.agent.governance.security.CipherDetector;
 
 import java.util.function.Predicate;
 

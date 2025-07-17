@@ -15,19 +15,21 @@
  */
 package com.jd.live.agent.governance.security;
 
-import com.jd.live.agent.core.extension.annotation.Extensible;
+import java.text.Normalizer;
 
 /**
- * Factory for creating configured cipher algorithm instances.
- *
+ * Utility for normalizing text to Unicode NFC form.
  */
-@Extensible("CipherAlgorithmFactory")
-public interface CipherAlgorithmFactory {
-    /**
-     * Creates a configured cipher algorithm instance.
-     * @param ctx Configuration context (non-null)
-     * @return Initialized cipher instance (non-null)
-     */
-    CipherAlgorithm create(CipherAlgorithmContext ctx);
+public class CipherNormalizer {
 
+    /**
+     * Normalizes the input string to NFC form.
+     *
+     * @param message the text to normalize (may be null)
+     * @return normalized string in NFC form, or null if input was null
+     */
+    public static String normalizeToNfc(final String message) {
+        return Normalizer.normalize(message, Normalizer.Form.NFC);
+    }
 }
+

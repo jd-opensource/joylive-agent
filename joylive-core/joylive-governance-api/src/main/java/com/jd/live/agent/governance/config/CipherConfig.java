@@ -26,13 +26,21 @@ public class CipherConfig {
 
     public static final String ENV_CIPHER_PASSWORD = "CONFIG_CIPHER_PASSWORD";
 
+    public static final String CIPHER_RANDOM_ALGORITHM = "cipher.random.algorithm";
+
     public static final int DEFAULT_ITERATIONS = 1000;
+
+    public static final int DEFAULT_SALT_SIZE = 8;
+
+    public static final int DEFAULT_IV_SIZE = 16;
 
     private boolean enabled;
 
     private String cipher;
 
     private String algorithm;
+
+    private String provider;
 
     private String password;
 
@@ -42,7 +50,17 @@ public class CipherConfig {
 
     private String suffix;
 
+    private String saltType;
+
     private String salt;
+
+    private int saltSize = DEFAULT_SALT_SIZE;
+
+    private String ivType;
+
+    private String iv;
+
+    private int ivSize = DEFAULT_IV_SIZE;
 
     private int iterations = DEFAULT_ITERATIONS;
 
@@ -54,6 +72,14 @@ public class CipherConfig {
 
     public String getOrDefault(String key, String defaultValue) {
         return key == null || properties == null ? defaultValue : properties.getOrDefault(key, defaultValue);
+    }
+
+    public int getSaltSize() {
+        return saltSize <= 0 ? DEFAULT_SALT_SIZE : saltSize;
+    }
+
+    public int getIvSize() {
+        return ivSize <= 0 ? DEFAULT_IV_SIZE : ivSize;
     }
 
     public int getIterations() {

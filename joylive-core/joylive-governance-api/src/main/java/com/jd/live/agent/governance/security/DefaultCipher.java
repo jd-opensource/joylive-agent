@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.cipher.jasypt;
-
-import com.jd.live.agent.governance.security.Cipher;
-import com.jd.live.agent.governance.security.CipherAlgorithm;
-import com.jd.live.agent.governance.security.StringCodec;
-import com.jd.live.agent.governance.security.codec.Base64StringCodec;
+package com.jd.live.agent.governance.security;
 
 import java.nio.charset.StandardCharsets;
 
@@ -26,17 +21,15 @@ import java.nio.charset.StandardCharsets;
  * Combines cryptographic operations with string encoding/decoding.
  * <p>Automatically handles UTF-8 text conversion and Base64 processing.
  */
-public class JasyptCipher implements Cipher {
+public class DefaultCipher implements Cipher {
 
     private final CipherAlgorithm algorithm;
 
     private final StringCodec codec;
 
-    public JasyptCipher(CipherAlgorithm algorithm) {
+    public DefaultCipher(CipherAlgorithm algorithm, StringCodec codec) {
         this.algorithm = algorithm;
-        this.codec = algorithm instanceof JasyptCipherAlgorithm
-                ? ((JasyptCipherAlgorithm) algorithm).getConfig().getCodec()
-                : new Base64StringCodec();
+        this.codec = codec;
     }
 
     @Override

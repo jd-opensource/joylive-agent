@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.security.hex;
+package com.jd.live.agent.governance.security.codec;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.exception.CipherException;

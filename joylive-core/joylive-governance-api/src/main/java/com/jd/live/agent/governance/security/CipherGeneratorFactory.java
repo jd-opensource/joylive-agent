@@ -16,18 +16,19 @@
 package com.jd.live.agent.governance.security;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.config.CipherConfig;
 
 /**
- * Factory for creating configured cipher algorithm instances.
- *
+ * Factory interface for producing {@link CipherGenerator} instances.
  */
-@Extensible("CipherAlgorithmFactory")
-public interface CipherAlgorithmFactory {
-    /**
-     * Creates a configured cipher algorithm instance.
-     * @param ctx Configuration context (non-null)
-     * @return Initialized cipher instance (non-null)
-     */
-    CipherAlgorithm create(CipherAlgorithmContext ctx);
+@Extensible("SaltFactory")
+public interface CipherGeneratorFactory {
 
+    /**
+     * Creates a new salt instance configured with the specified cipher parameters.
+     *
+     * @param config the cipher configuration (must not be null)
+     * @return a new configured salt instance (never null)
+     */
+    CipherGenerator create(CipherConfig config);
 }

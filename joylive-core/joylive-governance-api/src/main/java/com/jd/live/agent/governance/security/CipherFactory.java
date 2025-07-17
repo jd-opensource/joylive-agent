@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.security;
 
-import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.governance.config.CipherConfig;
 
 import java.util.Map;
@@ -23,8 +22,9 @@ import java.util.Map;
 /**
  * Factory interface for creating cryptographic cipher instances.
  */
-@Extensible("CipherFactory")
 public interface CipherFactory {
+
+    String COMPONENT_CIPHER_FACTORY = "CipherFactory";
 
     /**
      * Creates a new cipher instance configured with the specified parameters.

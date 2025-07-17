@@ -13,27 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.security.base64;
+package com.jd.live.agent.governance.security.generator;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.security.StringCodec;
+import com.jd.live.agent.governance.config.CipherConfig;
+import com.jd.live.agent.governance.security.CipherGenerator;
+import com.jd.live.agent.governance.security.CipherGeneratorFactory;
 
-import java.util.Base64;
+@Extension("Random")
+public class RandomGeneratorFactory implements CipherGeneratorFactory {
 
-@Extension(Base64StringCodec.name)
-public class Base64StringCodec implements StringCodec {
-
-    public static final String name = "base64";
-
-    public static final Base64StringCodec INSTANCE = new Base64StringCodec();
+    public static final CipherGeneratorFactory INSTANCE = new RandomGeneratorFactory();
 
     @Override
-    public String encode(byte[] data) {
-        return Base64.getEncoder().encodeToString(data);
-    }
-
-    @Override
-    public byte[] decode(String data) {
-        return Base64.getDecoder().decode(data);
+    public CipherGenerator create(CipherConfig config) {
+        return new RandomGenerator(config.getProperty(CipherConfig.CIPHER_RANDOM_ALGORITHM));
     }
 }

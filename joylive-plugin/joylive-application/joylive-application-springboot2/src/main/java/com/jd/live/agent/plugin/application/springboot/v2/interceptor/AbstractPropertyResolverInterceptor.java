@@ -23,9 +23,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.security.Cipher;
 import com.jd.live.agent.governance.security.CipherDetector;
 import com.jd.live.agent.governance.security.CipherFactory;
-import com.jd.live.agent.governance.security.DefaultCipherDetector;
-
-import java.util.Map;
+import com.jd.live.agent.governance.security.detector.DefaultCipherDetector;
 
 public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
 
@@ -35,8 +33,8 @@ public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
 
     private final CipherDetector detector;
 
-    public AbstractPropertyResolverInterceptor(GovernanceConfig config, Map<String, CipherFactory> ciphers) {
-        this.cipher = CipherFactory.create(ciphers, config.getCipherConfig());
+    public AbstractPropertyResolverInterceptor(GovernanceConfig config, CipherFactory cipherFactory) {
+        this.cipher = cipherFactory.create(config.getCipherConfig());
         this.detector = new DefaultCipherDetector(config.getCipherConfig());
     }
 
