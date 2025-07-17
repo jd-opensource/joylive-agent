@@ -18,9 +18,16 @@ package com.jd.live.agent.plugin.registry.springcloud.v2_2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.openfeign.FeignClientFactoryBean;
+import org.springframework.context.ApplicationContextAware;
+
+import java.lang.reflect.Modifier;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * FeignClientFactoryBeanInterceptor
@@ -37,9 +44,28 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        FeignClientFactoryBean factoryBean = (FeignClientFactoryBean) ctx.getTarget();
-        String name = factoryBean.getName();
-        registry.subscribe(name);
-        logger.info("Found feign client consumer, service: {}", name);
+        // FeignClientFactoryBean is package-private in 2.2.6-, so we can't direct access it.
+        String name = Accessor.getName(ctx.getTarget());
+        if (name != null) {
+            registry.subscribe(name);
+            logger.info("Found feign client consumer, service: {}", name);
+        }
+    }
+
+    private static class Accessor {
+
+        private static final Class<?> type = loadClass("org.springframework.cloud.openfeign.FeignClientFactoryBean",
+                ApplicationContextAware.class.getClassLoader());
+        private static final FieldAccessor name = FieldAccessorFactory.getAccessor(type, "name");
+
+        public static String getName(Object bean) {
+            if (type == null) {
+                return null;
+            } else if (Modifier.isPublic(type.getModifiers())) {
+                return ((FeignClientFactoryBean) bean).getName();
+            } else {
+                return name.get(bean, String.class);
+            }
+        }
     }
 }
