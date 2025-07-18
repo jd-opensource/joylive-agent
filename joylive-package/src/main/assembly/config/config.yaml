@@ -307,7 +307,12 @@ agent:
       codec: ${CONFIG_CIPHER_CODEC:base64}
       prefix: ${CONFIG_CIPHER_PREFIX:ENC(}
       suffix: ${CONFIG_CIPHER_SUFFIX:)}
+      saltType: ${CONFIG_CIPHER_SALT_TYPE:base64}
       salt: ${CONFIG_CIPHER_SALT}
+      saltSize: ${CONFIG_CIPHER_SALT_SIZE:8}
+      ivType: ${CONFIG_CIPHER_IV_TYPE}
+      iv: ${CONFIG_CIPHER_IV}
+      ivSize: ${CONFIG_CIPHER_IV_SIZE:16}
       iterations: ${CONFIG_CIPHER_ITERATIONS:1000}
       properties: ${CONFIG_CIPHER_PROPERTIES}
     configCenter:
