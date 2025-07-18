@@ -15,11 +15,13 @@
  */
 package com.jd.live.agent.plugin.registry.eureka.registry;
 
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClientConfig;
+import com.netflix.discovery.endpoint.EndpointUtils;
 import com.netflix.discovery.shared.Application;
 import lombok.Setter;
 
@@ -27,7 +29,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.URI.getAddress;
 
 /**
  * Registry service implementation for Eureka discovery client.
@@ -39,7 +40,7 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     private DiscoveryClient client;
 
     public EurekaRegistryService(EurekaClientConfig config) {
-        super(getAddress("eureka", config.getEurekaServerDNSName(), config.getEurekaServerPort()));
+        super(getAddress(config));
     }
 
     public EurekaRegistryService(DiscoveryClient client) {
@@ -62,9 +63,20 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
         if (application != null) {
             for (RegistryListener listener : listeners) {
                 ServiceId serviceId = listener.getServiceId();
-                List<ServiceEndpoint> endpoints = getEndpoints(application, serviceId.getGroup());
-                publish(new RegistryEvent(serviceId, endpoints, getDefaultGroup()), listener);
+                if (serviceId.getService().equalsIgnoreCase(application.getName())) {
+                    List<ServiceEndpoint> endpoints = getEndpoints(application, serviceId.getGroup());
+                    publish(new RegistryEvent(serviceId, endpoints, getDefaultGroup()), listener);
+                }
             }
+        }
+    }
+
+    private static String getAddress(EurekaClientConfig config) {
+        List<String> addrs = EndpointUtils.getServiceUrlsFromConfig(config, null, true);
+        if (addrs.isEmpty()) {
+            return "eureka";
+        } else {
+            return URI.parse(addrs.get(0)).scheme("eureka").getAddress(true);
         }
     }
 
