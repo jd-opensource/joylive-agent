@@ -20,6 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryConfig;
 import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryService;
+import com.netflix.appinfo.ApplicationInfoManager;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClientConfig;
 
@@ -37,8 +38,10 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
+        ApplicationInfoManager applicationInfoManager = (ApplicationInfoManager) arguments[0];
         EurekaClientConfig config = (EurekaClientConfig) arguments[1];
-        EurekaRegistryService registryService = new EurekaRegistryService(config);
+        String zone = applicationInfoManager.getInfo().getMetadata().get("zone");
+        EurekaRegistryService registryService = new EurekaRegistryService(config, zone);
         arguments[1] = new EurekaRegistryConfig(config, registryService);
         registry.addSystemRegistry(registryService);
     }

@@ -15,10 +15,13 @@
  */
 package com.jd.live.agent.plugin.registry.eureka.registry;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.governance.registry.RegistryService.AbstractSystemRegistryService;
 import com.jd.live.agent.plugin.registry.eureka.instance.EurekaEndpoint;
+import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClientConfig;
 import com.netflix.discovery.endpoint.EndpointUtils;
@@ -39,12 +42,12 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     @Setter
     private DiscoveryClient client;
 
-    public EurekaRegistryService(EurekaClientConfig config) {
-        super(getAddress(config));
+    public EurekaRegistryService(EurekaClientConfig config, String zone) {
+        super(getAddress(config, zone));
     }
 
     public EurekaRegistryService(DiscoveryClient client) {
-        this(client.getEurekaClientConfig());
+        this(client.getEurekaClientConfig(), Accessor.getZone(client));
         this.client = client;
     }
 
@@ -71,8 +74,8 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
         }
     }
 
-    private static String getAddress(EurekaClientConfig config) {
-        List<String> addrs = EndpointUtils.getServiceUrlsFromConfig(config, null, true);
+    private static String getAddress(EurekaClientConfig config, String zone) {
+        List<String> addrs = EndpointUtils.getServiceUrlsFromConfig(config, zone, true);
         if (addrs.isEmpty()) {
             return "eureka";
         } else {
@@ -99,5 +102,18 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     @Override
     public int hashCode() {
         return Objects.hashCode(client);
+    }
+
+    private static class Accessor {
+
+        private static final FieldAccessor instanceInfo = FieldAccessorFactory.getAccessor(DiscoveryClient.class, "InstanceInfo");
+
+        public static String getZone(Object client) {
+            if (instanceInfo == null) {
+                return null;
+            }
+            InstanceInfo info = (InstanceInfo) instanceInfo.get(client);
+            return info == null ? null : info.getMetadata().get("zone");
+        }
     }
 }
