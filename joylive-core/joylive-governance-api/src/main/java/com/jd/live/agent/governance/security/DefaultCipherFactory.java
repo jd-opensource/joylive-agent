@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.security.codec.Base64StringCodec;
 import com.jd.live.agent.governance.security.generator.EmptyGeneratorFactory;
 import com.jd.live.agent.governance.security.generator.RandomGeneratorFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -52,6 +53,10 @@ public class DefaultCipherFactory implements CipherFactory {
         return ca == null ? null : new DefaultCipher(ca, ctx.getCodec());
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
      * Builds Jasypt configuration from input options.
      *
@@ -61,13 +66,69 @@ public class DefaultCipherFactory implements CipherFactory {
     private CipherAlgorithmContext createContext(CipherConfig config) {
         StringCodec codec = codecs == null
                 ? Base64StringCodec.INSTANCE
-                : codecs.getOrDefault(config.getAlgorithm(), Base64StringCodec.INSTANCE);
+                : codecs.getOrDefault(config.getCodec(), Base64StringCodec.INSTANCE);
         CipherGeneratorFactory saltFactory = salts == null
                 ? RandomGeneratorFactory.INSTANCE :
-                salts.getOrDefault(config.getSalt(), RandomGeneratorFactory.INSTANCE);
+                salts.getOrDefault(config.getSaltType(), RandomGeneratorFactory.INSTANCE);
         CipherGeneratorFactory ivFactory = salts == null
                 ? EmptyGeneratorFactory.INSTANCE :
-                salts.getOrDefault(config.getSalt(), EmptyGeneratorFactory.INSTANCE);
-        return new CipherAlgorithmContext(config, codec, saltFactory.create(config), ivFactory.create(config));
+                salts.getOrDefault(config.getIvType(), EmptyGeneratorFactory.INSTANCE);
+        return new CipherAlgorithmContext(config, codec,
+                saltFactory.create(config, CipherGeneratorType.SALT),
+                ivFactory.create(config, CipherGeneratorType.IV));
+    }
+
+    /**
+     * Builder for constructing DefaultCipherFactory with customizable components.
+     */
+    public static class Builder {
+        private final Map<String, CipherAlgorithmFactory> algorithmFactories = new HashMap<>();
+        private final Map<String, StringCodec> codecs = new HashMap<>();
+        private final Map<String, CipherGeneratorFactory> generatorFactories = new HashMap<>();
+
+        /**
+         * Adds a cipher algorithm factory.
+         *
+         * @param name    Unique identifier for the algorithm
+         * @param factory Factory instance
+         * @return this builder for chaining
+         */
+        public Builder add(String name, CipherAlgorithmFactory factory) {
+            algorithmFactories.put(name, factory);
+            return this;
+        }
+
+        /**
+         * Adds a string codec implementation.
+         *
+         * @param name  Codec identifier
+         * @param codec Codec instance
+         * @return this builder for chaining
+         */
+        public Builder add(String name, StringCodec codec) {
+            codecs.put(name, codec);
+            return this;
+        }
+
+        /**
+         * Adds a salt/IV generator factory.
+         *
+         * @param name    Generator identifier
+         * @param factory Factory instance
+         * @return this builder for chaining
+         */
+        public Builder add(String name, CipherGeneratorFactory factory) {
+            generatorFactories.put(name, factory);
+            return this;
+        }
+
+        /**
+         * Builds the DefaultCipherFactory instance.
+         *
+         * @return Configured cipher factory
+         */
+        public DefaultCipherFactory build() {
+            return new DefaultCipherFactory(algorithmFactories, codecs, generatorFactories);
+        }
     }
 }

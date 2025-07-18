@@ -19,12 +19,12 @@ import java.util.Base64;
 
 public class Base64Generator extends StringGenerator {
 
-    public Base64Generator(String salt) {
-        super(salt);
+    public Base64Generator(String salt, int size) {
+        super(salt, size);
     }
 
     @Override
-    protected byte[] getBytes(String salt) {
-        return Base64.getDecoder().decode(salt);
+    protected byte[] setupSalt(byte[] bytes, int size) {
+        return super.setupSalt(Base64.getDecoder().decode(bytes), size);
     }
 }

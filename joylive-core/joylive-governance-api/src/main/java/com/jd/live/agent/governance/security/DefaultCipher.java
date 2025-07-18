@@ -15,6 +15,9 @@
  */
 package com.jd.live.agent.governance.security;
 
+import com.jd.live.agent.governance.exception.CipherException;
+import com.jd.live.agent.governance.security.codec.Base64StringCodec;
+
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -29,16 +32,26 @@ public class DefaultCipher implements Cipher {
 
     public DefaultCipher(CipherAlgorithm algorithm, StringCodec codec) {
         this.algorithm = algorithm;
-        this.codec = codec;
+        this.codec = codec == null ? Base64StringCodec.INSTANCE : codec;
     }
 
     @Override
-    public String encrypt(String source) throws Exception {
-        return codec.encode(algorithm.encrypt(source.getBytes(StandardCharsets.UTF_8)));
+    public byte[] encrypt(byte[] plainData) throws CipherException {
+        return plainData == null ? null : algorithm.encrypt(plainData);
     }
 
     @Override
-    public String decrypt(String encoded) throws Exception {
-        return new String(algorithm.decrypt(codec.decode(encoded)), StandardCharsets.UTF_8);
+    public byte[] decrypt(byte[] encryptedData) throws CipherException {
+        return encryptedData == null ? null : algorithm.decrypt(encryptedData);
+    }
+
+    @Override
+    public String encrypt(String plainText) throws CipherException {
+        return plainText == null ? null : codec.encode(algorithm.encrypt(plainText.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Override
+    public String decrypt(String encryptedText) throws CipherException {
+        return encryptedText == null ? null : new String(algorithm.decrypt(codec.decode(encryptedText)), StandardCharsets.UTF_8);
     }
 }

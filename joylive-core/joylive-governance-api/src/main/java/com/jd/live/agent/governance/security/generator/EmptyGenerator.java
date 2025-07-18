@@ -17,12 +17,11 @@ package com.jd.live.agent.governance.security.generator;
 
 import com.jd.live.agent.governance.security.CipherGenerator;
 
-public class EmptyGenerator implements CipherGenerator {
+public class EmptyGenerator extends ByteGenerator {
 
-    public static CipherGenerator INSTANCE = new EmptyGenerator();
+    public static CipherGenerator INSTANCE = new EmptyGenerator(8);
 
-    @Override
-    public byte[] create(int size) throws Exception {
-        return new byte[0];
+    public EmptyGenerator(int size) {
+        super(new byte[size], size);
     }
 }

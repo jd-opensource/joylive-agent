@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.security.cipher.simple;
 
 import com.jd.live.agent.governance.config.CipherConfig;
+import com.jd.live.agent.governance.exception.CipherException;
 import com.jd.live.agent.governance.security.CipherAlgorithm;
 import com.jd.live.agent.governance.security.CipherAlgorithmContext;
 import com.jd.live.agent.governance.security.generator.RandomGenerator;
@@ -49,55 +50,67 @@ public class SimplePBECipherAlgorithm implements CipherAlgorithm {
     }
 
     @Override
-    public byte[] encrypt(byte[] encoded) throws Exception {
-        // create Key
-        final SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
-        // fixed random salt algorithm
-        byte[] salt = RandomGenerator.INSTANCE.create(8);
-        final PBEKeySpec keySpec = new PBEKeySpec(password, salt, iterations);
-        SecretKey key = factory.generateSecret(keySpec);
+    public byte[] encrypt(byte[] encoded) throws CipherException {
+        try {
+            // create Key
+            final SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
+            // fixed random salt algorithm
+            byte[] salt = RandomGenerator.INSTANCE.create(8);
+            final PBEKeySpec keySpec = new PBEKeySpec(password, salt, iterations);
+            SecretKey key = factory.generateSecret(keySpec);
 
-        // Build cipher.
-        final Cipher cipherEncrypt = Cipher.getInstance(algorithm);
-        cipherEncrypt.init(Cipher.ENCRYPT_MODE, key);
+            // Build cipher.
+            final Cipher cipherEncrypt = Cipher.getInstance(algorithm);
+            cipherEncrypt.init(Cipher.ENCRYPT_MODE, key);
 
-        // Save parameters
-        byte[] params = cipherEncrypt.getParameters().getEncoded();
+            // Save parameters
+            byte[] params = cipherEncrypt.getParameters().getEncoded();
 
-        // Encrypted message
-        byte[] encryptedMessage = cipherEncrypt.doFinal(encoded);
+            // Encrypted message
+            byte[] encryptedMessage = cipherEncrypt.doFinal(encoded);
 
-        return ByteBuffer
-                .allocate(1 + params.length + encryptedMessage.length)
-                .put((byte) params.length)
-                .put(params)
-                .put(encryptedMessage)
-                .array();
+            return ByteBuffer
+                    .allocate(1 + params.length + encryptedMessage.length)
+                    .put((byte) params.length)
+                    .put(params)
+                    .put(encryptedMessage)
+                    .array();
+        } catch (CipherException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new CipherException(e.getMessage(), e);
+        }
     }
 
     @Override
-    public byte[] decrypt(byte[] encryptedMessage) throws Exception {
-        int paramsLength = Byte.toUnsignedInt(encryptedMessage[0]);
-        int messageLength = encryptedMessage.length - paramsLength - 1;
-        byte[] params = new byte[paramsLength];
-        byte[] message = new byte[messageLength];
-        System.arraycopy(encryptedMessage, 1, params, 0, paramsLength);
-        System.arraycopy(encryptedMessage, paramsLength + 1, message, 0, messageLength);
+    public byte[] decrypt(byte[] encryptedMessage) throws CipherException {
+        try {
+            int paramsLength = Byte.toUnsignedInt(encryptedMessage[0]);
+            int messageLength = encryptedMessage.length - paramsLength - 1;
+            byte[] params = new byte[paramsLength];
+            byte[] message = new byte[messageLength];
+            System.arraycopy(encryptedMessage, 1, params, 0, paramsLength);
+            System.arraycopy(encryptedMessage, paramsLength + 1, message, 0, messageLength);
 
-        // create Key
-        final SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
-        final PBEKeySpec keySpec = new PBEKeySpec(password);
-        SecretKey key = factory.generateSecret(keySpec);
+            // create Key
+            final SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
+            final PBEKeySpec keySpec = new PBEKeySpec(password);
+            SecretKey key = factory.generateSecret(keySpec);
 
-        // Build parameters
-        AlgorithmParameters algorithmParameters = AlgorithmParameters.getInstance(algorithm);
-        algorithmParameters.init(params);
+            // Build parameters
+            AlgorithmParameters algorithmParameters = AlgorithmParameters.getInstance(algorithm);
+            algorithmParameters.init(params);
 
-        // Build Cipher
-        final Cipher cipherDecrypt = Cipher.getInstance(algorithm);
-        cipherDecrypt.init(Cipher.DECRYPT_MODE, key, algorithmParameters);
+            // Build Cipher
+            final Cipher cipherDecrypt = Cipher.getInstance(algorithm);
+            cipherDecrypt.init(Cipher.DECRYPT_MODE, key, algorithmParameters);
 
-        return cipherDecrypt.doFinal(message);
+            return cipherDecrypt.doFinal(message);
+        } catch (CipherException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new CipherException(e.getMessage(), e);
+        }
     }
 
 }

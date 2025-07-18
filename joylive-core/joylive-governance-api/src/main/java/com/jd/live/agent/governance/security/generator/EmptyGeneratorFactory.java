@@ -19,14 +19,15 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.security.CipherGenerator;
 import com.jd.live.agent.governance.security.CipherGeneratorFactory;
+import com.jd.live.agent.governance.security.CipherGeneratorType;
 
-@Extension({"Empty", "Zero"})
+@Extension({"empty", "zero"})
 public class EmptyGeneratorFactory implements CipherGeneratorFactory {
 
     public static CipherGeneratorFactory INSTANCE = new EmptyGeneratorFactory();
 
     @Override
-    public CipherGenerator create(CipherConfig config) {
-        return new EmptyGenerator();
+    public CipherGenerator create(CipherConfig config, CipherGeneratorType type) {
+        return new EmptyGenerator(type.getSize(config));
     }
 }

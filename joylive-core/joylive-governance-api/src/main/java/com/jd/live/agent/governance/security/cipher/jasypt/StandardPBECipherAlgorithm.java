@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.security.cipher.jasypt;
 
 import com.jd.live.agent.governance.config.CipherConfig;
+import com.jd.live.agent.governance.exception.CipherException;
 import com.jd.live.agent.governance.security.CipherAlgorithm;
 import com.jd.live.agent.governance.security.CipherAlgorithmContext;
 import com.jd.live.agent.governance.security.CipherGenerator;
@@ -27,6 +28,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import java.security.spec.AlgorithmParameterSpec;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
@@ -37,23 +39,14 @@ import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 public class StandardPBECipherAlgorithm implements CipherAlgorithm {
 
     private final String algorithm;
-
     private final String provider;
-
     private final char[] password;
-
     private final int iterations;
-
     private final CipherGenerator salt;
-
     private final int saltSize;
-
     private final CipherGenerator iv;
-
     private final int ivSize;
-
     private final boolean withSalt;
-
     private final boolean withIV;
 
     public StandardPBECipherAlgorithm(CipherAlgorithmContext ctx) {
@@ -73,55 +66,120 @@ public class StandardPBECipherAlgorithm implements CipherAlgorithm {
     }
 
     @Override
-    public byte[] encrypt(byte[] data) throws Exception {
-        byte[] saltBytes = salt.create(saltSize);
-        byte[] ivBytes = iv.create(ivSize);
+    public byte[] encrypt(byte[] data) throws CipherException {
+        try {
+            int saltSize = this.saltSize;
+            int ivSize = this.ivSize;
+            Cipher cipher = createCipher();
+            // The salt size and the IV size for the chosen algorithm are set to be equal
+            // to the algorithm's block size (if it is a block algorithm).
+            final int blockSize = cipher.getBlockSize();
+            if (blockSize > 0) {
+                saltSize = blockSize;
+                ivSize = blockSize;
+            }
 
-        Cipher cipher = createCipher(saltBytes, ivBytes, Cipher.ENCRYPT_MODE);
-        byte[] encoded = cipher.doFinal(data);
-        return append(encoded, saltBytes, ivBytes);
+            // compatible with jasypt StandardPBEByteEncryptor
+            byte[] saltBytes = salt.create(saltSize);
+            byte[] ivBytes = iv.create(ivSize);
+            setupCipher(cipher, saltBytes, ivBytes, Cipher.ENCRYPT_MODE);
+
+            byte[] encoded = cipher.doFinal(data);
+            return append(encoded, saltBytes, ivBytes);
+        } catch (CipherException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new CipherException(e.getMessage(), e);
+        }
     }
 
     @Override
-    public byte[] decrypt(byte[] data) throws Exception {
-        byte[] saltBytes = null;
-        byte[] ivBytes = null;
-        int offset = 0;
-        if (withSalt && withIV) {
-            offset = saltSize + ivSize;
-            saltBytes = new byte[saltSize];
-            System.arraycopy(data, 0, saltBytes, 0, saltSize);
-            ivBytes = new byte[ivSize];
-            System.arraycopy(data, saltSize, ivBytes, 0, ivSize);
-        } else if (withSalt) {
-            offset = saltSize;
-            saltBytes = new byte[saltSize];
-            System.arraycopy(data, 0, saltBytes, 0, saltSize);
-            ivBytes = iv.create(ivSize);
-        } else if (withIV) {
-            offset = ivSize;
-            saltBytes = salt.create(saltSize);
-            ivBytes = new byte[ivSize];
-            System.arraycopy(data, 0, ivBytes, 0, ivSize);
-        }
+    public byte[] decrypt(byte[] data) throws CipherException {
+        try {
+            int saltSize = this.saltSize;
+            int ivSize = this.ivSize;
+            Cipher cipher = createCipher();
+            // The salt size and the IV size for the chosen algorithm are set to be equal
+            // to the algorithm's block size (if it is a block algorithm).
+            final int blockSize = cipher.getBlockSize();
+            if (blockSize > 0) {
+                saltSize = blockSize;
+                ivSize = blockSize;
+            }
+            byte[] saltBytes;
+            byte[] ivBytes;
+            int offset = 0;
+            if (withSalt && withIV) {
+                offset = saltSize + ivSize;
+                saltBytes = new byte[saltSize];
+                System.arraycopy(data, 0, saltBytes, 0, saltSize);
+                ivBytes = new byte[ivSize];
+                System.arraycopy(data, saltSize, ivBytes, 0, ivSize);
+            } else if (withSalt) {
+                offset = saltSize;
+                saltBytes = new byte[saltSize];
+                System.arraycopy(data, 0, saltBytes, 0, saltSize);
+                ivBytes = iv.create(ivSize);
+            } else if (withIV) {
+                offset = ivSize;
+                saltBytes = salt.create(saltSize);
+                ivBytes = new byte[ivSize];
+                System.arraycopy(data, 0, ivBytes, 0, ivSize);
+            } else {
+                saltBytes = salt.create(saltSize);
+                ivBytes = iv.create(ivSize);
+            }
 
-        Cipher cipher = createCipher(saltBytes, ivBytes, Cipher.DECRYPT_MODE);
-        return cipher.doFinal(data, offset, data.length - offset);
+            setupCipher(cipher, saltBytes, ivBytes, Cipher.DECRYPT_MODE);
+            return cipher.doFinal(data, offset, data.length - offset);
+        } catch (CipherException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new CipherException(e.getMessage(), e);
+        }
     }
 
-    private Cipher createCipher(byte[] saltBytes, byte[] ivBytes, int encryptMode) throws Exception {
-        PBEParameterSpec parameterSpec = new PBEParameterSpec(saltBytes, iterations, new IvParameterSpec(ivBytes));
-        PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
-
+    /**
+     * Initializes cipher with PBE parameters (salt, IV, and password).
+     *
+     * @param cipher      cipher to initialize
+     * @param saltBytes   salt bytes (non-null if used)
+     * @param ivBytes     IV bytes (non-null if used)
+     * @param encryptMode Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE
+     * @throws Exception if cipher initialization fails
+     */
+    private void setupCipher(Cipher cipher, byte[] saltBytes, byte[] ivBytes, int encryptMode) throws Exception {
+        // TODO cache to improve performance in some case
         SecretKeyFactory factory = isEmpty(provider)
                 ? SecretKeyFactory.getInstance(algorithm)
                 : SecretKeyFactory.getInstance(algorithm, provider);
-        SecretKey key = factory.generateSecret(pbeKeySpec);
-        Cipher cipher = isEmpty(provider) ? Cipher.getInstance(algorithm) : Cipher.getInstance(algorithm, provider);
+
+        SecretKey key = factory.generateSecret(new PBEKeySpec(password));
+
+        AlgorithmParameterSpec paramSpec = ivBytes == null || ivBytes.length == 0 ? null : new IvParameterSpec(ivBytes);
+        PBEParameterSpec parameterSpec = new PBEParameterSpec(saltBytes, iterations, paramSpec);
+
         cipher.init(encryptMode, key, parameterSpec);
-        return cipher;
     }
 
+    /**
+     * Creates new cipher instance with configured algorithm/provider.
+     *
+     * @return initialized cipher
+     * @throws Exception if cipher creation fails
+     */
+    private Cipher createCipher() throws Exception {
+        return isEmpty(provider) ? Cipher.getInstance(algorithm) : Cipher.getInstance(algorithm, provider);
+    }
+
+    /**
+     * Combines salt, IV and encrypted data into single byte array according to configuration.
+     *
+     * @param encoded   encrypted data
+     * @param saltBytes salt (nullable if not used)
+     * @param ivBytes   IV (nullable if not used)
+     * @return combined byte array in format: [salt?][IV?][data]
+     */
     private byte[] append(byte[] encoded, byte[] saltBytes, byte[] ivBytes) {
         if (withSalt && withIV) {
             byte[] result = new byte[saltSize + ivSize + encoded.length];

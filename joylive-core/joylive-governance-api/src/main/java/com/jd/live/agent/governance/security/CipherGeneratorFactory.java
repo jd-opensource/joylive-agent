@@ -25,10 +25,11 @@ import com.jd.live.agent.governance.config.CipherConfig;
 public interface CipherGeneratorFactory {
 
     /**
-     * Creates a new salt instance configured with the specified cipher parameters.
+     * Creates a new {@link CipherGenerator} of the specified type configured with the given parameters.
      *
-     * @param config the cipher configuration (must not be null)
-     * @return a new configured salt instance (never null)
+     * @param config the cipher configuration (non-null)
+     * @param type the generator type to create (non-null)
+     * @return a new configured cipher generator instance (non-null)
      */
-    CipherGenerator create(CipherConfig config);
+    CipherGenerator create(CipherConfig config, CipherGeneratorType type);
 }

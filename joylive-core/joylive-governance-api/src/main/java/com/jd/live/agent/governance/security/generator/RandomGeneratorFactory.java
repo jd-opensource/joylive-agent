@@ -19,14 +19,15 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.security.CipherGenerator;
 import com.jd.live.agent.governance.security.CipherGeneratorFactory;
+import com.jd.live.agent.governance.security.CipherGeneratorType;
 
-@Extension("Random")
+@Extension("random")
 public class RandomGeneratorFactory implements CipherGeneratorFactory {
 
     public static final CipherGeneratorFactory INSTANCE = new RandomGeneratorFactory();
 
     @Override
-    public CipherGenerator create(CipherConfig config) {
-        return new RandomGenerator(config.getProperty(CipherConfig.CIPHER_RANDOM_ALGORITHM));
+    public CipherGenerator create(CipherConfig config, CipherGeneratorType type) {
+        return new RandomGenerator(config.getProperty(CipherConfig.CIPHER_RANDOM_ALGORITHM), type.getSize(config));
     }
 }

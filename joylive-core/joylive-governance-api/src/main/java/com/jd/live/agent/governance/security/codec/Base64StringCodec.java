@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.security.codec;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.governance.exception.CipherException;
 import com.jd.live.agent.governance.security.StringCodec;
 
 import java.util.Base64;
@@ -28,12 +29,16 @@ public class Base64StringCodec implements StringCodec {
     public static final Base64StringCodec INSTANCE = new Base64StringCodec();
 
     @Override
-    public String encode(byte[] data) {
+    public String encode(byte[] data) throws CipherException {
         return Base64.getEncoder().encodeToString(data);
     }
 
     @Override
-    public byte[] decode(String data) {
-        return Base64.getDecoder().decode(data);
+    public byte[] decode(String data) throws CipherException {
+        try {
+            return Base64.getDecoder().decode(data);
+        } catch (Exception e) {
+            throw new CipherException(e.getMessage(), e);
+        }
     }
 }

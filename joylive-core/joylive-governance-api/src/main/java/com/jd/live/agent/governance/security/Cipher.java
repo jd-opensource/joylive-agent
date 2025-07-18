@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.security;
 
+import com.jd.live.agent.governance.exception.CipherException;
+
 /**
  * Defines symmetric string encryption/decryption operations.
  * <p>Implementations should provide reversible transformation of string data.
@@ -22,20 +24,36 @@ package com.jd.live.agent.governance.security;
 public interface Cipher {
 
     /**
-     * Encrypts a plaintext string for secure storage/transmission.
-     *
-     * @param source the original input string
-     * @return encrypted string
-     * @throws Exception if encryption fails
+     * Encrypts plaintext string.
+     * @param plainText the input string to encrypt
+     * @return encrypted string (Base64 or hex encoded)
+     * @throws CipherException if encryption fails
      */
-    String encrypt(String source) throws Exception;
+    String encrypt(String plainText) throws CipherException;
 
     /**
-     * Decrypts an encoded string back to original content.
+     * Decrypts encoded string to original plaintext.
      *
-     * @param encrypted the encrypted input string
+     * @param encryptedText the encrypted string (Base64 or hex encoded)
      * @return original plaintext string
-     * @throws Exception if decryption fails
+     * @throws CipherException if decryption fails
      */
-    String decrypt(String encrypted) throws Exception;
+    String decrypt(String encryptedText);
+
+    /**
+     * Encrypts binary data.
+     * @param plainData the input bytes to encrypt
+     * @return encrypted byte array
+     * @throws CipherException if encryption fails
+     */
+    byte[] encrypt(byte[] plainData) throws CipherException;
+
+    /**
+     * Decrypts binary data to original content.
+     *
+     * @param encryptedData the encrypted byte array
+     * @return original plaintext bytes
+     * @throws CipherException if decryption fails
+     */
+    byte[] decrypt(byte[] encryptedData) throws CipherException;
 }

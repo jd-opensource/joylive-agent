@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.security;
 
+import com.jd.live.agent.governance.exception.CipherException;
+
 /**
  * Cryptographic algorithm for byte-level encryption/decryption operations.
  */
@@ -27,16 +29,16 @@ public interface CipherAlgorithm {
      *
      * @param data encrypted byte array
      * @return decrypted byte array
-     * @throws Exception if decryption fails
+     * @throws CipherException if decryption fails
      */
-    byte[] decrypt(byte[] data) throws Exception;
+    byte[] decrypt(byte[] data) throws CipherException;
 
     /**
      * Encrypts data for secure storage/transmission.
      *
      * @param data original byte array
      * @return encrypted byte array
-     * @throws Exception if encryption fails
+     * @throws CipherException if encryption fails
      */
-    byte[] encrypt(byte[] data) throws Exception;
+    byte[] encrypt(byte[] data) throws CipherException;
 }

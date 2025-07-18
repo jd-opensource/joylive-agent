@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.security.generator;
 
+import com.jd.live.agent.governance.exception.CipherException;
 import com.jd.live.agent.governance.security.CipherGenerator;
 
 import java.security.NoSuchAlgorithmException;
@@ -28,28 +29,40 @@ public class RandomGenerator implements CipherGenerator {
 
     private final String randomAlgorithm;
 
+    private final int size;
+
     private final Object mutex = new Object();
 
     private volatile SecureRandom random;
 
     public RandomGenerator() {
-        this(DEFAULT_SECURE_RANDOM_ALGORITHM);
+        this(DEFAULT_SECURE_RANDOM_ALGORITHM, 8);
     }
 
-    public RandomGenerator(String randomAlgorithm) {
+    public RandomGenerator(String randomAlgorithm, int size) {
         this.randomAlgorithm = randomAlgorithm == null ? DEFAULT_SECURE_RANDOM_ALGORITHM : randomAlgorithm;
+        this.size = size;
     }
 
     @Override
-    public byte[] create(int size) throws Exception {
-        final byte[] salt = new byte[size];
-        getRandom().nextBytes(salt);
-        return salt;
+    public byte[] create(int size) throws CipherException {
+        try {
+            final byte[] salt = new byte[size];
+            getRandom().nextBytes(salt);
+            return salt;
+        } catch (NoSuchAlgorithmException e) {
+            throw new CipherException(e.getMessage(), e);
+        }
     }
 
     @Override
     public boolean withResult() {
         return true;
+    }
+
+    @Override
+    public int size() {
+        return size;
     }
 
     private SecureRandom getRandom() throws NoSuchAlgorithmException {

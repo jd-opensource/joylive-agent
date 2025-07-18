@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.governance.config;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Map;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CipherConfig {
 
     public static final String ENV_CIPHER_PASSWORD = "CONFIG_CIPHER_PASSWORD";

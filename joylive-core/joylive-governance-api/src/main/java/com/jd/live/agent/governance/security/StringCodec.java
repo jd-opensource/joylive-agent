@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.security;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.exception.CipherException;
 
 /**
  * Bidirectional converter between strings and byte arrays.
@@ -28,7 +29,7 @@ public interface StringCodec {
      * @param data raw byte array to encode (non-null)
      * @return encoded string
      */
-    String encode(byte[] data);
+    String encode(byte[] data) throws CipherException;
 
     /**
      * Decodes a string back into its original byte array.
@@ -36,5 +37,5 @@ public interface StringCodec {
      * @param data encoded string to decode (non-null)
      * @return original byte array
      */
-    byte[] decode(String data);
+    byte[] decode(String data) throws CipherException;
 }

@@ -16,17 +16,33 @@
 package com.jd.live.agent.governance.security;
 
 import com.jd.live.agent.governance.config.CipherConfig;
+import com.jd.live.agent.governance.exception.CipherException;
+import com.jd.live.agent.governance.security.cipher.jasypt.StandardPBECipherAlgorithmFactory;
 import com.jd.live.agent.governance.security.cipher.simple.SimplePBECipherAlgorithmFactory;
 import com.jd.live.agent.governance.security.codec.Base64StringCodec;
 import com.jd.live.agent.governance.security.codec.HexStringCodec;
+import com.jd.live.agent.governance.security.generator.Base64GeneratorFactory;
+import com.jd.live.agent.governance.security.generator.EmptyGeneratorFactory;
+import com.jd.live.agent.governance.security.generator.RandomGeneratorFactory;
+import com.jd.live.agent.governance.security.generator.StringGeneratorFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
 public class CipherTest {
+
+    private static final DefaultCipherFactory factory = DefaultCipherFactory.builder()
+            .add("SimplePBE", new SimplePBECipherAlgorithmFactory())
+            .add("StandardPBE", new StandardPBECipherAlgorithmFactory())
+            .add("base64", new Base64StringCodec())
+            .add("hex", new HexStringCodec())
+            .add("random", new RandomGeneratorFactory())
+            .add("empty", new EmptyGeneratorFactory())
+            .add("zero", new EmptyGeneratorFactory())
+            .add("base64", new Base64GeneratorFactory())
+            .add("string", new StringGeneratorFactory())
+            .build();
 
     @Test
     void testBase64Codec() {
@@ -39,16 +55,62 @@ public class CipherTest {
     }
 
     @Test
-    void testSimpleCipher() throws Exception {
+    void testSimplePBE() throws CipherException {
+        testCipher(CipherConfig.builder()
+                .cipher("SimplePBE")
+                .password("test")
+                .algorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM)
+                .build()
+        );
+    }
 
-        Map<String, CipherAlgorithmFactory> factories = new HashMap<>();
-        factories.put("SimplePBE",new SimplePBECipherAlgorithmFactory());
+    @Test
+    void testStandardPBE() throws CipherException {
+        // with salt(Random)
+        testCipher(CipherConfig.builder()
+                .cipher("StandardPBE")
+                .password("test")
+                .algorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM)
+                .build()
+        );
+        // with salt(string) and iv(String)
+        testCipher(CipherConfig.builder()
+                .cipher("StandardPBE")
+                .password("test")
+                .saltType("string")
+                .salt("s")
+                .ivType("string")
+                .iv("a")
+                .codec("hex")
+                .algorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM)
+                .build()
+        );
 
-        DefaultCipherFactory factory = new DefaultCipherFactory(factories);
-        CipherConfig config = new CipherConfig();
-        config.setCipher("SimplePBE");
-        config.setPassword("test");
-        config.setAlgorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM);
+        // with salt(empty) and iv(String)
+        testCipher(CipherConfig.builder()
+                .cipher("StandardPBE")
+                .password("test")
+                .saltType("empty")
+                .ivType("string")
+                .iv("a")
+                .codec("hex")
+                .algorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM)
+                .build()
+        );
+
+        // without salt(Empty) and iv(Empty)
+        testCipher(CipherConfig.builder()
+                .cipher("StandardPBE")
+                .password("test")
+                .saltType("empty")
+                .ivType("empty")
+                .algorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM)
+                .build()
+        );
+
+    }
+
+    protected void testCipher(CipherConfig config) {
         Cipher cipher = factory.create(config);
         String source = "abcde";
         String encoded = cipher.encrypt(source);
@@ -56,7 +118,7 @@ public class CipherTest {
         Assertions.assertEquals(source, decoded);
     }
 
-    private void testCodec(StringCodec codec) {
+    protected void testCodec(StringCodec codec) {
         byte[] bytes = "test".getBytes(StandardCharsets.UTF_8);
         String encoded = codec.encode(bytes);
         byte[] decoded = codec.decode(encoded);

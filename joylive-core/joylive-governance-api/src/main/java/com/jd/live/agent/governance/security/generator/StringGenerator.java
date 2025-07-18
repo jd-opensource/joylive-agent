@@ -15,26 +15,11 @@
  */
 package com.jd.live.agent.governance.security.generator;
 
-import com.jd.live.agent.governance.security.CipherGenerator;
-
 import java.nio.charset.StandardCharsets;
 
-public class StringGenerator implements CipherGenerator {
+public class StringGenerator extends ByteGenerator {
 
-    protected final byte[] salt;
-
-    public StringGenerator(String salt) {
-        this.salt = getBytes(salt);
-    }
-
-    @Override
-    public byte[] create(int size) throws Exception {
-        byte[] result = new byte[size];
-        System.arraycopy(salt, 0, result, 0, Math.min(salt.length, size));
-        return result;
-    }
-
-    protected byte[] getBytes(String salt) {
-        return salt.getBytes(StandardCharsets.UTF_8);
+    public StringGenerator(String salt, int size) {
+        super(salt == null ? new byte[0] : salt.getBytes(StandardCharsets.UTF_8), size);
     }
 }

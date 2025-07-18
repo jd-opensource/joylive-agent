@@ -19,12 +19,13 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.security.CipherGenerator;
 import com.jd.live.agent.governance.security.CipherGeneratorFactory;
+import com.jd.live.agent.governance.security.CipherGeneratorType;
 
-@Extension("String")
+@Extension("string")
 public class StringGeneratorFactory implements CipherGeneratorFactory {
 
     @Override
-    public CipherGenerator create(CipherConfig config) {
-        return new StringGenerator(config.getSalt());
+    public CipherGenerator create(CipherConfig config, CipherGeneratorType type) {
+        return new StringGenerator(type.getSeed(config), type.getSize(config));
     }
 }
