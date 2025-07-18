@@ -78,9 +78,9 @@ public class CipherTest {
                 .cipher("StandardPBE")
                 .password("test")
                 .saltType("string")
-                .salt("s")
+                .salt("ssssssss")
                 .ivType("string")
-                .iv("a")
+                .iv("aaaaaaaa")
                 .codec("hex")
                 .algorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM)
                 .build()
@@ -114,6 +114,7 @@ public class CipherTest {
         Cipher cipher = factory.create(config);
         String source = "abcde";
         String encoded = cipher.encrypt(source);
+        System.out.println(encoded);
         String decoded = cipher.decrypt(encoded);
         Assertions.assertEquals(source, decoded);
     }
