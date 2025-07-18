@@ -22,16 +22,21 @@ package com.jd.live.agent.governance.registry;
 public interface CompositeRegistry extends Registry {
 
     /**
-     * Set the system registry service .
+     * Set the system registry service.
      *
      * @param registryService the service implementation to add
      */
     void addSystemRegistry(RegistryService registryService);
 
+    /**
+     * Remove the system registry service.
+     *
+     * @param registryService the service implementation to remove
+     */
     void removeSystemRegistry(RegistryService registryService);
 
     /**
-     * Set the system registry service .
+     * Set the system registry service.
      *
      * @param service         the service name
      * @param registryService the service implementation to add

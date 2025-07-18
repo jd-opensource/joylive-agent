@@ -268,7 +268,7 @@ public class URI {
      * @return host:port (with scheme if requested)
      */
     public String getAddress(boolean withScheme) {
-        return withScheme ? getAddress(scheme, host, port) : getAddress(host, port);
+        return withScheme ? getAddress(scheme, host, port == null ? -1 : port) : getAddress(host, port);
     }
 
     /**
@@ -456,6 +456,9 @@ public class URI {
      * "[IPv6]", or "[IPv6]:port"
      */
     public static String getAddress(String host, Integer port) {
+        if (host == null) {
+            return null;
+        }
         if (isIpv6(host) && host.charAt(0) != '[') {
             host = "[" + host + "]";
         }
