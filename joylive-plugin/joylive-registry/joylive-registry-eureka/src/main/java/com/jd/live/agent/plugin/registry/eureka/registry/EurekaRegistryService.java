@@ -75,11 +75,15 @@ public class EurekaRegistryService extends AbstractSystemRegistryService impleme
     }
 
     private static String getAddress(EurekaClientConfig config, String zone) {
-        List<String> addrs = EndpointUtils.getServiceUrlsFromConfig(config, zone, true);
-        if (addrs.isEmpty()) {
+        try {
+            List<String> addrs = EndpointUtils.getServiceUrlsFromConfig(config, zone, true);
+            if (addrs.isEmpty()) {
+                return "eureka";
+            } else {
+                return URI.parse(addrs.get(0)).scheme("eureka").getAddress(true);
+            }
+        } catch (Throwable e) {
             return "eureka";
-        } else {
-            return URI.parse(addrs.get(0)).scheme("eureka").getAddress(true);
         }
     }
 
