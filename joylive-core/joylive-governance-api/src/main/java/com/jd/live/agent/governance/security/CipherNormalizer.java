@@ -15,27 +15,21 @@
  */
 package com.jd.live.agent.governance.security;
 
-import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.exception.CipherException;
+import java.text.Normalizer;
 
 /**
- * Bidirectional converter between strings and byte arrays.
+ * Utility for normalizing text to Unicode NFC form.
  */
-@Extensible("StringCodec")
-public interface StringCodec {
-    /**
-     * Encodes binary data into a string representation.
-     *
-     * @param data raw byte array to encode (non-null)
-     * @return encoded string
-     */
-    String encode(byte[] data) throws CipherException;
+public class CipherNormalizer {
 
     /**
-     * Decodes a string back into its original byte array.
+     * Normalizes the input string to NFC form.
      *
-     * @param data encoded string to decode (non-null)
-     * @return original byte array
+     * @param message the text to normalize (may be null)
+     * @return normalized string in NFC form, or null if input was null
      */
-    byte[] decode(String data) throws CipherException;
+    public static String normalizeToNfc(final String message) {
+        return Normalizer.normalize(message, Normalizer.Form.NFC);
+    }
 }
+

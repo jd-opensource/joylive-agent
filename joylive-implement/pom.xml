@@ -25,7 +25,6 @@
         <module>joylive-expression</module>
         <module>joylive-probe</module>
         <module>joylive-auth</module>
-        <module>joylive-cipher</module>
     </modules>
 
     <dependencies>

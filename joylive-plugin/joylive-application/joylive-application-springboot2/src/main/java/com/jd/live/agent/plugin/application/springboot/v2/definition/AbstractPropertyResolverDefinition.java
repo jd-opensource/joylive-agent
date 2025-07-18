@@ -29,8 +29,6 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.security.CipherFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.AbstractPropertyResolverInterceptor;
 
-import java.util.Map;
-
 @Injectable
 @Extension(value = "AbstractPropertyResolverDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
 @ConditionalOnCipherEnabled
@@ -50,14 +48,14 @@ public class AbstractPropertyResolverDefinition extends PluginDefinitionAdapter 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig config;
 
-    @Inject
-    private Map<String, CipherFactory> ciphers;
+    @Inject(CipherFactory.COMPONENT_CIPHER_FACTORY)
+    private CipherFactory cipherFactory;
 
     public AbstractPropertyResolverDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new AbstractPropertyResolverInterceptor(config, ciphers))
+                        () -> new AbstractPropertyResolverInterceptor(config, cipherFactory))
         };
     }
 }

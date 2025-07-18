@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.security;
+package com.jd.live.agent.governance.security.generator;
 
-import com.jd.live.agent.core.extension.annotation.Extensible;
+import java.nio.charset.StandardCharsets;
 
-/**
- * Factory for creating configured cipher algorithm instances.
- *
- */
-@Extensible("CipherAlgorithmFactory")
-public interface CipherAlgorithmFactory {
-    /**
-     * Creates a configured cipher algorithm instance.
-     * @param ctx Configuration context (non-null)
-     * @return Initialized cipher instance (non-null)
-     */
-    CipherAlgorithm create(CipherAlgorithmContext ctx);
+public class StringGenerator extends ByteGenerator {
 
+    public StringGenerator(String salt, int size) {
+        super(salt == null ? new byte[0] : salt.getBytes(StandardCharsets.UTF_8), size);
+    }
 }

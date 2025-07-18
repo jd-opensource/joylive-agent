@@ -15,19 +15,28 @@
  */
 package com.jd.live.agent.governance.security;
 
-import com.jd.live.agent.core.extension.annotation.Extensible;
+import com.jd.live.agent.governance.config.CipherConfig;
+import lombok.Getter;
 
-/**
- * Factory for creating configured cipher algorithm instances.
- *
- */
-@Extensible("CipherAlgorithmFactory")
-public interface CipherAlgorithmFactory {
-    /**
-     * Creates a configured cipher algorithm instance.
-     * @param ctx Configuration context (non-null)
-     * @return Initialized cipher instance (non-null)
-     */
-    CipherAlgorithm create(CipherAlgorithmContext ctx);
+@Getter
+public class CipherAlgorithmContext {
 
+    private final CipherConfig config;
+
+    private final StringCodec codec;
+
+    private final CipherGenerator salt;
+
+    private final CipherGenerator iv;
+
+    public CipherAlgorithmContext(CipherConfig config, StringCodec codec, CipherGenerator salt) {
+        this(config, codec, salt, null);
+    }
+
+    public CipherAlgorithmContext(CipherConfig config, StringCodec codec, CipherGenerator salt, CipherGenerator iv) {
+        this.config = config;
+        this.codec = codec;
+        this.salt = salt;
+        this.iv = iv;
+    }
 }

@@ -16,26 +16,20 @@
 package com.jd.live.agent.governance.security;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.governance.exception.CipherException;
+import com.jd.live.agent.governance.config.CipherConfig;
 
 /**
- * Bidirectional converter between strings and byte arrays.
+ * Factory interface for producing {@link CipherGenerator} instances.
  */
-@Extensible("StringCodec")
-public interface StringCodec {
-    /**
-     * Encodes binary data into a string representation.
-     *
-     * @param data raw byte array to encode (non-null)
-     * @return encoded string
-     */
-    String encode(byte[] data) throws CipherException;
+@Extensible("SaltFactory")
+public interface CipherGeneratorFactory {
 
     /**
-     * Decodes a string back into its original byte array.
+     * Creates a new {@link CipherGenerator} of the specified type configured with the given parameters.
      *
-     * @param data encoded string to decode (non-null)
-     * @return original byte array
+     * @param config the cipher configuration (non-null)
+     * @param type the generator type to create (non-null)
+     * @return a new configured cipher generator instance (non-null)
      */
-    byte[] decode(String data) throws CipherException;
+    CipherGenerator create(CipherConfig config, CipherGeneratorType type);
 }
