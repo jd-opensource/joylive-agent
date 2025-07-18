@@ -109,8 +109,12 @@ public class ServiceListener extends AbstractListener<Service> {
         synchronized (mutex) {
             PolicyLoader loader = loaders.computeIfAbsent(event.getWatcher(), PolicyLoader::new);
             Set<String> names = se.getLoadedServices();
-            if (event.getType() == EventType.UPDATE_ALL && !loader.isLoaded()) {
-                loader.setLoaded(true);
+            if (event.getType() == EventType.UPDATE_ALL) {
+                if (!loader.isLoaded()) {
+                    loader.setLoaded(true);
+                    subscribers.forEach((name, subscriber) -> subscriber.complete(event.getWatcher()));
+                    return;
+                }
             }
             if (names != null) {
                 for (String name : names) {
