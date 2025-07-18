@@ -268,7 +268,7 @@ public class URI {
      * @return host:port (with scheme if requested)
      */
     public String getAddress(boolean withScheme) {
-        return withScheme ? getAddress(scheme, host, port == null ? -1 : port) : getAddress(host, port);
+        return withScheme ? getAddress(scheme, host, port) : getAddress(host, port);
     }
 
     /**
@@ -431,7 +431,7 @@ public class URI {
      * - "host:port"
      * - "host"
      */
-    public static String getAddress(String scheme, String host, int port) {
+    public static String getAddress(String scheme, String host, Integer port) {
         if (scheme == null || scheme.isEmpty()) {
             return getAddress(host, port);
         }
