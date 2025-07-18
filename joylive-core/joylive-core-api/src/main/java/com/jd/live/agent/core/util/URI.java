@@ -438,14 +438,6 @@ public class URI {
         return scheme + "://" + getAddress(host, port);
     }
 
-    public static String getAddress(String scheme, String host, String port) {
-        try {
-            return getAddress(scheme, host, Integer.parseInt(port));
-        } catch (NumberFormatException e) {
-            return getAddress(scheme, host, 0);
-        }
-    }
-
     /**
      * Formats a host and port into a standard address string.
      * Automatically wraps IPv6 addresses in square brackets if needed.
