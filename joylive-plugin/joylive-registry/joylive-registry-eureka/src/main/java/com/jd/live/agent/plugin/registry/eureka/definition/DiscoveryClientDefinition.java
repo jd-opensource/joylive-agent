@@ -49,12 +49,22 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
 
     private static final String METHOD_SHUTDOWN = "shutdown";
 
-    private static final String[] ARGUMENTS_CONSTRUCTOR = new String[]{
+    // for version 2
+    private static final String[] ARGUMENTS_CONSTRUCTOR2 = new String[]{
             "com.netflix.appinfo.ApplicationInfoManager",
             "com.netflix.discovery.EurekaClientConfig",
             "com.netflix.discovery.shared.transport.jersey.TransportClientFactories",
             "com.netflix.discovery.AbstractDiscoveryClientOptionalArgs",
             "jakarta.inject.Provider",
+            "com.netflix.discovery.shared.resolver.EndpointRandomizer"
+    };
+
+    // for version 1
+    private static final String[] ARGUMENTS_CONSTRUCTOR1 = new String[]{
+            "com.netflix.appinfo.ApplicationInfoManager",
+            "com.netflix.discovery.EurekaClientConfig",
+            "com.netflix.discovery.AbstractDiscoveryClientOptionalArgs",
+            "javax.inject.Provider",
             "com.netflix.discovery.shared.resolver.EndpointRandomizer"
     };
 
@@ -69,7 +79,10 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_UPDATE_DELTA), () -> new DiscoveryClientDeltaUpdateInterceptor()),
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR)),
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR2)),
+                        () -> new DiscoveryClientConstructorInterceptor(registry)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR1)),
                         () -> new DiscoveryClientConstructorInterceptor(registry)),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SHUTDOWN), () -> new DiscoveryClientShutdownInterceptor(registry)),
