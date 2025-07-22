@@ -511,16 +511,9 @@ public class JakartaRequest implements HttpServletRequest, HeaderProvider {
         HttpServletRequest hsr = (HttpServletRequest) arguments[index];
         if (hsr instanceof HeaderProvider) {
             return hsr;
-        } else {
-            Object request = hsr;
-            while (request instanceof ServletRequestWrapper) {
-                request = ((HttpServletRequestWrapper) request).getRequest();
-                if (request instanceof HeaderProvider) {
-                    return hsr;
-                }
-            }
         }
-        arguments[index] = new JakartaRequest(hsr);
+        hsr = new JakartaRequest(hsr);
+        arguments[index] = hsr;
         return hsr;
     }
 }

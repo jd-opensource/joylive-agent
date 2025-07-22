@@ -509,7 +509,8 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
                 }
             }
         }
-        arguments[index] = new JavaxRequest(hsr);
+        hsr = new JavaxRequest(hsr);
+        arguments[index] = hsr;
         return hsr;
     }
 
