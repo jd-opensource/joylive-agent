@@ -473,10 +473,18 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
      */
     public static HttpServletRequest replace(final Object[] arguments, final int index) {
         HttpServletRequest hsr = (HttpServletRequest) arguments[index];
-        if (!(hsr instanceof HeaderProvider)) {
-            hsr = new JavaxRequest(hsr);
-            arguments[index] = hsr;
+        if (hsr instanceof HeaderProvider) {
+            return hsr;
+        } else {
+            Object request = hsr;
+            while (request instanceof ServletRequestWrapper) {
+                request = ((HttpServletRequestWrapper) request).getRequest();
+                if (request instanceof HeaderProvider) {
+                    return hsr;
+                }
+            }
         }
+        arguments[index] = new JavaxRequest(hsr);
         return hsr;
     }
 }
