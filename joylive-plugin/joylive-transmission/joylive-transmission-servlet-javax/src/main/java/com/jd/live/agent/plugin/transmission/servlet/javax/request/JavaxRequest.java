@@ -70,6 +70,15 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
         super(request);
     }
 
+    /**
+     * Retrieves the original HttpServletRequest from the current request.
+     * <p>
+     * This method traverses through any ServletRequestWrapper instances
+     * to find the original request object.
+     * </p>
+     *
+     * @return HttpServletRequest
+     */
     private HttpServletRequest getOriginalRequest() {
         ServletRequest req = super.getRequest();
         while (req instanceof ServletRequestWrapper) {
