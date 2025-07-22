@@ -66,8 +66,11 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     private MultiMap<String, String> headers;
 
+    private final HttpServletRequest request;
+
     public JavaxRequest(HttpServletRequest request) {
         super(request);
+        this.request = request;
     }
 
     /**
@@ -89,12 +92,12 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     public String getAuthType() {
-        return getOriginalRequest().getAuthType();
+        return request.getAuthType();
     }
 
     @Override
     public Cookie[] getCookies() {
-        return getOriginalRequest().getCookies();
+        return request.getCookies();
     }
 
     @Override
@@ -141,26 +144,26 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     public String getMethod() {
-        return getOriginalRequest().getMethod();
+        return request.getMethod();
     }
 
     @Override
     public String getPathInfo() {
         if (pathInfo == null) {
-            pathInfo = getOriginalRequest().getPathInfo();
+            pathInfo = request.getPathInfo();
         }
         return pathInfo;
     }
 
     @Override
     public String getPathTranslated() {
-        return getOriginalRequest().getPathTranslated();
+        return request.getPathTranslated();
     }
 
     @Override
     public String getContextPath() {
         if (contextPath == null) {
-            contextPath = getOriginalRequest().getContextPath();
+            contextPath = request.getContextPath();
         }
         return contextPath;
     }
@@ -168,182 +171,179 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
     @Override
     public String getQueryString() {
         if (queryString == null) {
-            queryString = getOriginalRequest().getQueryString();
+            queryString = request.getQueryString();
         }
         return queryString;
     }
 
     @Override
     public String getRemoteUser() {
-        return getOriginalRequest().getRemoteUser();
+        return request.getRemoteUser();
     }
 
     @Override
     public boolean isUserInRole(String role) {
-        return getOriginalRequest().isUserInRole(role);
+        return request.isUserInRole(role);
     }
 
     @Override
     public Principal getUserPrincipal() {
-        return getOriginalRequest().getUserPrincipal();
+        return request.getUserPrincipal();
     }
 
     @Override
     public String getRequestedSessionId() {
-        return getOriginalRequest().getRequestedSessionId();
+        return request.getRequestedSessionId();
     }
 
     @Override
     public String getRequestURI() {
-        if (requestURI == null) {
-            requestURI = getOriginalRequest().getRequestURI();
-        }
-        return requestURI;
+        return request.getRequestURI();
     }
 
     @Override
     public StringBuffer getRequestURL() {
-        return getOriginalRequest().getRequestURL();
+        return request.getRequestURL();
     }
 
     @Override
     public String getServletPath() {
-        return getOriginalRequest().getServletPath();
+        return request.getServletPath();
     }
 
     @Override
     public HttpSession getSession(boolean create) {
-        return getOriginalRequest().getSession(create);
+        return request.getSession(create);
     }
 
     @Override
     public HttpSession getSession() {
-        return getOriginalRequest().getSession();
+        return request.getSession();
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
-        return getOriginalRequest().isRequestedSessionIdValid();
+        return request.isRequestedSessionIdValid();
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        return getOriginalRequest().isRequestedSessionIdFromCookie();
+        return request.isRequestedSessionIdFromCookie();
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        return getOriginalRequest().isRequestedSessionIdFromURL();
+        return request.isRequestedSessionIdFromURL();
     }
 
     @Override
     @Deprecated
     public boolean isRequestedSessionIdFromUrl() {
-        return getOriginalRequest().isRequestedSessionIdFromUrl();
+        return request.isRequestedSessionIdFromUrl();
     }
 
     @Override
     public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
-        return getOriginalRequest().authenticate(response);
+        return request.authenticate(response);
     }
 
     @Override
     public void login(String username, String password) throws ServletException {
-        getOriginalRequest().login(username, password);
+        request.login(username, password);
     }
 
     @Override
     public void logout() throws ServletException {
-        getOriginalRequest().logout();
+        request.logout();
     }
 
     @Override
     public Collection<Part> getParts() throws IOException, ServletException {
-        return getOriginalRequest().getParts();
+        return request.getParts();
     }
 
     @Override
     public Part getPart(String name) throws IOException, ServletException {
-        return getOriginalRequest().getPart(name);
+        return request.getPart(name);
     }
 
     @Override
     public Object getAttribute(String name) {
-        return getOriginalRequest().getAttribute(name);
+        return request.getAttribute(name);
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        return getOriginalRequest().getAttributeNames();
+        return request.getAttributeNames();
     }
 
     @Override
     public String getCharacterEncoding() {
-        return getOriginalRequest().getCharacterEncoding();
+        return request.getCharacterEncoding();
     }
 
     @Override
     public void setCharacterEncoding(String env) throws UnsupportedEncodingException {
-        getOriginalRequest().setCharacterEncoding(env);
+        request.setCharacterEncoding(env);
     }
 
     @Override
     public int getContentLength() {
-        return getOriginalRequest().getContentLength();
+        return request.getContentLength();
     }
 
     @Override
     public long getContentLengthLong() {
-        return getOriginalRequest().getContentLengthLong();
+        return request.getContentLengthLong();
     }
 
     @Override
     public String getContentType() {
         if (contentType == null) {
-            contentType = getOriginalRequest().getContentType();
+            contentType = request.getContentType();
         }
         return contentType;
     }
 
     @Override
     public String changeSessionId() {
-        return getOriginalRequest().changeSessionId();
+        return request.changeSessionId();
     }
 
     @Override
     public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
-        return getOriginalRequest().upgrade(handlerClass);
+        return request.upgrade(handlerClass);
     }
 
     @Override
     public ServletInputStream getInputStream() throws IOException {
-        return getOriginalRequest().getInputStream();
+        return request.getInputStream();
     }
 
     @Override
     public String getParameter(String name) {
-        return getOriginalRequest().getParameter(name);
+        return request.getParameter(name);
     }
 
     @Override
     public Enumeration<String> getParameterNames() {
-        return getOriginalRequest().getParameterNames();
+        return request.getParameterNames();
     }
 
     @Override
     public String[] getParameterValues(String name) {
-        return getOriginalRequest().getParameterValues(name);
+        return request.getParameterValues(name);
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        return getOriginalRequest().getParameterMap();
+        return request.getParameterMap();
     }
 
     @Override
     public String getProtocol() {
         if (protocol == null) {
-            protocol = getOriginalRequest().getProtocol();
+            protocol = request.getProtocol();
         }
         return protocol;
     }
@@ -351,139 +351,138 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
     @Override
     public String getScheme() {
         if (scheme == null) {
-            scheme = getOriginalRequest().getScheme();
+            scheme = request.getScheme();
         }
         return scheme;
     }
 
     @Override
     public String getServerName() {
-        return getOriginalRequest().getServerName();
+        return request.getServerName();
     }
 
     @Override
     public int getServerPort() {
-        return getOriginalRequest().getServerPort();
+        return request.getServerPort();
     }
 
     @Override
     public BufferedReader getReader() throws IOException {
-        return getOriginalRequest().getReader();
+        return request.getReader();
     }
 
     @Override
     public String getRemoteAddr() {
-        return getOriginalRequest().getRemoteAddr();
+        return request.getRemoteAddr();
     }
 
     @Override
     public String getRemoteHost() {
-        return getOriginalRequest().getRemoteHost();
+        return request.getRemoteHost();
     }
 
     @Override
     public void setAttribute(String name, Object o) {
-        getOriginalRequest().setAttribute(name, o);
+        request.setAttribute(name, o);
     }
 
     @Override
     public void removeAttribute(String name) {
-        getOriginalRequest().removeAttribute(name);
+        request.removeAttribute(name);
     }
 
     @Override
     public Locale getLocale() {
-        return getOriginalRequest().getLocale();
+        return request.getLocale();
     }
 
     @Override
     public Enumeration<Locale> getLocales() {
-        return getOriginalRequest().getLocales();
+        return request.getLocales();
     }
 
     @Override
     public boolean isSecure() {
-        return getOriginalRequest().isSecure();
+        return request.isSecure();
     }
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        return getOriginalRequest().getRequestDispatcher(path);
+        return request.getRequestDispatcher(path);
     }
 
     @Override
     @Deprecated
     public String getRealPath(String path) {
-        return getOriginalRequest().getRealPath(path);
+        return request.getRealPath(path);
     }
 
     @Override
     public int getRemotePort() {
-        return getOriginalRequest().getRemotePort();
+        return request.getRemotePort();
     }
 
     @Override
     public String getLocalName() {
-        return getOriginalRequest().getLocalName();
+        return request.getLocalName();
     }
 
     @Override
     public String getLocalAddr() {
-        return getOriginalRequest().getLocalAddr();
+        return request.getLocalAddr();
     }
 
     @Override
     public int getLocalPort() {
-        return getOriginalRequest().getLocalPort();
+        return request.getLocalPort();
     }
 
     @Override
     public ServletContext getServletContext() {
-        return getOriginalRequest().getServletContext();
+        return request.getServletContext();
     }
 
     @Override
     public AsyncContext startAsync() throws IllegalStateException {
-        return getOriginalRequest().startAsync();
+        return request.startAsync();
     }
 
     @Override
     public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
-        return getOriginalRequest().startAsync(servletRequest, servletResponse);
+        return request.startAsync(servletRequest, servletResponse);
     }
 
     @Override
     public boolean isAsyncStarted() {
-        return getOriginalRequest().isAsyncStarted();
+        return request.isAsyncStarted();
     }
 
     @Override
     public boolean isAsyncSupported() {
-        return getOriginalRequest().isAsyncSupported();
+        return request.isAsyncSupported();
     }
 
     @Override
     public AsyncContext getAsyncContext() {
-        return getOriginalRequest().getAsyncContext();
+        return request.getAsyncContext();
     }
 
     @Override
     public DispatcherType getDispatcherType() {
-        return getOriginalRequest().getDispatcherType();
+        return request.getDispatcherType();
     }
 
 
     @Override
     public MultiMap<String, String> getHeaders() {
         if (headers == null) {
-            HttpServletRequest originalRequest = getOriginalRequest();
             // direct access the underlying
             // org.apache.catalina.connector.RequestFacade
             // org.apache.catalina.connector.Request
-            HttpHeaderParser parser = HttpHeaderParsers.create(originalRequest.getClass());
+            HttpHeaderParser parser = HttpHeaderParsers.create(request.getClass());
             headers = parser != null
-                    ? parser.parse(originalRequest)
-                    : HttpUtils.parseHeader(originalRequest.getHeaderNames(), originalRequest::getHeaders);
+                    ? parser.parse(request)
+                    : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
         return headers;
     }

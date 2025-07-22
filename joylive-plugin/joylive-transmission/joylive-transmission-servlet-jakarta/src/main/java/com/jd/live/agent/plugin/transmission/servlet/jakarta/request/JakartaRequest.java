@@ -220,10 +220,7 @@ public class JakartaRequest implements HttpServletRequest, HeaderProvider {
 
     @Override
     public String getRequestURI() {
-        if (requestURI == null) {
-            requestURI = request.getRequestURI();
-        }
-        return requestURI;
+        return request.getRequestURI();
     }
 
     @Override
