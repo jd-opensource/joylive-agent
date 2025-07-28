@@ -84,7 +84,7 @@ public class SmoothWarmupLimiter extends TokenBucketLimiter {
     }
 
     @Override
-    protected long estimateStorePermitsWaitTime(double storedPermits, double targetPermits) {
+    protected long waitForStorePermits(double storedPermits, double targetPermits) {
         double availablePermitsAboveThreshold = storedPermits - thresholdPermits;
         long micros = 0;
         // measuring the integral on the right part of the function (the climbing line)

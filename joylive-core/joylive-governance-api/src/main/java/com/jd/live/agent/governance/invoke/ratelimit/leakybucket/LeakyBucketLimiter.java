@@ -59,8 +59,8 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
     }
 
     @Override
-    protected long adjustRequiredPermitsWaitTime(long startTime, long timeoutMicros, long nowMicros, long waitTime) {
-        return waitTime > 0 && nowMicros + waitTime - startTime > timeoutMicros ? TIMEOUT : waitTime;
+    protected long adjustWaitTime(long startTimeMicros, long timeoutMicros, long nowMicros, long waitTimeMicros) {
+        return waitTimeMicros > 0 && nowMicros + waitTimeMicros - startTimeMicros > timeoutMicros ? TIMEOUT : waitTimeMicros;
     }
 
     @Override
@@ -69,10 +69,10 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
     }
 
     @Override
-    protected boolean doAcquire(int permits, long nowMicros, long timeoutMicros) {
+    protected boolean doAcquire(int permits, long startTimeMicros, long timeoutMicros) {
         requests.incrementAndGet();
         try {
-            return super.doAcquire(permits, nowMicros, timeoutMicros);
+            return super.doAcquire(permits, startTimeMicros, timeoutMicros);
         } finally {
             requests.decrementAndGet();
         }

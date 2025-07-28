@@ -56,6 +56,7 @@ import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
+import com.jd.live.agent.governance.invoke.ratelimit.tokenbucket.SleepingStopwatch;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
@@ -421,6 +422,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Override
     public void initialize() {
+        // initialize system ticker
+        SleepingStopwatch.Ticker.SYSTEM_TICKER.read();
+
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
         liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
 
