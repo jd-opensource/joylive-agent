@@ -34,15 +34,6 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
      */
     private static final String KEY_CAPACITY = "capacity";
 
-    /**
-     * The key for configuring the flow window in seconds.
-     * <p>
-     * This value is used to calculate the maximum number of storable permits (tokens) to prevent
-     * excessive accumulation. The bucket can store at most the number of permits generated during this time window,
-     * which helps in maintaining a smoother outflow rate.
-     */
-    private static final String KEY_FLOW_WINDOW_SECONDS = "flowWindowSeconds";
-
     private final long capacity;
 
     private final AtomicLong requests = new AtomicLong(0);
@@ -54,8 +45,8 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
 
     @Override
     protected double getMaxStoredPermits() {
-        // Keep a constant rate and prevent excessive token accumulation.
-        return getPermits(option.getPositive(KEY_FLOW_WINDOW_SECONDS, 1));
+        // A leaky bucket does not allow for bursts, so no permits should be stored.
+        return 0.0;
     }
 
     @Override
@@ -70,8 +61,14 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
 
     @Override
     protected boolean doAcquire(int permits, long startTimeMicros, long timeoutMicros) {
-        requests.incrementAndGet();
+        if (capacity > 0 && requests.get() >= capacity) {
+            return false;
+        }
+        long currentRequests = requests.incrementAndGet();
         try {
+            if (capacity > 0 && currentRequests > capacity) {
+                return false;
+            }
             return super.doAcquire(permits, startTimeMicros, timeoutMicros);
         } finally {
             requests.decrementAndGet();

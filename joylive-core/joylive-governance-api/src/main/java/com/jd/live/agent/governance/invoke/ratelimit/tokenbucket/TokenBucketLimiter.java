@@ -58,9 +58,10 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     public TokenBucketLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
         super(limitPolicy, TimeUnit.MILLISECONDS);
         this.stopwatch = SleepingStopwatch.createFromSystemTimer();
+        this.nextPermitMicros = stopwatch.readMicros();
         this.permitIntervalMicros = slidingWindow.getPermitIntervalMicros();
         initialize();
-        refresh();
+        this.storedPermits = this.maxStoredPermits;
     }
 
     @Override
@@ -141,23 +142,19 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      * @return The estimated wait time in microseconds, or 0 if no wait is required.
      */
     protected long waitForRequiredPermits(long permits, long startTimeMicros, long timeoutMicros) {
-        // update stored permits according to the current time
         long nowMicros = stopwatch.readMicros();
         refresh(nowMicros);
-        // compute wait time
         double available = min(permits, storedPermits);
         double lack = permits - available;
         long waitTimeMicros = waitForStorePermits(storedPermits, available) + (long) (lack * permitIntervalMicros);
-        // adjust wait time to facilitate pre-fetching
-        long result = adjustWaitTime(startTimeMicros, timeoutMicros, nowMicros, waitTimeMicros);
-        if (result == TIMEOUT) {
-            // it's timeout.
+        long momentAvailable = saturatedAdd(this.nextPermitMicros, waitTimeMicros);
+        long microsToWait = max(momentAvailable - startTimeMicros, 0);
+        if (microsToWait > timeoutMicros) {
             return TIMEOUT;
         }
-        // update next token time
-        nextPermitMicros = saturatedAdd(nextPermitMicros, waitTimeMicros);
+        this.nextPermitMicros = momentAvailable;
         storedPermits -= available;
-        return result;
+        return microsToWait;
     }
 
     /**
