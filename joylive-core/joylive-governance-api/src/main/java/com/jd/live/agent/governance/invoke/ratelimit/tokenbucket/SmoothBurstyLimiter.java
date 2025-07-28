@@ -16,8 +16,6 @@ package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * SmoothBurstyLimiter
  * <p>
@@ -44,11 +42,6 @@ public class SmoothBurstyLimiter extends TokenBucketLimiter {
 
     public SmoothBurstyLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
         super(limitPolicy, slidingWindow);
-    }
-
-    @Override
-    protected void refresh() {
-        refresh(TimeUnit.SECONDS.toMicros(option.getPositive(KEY_MAX_BURST_SECONDS, DEFAULT_MAX_BURST_SECONDS)));
     }
 
     @Override
