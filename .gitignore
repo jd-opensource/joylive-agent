@@ -21,6 +21,12 @@ target/
 ### VS Code ###
 .vscode/
 
+### Joy Code ###
+.joycode/
+.joycode/rules/
+
+.mvn/
+
 ### Mac OS ###
 .DS_Store
 

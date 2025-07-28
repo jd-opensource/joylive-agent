@@ -19,6 +19,8 @@ import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.request.HeaderProvider;
+import com.jd.live.agent.governance.request.HeaderProviderFactory;
+import com.jd.live.agent.governance.request.HeaderProviderRegistry;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -50,44 +52,16 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
             DateTimeFormatter.ofPattern(DATE_OBSOLETE_ASCTIME, Locale.US).withZone(GMT_ZONE)
     };
 
-    private String queryString;
-
-    private String pathInfo;
-
-    private String scheme;
-
-    private String protocol;
-
-    private String contentType;
-
-    private String requestURI;
-
-    private String contextPath;
-
     private MultiMap<String, String> headers;
 
     private final HttpServletRequest request;
 
-    public JavaxRequest(HttpServletRequest request) {
+    private final HeaderProviderRegistry registry;
+
+    public JavaxRequest(HttpServletRequest request, HeaderProviderRegistry registry) {
         super(request);
         this.request = request;
-    }
-
-    /**
-     * Retrieves the original HttpServletRequest from the current request.
-     * <p>
-     * This method traverses through any ServletRequestWrapper instances
-     * to find the original request object.
-     * </p>
-     *
-     * @return HttpServletRequest
-     */
-    private HttpServletRequest getOriginalRequest() {
-        ServletRequest req = super.getRequest();
-        while (req instanceof ServletRequestWrapper) {
-            req = ((ServletRequestWrapper) req).getRequest();
-        }
-        return (HttpServletRequest) req;
+        this.registry = registry;
     }
 
     @Override
@@ -149,10 +123,7 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     public String getPathInfo() {
-        if (pathInfo == null) {
-            pathInfo = request.getPathInfo();
-        }
-        return pathInfo;
+        return request.getPathInfo();
     }
 
     @Override
@@ -162,18 +133,12 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     public String getContextPath() {
-        if (contextPath == null) {
-            contextPath = request.getContextPath();
-        }
-        return contextPath;
+        return request.getContextPath();
     }
 
     @Override
     public String getQueryString() {
-        if (queryString == null) {
-            queryString = request.getQueryString();
-        }
-        return queryString;
+        return request.getQueryString();
     }
 
     @Override
@@ -299,10 +264,7 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     public String getContentType() {
-        if (contentType == null) {
-            contentType = request.getContentType();
-        }
-        return contentType;
+        return request.getContentType();
     }
 
     @Override
@@ -342,18 +304,12 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     public String getProtocol() {
-        if (protocol == null) {
-            protocol = request.getProtocol();
-        }
-        return protocol;
+        return request.getProtocol();
     }
 
     @Override
     public String getScheme() {
-        if (scheme == null) {
-            scheme = request.getScheme();
-        }
-        return scheme;
+        return request.getScheme();
     }
 
     @Override
@@ -413,6 +369,7 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     @Override
     @Deprecated
+    @SuppressWarnings("deprecation")
     public String getRealPath(String path) {
         return request.getRealPath(path);
     }
@@ -472,16 +429,16 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
         return request.getDispatcherType();
     }
 
-
     @Override
     public MultiMap<String, String> getHeaders() {
         if (headers == null) {
             // direct access the underlying
             // org.apache.catalina.connector.RequestFacade
             // org.apache.catalina.connector.Request
-            HttpHeaderParser parser = HttpHeaderParsers.create(request.getClass());
-            headers = parser != null
-                    ? parser.parse(request)
+            HeaderProviderFactory factory = registry.getFactory(request.getClass());
+            HeaderProvider provider = factory != null ? factory.create(request) : null;
+            headers = provider != null
+                    ? provider.getHeaders()
                     : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
         return headers;
@@ -493,9 +450,10 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
      *
      * @param arguments the array of arguments
      * @param index     the index of the HttpServletRequest object to replace
+     * @param registry  the registry of header providers
      * @return the replaced HttpServletRequest object
      */
-    public static HttpServletRequest replace(final Object[] arguments, final int index) {
+    public static HttpServletRequest replace(final Object[] arguments, final int index, HeaderProviderRegistry registry) {
         HttpServletRequest hsr = (HttpServletRequest) arguments[index];
         if (hsr instanceof HeaderProvider) {
             return hsr;
@@ -508,7 +466,7 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
                 }
             }
         }
-        hsr = new JavaxRequest(hsr);
+        hsr = new JavaxRequest(hsr, registry);
         arguments[index] = hsr;
         return hsr;
     }

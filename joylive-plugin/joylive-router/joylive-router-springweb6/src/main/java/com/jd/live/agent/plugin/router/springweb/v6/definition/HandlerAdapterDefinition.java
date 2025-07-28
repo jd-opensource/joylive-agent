@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v6.definition;
 
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
+import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -24,6 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.request.HeaderProviderFactory;
 import com.jd.live.agent.plugin.router.springweb.v6.condition.ConditionalOnSpringWeb6GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springweb.v6.interceptor.HandlerAdapterInterceptor;
 
@@ -51,13 +54,22 @@ public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
+    // lazy load header provider factory by ExtensibleDesc
+    @Inject(loader = ResourcerType.CORE_IMPL)
+    private ExtensibleDesc<HeaderProviderFactory> extensibleDesc;
+
     public HandlerAdapterDefinition() {
+        // org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter
+        //  <-- org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter
+        // org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter
+        // org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter
+        // org.springframework.web.servlet.function.support.HandlerFunctionAdapter
         this.matcher = () -> MatcherBuilder.isImplement(TYPE_HANDLER_ADAPTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new HandlerAdapterInterceptor(context)
+                        () -> new HandlerAdapterInterceptor(context, extensibleDesc)
                 )
         };
     }

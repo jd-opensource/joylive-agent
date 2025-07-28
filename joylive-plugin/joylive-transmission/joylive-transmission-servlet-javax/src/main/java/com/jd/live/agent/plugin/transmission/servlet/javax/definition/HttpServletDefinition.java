@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.plugin.transmission.servlet.javax.definition;
 
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
+import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -26,6 +28,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderProviderFactory;
 import com.jd.live.agent.plugin.transmission.servlet.javax.interceptor.HttpServletInterceptor;
 
 @Injectable
@@ -46,13 +49,17 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
     @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
+    // lazy load header provider factory by ExtensibleDesc
+    @Inject(loader = ResourcerType.CORE_IMPL)
+    private ExtensibleDesc<HeaderProviderFactory> extensibleDesc;
+
     public HttpServletDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_HTTP_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_SERVICE).
                                 and(MatcherBuilder.arguments(ARGUMENT_SERVICE)),
-                        () -> new HttpServletInterceptor(propagation))
+                        () -> new HttpServletInterceptor(propagation, extensibleDesc))
         };
     }
 }

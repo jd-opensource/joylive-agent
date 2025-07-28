@@ -13,35 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.servlet.javax.request.tomcat;
+package com.jd.live.agent.implement.servlet.tomcat.v10;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
-import com.jd.live.agent.plugin.transmission.servlet.javax.request.HttpHeaderParser;
+import com.jd.live.agent.governance.request.HeaderProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.RequestFacade;
 import org.apache.tomcat.util.http.MimeHeaders;
 
-import javax.servlet.http.HttpServletRequest;
 
-/**
- * An implementation of HttpHeaderParser that is compatible with Tomcat's Request and RequestFacade classes.
- */
-public class TomcatHeaderParser implements HttpHeaderParser {
+public class TomcatHeaderProvider implements HeaderProvider {
 
-    private static final FieldAccessor accessor = FieldAccessorFactory.getAccessor(RequestFacade.class, "request");
+    private final HttpServletRequest request;
+
+    public TomcatHeaderProvider(HttpServletRequest request) {
+        this.request = request;
+    }
 
     @Override
-    public MultiMap<String, String> parse(Object request) {
-        Request req = null;
-        if (request instanceof RequestFacade) {
-            req = accessor == null ? null : (Request) accessor.get(request);
-        } else if (request instanceof Request) {
-            req = (Request) request;
-        }
+    public MultiMap<String, String> getHeaders() {
+        Request req = Accessor.getRequest(request);
         if (req != null) {
             MimeHeaders mimeHeaders = req.getCoyoteRequest().getMimeHeaders();
             int count = mimeHeaders.size();
@@ -54,8 +50,23 @@ public class TomcatHeaderParser implements HttpHeaderParser {
             }
             return result;
         } else {
-            HttpServletRequest hsr = (HttpServletRequest) request;
-            return HttpUtils.parseHeader(hsr.getHeaderNames(), hsr::getHeaders);
+            return HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
+    }
+
+    private static class Accessor {
+
+        private static final FieldAccessor request = FieldAccessorFactory.getAccessor(RequestFacade.class, "request");
+
+        public static Request getRequest(HttpServletRequest request) {
+            Request req = null;
+            if (request instanceof RequestFacade) {
+                req = Accessor.request == null ? null : (Request) Accessor.request.get(request);
+            } else if (request instanceof Request) {
+                req = (Request) request;
+            }
+            return req;
+        }
+
     }
 }

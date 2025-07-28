@@ -61,6 +61,8 @@
                 <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
                 <include>com.jd.live:joylive-parser-jxpath</include>
+                <include>com.jd.live:joylive-servlet-tomcat9</include>
+                <include>com.jd.live:joylive-servlet-tomcat10</include>
                 <include>com.jd.live:joylive-probe-zookeeper</include>
                 <include>com.jd.live:joylive-probe-nacos</include>
                 <include>com.jd.live:joylive-service-file</include>

@@ -17,10 +17,13 @@ package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.request.HeaderProviderFactory;
+import com.jd.live.agent.governance.request.HeaderProviderRegistry;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ExceptionView;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ServletInboundRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -34,8 +37,11 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public HandlerAdapterInterceptor(InvocationContext context) {
+    private final HeaderProviderRegistry registry;
+
+    public HandlerAdapterInterceptor(InvocationContext context, ExtensibleDesc<HeaderProviderFactory> extensibleDesc) {
         this.context = context;
+        this.registry = new HeaderProviderRegistry(extensibleDesc.getExtensions());
     }
 
     @Override
@@ -43,7 +49,7 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
         ServiceConfig config =  context.getGovernanceConfig().getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        ServletInboundRequest request = new ServletInboundRequest(replace(arguments, 0), arguments[2], config::isSystem);
+        ServletInboundRequest request = new ServletInboundRequest(replace(arguments, 0, registry), arguments[2], config::isSystem);
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
             ModelAndView view = context.inward(invocation, mc::invokeOrigin, request::convert);

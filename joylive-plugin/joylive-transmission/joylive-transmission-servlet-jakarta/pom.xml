@@ -13,9 +13,8 @@
 
     <properties>
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
-        <tomcat-embed-core.version>10.1.33</tomcat-embed-core.version>
+        <tomcat.version>10.1.33</tomcat.version>
     </properties>
-
 
     <dependencies>
         <dependency>
@@ -28,7 +27,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>${tomcat-embed-core.version}</version>
+            <version>${tomcat.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

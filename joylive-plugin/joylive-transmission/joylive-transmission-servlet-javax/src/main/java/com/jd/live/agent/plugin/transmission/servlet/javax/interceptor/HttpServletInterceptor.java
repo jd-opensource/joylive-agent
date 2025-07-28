@@ -17,9 +17,12 @@ package com.jd.live.agent.plugin.transmission.servlet.javax.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
+import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.governance.request.HeaderProviderFactory;
+import com.jd.live.agent.governance.request.HeaderProviderRegistry;
 import com.jd.live.agent.plugin.transmission.servlet.javax.request.HttpServletRequestParser;
 
 import static com.jd.live.agent.plugin.transmission.servlet.javax.request.JavaxRequest.replace;
@@ -34,8 +37,11 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
 
     private final Propagation propagation;
 
-    public HttpServletInterceptor(Propagation propagation) {
+    private final HeaderProviderRegistry registry;
+
+    public HttpServletInterceptor(Propagation propagation, ExtensibleDesc<HeaderProviderFactory> extensibleDesc) {
         this.propagation = propagation;
+        this.registry = new HeaderProviderRegistry(extensibleDesc.getExtensions());
     }
 
     /**
@@ -46,7 +52,7 @@ public class HttpServletInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         if (ctx.tryLock(lock)) {
-            propagation.read(RequestContext.create(), new HttpServletRequestParser(replace(ctx.getArguments(), 0)));
+            propagation.read(RequestContext.create(), new HttpServletRequestParser(replace(ctx.getArguments(), 0, registry)));
         }
     }
 

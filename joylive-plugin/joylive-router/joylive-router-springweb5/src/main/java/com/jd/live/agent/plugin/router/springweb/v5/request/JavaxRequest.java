@@ -19,6 +19,8 @@ import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.request.HeaderProvider;
+import com.jd.live.agent.governance.request.HeaderProviderFactory;
+import com.jd.live.agent.governance.request.HeaderProviderRegistry;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -50,24 +52,13 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
 
     private final HttpServletRequest request;
 
-    private String queryString;
-
-    private String pathInfo;
-
-    private String scheme;
-
-    private String protocol;
-
-    private String contentType;
-
-    private String requestURI;
-
-    private String contextPath;
+    private final HeaderProviderRegistry registry;
 
     private MultiMap<String, String> headers;
 
-    public JavaxRequest(HttpServletRequest request) {
+    public JavaxRequest(HttpServletRequest request, HeaderProviderRegistry registry) {
         this.request = request;
+        this.registry = registry;
     }
 
     @Override
@@ -129,10 +120,7 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
 
     @Override
     public String getPathInfo() {
-        if (pathInfo == null) {
-            pathInfo = request.getPathInfo();
-        }
-        return pathInfo;
+        return request.getPathInfo();
     }
 
     @Override
@@ -142,18 +130,12 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
 
     @Override
     public String getContextPath() {
-        if (contextPath == null) {
-            contextPath = request.getContextPath();
-        }
-        return contextPath;
+        return request.getContextPath();
     }
 
     @Override
     public String getQueryString() {
-        if (queryString == null) {
-            queryString = request.getQueryString();
-        }
-        return queryString;
+        return request.getQueryString();
     }
 
     @Override
@@ -289,10 +271,7 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
 
     @Override
     public String getContentType() {
-        if (contentType == null) {
-            contentType = request.getContentType();
-        }
-        return contentType;
+        return request.getContentType();
     }
 
     @Override
@@ -322,18 +301,12 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
 
     @Override
     public String getProtocol() {
-        if (protocol == null) {
-            protocol = request.getProtocol();
-        }
-        return protocol;
+        return request.getProtocol();
     }
 
     @Override
     public String getScheme() {
-        if (scheme == null) {
-            scheme = request.getScheme();
-        }
-        return scheme;
+        return request.getScheme();
     }
 
     @Override
@@ -455,7 +428,14 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
     @Override
     public MultiMap<String, String> getHeaders() {
         if (headers == null) {
-            headers = HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
+            // direct access the underlying
+            // org.apache.catalina.connector.RequestFacade
+            // org.apache.catalina.connector.Request
+            HeaderProviderFactory factory = registry.getFactory(request.getClass());
+            HeaderProvider provider = factory != null ? factory.create(request) : null;
+            headers = provider != null
+                    ? provider.getHeaders()
+                    : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
         return headers;
     }
@@ -466,14 +446,15 @@ public class JavaxRequest implements HttpServletRequest, HeaderProvider {
      *
      * @param arguments the array of arguments
      * @param index     the index of the HttpServletRequest object to replace
+     * @param registry  the registry of header providers
      * @return the replaced HttpServletRequest object
      */
-    public static HttpServletRequest replace(final Object[] arguments, final int index) {
+    public static HttpServletRequest replace(final Object[] arguments, final int index, HeaderProviderRegistry registry) {
         HttpServletRequest hsr = (HttpServletRequest) arguments[index];
         if (hsr instanceof HeaderProvider) {
             return hsr;
         }
-        hsr = new JavaxRequest(hsr);
+        hsr = new JavaxRequest(hsr, registry);
         arguments[index] = hsr;
         return hsr;
     }

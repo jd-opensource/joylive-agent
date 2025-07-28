@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.servlet.javax.request;
+package com.jd.live.agent.governance.request;
+
+import com.jd.live.agent.core.extension.annotation.Extensible;
 
 /**
- * An interface for creating instances of HttpHeaderParser.
+ * Factory interface for creating {@link HeaderProvider} instances to optimize
+ * Servlet request header parsing in J2EE containers.
  */
-public interface HttpHeaderParserFactory {
+@Extensible("HeaderProviderFactory")
+public interface HeaderProviderFactory {
 
     /**
-     * Creates a new instance of HttpHeaderParser.
+     * Creates a header provider instance for the given request object.
      *
-     * @return a new instance of HttpHeaderParser
+     * @param request The underlying request object (e.g., HttpServletRequest)
+     * @return Configured HeaderProvider instance
      */
-    HttpHeaderParser create();
+    HeaderProvider create(Object request);
 
     /**
-     * Checks if the factory supports creating HttpHeaderParser instances for the given type.
-     *
-     * @param type the type to check support for
-     * @return true if the factory supports creating HttpHeaderParser instances for the given type, false otherwise
+     * Returns the supported request type identifiers.
      */
-    boolean support(Class<?> type);
+    String[] getSupportTypes();
+
 }
 
