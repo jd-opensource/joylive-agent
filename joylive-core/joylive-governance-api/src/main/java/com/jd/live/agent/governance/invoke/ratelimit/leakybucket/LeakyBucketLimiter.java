@@ -50,25 +50,19 @@ public class LeakyBucketLimiter extends TokenBucketLimiter {
     }
 
     @Override
-    protected long adjustWaitTime(long startTimeMicros, long timeoutMicros, long nowMicros, long waitTimeMicros) {
-        return waitTimeMicros > 0 && nowMicros + waitTimeMicros - startTimeMicros > timeoutMicros ? TIMEOUT : waitTimeMicros;
-    }
-
-    @Override
     protected boolean isFull() {
         return capacity > 0 && requests.get() >= capacity;
     }
 
     @Override
+    protected boolean isOver() {
+        return capacity > 0 && requests.get() > capacity;
+    }
+
+    @Override
     protected boolean doAcquire(int permits, long startTimeMicros, long timeoutMicros) {
-        if (capacity > 0 && requests.get() >= capacity) {
-            return false;
-        }
-        long currentRequests = requests.incrementAndGet();
+        requests.incrementAndGet();
         try {
-            if (capacity > 0 && currentRequests > capacity) {
-                return false;
-            }
             return super.doAcquire(permits, startTimeMicros, timeoutMicros);
         } finally {
             requests.decrementAndGet();

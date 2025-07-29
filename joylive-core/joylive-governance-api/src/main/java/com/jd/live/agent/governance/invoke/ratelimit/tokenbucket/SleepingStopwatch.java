@@ -55,7 +55,8 @@ public interface SleepingStopwatch {
 
             @Override
             public void sleepMicrosUninterruptibly(long micros) {
-                if (micros > 0) {
+                if (micros >= 5) {
+                    // skip small sleeps to avoid thread wake-up overhead
                     sleepUninterruptibly(micros, TimeUnit.MICROSECONDS);
                 }
             }

@@ -58,17 +58,17 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     public TokenBucketLimiter(RateLimitPolicy limitPolicy, SlidingWindow slidingWindow) {
         super(limitPolicy, TimeUnit.MILLISECONDS);
         this.stopwatch = SleepingStopwatch.createFromSystemTimer();
-        this.nextPermitMicros = stopwatch.readMicros();
         this.permitIntervalMicros = slidingWindow.getPermitIntervalMicros();
         initialize();
-        this.storedPermits = this.maxStoredPermits;
+        this.nextPermitMicros = stopwatch.readMicros();
+        this.storedPermits = maxStoredPermits;
     }
 
     @Override
     protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
         long timeoutMicros = timeout <= 0 ? 0 : timeUnit.toMicros(timeout);
         long startTimeMicros = stopwatch.readMicros();
-        if (isTimeout(startTimeMicros, timeoutMicros) && isFull()) {
+        if (isTimeout(startTimeMicros, timeoutMicros) || isFull()) {
             return false;
         }
         return doAcquire(permits, startTimeMicros, timeoutMicros);
@@ -87,7 +87,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
         long microsToWait;
         synchronized (mutex) {
             // double check in lock
-            if (isTimeout(startTimeMicros, timeoutMicros)) {
+            if (isTimeout(startTimeMicros, timeoutMicros) || isOver()) {
                 return false;
             }
             microsToWait = waitForRequiredPermits(permits, startTimeMicros, timeoutMicros);
@@ -134,6 +134,15 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     }
 
     /**
+     * Determines if the current state has exceeded normal operating limits.
+     * Returns {@code true} when exceeding capacity/threshold (beyond just being full).
+     * Default implementation always returns {@code false}.
+     */
+    protected boolean isOver() {
+        return false;
+    }
+
+    /**
      * Estimates the wait time required to acquire the specified number of permits.
      *
      * @param permits         The number of permits to acquire.
@@ -158,19 +167,6 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     }
 
     /**
-     * Adjusts the required wait time for acquiring permits based on the current time and the next token time.
-     *
-     * @param startTimeMicros The request start time in microseconds.
-     * @param waitTimeMicros  The original wait time (in microseconds). This parameter is not used in the calculation.
-     * @param nowMicros       The current time in microseconds
-     * @param timeoutMicros   The timeout time in microseconds
-     * @return The adjusted wait time (in microseconds), which is guaranteed to be non-negative.
-     */
-    protected long adjustWaitTime(long startTimeMicros, long timeoutMicros, long nowMicros, long waitTimeMicros) {
-        return max(nextPermitMicros - startTimeMicros, 0);
-    }
-
-    /**
      * Waits for the specified number of stored permits to become available.
      *
      * @param storedPermits the current number of stored permits
@@ -186,10 +182,6 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
      */
     protected double coolDownIntervalMicros() {
         return permitIntervalMicros;
-    }
-
-    protected void refresh() {
-        refresh(stopwatch.readMicros());
     }
 
     /**
