@@ -50,14 +50,14 @@ public interface SleepingStopwatch {
 
             @Override
             public long readMicros() {
-                return TimeUnit.MICROSECONDS.convert(ticker.read() - startTick, TimeUnit.NANOSECONDS);
+                return (ticker.read() - startTick) / 1000L;
             }
 
             @Override
             public void sleepMicrosUninterruptibly(long micros) {
                 if (micros >= 5) {
                     // skip small sleeps to avoid thread wake-up overhead
-                    sleepUninterruptibly(micros, TimeUnit.MICROSECONDS);
+                    sleepUninterruptibly(micros * 1000L);
                 }
             }
         };
@@ -70,9 +70,18 @@ public interface SleepingStopwatch {
      * @param unit     the unit of time for sleepFor
      */
     static void sleepUninterruptibly(long sleepFor, TimeUnit unit) {
+        sleepUninterruptibly(unit.toNanos(sleepFor));
+    }
+
+    /**
+     * Sleeps uninterruptedly for the specified amount of time.
+     *
+     * @param sleepForNanos the amount of time to sleep
+     */
+    static void sleepUninterruptibly(long sleepForNanos) {
         boolean interrupted = false;
         try {
-            long remainingNanos = unit.toNanos(sleepFor);
+            long remainingNanos = sleepForNanos;
             long end = System.nanoTime() + remainingNanos;
             while (true) {
                 try {

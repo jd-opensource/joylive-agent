@@ -13,6 +13,7 @@
  */
 package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 
+import com.jd.live.agent.core.util.TimeUtils;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
@@ -66,7 +67,7 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
 
     @Override
     protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
-        long timeoutMicros = timeout <= 0 ? 0 : timeUnit.toMicros(timeout);
+        long timeoutMicros = timeout <= 0 ? 0 : TimeUtils.toMicros(timeout, timeUnit);
         long startTimeMicros = stopwatch.readMicros();
         if (isTimeout(startTimeMicros, timeoutMicros) || isFull()) {
             return false;
