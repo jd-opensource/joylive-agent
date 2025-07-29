@@ -32,5 +32,7 @@ public class CircuitBreakerConfig extends RecyclerConfig {
 
     private boolean autoHalfOpenEnabled;
 
+    private boolean loggingEnabled = true;
+
 }
 

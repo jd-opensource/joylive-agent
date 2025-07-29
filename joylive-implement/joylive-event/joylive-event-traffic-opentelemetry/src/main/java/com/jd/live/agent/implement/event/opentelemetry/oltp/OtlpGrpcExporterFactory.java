@@ -17,8 +17,7 @@ package com.jd.live.agent.implement.event.opentelemetry.oltp;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.implement.event.opentelemetry.ExporterFactory;
-import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
-import com.jd.live.agent.implement.event.opentelemetry.config.ExporterConfig;
+import com.jd.live.agent.governance.config.ExporterConfig;
 import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
@@ -31,11 +30,10 @@ import java.time.Duration;
 public class OtlpGrpcExporterFactory implements ExporterFactory {
 
     @Override
-    public MetricReader create(CounterConfig config) {
-        ExporterConfig exporterConfig = config.getExporter();
-        MetricExporter exporter = OtlpGrpcMetricExporter.builder().setEndpoint(exporterConfig.getEndpoint()).
+    public MetricReader create(ExporterConfig config) {
+        MetricExporter exporter = OtlpGrpcMetricExporter.builder().setEndpoint(config.getEndpoint()).
                 setAggregationTemporalitySelector(AggregationTemporalitySelector.alwaysCumulative()).
-                setTimeout(Duration.ofMillis(exporterConfig.getTimeout())).build();
+                setTimeout(Duration.ofMillis(config.getTimeout())).build();
         return PeriodicMetricReader.builder(exporter).setInterval(Duration.ofMillis(config.getReaderInterval())).build();
     }
 }

@@ -27,10 +27,9 @@ import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.config.ExporterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
-import com.jd.live.agent.implement.event.opentelemetry.config.ExporterConfig;
 import com.jd.live.agent.implement.event.opentelemetry.log.LoggingExporterFactory;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -49,9 +48,9 @@ import static com.jd.live.agent.governance.event.TrafficEvent.*;
 
 @Configurable
 @Injectable
-@Extension("TrafficEventExporter")
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_COUNTER_ENABLED, matchIfMissing = true)
-public class TrafficEventExporter implements Subscriber, ExtensionInitializer {
+@Extension("OpenTelemetryExporter")
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_EXPORTER_ENABLED, matchIfMissing = true)
+public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private static final String LIVE_SCOPE = "com.jd.live";
 
@@ -101,8 +100,8 @@ public class TrafficEventExporter implements Subscriber, ExtensionInitializer {
 
     private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
 
-    @Config(CounterConfig.CONFIG_COUNTER)
-    private CounterConfig config;
+    @Config(ExporterConfig.CONFIG_EXPORTER)
+    private ExporterConfig config;
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
@@ -117,20 +116,22 @@ public class TrafficEventExporter implements Subscriber, ExtensionInitializer {
     @Override
     public void initialize() {
         Resource resource = Resource.getDefault().toBuilder().put("service.name", application.getName()).build();
-        ExporterConfig exporterConfig = config.getExporter();
-        ExporterFactory factory = exporterConfig.getType() == null ? null : factories.get(exporterConfig.getType());
+        ExporterFactory factory = config.getType() == null ? null : factories.get(config.getType());
         factory = factory == null ? new LoggingExporterFactory() : factory;
         MetricReader reader = factory.create(config);
 
         SdkMeterProvider provider = SdkMeterProvider.builder().setResource(resource).registerMetricReader(reader).build();
         sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
         Meter meter = sdk.getMeter(LIVE_SCOPE);
-        trafficEventSubscription = new TrafficEventSubscription(config, application, meter);
+        trafficEventSubscription = new TrafficEventSubscription(config.getTrafficConfig(), application, meter);
     }
 
     @Override
     public Subscription<?>[] subscribe() {
-        return new Subscription[]{trafficEventSubscription};
+        if (config.getTrafficConfig().isEnabled()) {
+            return new Subscription[]{trafficEventSubscription};
+        }
+        return new Subscription[0];
     }
 
     @Override
@@ -142,7 +143,7 @@ public class TrafficEventExporter implements Subscriber, ExtensionInitializer {
 
     private static class TrafficEventSubscription implements Subscription<TrafficEvent> {
 
-        private final CounterConfig config;
+        private final ExporterConfig.TrafficConfig config;
 
         private final Application application;
 
@@ -170,7 +171,7 @@ public class TrafficEventExporter implements Subscriber, ExtensionInitializer {
 
         private final LongCounter serviceOutboundRejects;
 
-        TrafficEventSubscription(CounterConfig config, Application application, Meter meter) {
+        TrafficEventSubscription(ExporterConfig.TrafficConfig config, Application application, Meter meter) {
             this.config = config;
             this.application = application;
             this.gatewayInbounds = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();

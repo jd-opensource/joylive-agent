@@ -17,7 +17,7 @@ package com.jd.live.agent.implement.event.opentelemetry.prometheus;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.implement.event.opentelemetry.ExporterFactory;
-import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
+import com.jd.live.agent.governance.config.ExporterConfig;
 import io.opentelemetry.exporter.prometheus.PrometheusHttpServer;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
 
@@ -25,7 +25,7 @@ import io.opentelemetry.sdk.metrics.export.MetricReader;
 public class PrometheusExporterFactory implements ExporterFactory {
 
     @Override
-    public MetricReader create(CounterConfig config) {
-        return PrometheusHttpServer.builder().setPort(config.getExporter().getPort()).build();
+    public MetricReader create(ExporterConfig config) {
+        return PrometheusHttpServer.builder().setPort(config.getPort()).build();
     }
 }

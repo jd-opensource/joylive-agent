@@ -16,12 +16,12 @@
 package com.jd.live.agent.implement.event.opentelemetry;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
-import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
+import com.jd.live.agent.governance.config.ExporterConfig;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
 
 @Extensible("ExporterFactory")
 public interface ExporterFactory {
 
-    MetricReader create(CounterConfig config);
+    MetricReader create(ExporterConfig config);
 
 }

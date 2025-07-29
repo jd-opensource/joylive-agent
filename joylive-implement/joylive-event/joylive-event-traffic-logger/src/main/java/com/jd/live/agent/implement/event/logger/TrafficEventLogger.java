@@ -23,14 +23,16 @@ import com.jd.live.agent.core.event.Subscriber;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 
+@Injectable
 @Extension("TrafficEventLogger")
 @ConditionalOnFlowControlEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_CIRCUIT_BREAK_LOG_ENABLED)
+@ConditionalOnProperty(GovernanceConfig.CONFIG_CIRCUIT_BREAKER_LOGGING_ENABLED)
 public class TrafficEventLogger implements Subscriber {
 
     private static final Logger logger = LoggerFactory.getLogger(TrafficEventLogger.class);

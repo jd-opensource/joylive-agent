@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.opentelemetry.config;
+package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.inject.annotation.Config;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class ExporterConfig {
+
+    public static final String CONFIG_EXPORTER = "agent.exporter";
+
+    private boolean enabled = true;
 
     /**
      * Exporter type, currently supported: logging, otlp.grpc, otlp.http
@@ -33,4 +38,20 @@ public class ExporterConfig {
 
     private int port = 9494;
 
+    private long readerInterval = 1000;
+
+    @Config("traffic")
+    private TrafficConfig trafficConfig;
+
+    @Getter
+    @Setter
+    public static class TrafficConfig {
+
+        private boolean enabled = true;
+
+        private boolean gatewayEnabled = true;
+
+        private boolean serviceEnabled = true;
+
+    }
 }

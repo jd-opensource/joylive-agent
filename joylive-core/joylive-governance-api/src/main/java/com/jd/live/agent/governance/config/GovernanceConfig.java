@@ -44,7 +44,6 @@ public class GovernanceConfig {
     private static final int DEFAULT_INITIALIZE_TIMEOUT = 10000;
 
     public static final String COMPONENT_GOVERNANCE_CONFIG = "governanceConfig";
-    public static final String CONFIG_AGENT_GOVERNANCE = "agent.governance";
 
     protected static final String ENABLED = ".enabled";
     protected static final String CONFIG_SWITCH = "agent.switch";
@@ -87,7 +86,6 @@ public class GovernanceConfig {
     public static final String CONFIG_FLOW_CONTROL_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ENABLED;
     public static final String CONFIG_LOCALHOST_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".localhost";
     public static final String CONFIG_VIRTUAL_THREAD_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".virtualthread";
-    public static final String CONFIG_CIRCUIT_BREAK_LOG_ENABLED = CONFIG_SWITCH_FLOW_CONTROL + ".circuitbreaklog";
 
     public static final String CONFIG_PROTECT_ENABLED = CONFIG_SWITCH_PROTECT + ENABLED;
     public static final String CONFIG_PROTECT_DB_ENABLED = CONFIG_SWITCH_PROTECT + ".db";
@@ -108,23 +106,32 @@ public class GovernanceConfig {
     public static final String CONFIG_FAILOVER_ROCKETMQ_ENABLED = CONFIG_SWITCH_FAILOVER + ".rocketmq";
     public static final String CONFIG_FAILOVER_REDIS_ENABLED = CONFIG_SWITCH_FAILOVER + ".redis";
 
-    public static final String CONFIG_COUNTER_ENABLED = CONFIG_SWITCH_COUNTER + ENABLED;
-
-    public static final String CONFIG_ROUTER = CONFIG_AGENT_GOVERNANCE + ".router";
+    public static final String CONFIG_GOVERNANCE = "agent.governance";
+    public static final String CONFIG_ROUTER = CONFIG_GOVERNANCE + ".router";
     public static final String CONFIG_ROUTER_SPRING = CONFIG_ROUTER + ".spring";
     public static final String CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES = CONFIG_ROUTER_SPRING + ".discovery.disables";
 
-    public static final String CONFIG_REGISTRY = CONFIG_AGENT_GOVERNANCE + ".registry";
+    public static final String CONFIG_SERVICE = CONFIG_GOVERNANCE + ".service";
+    public static final String CONFIG_CIRCUIT_BREAKER = CONFIG_SERVICE + ".circuitBreaker";
+    public static final String CONFIG_CIRCUIT_BREAKER_LOGGING_ENABLED = CONFIG_CIRCUIT_BREAKER + ".loggingEnabled";
+
+
+    public static final String CONFIG_REGISTRY = CONFIG_GOVERNANCE + ".registry";
     public static final String CONFIG_REGISTRY_ENABLED = CONFIG_REGISTRY + ENABLED;
 
-    public static final String CONFIG_CENTER = CONFIG_AGENT_GOVERNANCE + ".configCenter";
+    public static final String CONFIG_CENTER = CONFIG_GOVERNANCE + ".configCenter";
     public static final String CONFIG_CENTER_ENABLED = CONFIG_CENTER + ENABLED;
-    public static final String CONFIG_CIPHER = CONFIG_AGENT_GOVERNANCE + ".cipher";
+    public static final String CONFIG_CIPHER = CONFIG_GOVERNANCE + ".cipher";
     public static final String CONFIG_CIPHER_ENABLED = CONFIG_CIPHER + ENABLED;
 
-    public static final String CONFIG_PROBE = CONFIG_AGENT_GOVERNANCE + ".probe";
+    public static final String CONFIG_PROBE = CONFIG_GOVERNANCE + ".probe";
     public static final String CONFIG_PROBE_ZOOKEEPER = CONFIG_PROBE + ".zookeeper";
     public static final String CONFIG_PROBE_NACOS = CONFIG_PROBE + ".nacos";
+
+    public static final String CONFIG_EXPORTER = "agent.exporter";
+    public static final String CONFIG_EXPORTER_ENABLED = CONFIG_EXPORTER + ENABLED;
+
+
 
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();

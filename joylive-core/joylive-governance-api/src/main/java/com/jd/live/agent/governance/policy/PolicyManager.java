@@ -133,7 +133,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private boolean flowControlEnabled;
 
     @Getter
-    @Config(GovernanceConfig.CONFIG_AGENT_GOVERNANCE)
+    @Config(GovernanceConfig.CONFIG_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 
     @Getter

@@ -17,7 +17,7 @@ package com.jd.live.agent.implement.event.opentelemetry.log;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.implement.event.opentelemetry.ExporterFactory;
-import com.jd.live.agent.implement.event.opentelemetry.config.CounterConfig;
+import com.jd.live.agent.governance.config.ExporterConfig;
 import io.opentelemetry.sdk.metrics.data.AggregationTemporality;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
@@ -29,7 +29,7 @@ import java.time.Duration;
 public class LoggingExporterFactory implements ExporterFactory {
 
     @Override
-    public MetricReader create(CounterConfig config) {
+    public MetricReader create(ExporterConfig config) {
         MetricExporter exporter = LoggingMetricExporter.create(AggregationTemporality.DELTA);
         return PeriodicMetricReader.builder(exporter).setInterval(Duration.ofMillis(config.getReaderInterval())).build();
     }
