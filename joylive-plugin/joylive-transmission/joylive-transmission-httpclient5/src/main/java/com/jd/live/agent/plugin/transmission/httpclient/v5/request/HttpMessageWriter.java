@@ -13,42 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.httpclient.v4.request;
+package com.jd.live.agent.plugin.transmission.httpclient.v5.request;
 
 import com.jd.live.agent.governance.request.HeaderWriter;
-import org.apache.http.Header;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.Header;
 
 import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
-public class HttpRequestBaseWriter implements HeaderWriter {
+public class HttpMessageWriter implements HeaderWriter {
 
-    private final HttpRequestBase requestBase;
+    private final ClassicHttpRequest message;
 
-    public HttpRequestBaseWriter(HttpRequestBase requestBase) {
-        this.requestBase = requestBase;
+    public HttpMessageWriter(ClassicHttpRequest message) {
+        this.message = message;
     }
 
     @Override
     public List<String> getHeaders(String key) {
-        return toList(requestBase.getHeaders(key), Header::getValue);
+        return toList(message.getHeaders(key), Header::getValue);
     }
 
     @Override
     public String getHeader(String key) {
-        Header header = requestBase.getFirstHeader(key);
+        Header header = message.getFirstHeader(key);
         return header == null ? null : header.getValue();
     }
 
     @Override
     public void addHeader(String key, String value) {
-        requestBase.addHeader(key, value);
+        message.addHeader(key, value);
     }
 
     @Override
     public void setHeader(String key, String value) {
-        requestBase.setHeader(key, value);
+        message.setHeader(key, value);
     }
 }

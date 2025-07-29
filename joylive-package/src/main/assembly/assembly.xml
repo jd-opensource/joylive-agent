@@ -246,6 +246,7 @@
             <outputDirectory>plugin/httpclient</outputDirectory>
             <unpack>false</unpack>
             <includes>
+                <include>com.jd.live:joylive-transmission-httpclient5</include>
                 <include>com.jd.live:joylive-transmission-httpclient4</include>
                 <include>com.jd.live:joylive-transmission-httpclient3</include>
             </includes>

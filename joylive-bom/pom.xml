@@ -475,6 +475,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-transmission-httpclient5</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-transmission-httpclient4</artifactId>
                 <version>${revision}</version>
             </dependency>

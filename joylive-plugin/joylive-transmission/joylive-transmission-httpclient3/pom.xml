@@ -12,7 +12,7 @@
     <artifactId>joylive-transmission-httpclient3</artifactId>
 
     <properties>
-        <commons-httpclient.version>3.1</commons-httpclient.version>
+        <httpclient.version>3.1</httpclient.version>
     </properties>
 
     <dependencies>
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
-            <version>${commons-httpclient.version}</version>
+            <version>${httpclient.version}</version>
             <scope>provided</scope>
         </dependency>
 

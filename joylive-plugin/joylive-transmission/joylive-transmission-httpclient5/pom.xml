@@ -9,18 +9,18 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-transmission-httpclient4</artifactId>
+    <artifactId>joylive-transmission-httpclient5</artifactId>
 
     <properties>
-        <httpclient.version>4.5.14</httpclient.version>
+        <httpclient5.version>5.5</httpclient5.version>
     </properties>
 
     <dependencies>
 
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${httpclient.version}</version>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${httpclient5.version}</version>
             <scope>provided</scope>
         </dependency>
 
