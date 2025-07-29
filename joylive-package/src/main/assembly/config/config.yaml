@@ -395,3 +395,35 @@ agent:
       enabled: ${CONFIG_EXPORTER_TRAFFIC_ENABLED:true}
       gatewayEnabled: true
       serviceEnabled: true
+    exception:
+      enabled: ${CONFIG_EXPORTER_EXCEPTION_ENABLED:true}
+      maxDepth: 20
+      stackTracePrefixes:
+        - java.
+        - javax.
+        - jdk.
+        - org.springframework.
+        - org.apache.dubbo.
+        - com.alibaba.dubbo.
+        - redis.
+        - org.redisson.
+        - io.lettuce.
+        - org.apache.rocketmq.
+        - org.apache.kafka.
+        - org.mariadb.jdbc.
+        - com.mongodb.
+        - org.opengauss.
+        - org.postgresql.
+        - com.netflix.discovery.
+        - net.devh.boot.grpc.
+        - com.alibaba.nacos
+        - com.alibaba.cloud.nacos.
+        - com.alipay.sofa.rpc.
+        - io.grpc.
+        - org.apache.commons.httpclient.
+        - org.apache.http.
+        - reactor.netty.http.client.
+        - com.squareup.okhttp.
+        - okhttp3.
+        - org.apache.pulsar.
+        - jakarta.servlet.

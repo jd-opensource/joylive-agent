@@ -15,6 +15,10 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.advice;
 
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceExecution.EnterExecution;
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceExecution.ErrorExecution;
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceExecution.ExiteExecution;
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceExecution.SuccessExecution;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -23,7 +27,7 @@ import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * A handler class for managing advices and their associated interceptors. Provides static methods
@@ -38,6 +42,8 @@ public class AdviceHandler {
      */
     private static final Map<Object, AdviceDesc> advices = new ConcurrentHashMap<>(1000);
 
+    public static Consumer<Throwable> onException;
+
     /**
      * Private constructor to prevent instantiation.
      */
@@ -47,12 +53,11 @@ public class AdviceHandler {
     /**
      * Handles the entry point for a given execution context and advice key.
      *
-     * @param <T>       the type of the execution context
      * @param context   the execution context
      * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onEnter(final T context, final Object adviceKey) throws Throwable {
+    public static void onEnter(final ExecutableContext context, final Object adviceKey) throws Throwable {
         if (context == null || adviceKey == null) {
             return;
         }
@@ -73,12 +78,11 @@ public class AdviceHandler {
     /**
      * Handles the exit point for a given execution context and advice key.
      *
-     * @param <T>       the type of the execution context
      * @param context   the execution context
      * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static <T extends ExecutableContext> void onExit(final T context, final Object adviceKey) throws Throwable {
+    public static void onExit(final ExecutableContext context, final Object adviceKey) throws Throwable {
         AdviceDesc adviceDesc = advices.get(adviceKey);
         List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
         int size = interceptors == null ? 0 : interceptors.size();
@@ -97,18 +101,14 @@ public class AdviceHandler {
      *
      * @param context     the executable context
      * @param interceptor the interceptor to be invoked
-     * @param <T>         the type of the executable context, which must extend ExecutableContext
      * @return true if the execution should be skipped, false otherwise
      * @throws Throwable if an error occurs during the execution of the interceptor's onEnter method
      */
-    private static <T extends ExecutableContext> boolean onEnter(T context, Interceptor interceptor) throws Throwable {
+    private static boolean onEnter(final ExecutableContext context, final Interceptor interceptor) throws Throwable {
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("enter [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
         }
-        handle(context, interceptor, Interceptor::onEnter, "enter");
-        if (!context.isSuccess()) {
-            throw context.getThrowable();
-        }
+        handle(context, interceptor, EnterExecution.INSTANCE, "enter");
         return context.isSkip();
     }
 
@@ -117,40 +117,41 @@ public class AdviceHandler {
      *
      * @param context     the executable context
      * @param interceptor the interceptor to be invoked
-     * @param <T>         the type of the executable context, which must extend ExecutableContext
      * @throws Throwable if an error occurs during the execution of the interceptor's methods
      */
-    private static <T extends ExecutableContext> void onExit(T context, Interceptor interceptor) throws Throwable {
+    private static void onExit(final ExecutableContext context, final Interceptor interceptor) throws Throwable {
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("exit [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
         }
         if (context.isSuccess()) {
-            handle(context, interceptor, Interceptor::onSuccess, "success");
+            handle(context, interceptor, SuccessExecution.INSTANCE, "success");
         } else {
-            handle(context, interceptor, Interceptor::onError, "recover");
+            if (onException != null) {
+                onException.accept(context.getThrowable());
+            }
+            handle(context, interceptor, ErrorExecution.INSTANCE, "recover");
         }
-        handle(context, interceptor, Interceptor::onExit, "exit");
+        handle(context, interceptor, ExiteExecution.INSTANCE, "exit");
     }
 
     /**
      * Generic method for handling interception actions.
      *
-     * @param <T>         the type of the execution context
      * @param context     the execution context
      * @param interceptor the interceptor to be executed
-     * @param consumer    the action to be performed by the interceptor
+     * @param execution   the action to be performed by the interceptor
      * @param action      the name of the action being performed
      * @throws Throwable if any exception occurs during interception
      */
-    private static <T extends ExecutableContext> void handle(final T context,
-                                                             final Interceptor interceptor,
-                                                             final BiConsumer<Interceptor, T> consumer,
-                                                             final String action) throws Throwable {
+    private static void handle(final ExecutableContext context,
+                               final Interceptor interceptor,
+                               final AdviceExecution execution,
+                               final String action) throws Throwable {
         try {
-            consumer.accept(interceptor, context);
+            execution.execute(interceptor, context);
         } catch (Throwable t) {
             logger.error(String.format("failed to %s %s, caused by %s", action, context.getDescription(), t.getMessage()), t);
-            throw t;
+            execution.fail(t, context);
         }
     }
 

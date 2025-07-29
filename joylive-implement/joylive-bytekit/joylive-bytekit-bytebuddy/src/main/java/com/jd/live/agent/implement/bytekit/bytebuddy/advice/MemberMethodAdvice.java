@@ -55,6 +55,7 @@ public class MemberMethodAdvice {
         if (!origin) {
             AdviceHandler.onEnter(mc, adviceKey);
             arguments = mc.getArguments();
+            // skipOn = Advice.OnNonDefaultValue.class
             return mc.isSkip();
         }
         return false;

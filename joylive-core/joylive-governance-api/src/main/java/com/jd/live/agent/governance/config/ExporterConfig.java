@@ -15,9 +15,12 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.inject.annotation.Config;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -43,6 +46,9 @@ public class ExporterConfig {
     @Config("traffic")
     private TrafficConfig trafficConfig;
 
+    @Config("exception")
+    private ExceptionConfig exceptionConfig;
+
     @Getter
     @Setter
     public static class TrafficConfig {
@@ -53,5 +59,29 @@ public class ExporterConfig {
 
         private boolean serviceEnabled = true;
 
+    }
+
+    public static class ExceptionConfig {
+
+        @Getter
+        @Setter
+        private boolean enabled = true;
+
+        @Getter
+        @Setter
+        private int maxDepth = 20;
+
+        @Getter
+        @Setter
+        private Set<String> stackTracePrefixes;
+
+        private transient Inclusion stackTraces;
+
+        public boolean withStackTrace(String className) {
+            if (stackTraces == null) {
+                stackTraces = new Inclusion(null, stackTracePrefixes);
+            }
+            return stackTraces.test(className);
+        }
     }
 }
