@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.event;
+package com.jd.live.agent.core.event;
 
 import lombok.Getter;
 
@@ -28,17 +28,21 @@ public class ExceptionEvent {
 
     public static final String KEY_CLASS_NAME = "class_name";
 
-    public static final String KEY_METHOD = "method";
+    public static final String KEY_METHOD_NAME = "method_name";
+
+    public static final String KEY_LINE_NUMBER = "line_number";
 
     public static final String COUNTER_EXCEPTIONS_TOTAL = "joylive_exception_total";
 
     private final String className;
 
-    private final String method;
+    private final String methodName;
 
-    public ExceptionEvent(String className, String method) {
+    private final int lineNumber;
+
+    public ExceptionEvent(String className, String methodName, int lineNumber) {
         this.className = className;
-        this.method = method;
+        this.methodName = methodName;
+        this.lineNumber = lineNumber;
     }
-
 }

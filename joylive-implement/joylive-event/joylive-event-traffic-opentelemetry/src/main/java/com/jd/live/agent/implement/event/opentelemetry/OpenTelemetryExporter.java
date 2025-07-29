@@ -15,10 +15,9 @@
  */
 package com.jd.live.agent.implement.event.opentelemetry;
 
-import com.jd.live.agent.core.event.Event;
-import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.event.Subscriber;
-import com.jd.live.agent.core.event.Subscription;
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
+import com.jd.live.agent.bootstrap.exception.LiveException;
+import com.jd.live.agent.core.event.*;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -30,7 +29,6 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.ExporterConfig;
 import com.jd.live.agent.governance.config.ExporterConfig.TrafficConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.event.ExceptionEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.implement.event.opentelemetry.log.LoggingExporterFactory;
 import io.opentelemetry.api.common.AttributeKey;
@@ -46,6 +44,7 @@ import io.opentelemetry.sdk.resources.Resource;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.ExceptionUtils.getRootCause;
 import static com.jd.live.agent.governance.event.TrafficEvent.*;
 
 @Configurable
@@ -56,12 +55,16 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private static final String LIVE_SCOPE = "com.jd.live";
     private static final String SERVICE_NAME = "service.name";
+    private static final String LIVE_AGENT_PREFIX = "com.jd.live.agent.";
 
     @Config(ExporterConfig.CONFIG_EXPORTER)
     private ExporterConfig config;
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
+
+    @Inject(Publisher.EXCEPTION)
+    private Publisher<ExceptionEvent> publisher;
 
     @Inject
     private Map<String, ExporterFactory> factories;
@@ -84,20 +87,72 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
         Meter meter = sdk.getMeter(LIVE_SCOPE);
         trafficEventSubscription = new TrafficEventSubscription(config.getTrafficConfig(), application, meter);
         exceptionEventSubscription = new ExceptionEventSubscription(application, meter);
+        if (config.getExceptionConfig().isEnabled()) {
+            AdviceHandler.onException = this::onException;
+        }
     }
 
     @Override
     public Subscription<?>[] subscribe() {
         if (config.getTrafficConfig().isEnabled()) {
-            return new Subscription[]{trafficEventSubscription, exceptionEventSubscription};
+            if (config.getExceptionConfig().isEnabled()) {
+                return new Subscription[]{trafficEventSubscription, exceptionEventSubscription};
+            }
+            return new Subscription[]{trafficEventSubscription};
+        } else if (config.getExceptionConfig().isEnabled()) {
+            return new Subscription[]{exceptionEventSubscription};
         }
-        return new Subscription[]{exceptionEventSubscription};
+        return new Subscription[0];
     }
 
     @Override
     public void close() {
         if (sdk != null) {
             sdk.close();
+        }
+        AdviceHandler.onException = null;
+    }
+
+    /**
+     * Processes an exception by analyzing its stack trace and publishing an event
+     * if the root cause matches specific criteria.
+     * <p>
+     * Skips {@link LiveException} instances and only publishes events for:
+     * <ul>
+     *   <li>Classes not matching the agent's stack trace filter</li>
+     *   <li>Classes starting with the agent prefix</li>
+     * </ul>
+     *
+     * @param throwable the exception to process (non-null)
+     */
+    private void onException(Throwable throwable) {
+        // Get root cause, excluding known LiveException instances
+        Throwable rootCause = getRootCause(throwable, e -> !(e instanceof LiveException));
+        if (rootCause == null) {
+            return;
+        }
+
+        // Extract stack trace elements for analysis
+        StackTraceElement[] traces = rootCause.getStackTrace();
+
+        // Get maximum traversal depth from configuration (default: 20)
+        int maxDepth = config.getExceptionConfig().getMaxDepth();
+        int max = maxDepth > 0 ? Math.min(maxDepth, traces.length) : traces.length;
+
+        String className;
+        StackTraceElement trace;
+        // Traverse stack trace elements
+        for (int i = 0; i < max; i++) {
+            trace = traces[i];
+            className = trace.getClassName();
+            if (className.startsWith(LIVE_AGENT_PREFIX)) {
+                // Priority handling - Report Agent-related exceptions immediately
+                publisher.offer(new ExceptionEvent(className, trace.getMethodName(), trace.getLineNumber()));
+                return;
+            } else if (!config.getExceptionConfig().withStackTrace(className)) {
+                // Filter out business exceptions - ignore if class not in whitelist
+                return;
+            }
         }
     }
 
@@ -232,7 +287,8 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
         private static final String ERRORS = "errors";
         private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(ExceptionEvent.KEY_APPLICATION);
         private static final AttributeKey<String> ATTRIBUTE_CLASS_NAME = AttributeKey.stringKey(ExceptionEvent.KEY_CLASS_NAME);
-        private static final AttributeKey<String> ATTRIBUTE_METHOD = AttributeKey.stringKey(ExceptionEvent.KEY_METHOD);
+        private static final AttributeKey<String> ATTRIBUTE_METHOD_NAME = AttributeKey.stringKey(ExceptionEvent.KEY_METHOD_NAME);
+        private static final AttributeKey<Long> ATTRIBUTE_LINE_NUMBER = AttributeKey.longKey(ExceptionEvent.KEY_LINE_NUMBER);
 
         private final Application application;
 
@@ -262,7 +318,8 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
             AttributesBuilder builder = Attributes.builder()
                     .put(ATTRIBUTE_APPLICATION, application.getName())
                     .put(ATTRIBUTE_CLASS_NAME, exceptionEvent.getClassName())
-                    .put(ATTRIBUTE_METHOD, exceptionEvent.getMethod());
+                    .put(ATTRIBUTE_METHOD_NAME, exceptionEvent.getMethodName())
+                    .put(ATTRIBUTE_LINE_NUMBER, exceptionEvent.getLineNumber());
             return builder.build();
         }
     }

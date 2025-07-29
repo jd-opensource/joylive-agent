@@ -32,7 +32,7 @@ public class ExceptionUtils {
     /**
      * Iterates over the exception chain starting from the given throwable and stops when the provided predicate returns false.
      *
-     * @param e       the throwable to start iterating from
+     * @param e         the throwable to start iterating from
      * @param predicate a predicate that will be applied to each element in the exception chain
      */
     public static void iterate(Throwable e, Predicate<Throwable> predicate) {
@@ -109,6 +109,23 @@ public class ExceptionUtils {
             cause = e.getCause();
         }
         return cause == null ? e : cause;
+    }
+
+    /**
+     * Finds the root cause of a throwable, optionally filtered by a predicate.
+     * Traverses the cause chain until either the end or the predicate rejects a cause.
+     *
+     * @param e         the throwable to analyze (may be null)
+     * @param predicate optional filter to test each cause (may be null to accept all)
+     * @return the deepest acceptable cause in the chain, or null if rejected by predicate
+     */
+    public static Throwable getRootCause(Throwable e, Predicate<Throwable> predicate) {
+        Throwable cause = null;
+        while (e != null && (predicate == null || predicate.test(e))) {
+            cause = e;
+            e = e.getCause();
+        }
+        return cause;
     }
 
 }
