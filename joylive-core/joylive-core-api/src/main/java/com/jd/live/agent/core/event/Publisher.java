@@ -41,6 +41,8 @@ public interface Publisher<E> {
 
     String DATABASE = "database";
 
+    String EXCEPTION = "exception";
+
     /**
      * Policy identifier for subscribers.
      */

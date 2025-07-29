@@ -28,7 +28,9 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.governance.config.ExporterConfig;
+import com.jd.live.agent.governance.config.ExporterConfig.TrafficConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.event.ExceptionEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.implement.event.opentelemetry.log.LoggingExporterFactory;
 import io.opentelemetry.api.common.AttributeKey;
@@ -53,52 +55,7 @@ import static com.jd.live.agent.governance.event.TrafficEvent.*;
 public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private static final String LIVE_SCOPE = "com.jd.live";
-
-    private static final String REQUESTS = "requests";
-
-    private static final AttributeKey<String> ATTRIBUTE_COMPONENT_TYPE = AttributeKey.stringKey(KEY_COMPONENT_TYPE);
-
-    private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
-
-    private static final AttributeKey<String> ATTRIBUTE_LIVE_SPACE_ID = AttributeKey.stringKey(KEY_LIVE_SPACE_ID);
-
-    private static final AttributeKey<String> ATTRIBUTE_LIVE_RULE_ID = AttributeKey.stringKey(KEY_LIVE_RULE_ID);
-
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_UNIT = AttributeKey.stringKey(KEY_LOCAL_UNIT);
-
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_CELL = AttributeKey.stringKey(KEY_LOCAL_CELL);
-
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_IP = AttributeKey.stringKey(KEY_LOCAL_IP);
-
-    private static final AttributeKey<String> ATTRIBUTE_TARGET_UNIT = AttributeKey.stringKey(KEY_TARGET_UNIT);
-
-    private static final AttributeKey<String> ATTRIBUTE_TARGET_CELL = AttributeKey.stringKey(KEY_TARGET_CELL);
-
-    private static final AttributeKey<String> ATTRIBUTE_LIVE_DOMAIN = AttributeKey.stringKey(KEY_LIVE_DOMAIN);
-
-    private static final AttributeKey<String> ATTRIBUTE_LIVE_PATH = AttributeKey.stringKey(KEY_LIVE_PATH);
-
-    private static final AttributeKey<String> ATTRIBUTE_LIVE_BIZ_VARIABLE = AttributeKey.stringKey(KEY_LIVE_BIZ_VARIABLE);
-
-    private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
-
-    private static final AttributeKey<String> ATTRIBUTE_LANE_RULE_ID = AttributeKey.stringKey(KEY_LANE_RULE_ID);
-
-    private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
-
-    private static final AttributeKey<String> ATTRIBUTE_TARGET_LANE = AttributeKey.stringKey(KEY_TARGET_LANE);
-
-    private static final AttributeKey<Long> ATTRIBUTE_SERVICE_POLICY_ID = AttributeKey.longKey(KEY_SERVICE_POLICY_ID);
-
-    private static final AttributeKey<String> ATTRIBUTE_SERVICE_NAME = AttributeKey.stringKey(KEY_SERVICE_NAME);
-
-    private static final AttributeKey<String> ATTRIBUTE_SERVICE_GROUP = AttributeKey.stringKey(KEY_SERVICE_GROUP);
-
-    private static final AttributeKey<String> ATTRIBUTE_SERVICE_PATH = AttributeKey.stringKey(KEY_SERVICE_PATH);
-
-    private static final AttributeKey<String> ATTRIBUTE_SERVICE_METHOD = AttributeKey.stringKey(KEY_SERVICE_METHOD);
-
-    private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
+    private static final String SERVICE_NAME = "service.name";
 
     @Config(ExporterConfig.CONFIG_EXPORTER)
     private ExporterConfig config;
@@ -113,9 +70,11 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private TrafficEventSubscription trafficEventSubscription;
 
+    private ExceptionEventSubscription exceptionEventSubscription;
+
     @Override
     public void initialize() {
-        Resource resource = Resource.getDefault().toBuilder().put("service.name", application.getName()).build();
+        Resource resource = Resource.getDefault().toBuilder().put(SERVICE_NAME, application.getName()).build();
         ExporterFactory factory = config.getType() == null ? null : factories.get(config.getType());
         factory = factory == null ? new LoggingExporterFactory() : factory;
         MetricReader reader = factory.create(config);
@@ -124,14 +83,15 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
         sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
         Meter meter = sdk.getMeter(LIVE_SCOPE);
         trafficEventSubscription = new TrafficEventSubscription(config.getTrafficConfig(), application, meter);
+        exceptionEventSubscription = new ExceptionEventSubscription(application, meter);
     }
 
     @Override
     public Subscription<?>[] subscribe() {
         if (config.getTrafficConfig().isEnabled()) {
-            return new Subscription[]{trafficEventSubscription};
+            return new Subscription[]{trafficEventSubscription, exceptionEventSubscription};
         }
-        return new Subscription[0];
+        return new Subscription[]{exceptionEventSubscription};
     }
 
     @Override
@@ -143,35 +103,48 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private static class TrafficEventSubscription implements Subscription<TrafficEvent> {
 
-        private final ExporterConfig.TrafficConfig config;
+        private static final String REQUESTS = "requests";
 
+        private static final AttributeKey<String> ATTRIBUTE_COMPONENT_TYPE = AttributeKey.stringKey(KEY_COMPONENT_TYPE);
+        private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
+        private static final AttributeKey<String> ATTRIBUTE_LIVE_SPACE_ID = AttributeKey.stringKey(KEY_LIVE_SPACE_ID);
+        private static final AttributeKey<String> ATTRIBUTE_LIVE_RULE_ID = AttributeKey.stringKey(KEY_LIVE_RULE_ID);
+        private static final AttributeKey<String> ATTRIBUTE_LOCAL_UNIT = AttributeKey.stringKey(KEY_LOCAL_UNIT);
+        private static final AttributeKey<String> ATTRIBUTE_LOCAL_CELL = AttributeKey.stringKey(KEY_LOCAL_CELL);
+        private static final AttributeKey<String> ATTRIBUTE_LOCAL_IP = AttributeKey.stringKey(KEY_LOCAL_IP);
+        private static final AttributeKey<String> ATTRIBUTE_TARGET_UNIT = AttributeKey.stringKey(KEY_TARGET_UNIT);
+        private static final AttributeKey<String> ATTRIBUTE_TARGET_CELL = AttributeKey.stringKey(KEY_TARGET_CELL);
+        private static final AttributeKey<String> ATTRIBUTE_LIVE_DOMAIN = AttributeKey.stringKey(KEY_LIVE_DOMAIN);
+        private static final AttributeKey<String> ATTRIBUTE_LIVE_PATH = AttributeKey.stringKey(KEY_LIVE_PATH);
+        private static final AttributeKey<String> ATTRIBUTE_LIVE_BIZ_VARIABLE = AttributeKey.stringKey(KEY_LIVE_BIZ_VARIABLE);
+        private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
+        private static final AttributeKey<String> ATTRIBUTE_LANE_RULE_ID = AttributeKey.stringKey(KEY_LANE_RULE_ID);
+        private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
+        private static final AttributeKey<String> ATTRIBUTE_TARGET_LANE = AttributeKey.stringKey(KEY_TARGET_LANE);
+        private static final AttributeKey<Long> ATTRIBUTE_SERVICE_POLICY_ID = AttributeKey.longKey(KEY_SERVICE_POLICY_ID);
+        private static final AttributeKey<String> ATTRIBUTE_SERVICE_NAME = AttributeKey.stringKey(KEY_SERVICE_NAME);
+        private static final AttributeKey<String> ATTRIBUTE_SERVICE_GROUP = AttributeKey.stringKey(KEY_SERVICE_GROUP);
+        private static final AttributeKey<String> ATTRIBUTE_SERVICE_PATH = AttributeKey.stringKey(KEY_SERVICE_PATH);
+        private static final AttributeKey<String> ATTRIBUTE_SERVICE_METHOD = AttributeKey.stringKey(KEY_SERVICE_METHOD);
+        private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
+
+        private final TrafficConfig config;
         private final Application application;
 
         private final LongCounter gatewayInbounds;
-
         private final LongCounter gatewayInboundForwards;
-
         private final LongCounter gatewayInboundRejects;
-
         private final LongCounter gatewayOutboundForwards;
-
         private final LongCounter gatewayOutbounds;
-
         private final LongCounter gatewayOutboundRejects;
-
         private final LongCounter serviceInbounds;
-
         private final LongCounter serviceInboundForwards;
-
         private final LongCounter serviceInboundRejects;
-
         private final LongCounter serviceOutbounds;
-
         private final LongCounter serviceOutboundForwards;
-
         private final LongCounter serviceOutboundRejects;
 
-        TrafficEventSubscription(ExporterConfig.TrafficConfig config, Application application, Meter meter) {
+        TrafficEventSubscription(TrafficConfig config, Application application, Meter meter) {
             this.config = config;
             this.application = application;
             this.gatewayInbounds = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
@@ -250,6 +223,46 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
             if (trafficEvent.getPolicyTags() != null) {
                 trafficEvent.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));
             }
+            return builder.build();
+        }
+    }
+
+    private static class ExceptionEventSubscription implements Subscription<ExceptionEvent> {
+
+        private static final String ERRORS = "errors";
+        private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(ExceptionEvent.KEY_APPLICATION);
+        private static final AttributeKey<String> ATTRIBUTE_CLASS_NAME = AttributeKey.stringKey(ExceptionEvent.KEY_CLASS_NAME);
+        private static final AttributeKey<String> ATTRIBUTE_METHOD = AttributeKey.stringKey(ExceptionEvent.KEY_METHOD);
+
+        private final Application application;
+
+        private final LongCounter exceptions;
+
+        ExceptionEventSubscription(Application application, Meter meter) {
+            this.application = application;
+            this.exceptions = meter.counterBuilder(ExceptionEvent.COUNTER_EXCEPTIONS_TOTAL).setUnit(ERRORS).build();
+        }
+
+        @Override
+        public void handle(List<Event<ExceptionEvent>> events) {
+            if (events != null) {
+                for (Event<ExceptionEvent> event : events) {
+                    exceptions.add(1, attributes(event));
+                }
+            }
+        }
+
+        @Override
+        public String getTopic() {
+            return Publisher.EXCEPTION;
+        }
+
+        private Attributes attributes(Event<ExceptionEvent> event) {
+            ExceptionEvent exceptionEvent = event.getData();
+            AttributesBuilder builder = Attributes.builder()
+                    .put(ATTRIBUTE_APPLICATION, application.getName())
+                    .put(ATTRIBUTE_CLASS_NAME, exceptionEvent.getClassName())
+                    .put(ATTRIBUTE_METHOD, exceptionEvent.getMethod());
             return builder.build();
         }
     }
