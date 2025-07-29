@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.event.opentelemetry;
 
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.event.Subscriber;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
@@ -50,7 +51,7 @@ import static com.jd.live.agent.governance.event.TrafficEvent.*;
 @Injectable
 @Extension("TrafficEventExporter")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_COUNTER_ENABLED, matchIfMissing = true)
-public class TrafficEventExporter implements Subscription<TrafficEvent>, ExtensionInitializer {
+public class TrafficEventExporter implements Subscriber, ExtensionInitializer {
 
     private static final String LIVE_SCOPE = "com.jd.live";
 
@@ -100,30 +101,6 @@ public class TrafficEventExporter implements Subscription<TrafficEvent>, Extensi
 
     private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
 
-    private LongCounter gatewayInbounds;
-
-    private LongCounter gatewayInboundForwards;
-
-    private LongCounter gatewayInboundRejects;
-
-    private LongCounter gatewayOutboundForwards;
-
-    private LongCounter gatewayOutbounds;
-
-    private LongCounter gatewayOutboundRejects;
-
-    private LongCounter serviceInbounds;
-
-    private LongCounter serviceInboundForwards;
-
-    private LongCounter serviceInboundRejects;
-
-    private LongCounter serviceOutbounds;
-
-    private LongCounter serviceOutboundForwards;
-
-    private LongCounter serviceOutboundRejects;
-
     @Config(CounterConfig.CONFIG_COUNTER)
     private CounterConfig config;
 
@@ -131,104 +108,148 @@ public class TrafficEventExporter implements Subscription<TrafficEvent>, Extensi
     private Application application;
 
     @Inject
-    private Map<String, ExporterFactory> factoryMap;
+    private Map<String, ExporterFactory> factories;
 
     private OpenTelemetrySdk sdk;
 
-    @Override
-    public void handle(List<Event<TrafficEvent>> events) {
-        if (events != null) {
-            TrafficEvent trafficEvent;
-            LongCounter counter;
-            for (Event<TrafficEvent> event : events) {
-                trafficEvent = event.getData();
-                Attributes attributes = attributes(event);
-                if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.INBOUND) {
-                    gatewayInbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayInboundForwards : gatewayInboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.OUTBOUND) {
-                    gatewayOutbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayOutboundForwards : gatewayOutboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.OUTBOUND) {
-                    serviceOutbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceOutboundForwards : serviceOutboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.INBOUND) {
-                    serviceInbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceInboundForwards : serviceInboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                }
-            }
-        }
-    }
-
-    private Attributes attributes(Event<TrafficEvent> event) {
-        TrafficEvent trafficEvent = event.getData();
-        AttributesBuilder builder = Attributes.builder();
-        builder.put(ATTRIBUTE_COMPONENT_TYPE, trafficEvent.getComponentType().name()).
-                put(ATTRIBUTE_APPLICATION, application.getName()).
-                put(ATTRIBUTE_LIVE_SPACE_ID, trafficEvent.getLiveSpaceId()).
-                put(ATTRIBUTE_LIVE_RULE_ID, trafficEvent.getUnitRuleId()).
-                put(ATTRIBUTE_LOCAL_UNIT, trafficEvent.getLocalUnit()).
-                put(ATTRIBUTE_LOCAL_CELL, trafficEvent.getLocalCell()).
-                put(ATTRIBUTE_TARGET_UNIT, trafficEvent.getTargetUnit()).
-                put(ATTRIBUTE_TARGET_CELL, trafficEvent.getTargetCell()).
-                put(ATTRIBUTE_LIVE_DOMAIN, trafficEvent.getLiveDomain()).
-                put(ATTRIBUTE_LIVE_PATH, trafficEvent.getLivePath()).
-                put(ATTRIBUTE_LIVE_BIZ_VARIABLE, trafficEvent.getLiveBizVariable()).
-                put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
-                put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
-                put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
-                put(ATTRIBUTE_TARGET_LANE, trafficEvent.getTargetLane()).
-                put(ATTRIBUTE_SERVICE_POLICY_ID, trafficEvent.getPolicyId()).
-                put(ATTRIBUTE_SERVICE_NAME, trafficEvent.getService()).
-                put(ATTRIBUTE_SERVICE_GROUP, trafficEvent.getGroup()).
-                put(ATTRIBUTE_SERVICE_PATH, trafficEvent.getPath()).
-                put(ATTRIBUTE_SERVICE_METHOD, trafficEvent.getMethod()).
-                put(ATTRIBUTE_REJECT_TYPE, trafficEvent.getRejectTypeName()).
-                put(ATTRIBUTE_LOCAL_IP, event.getIp());
-        if (trafficEvent.getPolicyTags() != null) {
-            trafficEvent.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));
-        }
-        return builder.build();
-    }
-
-    @Override
-    public String getTopic() {
-        return Publisher.TRAFFIC;
-    }
+    private TrafficEventSubscription trafficEventSubscription;
 
     @Override
     public void initialize() {
         Resource resource = Resource.getDefault().toBuilder().put("service.name", application.getName()).build();
         ExporterConfig exporterConfig = config.getExporter();
-        ExporterFactory factory = exporterConfig.getType() == null ? null : factoryMap.get(exporterConfig.getType());
+        ExporterFactory factory = exporterConfig.getType() == null ? null : factories.get(exporterConfig.getType());
         factory = factory == null ? new LoggingExporterFactory() : factory;
         MetricReader reader = factory.create(config);
 
         SdkMeterProvider provider = SdkMeterProvider.builder().setResource(resource).registerMetricReader(reader).build();
         sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
         Meter meter = sdk.getMeter(LIVE_SCOPE);
-        this.gatewayInbounds = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.gatewayInboundForwards = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.gatewayInboundRejects = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.gatewayOutbounds = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.gatewayOutboundForwards = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.gatewayOutboundRejects = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.serviceInbounds = meter.counterBuilder(COUNTER_SERVICE_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.serviceInboundForwards = meter.counterBuilder(COUNTER_SERVICE_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.serviceInboundRejects = meter.counterBuilder(COUNTER_SERVICE_INBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.serviceOutbounds = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.serviceOutboundForwards = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        this.serviceOutboundRejects = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+        trafficEventSubscription = new TrafficEventSubscription(config, application, meter);
+    }
+
+    @Override
+    public Subscription<?>[] subscribe() {
+        return new Subscription[]{trafficEventSubscription};
     }
 
     @Override
     public void close() {
         if (sdk != null) {
             sdk.close();
+        }
+    }
+
+    private static class TrafficEventSubscription implements Subscription<TrafficEvent> {
+
+        private final CounterConfig config;
+
+        private final Application application;
+
+        private final LongCounter gatewayInbounds;
+
+        private final LongCounter gatewayInboundForwards;
+
+        private final LongCounter gatewayInboundRejects;
+
+        private final LongCounter gatewayOutboundForwards;
+
+        private final LongCounter gatewayOutbounds;
+
+        private final LongCounter gatewayOutboundRejects;
+
+        private final LongCounter serviceInbounds;
+
+        private final LongCounter serviceInboundForwards;
+
+        private final LongCounter serviceInboundRejects;
+
+        private final LongCounter serviceOutbounds;
+
+        private final LongCounter serviceOutboundForwards;
+
+        private final LongCounter serviceOutboundRejects;
+
+        TrafficEventSubscription(CounterConfig config, Application application, Meter meter) {
+            this.config = config;
+            this.application = application;
+            this.gatewayInbounds = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.gatewayInboundForwards = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.gatewayInboundRejects = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.gatewayOutbounds = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.gatewayOutboundForwards = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.gatewayOutboundRejects = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.serviceInbounds = meter.counterBuilder(COUNTER_SERVICE_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.serviceInboundForwards = meter.counterBuilder(COUNTER_SERVICE_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.serviceInboundRejects = meter.counterBuilder(COUNTER_SERVICE_INBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.serviceOutbounds = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.serviceOutboundForwards = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+            this.serviceOutboundRejects = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
+        }
+
+        @Override
+        public void handle(List<Event<TrafficEvent>> events) {
+            if (events != null) {
+                TrafficEvent trafficEvent;
+                LongCounter counter;
+                for (Event<TrafficEvent> event : events) {
+                    trafficEvent = event.getData();
+                    Attributes attributes = attributes(event);
+                    if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.INBOUND) {
+                        gatewayInbounds.add(trafficEvent.getRequests(), attributes);
+                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayInboundForwards : gatewayInboundRejects;
+                        counter.add(trafficEvent.getRequests(), attributes);
+                    } else if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.OUTBOUND) {
+                        gatewayOutbounds.add(trafficEvent.getRequests(), attributes);
+                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayOutboundForwards : gatewayOutboundRejects;
+                        counter.add(trafficEvent.getRequests(), attributes);
+                    } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.OUTBOUND) {
+                        serviceOutbounds.add(trafficEvent.getRequests(), attributes);
+                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceOutboundForwards : serviceOutboundRejects;
+                        counter.add(trafficEvent.getRequests(), attributes);
+                    } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.INBOUND) {
+                        serviceInbounds.add(trafficEvent.getRequests(), attributes);
+                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceInboundForwards : serviceInboundRejects;
+                        counter.add(trafficEvent.getRequests(), attributes);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public String getTopic() {
+            return Publisher.TRAFFIC;
+        }
+
+        private Attributes attributes(Event<TrafficEvent> event) {
+            TrafficEvent trafficEvent = event.getData();
+            AttributesBuilder builder = Attributes.builder();
+            builder.put(ATTRIBUTE_COMPONENT_TYPE, trafficEvent.getComponentType().name()).
+                    put(ATTRIBUTE_APPLICATION, application.getName()).
+                    put(ATTRIBUTE_LIVE_SPACE_ID, trafficEvent.getLiveSpaceId()).
+                    put(ATTRIBUTE_LIVE_RULE_ID, trafficEvent.getUnitRuleId()).
+                    put(ATTRIBUTE_LOCAL_UNIT, trafficEvent.getLocalUnit()).
+                    put(ATTRIBUTE_LOCAL_CELL, trafficEvent.getLocalCell()).
+                    put(ATTRIBUTE_TARGET_UNIT, trafficEvent.getTargetUnit()).
+                    put(ATTRIBUTE_TARGET_CELL, trafficEvent.getTargetCell()).
+                    put(ATTRIBUTE_LIVE_DOMAIN, trafficEvent.getLiveDomain()).
+                    put(ATTRIBUTE_LIVE_PATH, trafficEvent.getLivePath()).
+                    put(ATTRIBUTE_LIVE_BIZ_VARIABLE, trafficEvent.getLiveBizVariable()).
+                    put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
+                    put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
+                    put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
+                    put(ATTRIBUTE_TARGET_LANE, trafficEvent.getTargetLane()).
+                    put(ATTRIBUTE_SERVICE_POLICY_ID, trafficEvent.getPolicyId()).
+                    put(ATTRIBUTE_SERVICE_NAME, trafficEvent.getService()).
+                    put(ATTRIBUTE_SERVICE_GROUP, trafficEvent.getGroup()).
+                    put(ATTRIBUTE_SERVICE_PATH, trafficEvent.getPath()).
+                    put(ATTRIBUTE_SERVICE_METHOD, trafficEvent.getMethod()).
+                    put(ATTRIBUTE_REJECT_TYPE, trafficEvent.getRejectTypeName()).
+                    put(ATTRIBUTE_LOCAL_IP, event.getIp());
+            if (trafficEvent.getPolicyTags() != null) {
+                trafficEvent.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));
+            }
+            return builder.build();
         }
     }
 }

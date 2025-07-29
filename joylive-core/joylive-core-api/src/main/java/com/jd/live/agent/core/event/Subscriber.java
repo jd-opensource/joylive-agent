@@ -15,17 +15,32 @@
  */
 package com.jd.live.agent.core.event;
 
+import com.jd.live.agent.core.extension.annotation.Extensible;
+
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
- * Represents a subscription to events of type {@code T} on a specific topic.
- *
- * @param <T> the type of events handled by this subscription
+ * Extensible event subscriber interface that can handle topic-based events.
+ * Implementations define how to subscribe to and process events.
  */
-public interface Subscription<T> extends EventHandler<T> {
+@Extensible("Subscriber")
+public interface Subscriber extends Closeable {
 
     /**
-     * Returns the topic this subscription is listening to.
-     * @return the subscription topic
+     * Creates new subscriptions for receiving events.
+     *
+     * @return array of active subscriptions
      */
-    String getTopic();
+    Subscription<?>[] subscribe();
 
+    /**
+     * Releases all subscriber resources.
+     *
+     * @throws IOException if resource cleanup fails
+     */
+    @Override
+    default void close() throws IOException {
+    }
 }
+

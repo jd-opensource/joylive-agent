@@ -29,11 +29,8 @@ import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
 import com.jd.live.agent.core.config.*;
-import com.jd.live.agent.core.event.AgentEvent;
-import com.jd.live.agent.core.event.EventBus;
+import com.jd.live.agent.core.event.*;
 import com.jd.live.agent.core.event.EventHandler.EventProcessor;
-import com.jd.live.agent.core.event.Publisher;
-import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.exception.EnhanceException;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
@@ -188,8 +185,7 @@ public class Bootstrap implements AgentLifecycle {
     /**
      * Subscription, handling the event.
      */
-    @SuppressWarnings("rawtypes")
-    private List<Subscription> subscriptions;
+    private List<Subscriber> subscribers;
 
     /**
      * Matches conditions for enabling or disabling certain agent features.
@@ -278,7 +274,7 @@ public class Bootstrap implements AgentLifecycle {
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
-            subscriptions = createSubscriptions();
+            subscribers = createSubscribers();
             subscribe();
             printExtensions();
             // TODO In AgentMain mode, it is necessary to enhance the registry first to obtain the service strategy, and then enhance the routing plugin
@@ -322,7 +318,7 @@ public class Bootstrap implements AgentLifecycle {
                 .closeIfExists(eventBus, EventBus::stop)
                 .closeIfExists(classLoaderManager, ClassLoaderManager::close)
                 .closeIfExists(unLoader, Runnable::run)
-                .close(subscriptions)
+                .close(subscribers)
                 .close((Runnable) LoggerFactory::reset);
         shutdown = null;
         pluginManager = null;
@@ -342,7 +338,7 @@ public class Bootstrap implements AgentLifecycle {
         commandManager = null;
         sourceSuppliers = null;
         extensionManager = null;
-        subscriptions = null;
+        subscribers = null;
     }
 
     @Override
@@ -670,16 +666,20 @@ public class Bootstrap implements AgentLifecycle {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void subscribe() {
-        if (subscriptions != null) {
-            for (Subscription subscription : subscriptions) {
-                eventBus.getPublisher(subscription.getTopic()).addHandler(subscription);
+        if (subscribers != null) {
+            for (Subscriber subscriber : subscribers) {
+                Subscription[] subscriptions = subscriber.subscribe();
+                for (Subscription subscription : subscriptions) {
+                    if (subscription != null) {
+                        eventBus.getPublisher(subscription.getTopic()).addHandler(subscription);
+                    }
+                }
             }
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private List<Subscription> createSubscriptions() {
-        return extensionManager.getOrLoadExtensible(Subscription.class, classLoaderManager.getCoreImplLoader()).getExtensions();
+    private List<Subscriber> createSubscribers() {
+        return extensionManager.getOrLoadExtensible(Subscriber.class, classLoaderManager.getCoreImplLoader()).getExtensions();
     }
 
     private ExtensibleDesc<Command> createCommandManager() {

@@ -20,21 +20,32 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.AgentEvent;
 import com.jd.live.agent.core.event.EventHandler.EventProcessor;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.event.Subscriber;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.extension.annotation.Extension;
 
 @Extension("AgentEventLogger")
-public class AgentEventLogger implements Subscription<AgentEvent>, EventProcessor<AgentEvent> {
+public class AgentEventLogger implements Subscriber {
 
     private static final Logger logger = LoggerFactory.getLogger(AgentEventLogger.class);
 
     @Override
-    public void process(AgentEvent event) {
-        logger.info(event.getMessage());
+    public Subscription<?>[] subscribe() {
+        return new Subscription[]{AgentEventSubscription.INSTANCE};
     }
 
-    @Override
-    public String getTopic() {
-        return Publisher.SYSTEM;
+    private static class AgentEventSubscription implements Subscription<AgentEvent>, EventProcessor<AgentEvent> {
+
+        private static final AgentEventSubscription INSTANCE = new AgentEventSubscription();
+
+        @Override
+        public void process(AgentEvent event) {
+            logger.info(event.getMessage());
+        }
+
+        @Override
+        public String getTopic() {
+            return Publisher.SYSTEM;
+        }
     }
 }
