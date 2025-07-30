@@ -396,7 +396,7 @@ agent:
       gatewayEnabled: true
       serviceEnabled: true
     document:
-      enabled: ${CONFIG_EXPORTER_DOCUMENT_ENABLED:true}
+      enabled: ${CONFIG_EXPORTER_DOCUMENT_ENABLED:false}
     exception:
       enabled: ${CONFIG_EXPORTER_EXCEPTION_ENABLED:true}
       maxDepth: 20
