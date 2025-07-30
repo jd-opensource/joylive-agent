@@ -45,8 +45,8 @@ import com.jd.live.agent.governance.counter.internal.InternalCounterManager;
 import com.jd.live.agent.governance.db.DbConnectionManager;
 import com.jd.live.agent.governance.db.DbConnectionSupervisor;
 import com.jd.live.agent.governance.db.DbUrlParser;
-import com.jd.live.agent.governance.doc.LiveDocumentRegistry;
 import com.jd.live.agent.governance.doc.DocumentRegistry;
+import com.jd.live.agent.governance.doc.LiveDocumentRegistry;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
@@ -134,9 +134,15 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Config(GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED)
     private boolean flowControlEnabled;
 
+    @Config(GovernanceConfig.CONFIG_EXPORTER_DOCUMENT_ENABLED)
+    private boolean documentEnabled;
+
     @Getter
     @Config(GovernanceConfig.CONFIG_GOVERNANCE)
     private GovernanceConfig governanceConfig;
+
+    @Config(ExporterConfig.CONFIG_EXPORTER)
+    private ExporterConfig exporterConfig;
 
     @Getter
     @Inject
@@ -224,7 +230,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private CipherFactory cipherFactory;
 
     @Getter
-    private final DocumentRegistry docRegistry = new LiveDocumentRegistry();
+    private DocumentRegistry docRegistry;
 
     private List<String> serviceSyncers;
 
@@ -430,6 +436,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     public void initialize() {
         // initialize system ticker
         SleepingStopwatch.Ticker.SYSTEM_TICKER.read();
+
+        docRegistry = new LiveDocumentRegistry(documentEnabled);
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
         liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);

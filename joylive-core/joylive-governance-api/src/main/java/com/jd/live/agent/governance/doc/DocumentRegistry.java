@@ -26,6 +26,8 @@ public interface DocumentRegistry {
 
     String COMPONENT_SERVICE_DOC_REGISTRY = "ServiceDocRegistry";
 
+    boolean isEnabled();
+
     /**
      * Adds service documentation to the registry.
      *

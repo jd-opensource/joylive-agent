@@ -22,6 +22,17 @@ public class LiveDocumentRegistry implements DocumentRegistry {
 
     private final List<Document> docs = new CopyOnWriteArrayList<>();
 
+    private final boolean enabled;
+
+    public LiveDocumentRegistry(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
     @Override
     public void register(Document doc) {
         if (doc != null) {

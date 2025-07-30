@@ -28,20 +28,22 @@ import com.jd.live.agent.plugin.application.springboot.v2.util.WebDoc;
 public class ApplicationOnStartedInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
-    private final DocumentRegistry registry;
+    private final DocumentRegistry docRegistry;
     private final Application application;
 
-    public ApplicationOnStartedInterceptor(AppListener listener, DocumentRegistry registry, Application application) {
+    public ApplicationOnStartedInterceptor(AppListener listener, DocumentRegistry docRegistry, Application application) {
         this.listener = listener;
-        this.registry = registry;
+        this.docRegistry = docRegistry;
         this.application = application;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
-        WebDoc webDoc = new WebDoc(application, context.getContext());
-        registry.register(webDoc.build());
+        if (docRegistry.isEnabled()) {
+            WebDoc webDoc = new WebDoc(application, context.getContext());
+            docRegistry.register(webDoc.build());
+        }
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.started(() -> {
             InnerListener.foreach(l -> l.onStarted(context));
