@@ -25,42 +25,40 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.httpclient.v5.contidion.ConditionalOnHttpClient5TransmissionEnabled;
-import com.jd.live.agent.plugin.transmission.httpclient.v5.interceptor.HttpClientInterceptor;
+import com.jd.live.agent.plugin.transmission.httpclient.v5.interceptor.HttpAsyncClientInterceptor;
 
 @Injectable
-@Extension(value = "HttpClientDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "HttpAsyncClientDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnHttpClient5TransmissionEnabled
-public class HttpClientDefinition extends PluginDefinitionAdapter {
+public class HttpAsyncClientDefinition extends PluginDefinitionAdapter {
 
-    // 5.5+
-    private static final String TYPE_CLASSIC_TO_ASYNC_ADAPTOR = "org.apache.hc.client5.http.impl.compat.ClassicToAsyncAdaptor";
-    // 5.0+
-    private static final String TYPE_INTERNAL_HTTP_CLIENT = "org.apache.hc.client5.http.impl.classic.InternalHttpClient";
-    // 5.0+
-    private static final String TYPE_MINIMAL_HTTP_CLIENT = "org.apache.hc.client5.http.impl.classic.MinimalHttpClient";
+    private static final String TYPE_ABSTRACT_MINIMAL_HTTP_ASYNC_CLIENT_BASE = "org.apache.hc.client5.http.impl.async.AbstractMinimalHttpAsyncClientBase";
+    private static final String TYPE_INTERNAL_ABSTRACT_HTTP_ASYNC_CLIENT = "org.apache.hc.client5.http.impl.async.InternalAbstractHttpAsyncClient";
 
     private static final String[] TYPE_CLIENTS = {
-            TYPE_CLASSIC_TO_ASYNC_ADAPTOR,
-            TYPE_INTERNAL_HTTP_CLIENT,
-            TYPE_MINIMAL_HTTP_CLIENT
+            TYPE_ABSTRACT_MINIMAL_HTTP_ASYNC_CLIENT_BASE,
+            TYPE_INTERNAL_ABSTRACT_HTTP_ASYNC_CLIENT
     };
 
     private static final String METHOD = "doExecute";
 
     private static final String[] ARGUMENTS = new String[]{
             "org.apache.hc.core5.http.HttpHost",
-            "org.apache.hc.core5.http.ClassicHttpRequest",
-            "org.apache.hc.core5.http.protocol.HttpContext"
+            "org.apache.hc.core5.http.nio.AsyncRequestProducer",
+            "org.apache.hc.core5.http.nio.AsyncResponseConsumer",
+            "org.apache.hc.core5.http.nio.HandlerFactory",
+            "org.apache.hc.core5.http.protocol.HttpContext",
+            "org.apache.hc.core5.concurrent.FutureCallback"
     };
 
     @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
     private Propagation propagation;
 
-    public HttpClientDefinition() {
+    public HttpAsyncClientDefinition() {
         this.matcher = () -> MatcherBuilder.in(TYPE_CLIENTS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new HttpClientInterceptor(propagation))};
+                        () -> new HttpAsyncClientInterceptor(propagation))};
     }
 }

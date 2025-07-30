@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.transmission.httpclient.v5.request;
 
 import com.jd.live.agent.governance.request.HeaderWriter;
-import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpRequest;
 
 import java.util.List;
 
@@ -25,9 +25,9 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 public class HttpMessageWriter implements HeaderWriter {
 
-    private final ClassicHttpRequest message;
+    private final HttpRequest message;
 
-    public HttpMessageWriter(ClassicHttpRequest message) {
+    public HttpMessageWriter(HttpRequest message) {
         this.message = message;
     }
 
