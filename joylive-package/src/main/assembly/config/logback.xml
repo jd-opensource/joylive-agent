@@ -60,7 +60,7 @@
         <appender-ref ref="CONSOLE_APPENDER"/>
     </logger>
 
-    <logger name="com.jd.live.agent.implement.event.opentelemetry.log.LoggingMetricExporter"
+    <logger name="com.jd.live.agent.implement.event.opentelemetry.exporter.LoggingMetricExporter"
             level="${logger.metric.level}"
             additivity="false">
         <appender-ref ref="CONSOLE_APPENDER"/>

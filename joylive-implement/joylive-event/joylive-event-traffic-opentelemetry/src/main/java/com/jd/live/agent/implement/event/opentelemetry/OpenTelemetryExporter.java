@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.implement.event.opentelemetry;
 
-import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
-import com.jd.live.agent.bootstrap.exception.LiveException;
-import com.jd.live.agent.core.event.*;
+import com.jd.live.agent.core.event.Subscriber;
+import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -26,15 +25,10 @@ import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.Close;
 import com.jd.live.agent.governance.config.ExporterConfig;
-import com.jd.live.agent.governance.config.ExporterConfig.TrafficConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent;
-import com.jd.live.agent.implement.event.opentelemetry.log.LoggingExporterFactory;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.common.AttributesBuilder;
-import io.opentelemetry.api.metrics.LongCounter;
+import com.jd.live.agent.implement.event.opentelemetry.exporter.LoggingExporterFactory;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
@@ -44,9 +38,6 @@ import io.opentelemetry.sdk.resources.Resource;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.getRootCause;
-import static com.jd.live.agent.governance.event.TrafficEvent.*;
-
 @Configurable
 @Injectable
 @Extension("OpenTelemetryExporter")
@@ -55,7 +46,6 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private static final String LIVE_SCOPE = "com.jd.live";
     private static final String SERVICE_NAME = "service.name";
-    private static final String LIVE_AGENT_PREFIX = "com.jd.live.agent.";
 
     @Config(ExporterConfig.CONFIG_EXPORTER)
     private ExporterConfig config;
@@ -63,264 +53,42 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
-    @Inject(Publisher.EXCEPTION)
-    private Publisher<ExceptionEvent> publisher;
+    @Inject
+    private Map<String, ExporterFactory> exporterFactories;
 
     @Inject
-    private Map<String, ExporterFactory> factories;
+    private List<MetricFactory<?>> metricFactories;
 
     private OpenTelemetrySdk sdk;
-
-    private TrafficEventSubscription trafficEventSubscription;
-
-    private ExceptionEventSubscription exceptionEventSubscription;
 
     @Override
     public void initialize() {
         Resource resource = Resource.getDefault().toBuilder().put(SERVICE_NAME, application.getName()).build();
-        ExporterFactory factory = config.getType() == null ? null : factories.get(config.getType());
+        ExporterFactory factory = config.getType() == null ? null : exporterFactories.get(config.getType());
         factory = factory == null ? new LoggingExporterFactory() : factory;
         MetricReader reader = factory.create(config);
 
         SdkMeterProvider provider = SdkMeterProvider.builder().setResource(resource).registerMetricReader(reader).build();
         sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
-        Meter meter = sdk.getMeter(LIVE_SCOPE);
-        trafficEventSubscription = new TrafficEventSubscription(config.getTrafficConfig(), application, meter);
-        exceptionEventSubscription = new ExceptionEventSubscription(application, meter);
-        if (config.getExceptionConfig().isEnabled()) {
-            AdviceHandler.onException = this::onException;
-        }
     }
 
     @Override
     public Subscription<?>[] subscribe() {
-        if (config.getTrafficConfig().isEnabled()) {
-            if (config.getExceptionConfig().isEnabled()) {
-                return new Subscription[]{trafficEventSubscription, exceptionEventSubscription};
-            }
-            return new Subscription[]{trafficEventSubscription};
-        } else if (config.getExceptionConfig().isEnabled()) {
-            return new Subscription[]{exceptionEventSubscription};
+        if (metricFactories == null || metricFactories.isEmpty()) {
+            return new Subscription[0];
         }
-        return new Subscription[0];
+        Meter meter = sdk.getMeter(LIVE_SCOPE);
+        Subscription<?>[] subscriptions = new Subscription[metricFactories.size()];
+        int i = 0;
+        for (MetricFactory<?> factory : metricFactories) {
+            subscriptions[i++] = factory.create(config, application, meter);
+        }
+        return subscriptions;
     }
 
     @Override
     public void close() {
-        if (sdk != null) {
-            sdk.close();
-        }
-        AdviceHandler.onException = null;
+        Close.instance().close(sdk).close(metricFactories);
     }
 
-    /**
-     * Processes an exception by analyzing its stack trace and publishing an event
-     * if the root cause matches specific criteria.
-     * <p>
-     * Skips {@link LiveException} instances and only publishes events for:
-     * <ul>
-     *   <li>Classes not matching the agent's stack trace filter</li>
-     *   <li>Classes starting with the agent prefix</li>
-     * </ul>
-     *
-     * @param throwable the exception to process (non-null)
-     */
-    private void onException(Throwable throwable) {
-        // Get root cause, excluding known LiveException instances
-        Throwable rootCause = getRootCause(throwable, e -> !(e instanceof LiveException));
-        if (rootCause == null) {
-            return;
-        }
-
-        // Extract stack trace elements for analysis
-        StackTraceElement[] traces = rootCause.getStackTrace();
-
-        // Get maximum traversal depth from configuration (default: 20)
-        int maxDepth = config.getExceptionConfig().getMaxDepth();
-        int max = maxDepth > 0 ? Math.min(maxDepth, traces.length) : traces.length;
-
-        String className;
-        StackTraceElement trace;
-        // Traverse stack trace elements
-        for (int i = 0; i < max; i++) {
-            trace = traces[i];
-            className = trace.getClassName();
-            if (className.startsWith(LIVE_AGENT_PREFIX)) {
-                // Priority handling - Report Agent-related exceptions immediately
-                publisher.offer(new ExceptionEvent(className, trace.getMethodName(), trace.getLineNumber()));
-                return;
-            } else if (!config.getExceptionConfig().withStackTrace(className)) {
-                // Filter out business exceptions - ignore if class not in whitelist
-                return;
-            }
-        }
-    }
-
-    private static class TrafficEventSubscription implements Subscription<TrafficEvent> {
-
-        private static final String REQUESTS = "requests";
-
-        private static final AttributeKey<String> ATTRIBUTE_COMPONENT_TYPE = AttributeKey.stringKey(KEY_COMPONENT_TYPE);
-        private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
-        private static final AttributeKey<String> ATTRIBUTE_LIVE_SPACE_ID = AttributeKey.stringKey(KEY_LIVE_SPACE_ID);
-        private static final AttributeKey<String> ATTRIBUTE_LIVE_RULE_ID = AttributeKey.stringKey(KEY_LIVE_RULE_ID);
-        private static final AttributeKey<String> ATTRIBUTE_LOCAL_UNIT = AttributeKey.stringKey(KEY_LOCAL_UNIT);
-        private static final AttributeKey<String> ATTRIBUTE_LOCAL_CELL = AttributeKey.stringKey(KEY_LOCAL_CELL);
-        private static final AttributeKey<String> ATTRIBUTE_LOCAL_IP = AttributeKey.stringKey(KEY_LOCAL_IP);
-        private static final AttributeKey<String> ATTRIBUTE_TARGET_UNIT = AttributeKey.stringKey(KEY_TARGET_UNIT);
-        private static final AttributeKey<String> ATTRIBUTE_TARGET_CELL = AttributeKey.stringKey(KEY_TARGET_CELL);
-        private static final AttributeKey<String> ATTRIBUTE_LIVE_DOMAIN = AttributeKey.stringKey(KEY_LIVE_DOMAIN);
-        private static final AttributeKey<String> ATTRIBUTE_LIVE_PATH = AttributeKey.stringKey(KEY_LIVE_PATH);
-        private static final AttributeKey<String> ATTRIBUTE_LIVE_BIZ_VARIABLE = AttributeKey.stringKey(KEY_LIVE_BIZ_VARIABLE);
-        private static final AttributeKey<String> ATTRIBUTE_LANE_SPACE_ID = AttributeKey.stringKey(KEY_LANE_SPACE_ID);
-        private static final AttributeKey<String> ATTRIBUTE_LANE_RULE_ID = AttributeKey.stringKey(KEY_LANE_RULE_ID);
-        private static final AttributeKey<String> ATTRIBUTE_LOCAL_LANE = AttributeKey.stringKey(KEY_LOCAL_LANE);
-        private static final AttributeKey<String> ATTRIBUTE_TARGET_LANE = AttributeKey.stringKey(KEY_TARGET_LANE);
-        private static final AttributeKey<Long> ATTRIBUTE_SERVICE_POLICY_ID = AttributeKey.longKey(KEY_SERVICE_POLICY_ID);
-        private static final AttributeKey<String> ATTRIBUTE_SERVICE_NAME = AttributeKey.stringKey(KEY_SERVICE_NAME);
-        private static final AttributeKey<String> ATTRIBUTE_SERVICE_GROUP = AttributeKey.stringKey(KEY_SERVICE_GROUP);
-        private static final AttributeKey<String> ATTRIBUTE_SERVICE_PATH = AttributeKey.stringKey(KEY_SERVICE_PATH);
-        private static final AttributeKey<String> ATTRIBUTE_SERVICE_METHOD = AttributeKey.stringKey(KEY_SERVICE_METHOD);
-        private static final AttributeKey<String> ATTRIBUTE_REJECT_TYPE = AttributeKey.stringKey(KEY_REJECT_TYPE);
-
-        private final TrafficConfig config;
-        private final Application application;
-
-        private final LongCounter gatewayInbounds;
-        private final LongCounter gatewayInboundForwards;
-        private final LongCounter gatewayInboundRejects;
-        private final LongCounter gatewayOutboundForwards;
-        private final LongCounter gatewayOutbounds;
-        private final LongCounter gatewayOutboundRejects;
-        private final LongCounter serviceInbounds;
-        private final LongCounter serviceInboundForwards;
-        private final LongCounter serviceInboundRejects;
-        private final LongCounter serviceOutbounds;
-        private final LongCounter serviceOutboundForwards;
-        private final LongCounter serviceOutboundRejects;
-
-        TrafficEventSubscription(TrafficConfig config, Application application, Meter meter) {
-            this.config = config;
-            this.application = application;
-            this.gatewayInbounds = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.gatewayInboundForwards = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.gatewayInboundRejects = meter.counterBuilder(COUNTER_GATEWAY_INBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.gatewayOutbounds = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.gatewayOutboundForwards = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.gatewayOutboundRejects = meter.counterBuilder(COUNTER_GATEWAY_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.serviceInbounds = meter.counterBuilder(COUNTER_SERVICE_INBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.serviceInboundForwards = meter.counterBuilder(COUNTER_SERVICE_INBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.serviceInboundRejects = meter.counterBuilder(COUNTER_SERVICE_INBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.serviceOutbounds = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.serviceOutboundForwards = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_FORWARD_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-            this.serviceOutboundRejects = meter.counterBuilder(COUNTER_SERVICE_OUTBOUND_REJECT_REQUESTS_TOTAL).setUnit(REQUESTS).build();
-        }
-
-        @Override
-        public void handle(List<Event<TrafficEvent>> events) {
-            if (events != null) {
-                TrafficEvent trafficEvent;
-                LongCounter counter;
-                for (Event<TrafficEvent> event : events) {
-                    trafficEvent = event.getData();
-                    Attributes attributes = attributes(event);
-                    if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.INBOUND) {
-                        gatewayInbounds.add(trafficEvent.getRequests(), attributes);
-                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayInboundForwards : gatewayInboundRejects;
-                        counter.add(trafficEvent.getRequests(), attributes);
-                    } else if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.OUTBOUND) {
-                        gatewayOutbounds.add(trafficEvent.getRequests(), attributes);
-                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayOutboundForwards : gatewayOutboundRejects;
-                        counter.add(trafficEvent.getRequests(), attributes);
-                    } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.OUTBOUND) {
-                        serviceOutbounds.add(trafficEvent.getRequests(), attributes);
-                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceOutboundForwards : serviceOutboundRejects;
-                        counter.add(trafficEvent.getRequests(), attributes);
-                    } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.INBOUND) {
-                        serviceInbounds.add(trafficEvent.getRequests(), attributes);
-                        counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceInboundForwards : serviceInboundRejects;
-                        counter.add(trafficEvent.getRequests(), attributes);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public String getTopic() {
-            return Publisher.TRAFFIC;
-        }
-
-        private Attributes attributes(Event<TrafficEvent> event) {
-            TrafficEvent trafficEvent = event.getData();
-            AttributesBuilder builder = Attributes.builder();
-            builder.put(ATTRIBUTE_COMPONENT_TYPE, trafficEvent.getComponentType().name()).
-                    put(ATTRIBUTE_APPLICATION, application.getName()).
-                    put(ATTRIBUTE_LIVE_SPACE_ID, trafficEvent.getLiveSpaceId()).
-                    put(ATTRIBUTE_LIVE_RULE_ID, trafficEvent.getUnitRuleId()).
-                    put(ATTRIBUTE_LOCAL_UNIT, trafficEvent.getLocalUnit()).
-                    put(ATTRIBUTE_LOCAL_CELL, trafficEvent.getLocalCell()).
-                    put(ATTRIBUTE_TARGET_UNIT, trafficEvent.getTargetUnit()).
-                    put(ATTRIBUTE_TARGET_CELL, trafficEvent.getTargetCell()).
-                    put(ATTRIBUTE_LIVE_DOMAIN, trafficEvent.getLiveDomain()).
-                    put(ATTRIBUTE_LIVE_PATH, trafficEvent.getLivePath()).
-                    put(ATTRIBUTE_LIVE_BIZ_VARIABLE, trafficEvent.getLiveBizVariable()).
-                    put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
-                    put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
-                    put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
-                    put(ATTRIBUTE_TARGET_LANE, trafficEvent.getTargetLane()).
-                    put(ATTRIBUTE_SERVICE_POLICY_ID, trafficEvent.getPolicyId()).
-                    put(ATTRIBUTE_SERVICE_NAME, trafficEvent.getService()).
-                    put(ATTRIBUTE_SERVICE_GROUP, trafficEvent.getGroup()).
-                    put(ATTRIBUTE_SERVICE_PATH, trafficEvent.getPath()).
-                    put(ATTRIBUTE_SERVICE_METHOD, trafficEvent.getMethod()).
-                    put(ATTRIBUTE_REJECT_TYPE, trafficEvent.getRejectTypeName()).
-                    put(ATTRIBUTE_LOCAL_IP, event.getIp());
-            if (trafficEvent.getPolicyTags() != null) {
-                trafficEvent.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));
-            }
-            return builder.build();
-        }
-    }
-
-    private static class ExceptionEventSubscription implements Subscription<ExceptionEvent> {
-
-        private static final String ERRORS = "errors";
-        private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(ExceptionEvent.KEY_APPLICATION);
-        private static final AttributeKey<String> ATTRIBUTE_CLASS_NAME = AttributeKey.stringKey(ExceptionEvent.KEY_CLASS_NAME);
-        private static final AttributeKey<String> ATTRIBUTE_METHOD_NAME = AttributeKey.stringKey(ExceptionEvent.KEY_METHOD_NAME);
-        private static final AttributeKey<Long> ATTRIBUTE_LINE_NUMBER = AttributeKey.longKey(ExceptionEvent.KEY_LINE_NUMBER);
-
-        private final Application application;
-
-        private final LongCounter exceptions;
-
-        ExceptionEventSubscription(Application application, Meter meter) {
-            this.application = application;
-            this.exceptions = meter.counterBuilder(ExceptionEvent.COUNTER_EXCEPTIONS_TOTAL).setUnit(ERRORS).build();
-        }
-
-        @Override
-        public void handle(List<Event<ExceptionEvent>> events) {
-            if (events != null) {
-                for (Event<ExceptionEvent> event : events) {
-                    exceptions.add(1, attributes(event));
-                }
-            }
-        }
-
-        @Override
-        public String getTopic() {
-            return Publisher.EXCEPTION;
-        }
-
-        private Attributes attributes(Event<ExceptionEvent> event) {
-            ExceptionEvent exceptionEvent = event.getData();
-            AttributesBuilder builder = Attributes.builder()
-                    .put(ATTRIBUTE_APPLICATION, application.getName())
-                    .put(ATTRIBUTE_CLASS_NAME, exceptionEvent.getClassName())
-                    .put(ATTRIBUTE_METHOD_NAME, exceptionEvent.getMethodName())
-                    .put(ATTRIBUTE_LINE_NUMBER, exceptionEvent.getLineNumber());
-            return builder.build();
-        }
-    }
 }

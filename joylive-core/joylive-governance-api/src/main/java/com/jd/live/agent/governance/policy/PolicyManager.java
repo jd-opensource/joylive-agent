@@ -45,6 +45,8 @@ import com.jd.live.agent.governance.counter.internal.InternalCounterManager;
 import com.jd.live.agent.governance.db.DbConnectionManager;
 import com.jd.live.agent.governance.db.DbConnectionSupervisor;
 import com.jd.live.agent.governance.db.DbUrlParser;
+import com.jd.live.agent.governance.doc.LiveDocumentRegistry;
+import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
@@ -221,6 +223,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Getter
     private CipherFactory cipherFactory;
 
+    @Getter
+    private final DocumentRegistry docRegistry = new LiveDocumentRegistry();
+
     private List<String> serviceSyncers;
 
     private final AtomicReference<GovernancePolicy> policy = new AtomicReference<>();
@@ -352,6 +357,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
         source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig == null ? null : governanceConfig.getServiceConfig());
         source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig == null ? null : governanceConfig.getRegistryConfig());
+        source.add(DocumentRegistry.COMPONENT_SERVICE_DOC_REGISTRY, docRegistry);
     }
 
     @Override

@@ -51,44 +51,47 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         RegisterType info = getRegisterType(config);
         Map<String, String> map = getContext(ctx);
         if (!isDubboSystemService(info.getInterfaceName())) {
-            subscribe(info, map);
+            subscribe(config, info, map);
         }
     }
 
     protected abstract RegisterType getRegisterType(T config);
 
     /**
-     * Subscribes to a specific service with the specified configuration and context.
+     * Subscribes to a service using the specified configuration and registration info.
+     * Populates the context map with service metadata and handles different registration modes.
      *
-     * @param ctx           the context map to populate with the service group and registry type.
+     * @param config the interface configuration
+     * @param info   the service registration details (name, group, mode)
+     * @param ctx    the context map to store registry type and group information
      */
-    protected void subscribe(RegisterType info, Map<String, String> ctx) {
+    protected void subscribe(T config, RegisterType info, Map<String, String> ctx) {
         application.labelRegistry(ctx::putIfAbsent);
         RegisterMode mode = info.getMode();
         switch (mode) {
             case INSTANCE:
                 ctx.put(REGISTRY_TYPE_KEY, mode.getName());
-                subscribe(new ServiceId(info.getService(), info.getGroup(), false));
+                subscribe(config, new ServiceId(info.getService(), info.getGroup(), false));
                 break;
             case ALL:
                 ctx.put(REGISTRY_TYPE_KEY, mode.getName());
-                subscribe(new ServiceId(info.getService(), info.getGroup(), false));
-                subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
+                subscribe(config, new ServiceId(info.getService(), info.getGroup(), false));
+                subscribe(config, new ServiceId(info.getInterfaceName(), info.getGroup(), true));
                 break;
             case INTERFACE:
             default:
-                subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
+                subscribe(config, new ServiceId(info.getInterfaceName(), info.getGroup(), true));
 
         }
     }
 
     /**
-     * Subscribes to a specific service in the specified group.
-     * This method must be implemented by subclasses to define the subscription logic.
+     * Subscribes to the specified service within its group.
      *
-     * @param serviceId the id of the service to subscribe to.
+     * @param config    the interface config
+     * @param serviceId the unique identifier of the service to subscribe to
      */
-    protected abstract void subscribe(ServiceId serviceId);
+    protected abstract void subscribe(T config, ServiceId serviceId);
 
     /**
      * Gets the context map for the given executable context.

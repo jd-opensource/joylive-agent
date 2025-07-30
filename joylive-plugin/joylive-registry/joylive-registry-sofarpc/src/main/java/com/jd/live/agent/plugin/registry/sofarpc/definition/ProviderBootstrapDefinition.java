@@ -23,6 +23,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.*;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.sofarpc.interceptor.ProviderBootstrapInterceptor;
 
@@ -48,6 +49,9 @@ public class ProviderBootstrapDefinition extends PluginDefinitionAdapter impleme
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
+    @Inject(DocumentRegistry.COMPONENT_SERVICE_DOC_REGISTRY)
+    private DocumentRegistry docRegistry;
+
     public ProviderBootstrapDefinition() {
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE_PROVIDER_BOOTSTRAP).
                 and(MatcherBuilder.exists("com.alipay.sofa.rpc.bootstrap.dubbo.DubboProviderBootstrap", "org.apache.dubbo.config.ServiceConfig"));
@@ -55,7 +59,7 @@ public class ProviderBootstrapDefinition extends PluginDefinitionAdapter impleme
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_EXPORT).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new ProviderBootstrapInterceptor(application, registry))
+                        () -> new ProviderBootstrapInterceptor(application, registry, docRegistry))
         };
     }
 
