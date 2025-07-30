@@ -33,7 +33,6 @@ public class DocMetric implements Subscription<DocEvent> {
 
     private static final String KEY_APPLICATION = "application";
     private static final String KEY_INSTANCE = "instance";
-    private static final String KEY_TIMESTAMP = "timestamp";
     private static final String KEY_SERVICE = "service";
     private static final String KEY_GROUP = "group";
     private static final String KEY_PATH = "path";
@@ -44,7 +43,6 @@ public class DocMetric implements Subscription<DocEvent> {
     private static final String ANCHORS = "anchors";
     private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
     private static final AttributeKey<String> ATTRIBUTE_INSTANCE = AttributeKey.stringKey(KEY_INSTANCE);
-    private static final AttributeKey<Long> ATTRIBUTE_TIMESTAMP = AttributeKey.longKey(KEY_TIMESTAMP);
     private static final AttributeKey<String> ATTRIBUTE_SERVICE = AttributeKey.stringKey(KEY_SERVICE);
     private static final AttributeKey<String> ATTRIBUTE_GROUP = AttributeKey.stringKey(KEY_GROUP);
     private static final AttributeKey<String> ATTRIBUTE_PATH = AttributeKey.stringKey(KEY_PATH);
@@ -80,7 +78,6 @@ public class DocMetric implements Subscription<DocEvent> {
         AttributesBuilder builder = Attributes.builder()
                 .put(ATTRIBUTE_APPLICATION, application.getName())
                 .put(ATTRIBUTE_INSTANCE, application.getInstance())
-                .put(ATTRIBUTE_TIMESTAMP, application.getTimestamp())
                 .put(ATTRIBUTE_SERVICE, anchor.getService())
                 .put(ATTRIBUTE_GROUP, anchor.getGroup())
                 .put(ATTRIBUTE_PATH, anchor.getPath())
