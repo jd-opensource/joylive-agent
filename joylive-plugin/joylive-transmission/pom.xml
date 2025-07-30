@@ -17,7 +17,8 @@
         <module>joylive-transmission-kafka4</module>
         <module>joylive-transmission-rocketmq5</module>
         <module>joylive-transmission-httpclient5</module>
-        <module>joylive-transmission-httpclient4</module>
+        <module>joylive-transmission-httpclient4.3</module>
+        <module>joylive-transmission-httpclient4.0</module>
         <module>joylive-transmission-httpclient3</module>
         <module>joylive-transmission-jdkhttp</module>
         <module>joylive-transmission-okhttp1</module>

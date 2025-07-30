@@ -480,7 +480,12 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-transmission-httpclient4</artifactId>
+                <artifactId>joylive-transmission-httpclient4.3</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-transmission-httpclient4.0</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

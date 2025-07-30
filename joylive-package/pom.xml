@@ -367,7 +367,11 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-transmission-httpclient4</artifactId>
+            <artifactId>joylive-transmission-httpclient4.3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-transmission-httpclient4.0</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
