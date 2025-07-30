@@ -134,9 +134,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Config(GovernanceConfig.CONFIG_FLOW_CONTROL_ENABLED)
     private boolean flowControlEnabled;
 
-    @Config(GovernanceConfig.CONFIG_EXPORTER_DOCUMENT_ENABLED)
-    private boolean documentEnabled;
-
     @Getter
     @Config(GovernanceConfig.CONFIG_GOVERNANCE)
     private GovernanceConfig governanceConfig;
@@ -437,7 +434,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         // initialize system ticker
         SleepingStopwatch.Ticker.SYSTEM_TICKER.read();
 
-        docRegistry = new LiveDocumentRegistry(documentEnabled);
+        docRegistry = new LiveDocumentRegistry();
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
         liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);

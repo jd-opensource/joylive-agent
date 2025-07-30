@@ -19,9 +19,11 @@ import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.event.Publisher;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.doc.Document;
 import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.governance.doc.ServiceAnchor;
@@ -32,6 +34,7 @@ import java.util.List;
 
 @Injectable
 @Extension(value = "DocEmitter", order = AppListener.ORDER_DOC)
+@ConditionalOnProperty(value = GovernanceConfig.CONFIG_EXPORTER_DOCUMENT_ENABLED, matchIfMissing = true)
 public class DocumentEmitter extends AppListenerAdapter {
 
     @Inject(DocumentRegistry.COMPONENT_SERVICE_DOC_REGISTRY)

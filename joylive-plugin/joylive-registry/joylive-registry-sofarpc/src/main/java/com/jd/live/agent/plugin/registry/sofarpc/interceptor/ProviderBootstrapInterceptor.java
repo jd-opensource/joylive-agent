@@ -50,18 +50,16 @@ public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<P
         ServiceId serviceId = new ServiceId(config.getInterfaceId(), getGroup(config), true);
         registry.register(serviceId);
         logger.info("Found sofa rpc provider {}.", serviceId.getUniqueName());
-        if (docRegistry.isEnabled()) {
-            Class<?> clazz = config.getProxyClass();
-            if (clazz != GenericService.class) {
-                docRegistry.register(() -> {
-                    List<ServiceAnchor> anchors = new ArrayList<>(16);
-                    Method[] methods = clazz.getMethods();
-                    for (Method method : methods) {
-                        anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName()));
-                    }
-                    return anchors;
-                });
-            }
+        Class<?> clazz = config.getProxyClass();
+        if (clazz != GenericService.class) {
+            docRegistry.register(() -> {
+                List<ServiceAnchor> anchors = new ArrayList<>(16);
+                Method[] methods = clazz.getMethods();
+                for (Method method : methods) {
+                    anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName()));
+                }
+                return anchors;
+            });
         }
     }
 

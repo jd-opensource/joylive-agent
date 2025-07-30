@@ -62,19 +62,16 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     protected void subscribe(ServiceConfig<?> config, ServiceId serviceId) {
         registry.register(serviceId);
         logger.info("Found dubbo provider {}", serviceId);
-        if (docRegistry.isEnabled()) {
-            Class<?> clazz = config.getInterfaceClass();
-            if (clazz != GenericService.class) {
-                docRegistry.register(() -> {
-                    List<ServiceAnchor> anchors = new ArrayList<>(16);
-                    Method[] methods = clazz.getMethods();
-                    for (Method method : methods) {
-                        anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName()));
-                    }
-                    return anchors;
-                });
-            }
+        Class<?> clazz = config.getInterfaceClass();
+        if (clazz != GenericService.class) {
+            docRegistry.register(() -> {
+                List<ServiceAnchor> anchors = new ArrayList<>(16);
+                Method[] methods = clazz.getMethods();
+                for (Method method : methods) {
+                    anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName()));
+                }
+                return anchors;
+            });
         }
-
     }
 }

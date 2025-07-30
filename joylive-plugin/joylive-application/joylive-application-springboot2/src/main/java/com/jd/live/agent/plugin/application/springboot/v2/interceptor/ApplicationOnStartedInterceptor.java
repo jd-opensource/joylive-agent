@@ -40,10 +40,8 @@ public class ApplicationOnStartedInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
-        if (docRegistry.isEnabled()) {
-            WebDoc webDoc = new WebDoc(application, context.getContext());
-            docRegistry.register(webDoc.build());
-        }
+        WebDoc webDoc = new WebDoc(application, context.getContext());
+        docRegistry.register(webDoc.build());
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.started(() -> {
             InnerListener.foreach(l -> l.onStarted(context));
