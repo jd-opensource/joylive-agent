@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.opentelemetry.subscription;
+package com.jd.live.agent.implement.event.opentelemetry.metric;
 
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.ExceptionEvent;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.network.Ipv4;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
@@ -31,6 +32,7 @@ import java.util.List;
 public class ExceptionMetric implements Subscription<ExceptionEvent> {
 
     private static final String KEY_APPLICATION = "application";
+    private static final String KEY_IP = "ip";
     private static final String KEY_CLASS_NAME = "class_name";
     private static final String KEY_METHOD_NAME = "method_name";
     private static final String KEY_LINE_NUMBER = "line_number";
@@ -38,6 +40,7 @@ public class ExceptionMetric implements Subscription<ExceptionEvent> {
 
     private static final String ERRORS = "errors";
     private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
+    private static final AttributeKey<String> ATTRIBUTE_IP = AttributeKey.stringKey(KEY_IP);
     private static final AttributeKey<String> ATTRIBUTE_CLASS_NAME = AttributeKey.stringKey(KEY_CLASS_NAME);
     private static final AttributeKey<String> ATTRIBUTE_METHOD_NAME = AttributeKey.stringKey(KEY_METHOD_NAME);
     private static final AttributeKey<Long> ATTRIBUTE_LINE_NUMBER = AttributeKey.longKey(KEY_LINE_NUMBER);
@@ -69,6 +72,7 @@ public class ExceptionMetric implements Subscription<ExceptionEvent> {
         ExceptionEvent exceptionEvent = event.getData();
         AttributesBuilder builder = Attributes.builder()
                 .put(ATTRIBUTE_APPLICATION, application.getName())
+                .put(ATTRIBUTE_IP, Ipv4.getLocalIp())
                 .put(ATTRIBUTE_CLASS_NAME, exceptionEvent.getClassName())
                 .put(ATTRIBUTE_METHOD_NAME, exceptionEvent.getMethodName())
                 .put(ATTRIBUTE_LINE_NUMBER, exceptionEvent.getLineNumber());

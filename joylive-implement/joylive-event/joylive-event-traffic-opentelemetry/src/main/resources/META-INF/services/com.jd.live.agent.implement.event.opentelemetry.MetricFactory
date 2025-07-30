@@ -1,3 +1,3 @@
-com.jd.live.agent.implement.event.opentelemetry.subscription.DocMetricFactory
-com.jd.live.agent.implement.event.opentelemetry.subscription.ExceptionMetricFactory
-com.jd.live.agent.implement.event.opentelemetry.subscription.TrafficMetricFactory
+com.jd.live.agent.implement.event.opentelemetry.metric.DocMetricFactory
+com.jd.live.agent.implement.event.opentelemetry.metric.ExceptionMetricFactory
+com.jd.live.agent.implement.event.opentelemetry.metric.TrafficMetricFactory

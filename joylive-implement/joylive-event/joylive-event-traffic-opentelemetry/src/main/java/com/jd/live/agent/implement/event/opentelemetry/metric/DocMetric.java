@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.opentelemetry.subscription;
+package com.jd.live.agent.implement.event.opentelemetry.metric;
 
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.event.Subscription;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.doc.ServiceAnchor;
 import com.jd.live.agent.governance.event.DocEvent;
 import io.opentelemetry.api.common.AttributeKey;
@@ -32,6 +33,7 @@ import java.util.List;
 public class DocMetric implements Subscription<DocEvent> {
 
     private static final String KEY_APPLICATION = "application";
+    private static final String KEY_IP = "ip";
     private static final String KEY_TIMESTAMP = "timestamp";
     private static final String KEY_SERVICE = "service";
     private static final String KEY_GROUP = "group";
@@ -42,6 +44,7 @@ public class DocMetric implements Subscription<DocEvent> {
 
     private static final String ANCHORS = "anchors";
     private static final AttributeKey<String> ATTRIBUTE_APPLICATION = AttributeKey.stringKey(KEY_APPLICATION);
+    private static final AttributeKey<String> ATTRIBUTE_IP = AttributeKey.stringKey(KEY_IP);
     private static final AttributeKey<Long> ATTRIBUTE_TIMESTAMP = AttributeKey.longKey(KEY_TIMESTAMP);
     private static final AttributeKey<String> ATTRIBUTE_SERVICE = AttributeKey.stringKey(KEY_SERVICE);
     private static final AttributeKey<String> ATTRIBUTE_GROUP = AttributeKey.stringKey(KEY_GROUP);
@@ -77,6 +80,7 @@ public class DocMetric implements Subscription<DocEvent> {
     private Attributes attributes(ServiceAnchor anchor) {
         AttributesBuilder builder = Attributes.builder()
                 .put(ATTRIBUTE_APPLICATION, application.getName())
+                .put(ATTRIBUTE_IP, Ipv4.getLocalIp())
                 .put(ATTRIBUTE_TIMESTAMP, application.getTimestamp())
                 .put(ATTRIBUTE_SERVICE, anchor.getService())
                 .put(ATTRIBUTE_GROUP, anchor.getGroup())
