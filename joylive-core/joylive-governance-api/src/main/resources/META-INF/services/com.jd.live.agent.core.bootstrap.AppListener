@@ -1,2 +1,3 @@
 com.jd.live.agent.governance.bootstrap.ConfigPreparation
 com.jd.live.agent.governance.bootstrap.PolicyPreparation
+com.jd.live.agent.governance.bootstrap.DocumentEmitter

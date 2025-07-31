@@ -84,4 +84,12 @@ public class ExporterConfig {
             return stackTraces.test(className);
         }
     }
+
+    public static class DocumentConfig {
+
+        @Getter
+        @Setter
+        private boolean enabled = true;
+
+    }
 }

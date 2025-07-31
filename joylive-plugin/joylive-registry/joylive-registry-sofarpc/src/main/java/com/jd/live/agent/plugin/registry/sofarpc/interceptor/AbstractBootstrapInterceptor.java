@@ -47,6 +47,7 @@ public abstract class AbstractBootstrapInterceptor<T extends AbstractInterfaceCo
         subscribe(config);
     }
 
+    @SuppressWarnings("deprecation")
     protected String getGroup(T config) {
         String group = config.getGroup();
         if (group != null && !group.isEmpty()) {

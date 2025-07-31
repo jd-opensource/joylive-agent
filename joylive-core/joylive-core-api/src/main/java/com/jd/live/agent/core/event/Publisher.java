@@ -34,14 +34,26 @@ public interface Publisher<E> {
      * Topic identifier for configuration-related events.
      */
     String CONFIG = "config";
+
     /**
      * Topic identifier for traffic-related events.
      */
     String TRAFFIC = "traffic";
 
+    /**
+     * Topic identifier for database events.
+     */
     String DATABASE = "database";
 
+    /**
+     * Topic identifier for exception events.
+     */
     String EXCEPTION = "exception";
+
+    /**
+     * Topic identifier for doc events.
+     */
+    String DOC = "doc";
 
     /**
      * Policy identifier for subscribers.

@@ -16,15 +16,21 @@
 package com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor;
 
 import com.alibaba.dubbo.config.ServiceConfig;
+import com.alibaba.dubbo.rpc.service.GenericService;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.doc.DocumentRegistry;
+import com.jd.live.agent.governance.doc.ServiceAnchor;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceId;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,8 +40,11 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
 
-    public ServiceConfigInterceptor(Application application, Registry registry) {
+    private final DocumentRegistry docRegistry;
+
+    public ServiceConfigInterceptor(Application application, Registry registry, DocumentRegistry docRegistry) {
         super(application, registry);
+        this.docRegistry = docRegistry;
     }
 
     @Override
@@ -50,8 +59,19 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     }
 
     @Override
-    protected void subscribe(ServiceId serviceId) {
+    protected void subscribe(ServiceConfig<?> config, ServiceId serviceId) {
         registry.register(serviceId);
         logger.info("Found dubbo provider {}", serviceId);
+        Class<?> clazz = config.getInterfaceClass();
+        if (clazz != GenericService.class) {
+            docRegistry.register(() -> {
+                List<ServiceAnchor> anchors = new ArrayList<>(16);
+                Method[] methods = clazz.getMethods();
+                for (Method method : methods) {
+                    anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName()));
+                }
+                return anchors;
+            });
+        }
     }
 }

@@ -28,6 +28,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnEnvironmentPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnReadyInterceptor;
@@ -60,6 +61,9 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
+    @Inject(DocumentRegistry.COMPONENT_SERVICE_DOC_REGISTRY)
+    private DocumentRegistry docRegistry;
+
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
@@ -67,7 +71,7 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationOnStartedInterceptor(listener)),
+                        () -> new ApplicationOnStartedInterceptor(listener, docRegistry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
                         () -> new ApplicationOnReadyInterceptor(listener, config, registry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),

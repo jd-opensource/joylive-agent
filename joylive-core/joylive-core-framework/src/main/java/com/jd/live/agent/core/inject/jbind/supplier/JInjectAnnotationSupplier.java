@@ -129,7 +129,17 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
      */
     protected Class<?> getExtensibleByList(FieldDesc fieldDesc) {
         Type[] types = getParameterizedTypes(fieldDesc);
-        return types != null && types.length > 0 && types[0] instanceof Class ? (Class<?>) types[0] : null;
+        if (types == null || types.length == 0) {
+            return null;
+        } else if (types[0] instanceof Class<?>) {
+            return (Class<?>) types[0];
+        } else if (types[0] instanceof ParameterizedType) {
+            ParameterizedType pType = (ParameterizedType) types[0];
+            if (pType.getRawType() instanceof Class<?>) {
+                return (Class<?>) pType.getRawType();
+            }
+        }
+        return null;
     }
 
     /**
@@ -144,8 +154,10 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
             if (types[1] instanceof Class<?>) {
                 return (Class<?>) types[1];
             } else if (types[1] instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) types[1];
-                return (Class<?>) parameterizedType.getRawType();
+                ParameterizedType pType = (ParameterizedType) types[1];
+                if (pType.getRawType() instanceof Class<?>) {
+                    return (Class<?>) pType.getRawType();
+                }
             }
         }
         return null;

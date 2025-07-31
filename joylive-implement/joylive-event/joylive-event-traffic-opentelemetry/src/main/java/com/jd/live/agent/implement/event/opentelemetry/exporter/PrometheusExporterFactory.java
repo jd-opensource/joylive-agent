@@ -13,27 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.opentelemetry.oltp;
+package com.jd.live.agent.implement.event.opentelemetry.exporter;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.implement.event.opentelemetry.ExporterFactory;
 import com.jd.live.agent.governance.config.ExporterConfig;
-import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter;
-import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
-import io.opentelemetry.sdk.metrics.export.MetricExporter;
+import io.opentelemetry.exporter.prometheus.PrometheusHttpServer;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
-import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 
-import java.time.Duration;
-
-@Extension("otlp.http")
-public class OtlpHttpExporterFactory implements ExporterFactory {
+@Extension("prometheus")
+public class PrometheusExporterFactory implements ExporterFactory {
 
     @Override
     public MetricReader create(ExporterConfig config) {
-        MetricExporter exporter = OtlpHttpMetricExporter.builder().setEndpoint(config.getEndpoint()).
-                setAggregationTemporalitySelector(AggregationTemporalitySelector.alwaysCumulative()).
-                setTimeout(Duration.ofMillis(config.getTimeout())).build();
-        return PeriodicMetricReader.builder(exporter).setInterval(Duration.ofMillis(config.getReaderInterval())).build();
+        return PrometheusHttpServer.builder().setPort(config.getPort()).build();
     }
 }

@@ -49,7 +49,7 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         RegisterType info = getRegisterType(config);
         if (!isDubboSystemService(info.getInterfaceName())) {
             application.labelRegistry(map::putIfAbsent);
-            subscribe(new ServiceId(info.getInterfaceName(), info.getGroup(), true));
+            subscribe(config, new ServiceId(info.getInterfaceName(), info.getGroup(), true));
         }
     }
 
@@ -64,10 +64,11 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
     protected abstract Map<String, String> getContext(ExecutableContext ctx);
 
     /**
-     * Subscribes to a specific service in the specified group.
+     * Subscribes to the specified service within its group.
      *
-     * @param serviceId The id of the service to subscribe to.
+     * @param config the configuration object for this subscription
+     * @param serviceId the unique identifier of the service to subscribe to
      */
-    protected abstract void subscribe(ServiceId serviceId);
+    protected abstract void subscribe(T config, ServiceId serviceId);
 
 }

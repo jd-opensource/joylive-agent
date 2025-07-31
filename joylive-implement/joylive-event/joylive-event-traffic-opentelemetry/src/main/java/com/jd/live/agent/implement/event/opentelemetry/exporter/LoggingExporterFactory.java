@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.event.opentelemetry.oltp;
+package com.jd.live.agent.implement.event.opentelemetry.exporter;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.implement.event.opentelemetry.ExporterFactory;
 import com.jd.live.agent.governance.config.ExporterConfig;
-import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
-import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
+import io.opentelemetry.sdk.metrics.data.AggregationTemporality;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 
 import java.time.Duration;
 
-@Extension("otlp.grpc")
-public class OtlpGrpcExporterFactory implements ExporterFactory {
+@Extension("logging")
+public class LoggingExporterFactory implements ExporterFactory {
 
     @Override
     public MetricReader create(ExporterConfig config) {
-        MetricExporter exporter = OtlpGrpcMetricExporter.builder().setEndpoint(config.getEndpoint()).
-                setAggregationTemporalitySelector(AggregationTemporalitySelector.alwaysCumulative()).
-                setTimeout(Duration.ofMillis(config.getTimeout())).build();
+        MetricExporter exporter = LoggingMetricExporter.create(AggregationTemporality.DELTA);
         return PeriodicMetricReader.builder(exporter).setInterval(Duration.ofMillis(config.getReaderInterval())).build();
     }
 }

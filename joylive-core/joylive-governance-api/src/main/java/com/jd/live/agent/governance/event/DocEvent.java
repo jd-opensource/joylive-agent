@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.event;
+package com.jd.live.agent.governance.event;
 
+import com.jd.live.agent.governance.doc.ServiceAnchor;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/**
- * Represents an exception event containing class and method information
- * where the exception occurred.
- */
+import java.util.List;
+
 @Getter
-public class ExceptionEvent {
+@AllArgsConstructor
+public class DocEvent {
 
-    private final String className;
+    private List<ServiceAnchor> anchors;
 
-    private final String methodName;
-
-    private final int lineNumber;
-
-    public ExceptionEvent(String className, String methodName, int lineNumber) {
-        this.className = className;
-        this.methodName = methodName;
-        this.lineNumber = lineNumber;
-    }
 }

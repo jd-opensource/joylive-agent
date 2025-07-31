@@ -45,6 +45,8 @@ import com.jd.live.agent.governance.counter.internal.InternalCounterManager;
 import com.jd.live.agent.governance.db.DbConnectionManager;
 import com.jd.live.agent.governance.db.DbConnectionSupervisor;
 import com.jd.live.agent.governance.db.DbUrlParser;
+import com.jd.live.agent.governance.doc.DocumentRegistry;
+import com.jd.live.agent.governance.doc.LiveDocumentRegistry;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
@@ -136,6 +138,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Config(GovernanceConfig.CONFIG_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 
+    @Config(ExporterConfig.CONFIG_EXPORTER)
+    private ExporterConfig exporterConfig;
+
     @Getter
     @Inject
     private Map<String, UnitFunction> unitFunctions;
@@ -220,6 +225,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Getter
     private CipherFactory cipherFactory;
+
+    @Getter
+    private DocumentRegistry docRegistry;
 
     private List<String> serviceSyncers;
 
@@ -352,6 +360,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
         source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig == null ? null : governanceConfig.getServiceConfig());
         source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig == null ? null : governanceConfig.getRegistryConfig());
+        source.add(DocumentRegistry.COMPONENT_SERVICE_DOC_REGISTRY, docRegistry);
     }
 
     @Override
@@ -424,6 +433,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     public void initialize() {
         // initialize system ticker
         SleepingStopwatch.Ticker.SYSTEM_TICKER.read();
+
+        docRegistry = new LiveDocumentRegistry();
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
         liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);

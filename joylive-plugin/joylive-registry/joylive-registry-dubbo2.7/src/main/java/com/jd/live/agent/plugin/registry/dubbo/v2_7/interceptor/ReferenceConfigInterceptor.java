@@ -39,7 +39,7 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     }
 
     @Override
-    protected void subscribe(ServiceId serviceId) {
+    protected void subscribe(ReferenceConfig<?> config, ServiceId serviceId) {
         registry.subscribe(serviceId);
         logger.info("Found dubbo consumer {}.", serviceId.getUniqueName());
     }

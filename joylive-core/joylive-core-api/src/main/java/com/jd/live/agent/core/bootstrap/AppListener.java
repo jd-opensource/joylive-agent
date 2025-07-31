@@ -30,7 +30,9 @@ public interface AppListener {
 
     int ORDER_BOOTSTRAP = 0;
 
-    int ORDER_POLICY_PREPARATION = 1;
+    int ORDER_POLICY_PREPARATION = ORDER_BOOTSTRAP + 1;
+
+    int ORDER_DOC = ORDER_POLICY_PREPARATION + 1;
 
     String COMPONENT_APPLICATION_LISTENER = "applicationListener";
 
