@@ -154,7 +154,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-### 1.4.2 启动应用
+#### 1.4.2 启动应用
 
 参考启动网关，模拟单元1内启动应用实例，命令如下：
 
@@ -221,7 +221,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.4.3 验证注册
+#### 1.4.3 验证注册
 
 访问`nacos`注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
 
@@ -231,7 +231,7 @@ x-live-unit=unit1
 x-live-cell=cell1
 ```
 
-### 1.4.4 流量测试
+#### 1.4.4 流量测试
 
 参考多活策略文件配置中的规则
 
@@ -287,7 +287,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-### 1.5.2 启动应用
+#### 1.5.2 启动应用
 
 参考启动网关，模拟生成泳道内启动应用实例，命令如下：
 
@@ -349,7 +349,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.5.3 验证注册
+#### 1.5.3 验证注册
 
 访问`nacos`注册中心，检查服务实例的元数据有如下数据代表agent增强成功。
 
@@ -358,12 +358,11 @@ x-lane-space-id=1
 x-lane-code=production
 ```
 
-### 1.5.4 流量测试
+#### 1.5.4 流量测试
 
 参考泳道策略文件配置中的染色规则
 
 ```bash
-
 # 通过网关访问应用接口，路由到生产泳道
 curl -X GET "http://localhost:8888/service-provider/echo/abc?aaa=false" -H "Host:demo.live.local"
 
@@ -423,7 +422,6 @@ curl -X GET "http://localhost:8888/service-provider/echo/abc?aaa=true" -H "Host:
 | APPLICATION_LOCATION_CELL   | cell1                       |  |
 | APPLICATION_LOCATION_LIVESPACE_ID   | v4bEh4kd6Jvu5QBX09qYq-qlbcs |                   |
 | APPLICATION_LOCATION_UNIT   | unit1                       |                   |
-| APPLICATION_SERVICE_GATEWAY   | FRONTEND                    |                   |
 | CONFIG_LOCALHOST_ENABLED   | true                        |                   |
 | NACOS_ADDR   |                             |                   |
 | NACOS_NAMESPACE   | public                      |                   |
