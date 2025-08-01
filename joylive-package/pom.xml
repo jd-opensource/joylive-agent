@@ -251,6 +251,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-polaris2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-router-springweb5</artifactId>
         </dependency>
         <dependency>

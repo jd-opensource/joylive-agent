@@ -42,27 +42,28 @@ agent:
     systems:
       - system
     statics:
-      - dubbo
       - eureka
+      - polaris
+      - nacos
+      - spring
+      - dubbo
+      - sofarpc
       - grpc
       - httpclient
-      - jdbc
+      - okhttp
+      - netty
       - jdk
-      - kafka
+      - jdbc
       - mariadb
       - mysql
       - mongodb
-      - nacos
-      - netty
-      - okhttp
       - opengauss
       - postgresql
+      - kafka
       - pulsar
       - rabbitmq
       - redis
       - rocketmq
-      - sofarpc
-      - spring
     disables: null
     dynamics: null
     profiles:

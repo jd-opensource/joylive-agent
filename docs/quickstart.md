@@ -153,7 +153,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-### 1.4.2 Starting the Application
+#### 1.4.2 Starting the Application
 
 Follow the gateway startup method and simulate starting an application instance within unit 1, the command is as follows:
 
@@ -220,7 +220,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.4.3 Verifying Registration
+#### 1.4.3 Verifying Registration
 
 Access the `nacos` registration center to check if the service instance metadata contains the following data, which represents that the agent enhancement is successful.
 
@@ -230,7 +230,7 @@ x-live-unit=unit1
 x-live-cell=cell1
 ```
 
-### 1.4.4 Traffic Testing
+#### 1.4.4 Traffic Testing
 
 Refer to the rules in the multi-active strategy file configuration:
 
@@ -286,7 +286,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_gateway_demo}\joylive-demo-springcloud3-gateway.jar
 ```
 
-### 1.5.2 Starting the Application
+#### 1.5.2 Starting the Application
 
 Follow the gateway startup method and simulate starting an application instance within the production lane, the command is as follows:
 
@@ -348,7 +348,7 @@ $env:NACOS_PASSWORD="nacos"
 java -javaagent:${path_to_agent}\live.jar -jar ${path_to_provider_demo}\joylive-demo-springcloud3-provider.jar
 ```
 
-### 1.5.3 Verifying Registration
+#### 1.5.3 Verifying Registration
 
 Access the `nacos` registration center to check if the service instance metadata contains the following data, which represents that the agent enhancement is successful.
 
@@ -357,12 +357,11 @@ x-lane-space-id=1
 x-lane-code=production
 ```
 
-### 1.5.4 Traffic Testing
+#### 1.5.4 Traffic Testing
 
 Refer to the tinting rules in the lane strategy file configuration:
 
 ```bash
-
 # Access the application interface through the gateway, routing to the production lane
 curl -X GET "http://localhost:8888/service-provider/echo/abc?aaa=false" -H "Host:demo.live.local"
 
@@ -422,7 +421,6 @@ Refer to the following for configuration environment variables.
 | APPLICATION_LOCATION_CELL | cell1 |          |
 | APPLICATION_LOCATION_LIVESPACE_ID | v4bEh4kd6Jvu5QBX09qYq-qlbcs |          |
 | APPLICATION_LOCATION_UNIT | unit1 |          |
-| APPLICATION_SERVICE_GATEWAY | FRONTEND |          |
 | CONFIG_LOCALHOST_ENABLED | true |          |
 | NACOS_ADDR |                           |          |
 | NACOS_NAMESPACE | public |          |
