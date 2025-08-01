@@ -277,6 +277,16 @@
             </includes>
         </dependencySet>
 
+        <!-- plugin/polaris -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/polaris</outputDirectory>
+            <unpack>false</unpack>
+            <includes>
+                <include>com.jd.live:joylive-registry-polaris2</include>
+            </includes>
+        </dependencySet>
+
         <!-- plugin/jdk -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
