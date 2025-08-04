@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-probe-zookeeper</artifactId>
+    <name>joylive-probe-zookeeper</name>
 
     <dependencies>
         <dependency>

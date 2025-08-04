@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-application-springboot2</artifactId>
+    <name>joylive-application-springboot2</name>
 
     <properties>
         <spring-core.version>5.3.39</spring-core.version>

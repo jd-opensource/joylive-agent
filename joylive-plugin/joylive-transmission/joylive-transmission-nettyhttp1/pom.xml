@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-nettyhttp1</artifactId>
+    <name>joylive-transmission-nettyhttp1</name>
 
     <properties>
         <reactor-netty-http.version>1.0.32</reactor-netty-http.version>

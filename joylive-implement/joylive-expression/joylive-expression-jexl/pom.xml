@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-expression-jexl</artifactId>
+    <name>joylive-expression-jexl</name>
 
     <properties>
         <commons-jexl3.version>3.3</commons-jexl3.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-failover-druid</artifactId>
+    <name>joylive-failover-druid</name>
 
     <properties>
         <druid.version>1.2.25</druid.version>

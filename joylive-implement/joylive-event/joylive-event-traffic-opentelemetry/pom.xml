@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-event-traffic-opentelemetry</artifactId>
+    <name>joylive-event-traffic-opentelemetry</name>
 
     <properties>
         <grpc.version>1.73.0</grpc.version>

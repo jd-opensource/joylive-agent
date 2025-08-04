@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-router-kafka3</artifactId>
+    <name>joylive-router-kafka3</name>
 
     <properties>
         <kafka-client.version>3.4.0</kafka-client.version>

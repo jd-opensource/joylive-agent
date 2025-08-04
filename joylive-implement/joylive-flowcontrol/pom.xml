@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-flowcontrol</artifactId>
+    <name>joylive-flowcontrol</name>
     <packaging>pom</packaging>
     <modules>
         <module>joylive-flowcontrol-resilience4j</module>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-bootstrap-api</artifactId>
+    <name>joylive-bootstrap-api</name>
 
     <dependencies>
         <dependency>

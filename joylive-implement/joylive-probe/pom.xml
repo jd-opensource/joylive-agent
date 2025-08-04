@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-probe</artifactId>
+    <name>joylive-probe</name>
     <packaging>pom</packaging>
 
     <modules>

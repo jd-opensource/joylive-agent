@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-springweb5</artifactId>
+    <name>joylive-transmission-springweb5</name>
 
     <properties>
         <spring.version>5.3.31</spring.version>

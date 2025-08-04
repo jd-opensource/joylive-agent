@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-parser</artifactId>
+    <name>joylive-parser</name>
     <packaging>pom</packaging>
 
     <modules>

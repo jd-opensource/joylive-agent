@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-bytekit-bytebuddy</artifactId>
+    <name>joylive-bytekit-bytebuddy</name>
     <properties>
         <byte-buddy.version>1.15.8</byte-buddy.version>
     </properties>

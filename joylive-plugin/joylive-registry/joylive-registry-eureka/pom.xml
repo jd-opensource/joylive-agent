@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-eureka</artifactId>
+    <name>joylive-registry-eureka</name>
     <properties>
         <spring-cloud-eureka-client.version>4.2.1</spring-cloud-eureka-client.version>
     </properties>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-auth</artifactId>
+    <name>joylive-auth</name>
     <packaging>pom</packaging>
 
     <modules>

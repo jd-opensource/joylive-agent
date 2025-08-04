@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-core-framework</artifactId>
+    <name>joylive-core-framework</name>
 
     <dependencies>
         <dependency>

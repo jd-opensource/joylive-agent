@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-jedis5</artifactId>
+    <name>joylive-protection-jedis5</name>
 
     <properties>
         <jedis.version>5.2.0</jedis.version>

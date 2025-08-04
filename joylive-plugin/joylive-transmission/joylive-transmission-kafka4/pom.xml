@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-kafka4</artifactId>
+    <name>joylive-transmission-kafka4</name>
 
     <properties>
         <kafka-client.version>4.0.0</kafka-client.version>

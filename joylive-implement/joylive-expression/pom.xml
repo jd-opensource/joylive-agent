@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-expression</artifactId>
+    <name>joylive-expression</name>
     <packaging>pom</packaging>
     <modules>
         <module>joylive-expression-jexl</module>

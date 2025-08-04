@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-plugin</artifactId>
+    <name>joylive-plugin</name>
+
     <packaging>pom</packaging>
     <modules>
         <module>joylive-system</module>

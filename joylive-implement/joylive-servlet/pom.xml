@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-servlet</artifactId>
+    <name>joylive-servlet</name>
     <packaging>pom</packaging>
     <modules>
         <module>joylive-servlet-tomcat10</module>

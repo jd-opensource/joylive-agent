@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-router-springcloud2.2</artifactId>
+    <name>joylive-router-springcloud2.2</name>
 
     <properties>
         <package.plugin.type>plugin</package.plugin.type>

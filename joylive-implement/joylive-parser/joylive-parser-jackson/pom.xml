@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-parser-jackson</artifactId>
+    <name>joylive-parser-jackson</name>
     <properties>
         <jackson.version>2.17.0</jackson.version>
         <json-path.version>2.9.0</json-path.version>

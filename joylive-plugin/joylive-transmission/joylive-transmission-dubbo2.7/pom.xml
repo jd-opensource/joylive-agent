@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-dubbo2.7</artifactId>
+    <name>joylive-transmission-dubbo2.7</name>
 
     <properties>
         <apache-dubbo.version>2.7.23</apache-dubbo.version>

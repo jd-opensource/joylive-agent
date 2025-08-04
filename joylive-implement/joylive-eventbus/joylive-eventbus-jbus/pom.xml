@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-eventbus-jbus</artifactId>
+    <name>joylive-eventbus-jbus</name>
 
     <dependencies>
         <dependency>

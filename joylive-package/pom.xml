@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-package</artifactId>
+    <name>joylive-package</name>
     <packaging>pom</packaging>
 
     <properties>

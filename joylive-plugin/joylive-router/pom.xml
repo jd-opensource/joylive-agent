@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-router</artifactId>
+    <name>joylive-router</name>
+
     <packaging>pom</packaging>
     <modules>
         <module>joylive-router-springweb5</module>

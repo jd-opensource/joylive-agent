@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-parser-jxpath</artifactId>
+    <name>joylive-parser-jxpath</name>
     <properties>
         <commons-jxpath.version>1.4.0</commons-jxpath.version>
     </properties>

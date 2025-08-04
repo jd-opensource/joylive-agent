@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-test-inject</artifactId>
+    <name>joylive-test-inject</name>
 
     <dependencies>
         <dependency>
@@ -18,4 +19,15 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <configuration>
+                    <skipPublishing>true</skipPublishing>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

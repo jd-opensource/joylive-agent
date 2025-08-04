@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-polaris2</artifactId>
+    <name>joylive-registry-polaris2</name>
 
     <properties>
         <polaris-client.version>1.15.11</polaris-client.version>

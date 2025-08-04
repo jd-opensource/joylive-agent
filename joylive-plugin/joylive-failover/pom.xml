@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-failover</artifactId>
+    <name>joylive-failover</name>
     <packaging>pom</packaging>
 
     <modules>

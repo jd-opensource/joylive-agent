@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-router-sofarpc</artifactId>
+    <name>joylive-router-sofarpc</name>
 
     <properties>
         <sofa-rpc.version>5.12.0</sofa-rpc.version>

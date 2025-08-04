@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-eventbus</artifactId>
+    <name>joylive-eventbus</name>
     <packaging>pom</packaging>
 
     <modules>

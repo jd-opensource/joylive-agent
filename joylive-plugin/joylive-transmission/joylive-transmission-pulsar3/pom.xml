@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-pulsar3</artifactId>
+    <name>joylive-transmission-pulsar3</name>
 
     <properties>
         <pulsar-client.version>3.3.0</pulsar-client.version>

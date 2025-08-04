@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-transmission</artifactId>
+    <name>joylive-transmission</name>
+
     <packaging>pom</packaging>
     <modules>
         <module>joylive-transmission-rocketmq4</module>
@@ -36,6 +38,5 @@
         <module>joylive-transmission-pulsar3</module>
         <module>joylive-transmission-rabbitmq5</module>
     </modules>
-
 
 </project>

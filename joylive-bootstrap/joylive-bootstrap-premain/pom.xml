@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-bootstrap-premain</artifactId>
+    <name>joylive-bootstrap-premain</name>
 
     <properties>
         <final.name>live</final.name>

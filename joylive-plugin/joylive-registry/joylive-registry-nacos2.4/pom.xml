@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-registry-nacos2.4</artifactId>
+    <name>joylive-registry-nacos2.4</name>
+
     <properties>
         <spring-cloud-commons.version>3.1.8</spring-cloud-commons.version>
         <nacos-client.version>2.4.3</nacos-client.version>

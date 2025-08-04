@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-router-zuul</artifactId>
+    <name>joylive-router-zuul</name>
+
     <properties>
         <netflix-zuul.version>2.1.6.RELEASE</netflix-zuul.version>
     </properties>

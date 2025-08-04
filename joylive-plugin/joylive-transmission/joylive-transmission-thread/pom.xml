@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-thread</artifactId>
+    <name>joylive-transmission-thread</name>
 
     <dependencies>
         <dependency>

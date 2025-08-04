@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>joylive-parser-properties</artifactId>
+    <name>joylive-parser-properties</name>
 
 </project>

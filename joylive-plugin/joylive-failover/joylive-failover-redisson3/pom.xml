@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-failover-redisson3</artifactId>
+    <name>joylive-failover-redisson3</name>
 
     <properties>
         <redisson.version>3.49.0</redisson.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-kafka2</artifactId>
+    <name>joylive-protection-kafka2</name>
 
     <properties>
         <kafka-client.version>2.8.2</kafka-client.version>

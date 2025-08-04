@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-jdkhttp</artifactId>
+    <name>joylive-transmission-jdkhttp</name>
 
     <build>
         <plugins>

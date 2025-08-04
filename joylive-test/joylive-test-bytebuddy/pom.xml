@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-test-bytebuddy</artifactId>
+    <name>joylive-test-bytebuddy</name>
 
     <dependencies>
         <dependency>
@@ -42,4 +43,16 @@
             <version>1.14.10</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <configuration>
+                    <skipPublishing>true</skipPublishing>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

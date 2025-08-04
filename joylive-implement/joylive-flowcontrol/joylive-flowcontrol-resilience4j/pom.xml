@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-flowcontrol-resilience4j</artifactId>
+    <name>joylive-flowcontrol-resilience4j</name>
 
     <properties>
         <!-- Only this version for jdk1.8 -->

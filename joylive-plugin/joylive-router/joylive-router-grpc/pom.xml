@@ -8,6 +8,7 @@
     </parent>
 
     <artifactId>joylive-router-grpc</artifactId>
+    <name>joylive-router-grpc</name>
 
     <properties>
         <grpc.version>1.63.0</grpc.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-service-multilive</artifactId>
+    <name>joylive-service-multilive</name>
 
     <dependencies>
         <dependency>

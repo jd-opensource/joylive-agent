@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-dubbo2.6</artifactId>
+    <name>joylive-registry-dubbo2.6</name>
 
     <properties>
         <alibaba-dubbo.version>2.6.12</alibaba-dubbo.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-service-apollo</artifactId>
+    <name>joylive-service-apollo</name>
 
     <properties>
         <apollo-client.version>2.3.0</apollo-client.version>

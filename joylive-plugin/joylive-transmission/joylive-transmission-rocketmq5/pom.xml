@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-rocketmq5</artifactId>
+    <name>joylive-transmission-rocketmq5</name>
 
     <properties>
         <rocketmq-client.version>5.1.4</rocketmq-client.version>

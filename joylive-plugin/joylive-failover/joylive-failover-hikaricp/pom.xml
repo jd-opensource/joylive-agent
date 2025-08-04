@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-failover-hikaricp</artifactId>
+    <name>joylive-failover-hikaricp</name>
 
     <properties>
         <HikariCP.version>6.3.0</HikariCP.version>

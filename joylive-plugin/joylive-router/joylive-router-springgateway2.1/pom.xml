@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-router-springgateway2.1</artifactId>
+    <name>joylive-router-springgateway2.1</name>
 
     <properties>
         <spring-cloud.version>2.1.5.RELEASE</spring-cloud.version>

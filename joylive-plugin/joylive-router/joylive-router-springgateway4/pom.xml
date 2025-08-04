@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-router-springgateway4</artifactId>
+    <name>joylive-router-springgateway4</name>
 
     <properties>
         <spring-cloud-gateway.version>4.1.5</spring-cloud-gateway.version>

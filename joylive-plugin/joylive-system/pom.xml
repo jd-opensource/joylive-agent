@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-system</artifactId>
+    <name>joylive-system</name>
+
     <packaging>pom</packaging>
     <modules>
         <module>joylive-system-springboot2</module>

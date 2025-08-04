@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-servlet-tomcat9</artifactId>
+    <name>joylive-servlet-tomcat9</name>
 
     <properties>
         <javax-servlet-api.version>3.1.0</javax-servlet-api.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-servlet-tomcat10</artifactId>
+    <name>joylive-servlet-tomcat10</name>
 
     <properties>
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>

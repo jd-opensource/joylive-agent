@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-postgresql9.4</artifactId>
+    <name>joylive-protection-postgresql9.4</name>
     <properties>
         <postgresql.version>9.4-1200-jdbc4</postgresql.version>
     </properties>

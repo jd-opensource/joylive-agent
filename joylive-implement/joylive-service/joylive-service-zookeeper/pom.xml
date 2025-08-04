@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-service-zookeeper</artifactId>
+    <name>joylive-service-zookeeper</name>
 
     <properties>
         <curator.version>5.8.0</curator.version>

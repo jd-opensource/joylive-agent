@@ -46,7 +46,7 @@
     </scm>
 
     <properties>
-        <revision>1.7.1-SNAPSHOT</revision>
+        <revision>1.8.0</revision>
         <lombok.version>1.18.34</lombok.version>
         <mockito.version>5.10.0</mockito.version>
         <junit-jupiter.version>5.10.0</junit-jupiter.version>
@@ -55,6 +55,7 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <puppycrawl-tools-checkstyle.version>8.45.1</puppycrawl-tools-checkstyle.version>
+        <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
@@ -127,6 +128,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${central-publishing-maven-plugin.version}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
@@ -459,20 +465,16 @@
                             <arguments>-Psonatype</arguments>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>sonatype</id>
-                    <name>OSS Snapshots Repository</name>
-                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-                </snapshotRepository>
-                <repository>
-                    <id>sonatype</id>
-                    <name>OSS Staging Repository</name>
-                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
         </profile>
     </profiles>
 

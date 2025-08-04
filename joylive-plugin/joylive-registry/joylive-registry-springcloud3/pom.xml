@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-springcloud3</artifactId>
+    <name>joylive-registry-springcloud3</name>
 
     <properties>
         <spring.cloud.version>3.1.8</spring.cloud.version>

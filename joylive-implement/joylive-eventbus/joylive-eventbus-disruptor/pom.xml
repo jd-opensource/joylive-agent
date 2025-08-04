@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-eventbus-disruptor</artifactId>
+    <name>joylive-eventbus-disruptor</name>
     <properties>
         <disruptor.version>3.4.4</disruptor.version>
     </properties>

@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-transmission-rabbitmq5</artifactId>
+    <name>joylive-transmission-rabbitmq5</name>
+
     <properties>
         <amqp-client.version>5.21.0</amqp-client.version>
     </properties>

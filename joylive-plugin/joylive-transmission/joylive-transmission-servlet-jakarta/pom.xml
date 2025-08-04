@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-servlet-jakarta</artifactId>
+    <name>joylive-transmission-servlet-jakarta</name>
 
     <properties>
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>

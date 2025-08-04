@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-bytekit</artifactId>
+    <name>joylive-bytekit</name>
     <packaging>pom</packaging>
 
     <modules>

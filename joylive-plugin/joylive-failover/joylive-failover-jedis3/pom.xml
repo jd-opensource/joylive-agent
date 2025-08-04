@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-failover-jedis3</artifactId>
+    <name>joylive-failover-jedis3</name>
 
     <properties>
         <jedis.version>3.10.0</jedis.version>

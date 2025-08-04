@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-mariadb3</artifactId>
+    <name>joylive-protection-mariadb3</name>
 
     <properties>
         <mariadb-java-client.version>3.5.3</mariadb-java-client.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-rocketmq4</artifactId>
+    <name>joylive-protection-rocketmq4</name>
 
     <properties>
         <rocketmq-client.version>4.9.7</rocketmq-client.version>

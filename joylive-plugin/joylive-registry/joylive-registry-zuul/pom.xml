@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-zuul</artifactId>
+    <name>joylive-registry-zuul</name>
 
     <properties>
         <netflix-zuul.version>2.1.6.RELEASE</netflix-zuul.version>

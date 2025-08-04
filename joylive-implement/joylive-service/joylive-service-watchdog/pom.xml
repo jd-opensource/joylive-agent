@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-service-watchdog</artifactId>
+    <name>joylive-service-watchdog</name>
 
     <dependencies>
         <dependency>

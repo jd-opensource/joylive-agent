@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-logger</artifactId>
+    <name>joylive-logger</name>
     <packaging>pom</packaging>
 
     <modules>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-governance-api</artifactId>
+    <name>joylive-governance-api</name>
     <properties>
         <guava.version>33.1.0-jre</guava.version>
     </properties>

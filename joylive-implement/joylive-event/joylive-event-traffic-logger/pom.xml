@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-event-traffic-logger</artifactId>
+    <name>joylive-event-traffic-logger</name>
 
     <dependencies>
         <dependency>

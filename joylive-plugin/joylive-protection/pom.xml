@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection</artifactId>
+    <name>joylive-protection</name>
     <packaging>pom</packaging>
     <modules>
         <module>joylive-protection-mariadb3</module>

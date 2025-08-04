@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-jedis4</artifactId>
+    <name>joylive-protection-jedis4</name>
 
     <properties>
         <jedis.version>4.4.8</jedis.version>

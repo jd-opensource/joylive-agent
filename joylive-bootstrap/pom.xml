@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-bootstrap</artifactId>
+    <name>joylive-bootstrap</name>
     <packaging>pom</packaging>
 
     <modules>

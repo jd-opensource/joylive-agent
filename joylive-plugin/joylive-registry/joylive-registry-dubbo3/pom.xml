@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-dubbo3</artifactId>
+    <name>joylive-registry-dubbo3</name>
 
     <properties>
         <apache-dubbo.version>3.2.11</apache-dubbo.version>

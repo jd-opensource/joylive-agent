@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-grpc</artifactId>
+    <name>joylive-registry-grpc</name>
 
     <properties>
         <spring.grpc.version>2.15.0.RELEASE</spring.grpc.version>

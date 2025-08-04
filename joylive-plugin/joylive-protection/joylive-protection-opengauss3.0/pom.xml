@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-protection-opengauss3.0</artifactId>
+    <name>joylive-protection-opengauss3.0</name>
 
     <properties>
         <opengauss-jdbc.version>3.0.0</opengauss-jdbc.version>

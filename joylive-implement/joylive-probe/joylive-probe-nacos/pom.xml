@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-probe-nacos</artifactId>
+    <name>joylive-probe-nacos</name>
 
     <dependencies>
         <dependency>

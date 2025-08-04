@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-command</artifactId>
+    <name>joylive-command</name>
     <packaging>pom</packaging>
 
     <modules>

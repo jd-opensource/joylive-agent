@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-registry-springgateway2.2</artifactId>
+    <name>joylive-registry-springgateway2.2</name>
 
     <properties>
         <spring-cloud-gateway.version>2.2.9.RELEASE</spring-cloud-gateway.version>

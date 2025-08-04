@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-function</artifactId>
+    <name>joylive-function</name>
     <packaging>pom</packaging>
     <modules>
         <module>joylive-function-bkdrhash</module>

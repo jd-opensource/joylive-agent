@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>joylive-command-lifecycle</artifactId>
+    <name>joylive-command-lifecycle</name>
 
 </project>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-okhttp1</artifactId>
+    <name>joylive-transmission-okhttp1</name>
 
     <properties>
         <okhttp.version>2.7.5</okhttp.version>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-transmission-httpclient5</artifactId>
+    <name>joylive-transmission-httpclient5</name>
 
     <properties>
         <httpclient5.version>5.5</httpclient5.version>
