@@ -87,16 +87,14 @@ public class JWTAuthenticate implements Authenticate {
     public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
         try {
             JWTPolicy jwtPolicy = policy.getJwtPolicy();
-            JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, consumer, service));
-            if (jwtToken != null) {
-                if (jwtToken.validate()) {
-                    String key = jwtPolicy.getKey();
-                    if (request.getHeader(key) == null) {
-                        request.setHeader(key, decorate(request, key, jwtToken.getToken()));
-                    }
+            String key = jwtPolicy.getKey();
+            if (request.getHeader(key) == null) {
+                JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, consumer, service));
+                if (jwtToken != null && jwtToken.validate()) {
+                    request.setHeader(key, decorate(request, key, jwtToken.getToken()));
+                } else {
+                    logger.warn("Failed to create jwt token for {}", policy.getUri());
                 }
-            } else {
-                logger.warn("Failed to create jwt token for {}", policy.getUri());
             }
         } catch (Exception e) {
             // Invalid Signing configuration / Couldn't convert Claims.
