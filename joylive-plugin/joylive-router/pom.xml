@@ -16,6 +16,7 @@
     <modules>
         <module>joylive-router-springweb5</module>
         <module>joylive-router-springweb6</module>
+        <module>joylive-router-springweb7</module>
         <module>joylive-router-springcloud2.1</module>
         <module>joylive-router-springcloud2.2</module>
         <module>joylive-router-springcloud3</module>

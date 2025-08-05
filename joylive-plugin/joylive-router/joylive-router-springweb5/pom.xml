@@ -13,9 +13,8 @@
     <name>joylive-router-springweb5</name>
 
     <properties>
-        <package.plugin.type>plugin</package.plugin.type>
         <spring-web.version>5.3.31</spring-web.version>
-        <servlet.api.version>4.0.4</servlet.api.version>
+        <servlet-api.version>4.0.4</servlet-api.version>
     </properties>
 
     <dependencies>
@@ -40,7 +39,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>${servlet.api.version}</version>
+            <version>${servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

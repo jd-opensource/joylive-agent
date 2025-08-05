@@ -24,8 +24,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.springweb.v5.condition.ConditionalOnSpringWeb5TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.DefaultExchangeFunctionInterceptor;
 
 /**
@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.DefaultExc
  */
 @Injectable
 @Extension(value = "DefaultExchangeFunctionDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnTransmissionEnabled
+@ConditionalOnSpringWeb5TransmissionEnabled
 @ConditionalOnClass(DefaultExchangeFunctionDefinition.TYPE_DEFAULT_EXCHANGE_FUNCTION)
 public class DefaultExchangeFunctionDefinition extends PluginDefinitionAdapter {
 

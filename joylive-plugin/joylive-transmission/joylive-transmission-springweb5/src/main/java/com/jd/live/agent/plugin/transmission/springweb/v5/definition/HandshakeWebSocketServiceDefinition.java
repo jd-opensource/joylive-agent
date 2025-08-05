@@ -24,8 +24,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.springweb.v5.condition.ConditionalOnSpringWeb5TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.HandshakeWebSocketServiceInterceptor;
 
 /**
@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.HandshakeW
  */
 @Injectable
 @Extension(value = "HandshakeWebSocketServiceDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnTransmissionEnabled
+@ConditionalOnSpringWeb5TransmissionEnabled
 @ConditionalOnClass(HandshakeWebSocketServiceDefinition.TYPE_REACTOR_LOADBALANCER)
 public class HandshakeWebSocketServiceDefinition extends PluginDefinitionAdapter {
 

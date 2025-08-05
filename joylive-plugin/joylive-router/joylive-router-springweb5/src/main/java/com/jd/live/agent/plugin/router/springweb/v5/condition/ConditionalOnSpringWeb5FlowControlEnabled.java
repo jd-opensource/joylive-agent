@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springweb.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
@@ -23,18 +24,22 @@ import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 import java.lang.annotation.*;
 
 /**
- * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
+ * An annotation used to mark a type as requiring specific conditions related to Spring Web to be met.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnFlowControlEnabled
 @ConditionalOnSpringEnabled
+@ConditionalOnClass(ConditionalOnSpringWeb5FlowControlEnabled.TYPE_NESTED_SERVLET_EXCEPTION)
 @ConditionalOnMissingClass(ConditionalOnSpringWeb5FlowControlEnabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb5FlowControlEnabled {
 
     // spring web 6
     String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
+
+    // spring web 5/6
+    String TYPE_NESTED_SERVLET_EXCEPTION = "org.springframework.web.util.NestedServletException";
 
 }
