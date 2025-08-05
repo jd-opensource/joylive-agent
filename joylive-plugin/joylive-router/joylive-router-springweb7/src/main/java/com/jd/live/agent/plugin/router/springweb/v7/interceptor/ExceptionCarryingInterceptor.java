@@ -17,9 +17,11 @@ package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.servlet.DispatcherServlet;
 
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
@@ -40,17 +42,34 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
         if (config.isResponseException()) {
             HttpServletResponse response = ctx.getArgument(1);
             Exception ex = ctx.getArgument(3);
-            labelHeaders(ex, this::getErrorMessage, response::setHeader);
+            labelHeaders(ex, Accessor::getErrorMessage, response::setHeader);
         }
     }
 
-    private String getErrorMessage(Throwable e) {
-        String errorMessage = null;
-        if (e instanceof WebClientResponseException) {
-            WebClientResponseException webError = (WebClientResponseException) e;
-            errorMessage = webError.getResponseBodyAsString();
+    /**
+     * Helper class for accessing WebClientResponseException error messages.
+     * Handles both WebFlux and non-WebFlux environments gracefully.
+     */
+    private static class Accessor {
+
+        private static final String TYPE_NAME = "org.springframework.web.reactive.function.client.WebClientResponseException";
+        private static final Class<?> type = ClassUtils.loadClass(TYPE_NAME, DispatcherServlet.class.getClassLoader());
+
+        /**
+         * Safely extracts error message from exception, including WebClient response body when available.
+         *
+         * @param e the exception to process
+         * @return the response body for WebClient exceptions, or regular message otherwise
+         */
+        public static String getErrorMessage(Throwable e) {
+            // without webflux
+            if (type != null && type.isInstance(e)) {
+                WebClientResponseException webError = (WebClientResponseException) e;
+                return webError.getResponseBodyAsString();
+            }
+            return e.getMessage();
         }
-        return errorMessage != null && !errorMessage.isEmpty() ? errorMessage : e.getMessage();
+
     }
 
 }

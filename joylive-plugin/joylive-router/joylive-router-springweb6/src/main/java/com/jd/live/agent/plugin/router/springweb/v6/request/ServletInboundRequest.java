@@ -41,17 +41,45 @@ import static com.jd.live.agent.plugin.router.springweb.v6.exception.SpringInbou
  */
 public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServletRequest> {
 
-    private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.servlet.resource.ResourceHttpRequestHandler";
-
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
-
-    private static final String ACTUATOR_SERVLET_TYPE = "org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$WebMvcEndpointHandlerMethod";
 
     private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE, HttpServletRequest.class.getClassLoader());
 
+    private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.servlet.resource.ResourceHttpRequestHandler";
+
     private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, HttpServletRequest.class.getClassLoader());
 
+    private static final String ACTUATOR_SERVLET_TYPE = "org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$WebMvcEndpointHandlerMethod";
+
     private static final Class<?> ACTUATOR_SERVLET_CLASS = loadClass(ACTUATOR_SERVLET_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String API_RESOURCE_CONTROLLER_TYPE = "springfox.documentation.swagger.web.ApiResourceController";
+
+    private static final Class<?> API_RESOURCE_CONTROLLER_CLASS = loadClass(API_RESOURCE_CONTROLLER_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String SWAGGER2_CONTROLLER_WEB_MVC_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebMvc";
+
+    private static final Class<?> SWAGGER2_CONTROLLER_WEB_MVC_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_MVC_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String OPEN_API_RESOURCE_TYPE = "org.springdoc.webmvc.api.OpenApiResource";
+
+    private static final Class<?> OPEN_API_RESOURCE_CLASS = loadClass(OPEN_API_RESOURCE_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String MULTIPLE_OPEN_API_RESOURCE_TYPE = "org.springdoc.webmvc.api.MultipleOpenApiResource";
+
+    private static final Class<?> MULTIPLE_OPEN_API_RESOURCE_CLASS = loadClass(MULTIPLE_OPEN_API_RESOURCE_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String SWAGGER_CONFIG_RESOURCE_TYPE = "org.springdoc.webmvc.ui.SwaggerConfigResource";
+
+    private static final Class<?> SWAGGER_CONFIG_RESOURCE_CLASS = loadClass(SWAGGER_CONFIG_RESOURCE_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String SWAGGER_UI_HOME_TYPE = "org.springdoc.webmvc.ui.SwaggerUiHome";
+
+    private static final Class<?> SWAGGER_UI_HOME_CLASS = loadClass(SWAGGER_UI_HOME_TYPE, HttpServletRequest.class.getClassLoader());
+
+    private static final String SWAGGER_WELCOME_COMMON_TYPE = "org.springdoc.webmvc.ui.SwaggerWelcomeCommon";
+
+    private static final Class<?> SWAGGER_WELCOME_COMMON_CLASS = loadClass(SWAGGER_WELCOME_COMMON_TYPE, HttpServletRequest.class.getClassLoader());
 
     private final Object handler;
 
@@ -89,10 +117,19 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         if (handler != null) {
             if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
                 return true;
-            } else if (handler instanceof HandlerMethod
-                    && ERROR_CONTROLLER_CLASS != null
-                    && ERROR_CONTROLLER_CLASS.isInstance(((HandlerMethod) handler).getBean())) {
-                return true;
+            } else if (handler instanceof HandlerMethod) {
+                HandlerMethod method = (HandlerMethod) handler;
+                Object bean = method.getBean();
+                if (ERROR_CONTROLLER_CLASS != null && ERROR_CONTROLLER_CLASS.isInstance(bean)
+                        || API_RESOURCE_CONTROLLER_CLASS != null && API_RESOURCE_CONTROLLER_CLASS.isInstance(bean)
+                        || SWAGGER2_CONTROLLER_WEB_MVC_CLASS != null && SWAGGER2_CONTROLLER_WEB_MVC_CLASS.isInstance(bean)
+                        || SWAGGER_CONFIG_RESOURCE_CLASS != null && SWAGGER_CONFIG_RESOURCE_CLASS.isInstance(bean)
+                        || OPEN_API_RESOURCE_CLASS != null && OPEN_API_RESOURCE_CLASS.isInstance(bean)
+                        || MULTIPLE_OPEN_API_RESOURCE_CLASS != null && MULTIPLE_OPEN_API_RESOURCE_CLASS.isInstance(bean)
+                        || SWAGGER_UI_HOME_CLASS != null && SWAGGER_UI_HOME_CLASS.isInstance(bean)
+                        || SWAGGER_WELCOME_COMMON_CLASS != null && SWAGGER_WELCOME_COMMON_CLASS.isInstance(bean)) {
+                    return true;
+                }
             } else if (ACTUATOR_SERVLET_CLASS != null && ACTUATOR_SERVLET_CLASS.isInstance(handler)) {
                 return true;
             }
