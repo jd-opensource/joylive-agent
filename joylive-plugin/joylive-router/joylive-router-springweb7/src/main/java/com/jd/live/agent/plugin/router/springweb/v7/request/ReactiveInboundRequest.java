@@ -53,11 +53,11 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.reactive.function.server.ResourceHandlerFunction";
 
-    private final static Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
+    private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
 
     private static final String RESOURCE_WEB_HANDLER_TYPE = "org.springframework.web.reactive.resource.ResourceWebHandler";
 
-    private final static Class<?> RESOURCE_WEB_HANDLER_CLASS = loadClass(RESOURCE_WEB_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
+    private static final Class<?> RESOURCE_WEB_HANDLER_CLASS = loadClass(RESOURCE_WEB_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
 
     private static final String OPEN_API_RESOURCE_TYPE = "org.springdoc.webflux.api.OpenApiResource";
 
