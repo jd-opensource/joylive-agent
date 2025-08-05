@@ -1,5 +1,9 @@
 # Release History
 
+## 1.9.0
+
+1. Fix Dubbo 3.0 compatibility issues
+
 ## 1.8.0
 
 1. Added support for Spring Cloud 2025
