@@ -79,6 +79,10 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     private static final Class<?> SWAGGER_WELCOME_COMMON_CLASS = loadClass(SWAGGER_WELCOME_COMMON_TYPE, ServerWebExchange.class.getClassLoader());
 
+    private static final String SWAGGER2_CONTROLLER_WEBFLUX_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux";
+
+    private static final Class<?> SWAGGER2_CONTROLLER_WEBFLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEBFLUX_TYPE, ServerWebExchange.class.getClassLoader());
+
     private final Predicate<String> systemPredicate;
 
     private final Object handler;
@@ -116,6 +120,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
                     || SWAGGER_CONFIG_RESOURCE_CLASS != null && SWAGGER_CONFIG_RESOURCE_CLASS.isInstance(bean)
                     || SWAGGER_UI_HOME_CLASS != null && SWAGGER_UI_HOME_CLASS.isInstance(bean)
                     || SWAGGER_WELCOME_COMMON_CLASS != null && SWAGGER_WELCOME_COMMON_CLASS.isInstance(bean)
+                    || SWAGGER2_CONTROLLER_WEBFLUX_CLASS != null && SWAGGER2_CONTROLLER_WEBFLUX_CLASS.isInstance(bean)
             ) {
                 return true;
             }
