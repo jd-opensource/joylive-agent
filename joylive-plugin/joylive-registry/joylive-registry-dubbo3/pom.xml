@@ -13,9 +13,9 @@
     <name>joylive-registry-dubbo3</name>
 
     <properties>
-        <apache-dubbo.version>3.2.11</apache-dubbo.version>
+        <apache-dubbo.version>3.2.18</apache-dubbo.version>
         <curator.version>5.8.0</curator.version>
-        <dubbo-remoting-zookeeper.version>2.7.8</dubbo-remoting-zookeeper.version>
+        <dubbo-remoting-zookeeper.version>3.2.18</dubbo-remoting-zookeeper.version>
     </properties>
 
     <dependencies>

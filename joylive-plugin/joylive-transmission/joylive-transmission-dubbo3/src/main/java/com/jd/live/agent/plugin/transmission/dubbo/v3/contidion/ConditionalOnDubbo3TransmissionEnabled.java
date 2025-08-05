@@ -25,9 +25,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnTransmissionEnabled
-@ConditionalOnClass(ConditionalOnDubbo3TransmissionEnabled.TYPE_CONSUMER_CLASSLOADER_FILTER)
+@ConditionalOnClass(ConditionalOnDubbo3TransmissionEnabled.TYPE_DEFAULT_FILTER_CHAIN_BUILDER)
 @ConditionalComposite
 public @interface ConditionalOnDubbo3TransmissionEnabled {
 
-    String TYPE_CONSUMER_CLASSLOADER_FILTER = "org.apache.dubbo.rpc.cluster.filter.support.ConsumerClassLoaderFilter";
+    String TYPE_DEFAULT_FILTER_CHAIN_BUILDER = "org.apache.dubbo.rpc.cluster.filter.DefaultFilterChainBuilder";
 }

@@ -13,7 +13,7 @@
     <name>joylive-router-dubbo3</name>
 
     <properties>
-        <apache-dubbo.version>3.2.11</apache-dubbo.version>
+        <apache-dubbo.version>3.2.18</apache-dubbo.version>
     </properties>
 
     <dependencies>

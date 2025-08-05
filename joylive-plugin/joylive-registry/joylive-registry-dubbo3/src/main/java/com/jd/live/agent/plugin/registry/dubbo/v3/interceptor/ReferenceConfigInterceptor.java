@@ -43,13 +43,14 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
         super(application, registry);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     protected RegisterType getServiceId(ReferenceConfig<?> config) {
         String providedBy = config.getProvidedBy();
         Map<String, String> parameters = config.getParameters();
         String migration = parameters.get(KEY_REFERENCE_MIGRATION);
         migration = migration == null || migration.isEmpty() ?
-                config.getApplication().getScopeModel().modelEnvironment().getAppConfigMap().get(KEY_APPLICATION_MIGRATION)
+                config.getApplication().getScopeModel().getModelEnvironment().getAppConfigMap().get(KEY_APPLICATION_MIGRATION)
                 : migration;
         migration = migration == null || migration.isEmpty() ? System.getProperty(KEY_APPLICATION_MIGRATION) : migration;
         if (FORCE_INTERFACE.equalsIgnoreCase(migration)) {
@@ -72,4 +73,5 @@ public class ReferenceConfigInterceptor extends AbstractConfigInterceptor<Refere
     protected Map<String, String> getContext(ExecutableContext ctx) {
         return ((MethodContext) ctx).getResult();
     }
+
 }
