@@ -26,7 +26,6 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.RequestFacade;
 import org.apache.tomcat.util.http.MimeHeaders;
 
-
 public class TomcatHeaderProvider implements HeaderProvider {
 
     private final HttpServletRequest request;
@@ -37,7 +36,12 @@ public class TomcatHeaderProvider implements HeaderProvider {
 
     @Override
     public MultiMap<String, String> getHeaders() {
-        Request req = Accessor.getRequest(request);
+        Request req = null;
+        if (request instanceof RequestFacade) {
+            req = Accessor.request == null ? null : (Request) Accessor.request.get(request);
+        } else if (request instanceof Request) {
+            req = (Request) request;
+        }
         if (req != null) {
             MimeHeaders mimeHeaders = req.getCoyoteRequest().getMimeHeaders();
             int count = mimeHeaders.size();
@@ -57,16 +61,6 @@ public class TomcatHeaderProvider implements HeaderProvider {
     private static class Accessor {
 
         private static final FieldAccessor request = FieldAccessorFactory.getAccessor(RequestFacade.class, "request");
-
-        public static Request getRequest(HttpServletRequest request) {
-            Request req = null;
-            if (request instanceof RequestFacade) {
-                req = Accessor.request == null ? null : (Request) Accessor.request.get(request);
-            } else if (request instanceof Request) {
-                req = (Request) request;
-            }
-            return req;
-        }
 
     }
 }

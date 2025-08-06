@@ -28,7 +28,7 @@ import com.jd.live.agent.plugin.router.springweb.v7.request.ExceptionView;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ServletInboundRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import static com.jd.live.agent.plugin.router.springweb.v7.request.JakartaRequest.replace;
+import static com.jd.live.agent.plugin.router.springweb.v7.request.JakartaRequest.wrap;
 
 /**
  * HandlerAdapterInterceptor
@@ -49,7 +49,7 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
         ServiceConfig config = context.getGovernanceConfig().getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        ServletInboundRequest request = new ServletInboundRequest(replace(arguments, 0, registry), arguments[2], config::isSystem);
+        ServletInboundRequest request = new ServletInboundRequest(wrap(arguments, 0, registry), arguments[2], config::isSystem);
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
             ModelAndView view = context.inward(invocation, mc::invokeOrigin, request::convert);

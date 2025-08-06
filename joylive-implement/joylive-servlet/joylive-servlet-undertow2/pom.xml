@@ -5,23 +5,22 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.jd.live</groupId>
-        <artifactId>joylive-implement</artifactId>
+        <artifactId>joylive-servlet</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-servlet</artifactId>
-    <name>joylive-servlet</name>
-    <packaging>pom</packaging>
-    <modules>
-        <module>joylive-servlet-tomcat10</module>
-        <module>joylive-servlet-tomcat9</module>
-        <module>joylive-servlet-undertow2</module>
-    </modules>
+    <artifactId>joylive-servlet-undertow2</artifactId>
+
+    <properties>
+        <undertow.version>2.3.18.Final</undertow.version>
+    </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-governance-api</artifactId>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-servlet</artifactId>
+            <version>${undertow.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
