@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 import java.lang.annotation.*;
 
 /**
- * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
+ * An annotation used to mark a type as requiring specific conditions related to Spring Web to be met.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -31,10 +31,14 @@ import java.lang.annotation.*;
 @ConditionalOnFlowControlEnabled
 @ConditionalOnSpringEnabled
 @ConditionalOnClass(ConditionalOnSpringWeb6FlowControlEnabled.TYPE_ERROR_RESPONSE)
+@ConditionalOnClass(ConditionalOnSpringWeb6FlowControlEnabled.TYPE_NESTED_SERVLET_EXCEPTION)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb6FlowControlEnabled {
 
-    // spring web 6
+    // spring web 6+
     String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
+
+    // spring web 5/6
+    String TYPE_NESTED_SERVLET_EXCEPTION = "org.springframework.web.util.NestedServletException";
 
 }

@@ -13,21 +13,20 @@
     <name>joylive-transmission-springweb5</name>
 
     <properties>
-        <spring.version>5.3.31</spring.version>
-        <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+        <spring-web.version>5.3.31</spring-web.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
-            <version>${spring.version}</version>
+            <version>${spring-web.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webflux</artifactId>
-            <version>${spring.version}</version>
+            <version>${spring-web.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 import java.lang.annotation.*;
 
 /**
- * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
+ * An annotation used to mark a type as requiring specific conditions related to Spring Web to be met.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

@@ -15,28 +15,30 @@
     <packaging>pom</packaging>
     <modules>
         <module>joylive-transmission-rocketmq4</module>
+        <module>joylive-transmission-rocketmq5</module>
+        <module>joylive-transmission-rabbitmq5</module>
+        <module>joylive-transmission-pulsar3</module>
         <module>joylive-transmission-kafka3</module>
         <module>joylive-transmission-kafka4</module>
-        <module>joylive-transmission-rocketmq5</module>
         <module>joylive-transmission-httpclient5</module>
         <module>joylive-transmission-httpclient4.3</module>
         <module>joylive-transmission-httpclient4.0</module>
         <module>joylive-transmission-httpclient3</module>
+        <module>joylive-transmission-nettyhttp1</module>
         <module>joylive-transmission-jdkhttp</module>
         <module>joylive-transmission-okhttp1</module>
         <module>joylive-transmission-okhttp3</module>
-        <module>joylive-transmission-servlet-javax</module>
-        <module>joylive-transmission-servlet-jakarta</module>
-        <module>joylive-transmission-grpc</module>
         <module>joylive-transmission-dubbo3</module>
         <module>joylive-transmission-dubbo2.7</module>
         <module>joylive-transmission-dubbo2.6</module>
         <module>joylive-transmission-sofarpc</module>
+        <module>joylive-transmission-grpc</module>
+        <module>joylive-transmission-servlet-javax</module>
+        <module>joylive-transmission-servlet-jakarta</module>
         <module>joylive-transmission-springweb5</module>
+        <module>joylive-transmission-springweb6</module>
+        <module>joylive-transmission-springweb7</module>
         <module>joylive-transmission-thread</module>
-        <module>joylive-transmission-nettyhttp1</module>
-        <module>joylive-transmission-pulsar3</module>
-        <module>joylive-transmission-rabbitmq5</module>
     </modules>
 
 </project>

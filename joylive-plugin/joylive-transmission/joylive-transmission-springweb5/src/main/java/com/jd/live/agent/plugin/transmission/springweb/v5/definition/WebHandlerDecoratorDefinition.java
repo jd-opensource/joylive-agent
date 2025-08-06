@@ -24,19 +24,18 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
+import com.jd.live.agent.plugin.transmission.springweb.v5.condition.ConditionalOnSpringWeb5TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.springweb.v5.interceptor.WebHandlerDecoratorInterceptor;
 
 /**
  * WebHandlerDecoratorDefinition
  *
- * @author Zhiguo.Chen
  * @since 1.0.0
  */
 @Injectable
 @Extension(value = "WebHandlerDecoratorDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnTransmissionEnabled
+@ConditionalOnSpringWeb5TransmissionEnabled
 @ConditionalOnClass(WebHandlerDecoratorDefinition.TYPE_FILTERING_WEB_HANDLER)
 @ConditionalOnClass(WebHandlerDecoratorDefinition.TYPE_MONO)
 public class WebHandlerDecoratorDefinition extends PluginDefinitionAdapter {

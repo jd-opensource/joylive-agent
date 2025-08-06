@@ -1,0 +1,3 @@
+com.jd.live.agent.plugin.transmission.springweb.v7.definition.WebHandlerDecoratorDefinition
+com.jd.live.agent.plugin.transmission.springweb.v7.definition.HandshakeWebSocketServiceDefinition
+com.jd.live.agent.plugin.transmission.springweb.v7.definition.DefaultExchangeFunctionDefinition

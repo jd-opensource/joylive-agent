@@ -13,7 +13,6 @@
     <name>joylive-router-springcloud2.2</name>
 
     <properties>
-        <package.plugin.type>plugin</package.plugin.type>
         <spring.cloud.version>2.2.9.RELEASE</spring.cloud.version>
         <spring-web.version>5.2.15.RELEASE</spring-web.version>
         <openfeign.version>10.12</openfeign.version>

@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInbo
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -49,7 +50,35 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.reactive.function.server.ResourceHandlerFunction";
 
-    private final static Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
+    private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String RESOURCE_WEB_HANDLER_TYPE = "org.springframework.web.reactive.resource.ResourceWebHandler";
+
+    private static final Class<?> RESOURCE_WEB_HANDLER_CLASS = loadClass(RESOURCE_WEB_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String OPEN_API_RESOURCE_TYPE = "org.springdoc.webflux.api.OpenApiResource";
+
+    private static final Class<?> OPEN_API_RESOURCE_CLASS = loadClass(OPEN_API_RESOURCE_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String MULTIPLE_OPEN_API_RESOURCE_TYPE = "org.springdoc.webflux.api.MultipleOpenApiResource";
+
+    private static final Class<?> MULTIPLE_OPEN_API_RESOURCE_CLASS = loadClass(MULTIPLE_OPEN_API_RESOURCE_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String SWAGGER_CONFIG_RESOURCE_TYPE = "org.springdoc.webflux.ui.SwaggerConfigResource";
+
+    private static final Class<?> SWAGGER_CONFIG_RESOURCE_CLASS = loadClass(SWAGGER_CONFIG_RESOURCE_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String SWAGGER_UI_HOME_TYPE = "org.springdoc.webflux.ui.SwaggerUiHome";
+
+    private static final Class<?> SWAGGER_UI_HOME_CLASS = loadClass(SWAGGER_UI_HOME_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String SWAGGER_WELCOME_COMMON_TYPE = "org.springdoc.webflux.ui.SwaggerWelcomeCommon";
+
+    private static final Class<?> SWAGGER_WELCOME_COMMON_CLASS = loadClass(SWAGGER_WELCOME_COMMON_TYPE, ServerWebExchange.class.getClassLoader());
+
+    private static final String SWAGGER2_CONTROLLER_WEBFLUX_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux";
+
+    private static final Class<?> SWAGGER2_CONTROLLER_WEBFLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEBFLUX_TYPE, ServerWebExchange.class.getClassLoader());
 
     private final Predicate<String> systemPredicate;
 
@@ -76,8 +105,22 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     public boolean isSystem() {
         if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
             return true;
+        } else if (RESOURCE_WEB_HANDLER_CLASS != null && RESOURCE_WEB_HANDLER_CLASS.isInstance(handler)) {
+            return true;
         } else if (ACTUATOR_CLASS != null && ACTUATOR_CLASS.isInstance(handler)) {
             return true;
+        } else if (handler instanceof HandlerMethod) {
+            HandlerMethod method = (HandlerMethod) handler;
+            Object bean = method.getBean();
+            if (OPEN_API_RESOURCE_CLASS != null && OPEN_API_RESOURCE_CLASS.isInstance(bean)
+                    || MULTIPLE_OPEN_API_RESOURCE_CLASS != null && MULTIPLE_OPEN_API_RESOURCE_CLASS.isInstance(bean)
+                    || SWAGGER_CONFIG_RESOURCE_CLASS != null && SWAGGER_CONFIG_RESOURCE_CLASS.isInstance(bean)
+                    || SWAGGER_UI_HOME_CLASS != null && SWAGGER_UI_HOME_CLASS.isInstance(bean)
+                    || SWAGGER_WELCOME_COMMON_CLASS != null && SWAGGER_WELCOME_COMMON_CLASS.isInstance(bean)
+                    || SWAGGER2_CONTROLLER_WEBFLUX_CLASS != null && SWAGGER2_CONTROLLER_WEBFLUX_CLASS.isInstance(bean)
+            ) {
+                return true;
+            }
         } else if (systemPredicate != null && systemPredicate.test(getPath())) {
             return true;
         }
