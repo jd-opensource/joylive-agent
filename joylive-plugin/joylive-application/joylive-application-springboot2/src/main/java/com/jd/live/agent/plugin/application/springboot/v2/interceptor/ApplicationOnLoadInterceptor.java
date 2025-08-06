@@ -33,6 +33,10 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // fix for spring boot devtools, it will create SpringApplication
+        if (Accessor.isDevThread()) {
+            return;
+        }
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.load(() -> {
             ResourceLoader resourceLoader = ctx.getArgument(0);
@@ -55,5 +59,17 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
             // Swallow and continue
         }
         return null;
+    }
+
+    private static class Accessor {
+
+        private static final String type = "org.springframework.boot.devtools.livereload.LiveReloadServer";
+        private static final String threadName = "restartedMain";
+        private static final boolean isDevTools = ClassUtils.isPresent(type, ResourceLoader.class.getClassLoader());
+
+        public static boolean isDevThread() {
+            return isDevTools && threadName.equals(Thread.currentThread().getName());
+        }
+
     }
 }
