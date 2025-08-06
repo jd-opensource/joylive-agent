@@ -428,6 +428,9 @@ public class JavaxRequest extends HttpServletRequestWrapper implements HeaderPro
 
     @Override
     public MultiMap<String, String> getHeaders() {
+        if (unwrapped instanceof HeaderProvider) {
+            return ((HeaderProvider) unwrapped).getHeaders();
+        }
         if (headers == null) {
             // direct access the underlying
             // org.apache.catalina.connector.RequestFacade
@@ -458,6 +461,9 @@ public class JavaxRequest extends HttpServletRequestWrapper implements HeaderPro
         ServletRequest request = hsr;
         while (request instanceof ServletRequestWrapper) {
             request = ((ServletRequestWrapper) request).getRequest();
+            if (request instanceof HeaderProvider && request instanceof HttpServletRequest) {
+                return (HttpServletRequest) request;
+            }
         }
         HttpServletRequest unwrapped = request instanceof HttpServletRequest ? (HttpServletRequest) request : hsr;
         hsr = new JavaxRequest(hsr, unwrapped, registry);

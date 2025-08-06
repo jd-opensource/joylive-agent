@@ -458,6 +458,9 @@ public class JakartaRequest extends HttpServletRequestWrapper implements HeaderP
 
     @Override
     public MultiMap<String, String> getHeaders() {
+        if (unwrapped instanceof HeaderProvider) {
+            return ((HeaderProvider) unwrapped).getHeaders();
+        }
         if (headers == null) {
             // direct access the underlying
             // org.apache.catalina.connector.RequestFacade
@@ -488,6 +491,9 @@ public class JakartaRequest extends HttpServletRequestWrapper implements HeaderP
         ServletRequest request = hsr;
         while (request instanceof ServletRequestWrapper) {
             request = ((ServletRequestWrapper) request).getRequest();
+            if (request instanceof HeaderProvider && request instanceof HttpServletRequest) {
+                return (HttpServletRequest) request;
+            }
         }
         HttpServletRequest unwrapped = request instanceof HttpServletRequest ? (HttpServletRequest) request : hsr;
         hsr = new JakartaRequest(hsr, unwrapped, registry);
