@@ -59,6 +59,10 @@
                                     <pattern>com.auth0.jwt</pattern>
                                     <shadedPattern>com.jd.live.agent.shaded.com.auth0.jwt</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>com.jd.live.agent.shaded.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>

@@ -21,20 +21,21 @@ import lombok.Setter;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Function;
+
+import static com.jd.live.agent.bootstrap.util.Inclusion.parse;
 
 @Setter
 @Getter
 public class ResourceConfig {
     public static final String CORE_PREFIX = "classloader.core";
+    public static final String BOOTSTRAP_PREFIX = "classloader.essential.bootstrap";
     public static final ResourceConfig DEFAULT_CORE_RESOURCE_CONFIG = new ResourceConfig(
             null,
             new String[]{"yaml", "yml", "xml", "json", "properties"},
             null,
             new String[]{"com.jd.live.agent.bootstrap."},
-            new String[]{},
+            null,
             new String[]{"com.jd.live.agent.core.", "com.jd.live.agent.governance."},
             null,
             new String[]{"META-INF/services/com.jd.live.agent"});
@@ -43,16 +44,16 @@ public class ResourceConfig {
             null,
             null,
             new String[]{"com.jd.live.agent.bootstrap.", "com.jd.live.agent.core.", "com.jd.live.agent.governance."},
-            new String[]{},
+            null,
             new String[]{"com.jd.live.agent.implement.", "com.jd.live.agent.shaded."},
-            new String[]{},
-            new String[]{}); // can be loaded in the parent class loader
+            null,
+            null); // can be loaded in the parent class loader
     public static final ResourceConfig DEFAULT_PLUGIN_RESOURCE_CONFIG = new ResourceConfig(
             null,
             null,
             null,
             new String[]{"com.jd.live.agent.bootstrap.", "com.jd.live.agent.core.", "com.jd.live.agent.governance."},
-            new String[]{},
+            null,
             new String[]{"com.jd.live.agent.plugin."},
             null,
             null); // can be loaded in the parent class loader
@@ -68,14 +69,14 @@ public class ResourceConfig {
 
     public ResourceConfig(Function<String, Object> env, String prefix) {
         // use java native method in LiveAgent
-        this(parse(env, prefix + ".configResources"),
-                parse(env, prefix + ".configExtensions"),
-                parse(env, prefix + ".parentResources"),
-                parse(env, prefix + ".parentPrefixes"),
-                parse(env, prefix + ".selfResources"),
-                parse(env, prefix + ".selfPrefixes"),
-                parse(env, prefix + ".isolationResources"),
-                parse(env, prefix + ".isolationPrefixes"));
+        this(parse(env, prefix + ".config.names"),
+                parse(env, prefix + ".config.prefixes"),
+                parse(env, prefix + ".parent.names"),
+                parse(env, prefix + ".parent.prefixes"),
+                parse(env, prefix + ".self.names"),
+                parse(env, prefix + ".self.prefixes"),
+                parse(env, prefix + ".isolation.names"),
+                parse(env, prefix + ".isolation.prefixes"));
     }
 
     public ResourceConfig(String[] configResources,
@@ -138,29 +139,6 @@ public class ResourceConfig {
     private static String getExtension(String name) {
         int pos = name.lastIndexOf('.');
         return pos > 0 ? name.substring(pos + 1).toLowerCase() : "";
-    }
-
-    /**
-     * Parses an environment variable into a set of strings.
-     *
-     * @param env environment variable accessor
-     * @param key variable name to lookup
-     * @return set of non-empty values (null if key not found/empty)
-     */
-    protected static Set<String> parse(Function<String, Object> env, String key) {
-        String value = (String) env.apply(key);
-        if (value == null || value.isEmpty()) {
-            return null;
-        }
-        String[] parts = value.split("[,;]");
-        Set<String> result = new HashSet<>(parts.length);
-        for (String part : parts) {
-            part = part.trim();
-            if (!part.isEmpty()) {
-                result.add(part);
-            }
-        }
-        return result;
     }
 
 }

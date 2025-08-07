@@ -16,13 +16,14 @@
 package com.jd.live.agent.core.config;
 
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Configurable;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Collections;
-import java.util.Set;
+import java.util.HashSet;
 
 @Getter
 @Setter
@@ -30,7 +31,6 @@ import java.util.Set;
 public class ClassLoaderConfig {
 
     public static final String COMPONENT_CLASSLOADER_CONFIG = "classLoaderConfig";
-    private static final String DEMO = "com.jd.live.agent.demo.";
 
     @Config("core")
     private ResourceConfig coreResource = ResourceConfig.DEFAULT_CORE_RESOURCE_CONFIG;
@@ -42,19 +42,26 @@ public class ClassLoaderConfig {
     private ResourceConfig pluginResource = ResourceConfig.DEFAULT_PLUGIN_RESOURCE_CONFIG;
 
     @Config("essential")
-    private Set<String> essentialPackage = Collections.singleton("com.jd.live.agent.");
+    private EssentialConfig essentialResource = new EssentialConfig();
 
     public boolean isEssential(String name) {
-        if (name == null || name.isEmpty()) {
-            return false;
+        return essentialResource.isEssential(name);
+    }
+
+    @Getter
+    @Setter
+    public static class EssentialConfig {
+
+        public static final Inclusion DEFAULT_ESSENTIAL_INCLUSION = new Inclusion(null, new HashSet<>(Collections.singletonList("com.jd.live.agent.")));
+        public static final Inclusion DEFAULT_ESSENTIAL_EXCLUSION = new Inclusion(null, new HashSet<>(Collections.singletonList("com.jd.live.agent.demo.")));
+        public static final Inclusion DEFAULT_ESSENTIAL_BOOTSTRAP = new Inclusion(null, new HashSet<>(Collections.singletonList("com.jd.live.agent.bootstrap.")));
+
+        private Inclusion inclusion = DEFAULT_ESSENTIAL_INCLUSION;
+        private Inclusion exclusion = DEFAULT_ESSENTIAL_EXCLUSION;
+        private Inclusion bootstrap = DEFAULT_ESSENTIAL_BOOTSTRAP;
+
+        public boolean isEssential(String name) {
+            return !exclusion.test(name) && inclusion.test(name);
         }
-        if (essentialPackage != null) {
-            for (String value : essentialPackage) {
-                if (name.startsWith(value)) {
-                    return !name.startsWith(DEMO);
-                }
-            }
-        }
-        return false;
     }
 }

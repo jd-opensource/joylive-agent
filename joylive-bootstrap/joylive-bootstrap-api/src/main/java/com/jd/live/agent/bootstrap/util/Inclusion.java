@@ -46,7 +46,11 @@ public class Inclusion implements Predicate<String> {
     @Setter
     private Set<String> prefixes;
 
-    private final BiFunction<String, Function<String, String>, InclusionType> predicate;
+    private final boolean nullable;
+
+    private final PredicateFactory factory;
+
+    private BiFunction<String, Function<String, String>, InclusionType> predicate;
 
     public Inclusion() {
         this(null, null, false, null);
@@ -63,9 +67,12 @@ public class Inclusion implements Predicate<String> {
     public Inclusion(Set<String> names, Set<String> prefixes, boolean nullable, PredicateFactory factory) {
         this.names = names;
         this.prefixes = prefixes;
-        this.predicate = factory != null
-                ? factory.create(names, prefixes, nullable)
-                : DefaultPredicateFactory.INSTANCE.create(names, prefixes, nullable);
+        this.nullable = nullable;
+        this.factory = factory != null ? factory : DefaultPredicateFactory.INSTANCE;
+    }
+
+    public Inclusion(Function<String, Object> env, String prefix) {
+        this(parse(env, prefix + ".names"), parse(env, prefix + ".prefixes"));
     }
 
     @Override
@@ -91,7 +98,7 @@ public class Inclusion implements Predicate<String> {
      * @return the inclusion classification (INCLUDE/EXCLUDE/NEUTRAL)
      */
     public InclusionType include(String name) {
-        return predicate.apply(name, null);
+        return include(name, null);
     }
 
     /**
@@ -103,7 +110,33 @@ public class Inclusion implements Predicate<String> {
      * @see InclusionType for possible return values
      */
     private InclusionType include(String name, Function<String, String> converter) {
+        if (predicate == null) {
+            predicate = factory.create(names, prefixes, nullable);
+        }
         return predicate.apply(name, converter);
+    }
+
+    /**
+     * Parses an environment variable into a set of strings.
+     *
+     * @param env environment variable accessor
+     * @param key variable name to lookup
+     * @return set of non-empty values (null if key not found/empty)
+     */
+    public static Set<String> parse(Function<String, Object> env, String key) {
+        String value = (String) env.apply(key);
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        String[] parts = value.split("[,;]");
+        Set<String> result = new HashSet<>(parts.length);
+        for (String part : parts) {
+            part = part.trim();
+            if (!part.isEmpty()) {
+                result.add(part);
+            }
+        }
+        return result;
     }
 
     /**

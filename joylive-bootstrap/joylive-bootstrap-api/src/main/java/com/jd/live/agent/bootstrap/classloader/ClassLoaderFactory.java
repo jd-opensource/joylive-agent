@@ -28,7 +28,7 @@ public interface ClassLoaderFactory {
      * @param name The name of the class loader to create.
      * @return A new class loader instance with the specified name.
      */
-    default ClassLoader create(String name) {
+    default LiveClassLoader create(String name) {
         return create(name, new URL[0]);
     }
 
@@ -39,6 +39,6 @@ public interface ClassLoaderFactory {
      * @param urls An array of URLs to be used for class loading.
      * @return A new class loader instance with the specified name and URLs.
      */
-    ClassLoader create(String name, URL[] urls);
+    LiveClassLoader create(String name, URL[] urls);
 }
 

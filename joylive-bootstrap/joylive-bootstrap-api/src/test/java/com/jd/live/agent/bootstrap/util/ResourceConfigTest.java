@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.bootstrap.classloader;
+package com.jd.live.agent.bootstrap.util;
 
-import java.io.File;
+import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-/**
- * CoreResourceFilter
- *
- * @since 1.0.0
- */
-public class CoreResourceFilter extends ResourceConfigFilter {
+public class ResourceConfigTest {
 
-    public CoreResourceFilter(ResourceConfig config, File configPath) {
-        super(config, configPath);
-    }
-
-    public CoreResourceFilter(File configPath) {
-        super(ResourceConfig.DEFAULT_CORE_RESOURCE_CONFIG, configPath);
+    @Test
+    public void test() {
+        ResourceConfig implConfig = ResourceConfig.DEFAULT_CORE_IMPL_RESOURCE_CONFIG;
+        Assertions.assertTrue(implConfig.isParent("com.jd.live.agent.core.bootstrap.env.spring.SpringEnvSupplier"));
     }
 }
