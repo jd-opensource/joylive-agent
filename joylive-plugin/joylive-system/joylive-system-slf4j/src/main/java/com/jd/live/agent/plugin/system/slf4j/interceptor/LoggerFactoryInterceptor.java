@@ -43,22 +43,23 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggerFactoryInterceptor.class);
 
-    private static final String DEFAULT_LOGGER_KEY = "logger.level";
+    private static final String DEFAULT_LOGGER_LEVEL_KEY = "logger.level";
 
-    private static final String KEY_LOGGER = "logger.key";
+    private static final String ENV_LOGGER_LEVEL_KEY = "CONFIG_CENTER_LOGGER_LEVEL_KEY";
 
-    private final ConfigCenterConfig config;
+    private static final String PROPERTY_LOGGER_LEVEL_KEY = "logger.level.key";
 
     private final Map<String, LoggerCache> loggerCaches = new ConcurrentHashMap<>();
+
+    private final String keyLoggerLevel;
 
     private volatile Map<String, String> configs;
 
     public LoggerFactoryInterceptor(ConfigCenter configCenter, GovernanceConfig governanceConfig) {
-        this.config = governanceConfig.getConfigCenterConfig();
+        this.keyLoggerLevel = getConfigKey(governanceConfig.getConfigCenterConfig());
         if (configCenter != null) {
             configCenter.ifPresent(configurator -> {
-                String key = config.getOrDefault(KEY_LOGGER, DEFAULT_LOGGER_KEY);
-                configurator.addListener(key, this::onUpdate);
+                configurator.addListener(keyLoggerLevel, this::onUpdate);
             });
         }
     }
@@ -76,6 +77,17 @@ public class LoggerFactoryInterceptor extends InterceptorAdaptor {
         Map<String, String> newLevels = configs;
         String newLevel = newLevels == null ? null : newLevels.get(name);
         cache.compareAndUpdate(level, newLevel);
+    }
+
+    private String getConfigKey(ConfigCenterConfig config) {
+        String result = config.getProperty(PROPERTY_LOGGER_LEVEL_KEY);
+        if (result == null || result.isEmpty()) {
+            result = System.getenv(ENV_LOGGER_LEVEL_KEY);
+            if (result == null || result.isEmpty()) {
+                result = DEFAULT_LOGGER_LEVEL_KEY;
+            }
+        }
+        return result;
     }
 
     /**
