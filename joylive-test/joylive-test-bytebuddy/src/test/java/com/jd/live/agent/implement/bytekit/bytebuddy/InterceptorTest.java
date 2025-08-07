@@ -15,7 +15,10 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy;
 
-import com.jd.live.agent.bootstrap.classloader.*;
+import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
+import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
+import com.jd.live.agent.bootstrap.classloader.Resourcer;
+import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.bootstrap.exception.LiveException;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
@@ -103,8 +106,9 @@ public class InterceptorTest {
         classLoaderConfig = new ClassLoaderConfig();
         conditionMatcher = new ConditionManager(classLoader, null, null);
         urls = agentPath.getLibUrls(agentPath.getRoot().getParentFile());
+        ResourceConfig config = new ResourceConfig();
         coreClassLoader = new LiveClassLoader(urls, InterceptorTest.class.getClassLoader(), ResourcerType.CORE,
-                new CoreResourceFilter(new ResourceConfig(), agentPath.getConfigPath()), "test");
+                config, classLoaderConfig.getEssentialResource().getBootstrap(), agentPath.getConfigPath(), "test");
         injector = createInjector(coreClassLoader);
         extensionManager.addListener((event -> {
             if (event.getType() == ExtensionEvent.EventType.CREATED) {

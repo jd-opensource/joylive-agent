@@ -22,8 +22,11 @@ import com.jd.live.agent.core.util.Close;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * The PluginLoaderManager class is responsible for managing class loaders for plugins. It implements
@@ -37,22 +40,20 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     /**
      * A thread-safe collection of live class loaders, indexed by their name.
      */
-    private final Map<String, ClassLoader> loaders = new ConcurrentHashMap<>(100);
+    private final Map<String, LiveClassLoader> loaders = new ConcurrentHashMap<>(100);
 
     private final ClassLoaderConfig config;
+
+    private final LiveClassLoader parent;
 
     /**
      * The factory used to create new class loaders.
      */
     private final ClassLoaderFactory builder;
 
-    /**
-     * Constructs a PluginLoaderManager with a specified class loader factory.
-     *
-     * @param builder The ClassLoaderFactory to use for creating new class loaders.
-     */
-    public PluginLoaderManager(ClassLoaderConfig config, ClassLoaderFactory builder) {
+    public PluginLoaderManager(ClassLoaderConfig config, LiveClassLoader parent, ClassLoaderFactory builder) {
         this.config = config;
+        this.parent = parent;
         this.builder = builder;
     }
 
@@ -67,8 +68,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     }
 
     @Override
-    public ClassLoader create(String name) {
-        ClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name);
+    public LiveClassLoader create(String name) {
+        LiveClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name);
         if (loader != null) {
             loaders.put(name, loader);
         }
@@ -76,8 +77,8 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     }
 
     @Override
-    public ClassLoader create(String name, URL[] urls) {
-        ClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name, urls);
+    public LiveClassLoader create(String name, URL[] urls) {
+        LiveClassLoader loader = name == null || name.isEmpty() ? null : builder.create(name, urls);
         if (loader != null) {
             loaders.put(name, loader);
         }
@@ -91,15 +92,27 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        // Only load classes with "com.jd.live.agent." prefix
-        if (!test(name)) {
-            throw new ClassNotFoundException("class " + name + " is not found.");
+        return loadClass(name, resolve, null);
+    }
+
+    @Override
+    public Class<?> loadClass(String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
+        // this method is called by spring class loader, so only load classes with "com.jd.live.agent." prefix.
+        ResourceConfig rc = config.getPluginResource();
+        if (rc.isSelf(name)) {
+            return findClass(name, resolve);
+        } else if (rc.isParent(name)) {
+            return parent.loadClass(name, resolve, predicate);
         }
-        // This is called by spring class loader, so disable context classloader.
-        return CandidateProvider.getCandidateFeature().disableAndRun(() -> {
-            for (ClassLoader classLoader : loaders.values()) {
+        throw new ClassNotFoundException("class " + name + " is not found.");
+    }
+
+    @Override
+    public Class<?> findClass(String name, boolean resolve) throws ClassNotFoundException {
+        return LiveClassLoader.getCandidateFeature().disableAndRun(() -> {
+            for (Map.Entry<String, LiveClassLoader> entry : loaders.entrySet()) {
                 try {
-                    return classLoader.loadClass(name);
+                    return entry.getValue().findClass(name, resolve);
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
                     // ignore
                 }
@@ -110,64 +123,28 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
 
     @Override
     public URL findResource(String path) {
-        URL url = null;
-        if (path != null) {
-            for (ClassLoader classLoader : loaders.values()) {
-                url = ((Resourcer) classLoader).findResource(path);
-                if (url != null) {
-                    break;
-                }
-            }
-        }
-        return url;
+        // This method is called back when the Spring class loader fails to load, only considering classes.
+        return findResource(path, false);
     }
 
     @Override
     public Enumeration<URL> findResources(String path) throws IOException {
-        List<URL> urls = new LinkedList<>();
-        if (path != null) {
-            Enumeration<URL> enumeration;
-            for (ClassLoader classLoader : loaders.values()) {
-                enumeration = ((Resourcer) classLoader).findResources(path);
-                if (enumeration != null) {
-                    while (enumeration.hasMoreElements()) {
-                        urls.add(enumeration.nextElement());
-                    }
-                }
-            }
-        }
-        return Collections.enumeration(urls);
+        // This method is called back when the Spring class loader fails to load, only considering classes.
+        URL url = findResource(path, false);
+        return url == null ? null : Collections.enumeration(Collections.singleton(url));
     }
 
     @Override
     public URL getResource(String path) throws IOException {
-        URL url = null;
-        if (path != null) {
-            for (ClassLoader classLoader : loaders.values()) {
-                url = ((Resourcer) classLoader).getResource(path);
-                if (url != null) {
-                    break;
-                }
-            }
-        }
-        return url;
+        // This method is called back when the Spring class loader fails to load, only considering classes.
+        return findResource(path, true);
     }
 
     @Override
     public Enumeration<URL> getResources(String path) throws IOException {
-        List<URL> urls = new LinkedList<>();
-        if (path != null) {
-            Enumeration<URL> enumeration;
-            for (ClassLoader classLoader : loaders.values()) {
-                enumeration = ((Resourcer) classLoader).getResources(path);
-                if (enumeration != null) {
-                    while (enumeration.hasMoreElements()) {
-                        urls.add(enumeration.nextElement());
-                    }
-                }
-            }
-        }
-        return Collections.enumeration(urls);
+        // This method is called back when the Spring class loader fails to load, only considering classes.
+        URL url = findResource(path, true);
+        return url == null ? null : Collections.enumeration(Collections.singleton(url));
     }
 
     @Override
@@ -183,11 +160,42 @@ public class PluginLoaderManager implements ClassLoaderSupervisor, Resourcer, Cl
     @Override
     public void close() {
         Close close = Close.instance();
-        loaders.values().forEach(o -> {
-            if (o instanceof AutoCloseable) {
-                close.close((AutoCloseable) o);
-            }
-        });
+        loaders.values().forEach(close::close);
         loaders.clear();
+    }
+
+    /**
+     * Finds a class resource by path with configurable parent delegation.
+     *
+     * @param path   the resource path (must end with ".class")
+     * @param parent whether to search in parent ClassLoaders
+     * @return the resource URL if found, null otherwise
+     */
+    private URL findResource(String path, boolean parent) {
+        if (path == null || !path.endsWith(".class")) {
+            // not a class file
+            return null;
+        }
+        String className = path.replace('/', '.');
+        ResourceConfig rc = config.getPluginResource();
+        if (rc.isSelf(className)) {
+            // find in plugins
+            for (Map.Entry<String, LiveClassLoader> entry : loaders.entrySet()) {
+                URL url = entry.getValue().findResource(path);
+                if (url != null) {
+                    return url;
+                }
+            }
+        } else if (parent && rc.isParent(className)) {
+            ClassLoader loader = this.parent;
+            while (loader instanceof LiveClassLoader) {
+                URL url = ((LiveClassLoader) loader).findResource(path);
+                if (url != null) {
+                    return url;
+                }
+                loader = loader.getParent();
+            }
+        }
+        return null;
     }
 }

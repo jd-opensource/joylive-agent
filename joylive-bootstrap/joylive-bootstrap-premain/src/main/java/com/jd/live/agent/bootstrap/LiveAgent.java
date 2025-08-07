@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.bootstrap;
 
-import com.jd.live.agent.bootstrap.classloader.CoreResourceFilter;
 import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
 import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
 import com.jd.live.agent.bootstrap.classloader.ResourcerType;
@@ -375,10 +374,10 @@ public class LiveAgent {
         public URLClassLoader createClassLoader() {
             // Create a new ResourceConfig using the configuration function and a prefix.
             ResourceConfig config = new ResourceConfig(configuration, ResourceConfig.CORE_PREFIX);
-            // Instantiate a new CoreResourceFilter with the created configuration and the config path.
-            CoreResourceFilter filter = new CoreResourceFilter(config, configDir);
+            Inclusion bootstrap = new Inclusion(configuration, ResourceConfig.BOOTSTRAP_PREFIX);
             // Return a new instance of LiveClassLoader with the provided URLs and filter.
-            return new LiveClassLoader(coreLibUrls, Thread.currentThread().getContextClassLoader(), ResourcerType.CORE, filter);
+            ClassLoader parent = Thread.currentThread().getContextClassLoader();
+            return new LiveClassLoader(coreLibUrls, parent, ResourcerType.CORE, config, bootstrap, configDir);
         }
 
         /**

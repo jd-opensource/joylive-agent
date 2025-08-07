@@ -41,7 +41,12 @@ public enum ResourcerType {
      * Represents the plugin classloader type. This can be used for loading resources or classes from
      * plugins or external modules that add additional functionality to the application.
      */
-    PLUGIN("classloader-plugin");
+    PLUGIN("classloader-plugin") {
+        @Override
+        boolean fallback() {
+            return true;
+        }
+    };
 
     // The name associated with the classloader type.
     private final String name;
@@ -53,6 +58,15 @@ public enum ResourcerType {
      */
     ResourcerType(String name) {
         this.name = name;
+    }
+
+    /**
+     * Indicates whether fallback is enabled.
+     *
+     * @return false, fallback is disabled by default
+     */
+    boolean fallback() {
+        return false;
     }
 }
 

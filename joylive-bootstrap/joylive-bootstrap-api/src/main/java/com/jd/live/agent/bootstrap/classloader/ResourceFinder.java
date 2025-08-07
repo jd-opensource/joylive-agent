@@ -19,9 +19,25 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
 
+/**
+ * Interface for finding resources by path.
+ */
 public interface ResourceFinder {
 
+    /**
+     * Finds a resource with the given path.
+     *
+     * @param path the resource path
+     * @return the resource URL, or null if not found
+     */
     URL findResource(String path);
 
+    /**
+     * Finds all resources with the given path.
+     *
+     * @param path the resource path
+     * @return an enumeration of resource URLs
+     * @throws IOException if an I/O error occurs
+     */
     Enumeration<URL> findResources(String path) throws IOException;
 }

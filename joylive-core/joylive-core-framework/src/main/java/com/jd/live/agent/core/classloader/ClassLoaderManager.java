@@ -16,7 +16,8 @@
 package com.jd.live.agent.core.classloader;
 
 import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
-import com.jd.live.agent.bootstrap.classloader.ResourceFilter;
+import com.jd.live.agent.bootstrap.classloader.ResourceConfig;
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import com.jd.live.agent.core.config.AgentPath;
 import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.util.Close;
@@ -53,12 +54,12 @@ public class ClassLoaderManager {
     public ClassLoaderManager(LiveClassLoader coreLoader, ClassLoaderConfig config, AgentPath agentPath) {
         this.coreLoader = coreLoader;
         URL[] implLibs = agentPath.getLibUrls(agentPath.getCoreImplLibPath());
-        ResourceFilter implFilter = new CoreImplResourceFilter(config.getCoreImplResource(), agentPath.getConfigPath());
-        this.coreImplLoader = new LiveClassLoader(implLibs, coreLoader, CORE_IMPL, implFilter);
-        this.pluginLoaders = new PluginLoaderManager(config, (name, urls) -> {
-            ResourceFilter filter = new PluginResourceFilter(config.getPluginResource(), agentPath.getConfigPath());
-            return new LiveClassLoader(urls, coreLoader, PLUGIN, filter, PLUGIN.getName() + "-" + name);
-        });
+        ResourceConfig coreImplConfig = config.getCoreImplResource();
+        ResourceConfig pluginConfig = config.getPluginResource();
+        Inclusion bootstrap = config.getEssentialResource().getBootstrap();
+        this.coreImplLoader = new LiveClassLoader(implLibs, coreLoader, CORE_IMPL, coreImplConfig, bootstrap, agentPath.getConfigPath());
+        this.pluginLoaders = new PluginLoaderManager(config, coreLoader, (name, urls) ->
+                new LiveClassLoader(urls, coreLoader, PLUGIN, pluginConfig, bootstrap, agentPath.getConfigPath(), PLUGIN.getName() + "-" + name));
     }
 
     public void close() {

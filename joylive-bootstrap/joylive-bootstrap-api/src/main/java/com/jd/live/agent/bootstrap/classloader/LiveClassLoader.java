@@ -15,11 +15,15 @@
  */
 package com.jd.live.agent.bootstrap.classloader;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -34,15 +38,21 @@ import java.util.function.Predicate;
  */
 public class LiveClassLoader extends URLClassLoader implements URLResourcer {
 
+    public static final ThreadLocal<CandidateFeature> CONTEXT_LOADER_ENABLED = ThreadLocal.withInitial(CandidateFeature::new);
+
+    public static ClassLoader BOOT_CLASS_LOADER = null;
+
+    public static ClassLoader APP_CLASS_LOADER = null;
     /**
      * The type of resources this class loader is concerned with.
      */
     private final ResourcerType type;
 
-    /**
-     * The filter used to determine how resources are loaded.
-     */
-    private final ResourceFilter filter;
+    private final ResourceConfig config;
+
+    private final Inclusion bootstrap;
+
+    private final File configPath;
 
     /**
      * The name of this class loader, potentially derived from the resource type.
@@ -60,41 +70,34 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     private final AtomicBoolean started = new AtomicBoolean(true);
 
     /**
-     * Constructs a new LiveClassLoader with the specified URLs, type, and filter.
-     *
-     * @param urls   The URLs from which to load classes and resources.
-     * @param type   The type of resources to manage.
-     * @param filter The filter to apply when loading resources.
-     */
-    public LiveClassLoader(URL[] urls, ResourcerType type, ResourceFilter filter) {
-        this(urls, null, type, filter, null);
-    }
-
-    /**
      * Constructs a new LiveClassLoader with the specified URLs, parent class loader, type, and filter.
      *
-     * @param urls   The URLs from which to load classes and resources.
-     * @param parent The parent class loader for delegation.
-     * @param type   The type of resources to manage.
-     * @param filter The filter to apply when loading resources.
+     * @param urls       The URLs from which to load classes and resources.
+     * @param parent     The parent class loader for delegation.
+     * @param type       The type of resources to manage.
+     * @param config     The configuration for resource management.
+     * @param configPath The config directory.
      */
-    public LiveClassLoader(URL[] urls, ClassLoader parent, ResourcerType type, ResourceFilter filter) {
-        this(urls, parent, type, filter, null);
+    public LiveClassLoader(URL[] urls, ClassLoader parent, ResourcerType type, ResourceConfig config, Inclusion bootstrap, File configPath) {
+        this(urls, parent, type, config, bootstrap, configPath, null);
     }
 
     /**
      * Constructs a new LiveClassLoader with the specified URLs, parent class loader, type, filter, and name.
      *
-     * @param urls   The URLs from which to load classes and resources.
+     * @param urls       The URLs from which to load classes and resources.
      * @param parent The parent class loader for delegation.
      * @param type   The type of resources to manage.
-     * @param filter The filter to apply when loading resources.
+     * @param config The configuration for resource management.
+     * @param configPath The config directory.
      * @param name   The name of the class loader. If {@code null} or empty, the name is derived from the resource type.
      */
-    public LiveClassLoader(URL[] urls, ClassLoader parent, ResourcerType type, ResourceFilter filter, String name) {
+    public LiveClassLoader(URL[] urls, ClassLoader parent, ResourcerType type, ResourceConfig config, Inclusion bootstrap, File configPath, String name) {
         super(urls, parent);
         this.type = type;
-        this.filter = filter;
+        this.config = config;
+        this.bootstrap = bootstrap;
+        this.configPath = configPath;
         this.name = (name == null || name.isEmpty()) && type != null ? type.getName() : name;
     }
 
@@ -119,37 +122,53 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        return loadClass(name, resolve, null);
+    }
+
+    @Override
+    public Class<?> loadClass(String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
+        if (!started.get()) {
+            throw new ClassNotFoundException("class " + name + " is not found.");
+        } else if (config.isSelf(name)) {
+            return loadBySelf(name, resolve, predicate);
+        } else if (config.isParent(name)) {
+            return loadByParent(name, resolve, predicate);
+        } else {
+            ClassLoader[] candidates = type.fallback() ? getFallbacks() : null;
+            if (candidates != null && candidates.length > 0) {
+                return loadByCandidate(candidates, name, resolve, c -> c != this && (predicate == null || predicate.test(c)));
+            }
+            return loadByRoot(name, resolve, predicate);
+        }
+    }
+
+    @Override
+    public Class<?> findClass(String name, boolean resolve) throws ClassNotFoundException {
         if (!started.get()) {
             throw new ClassNotFoundException("class " + name + " is not found.");
         }
-        // candidates for plugin classloader.
-        ClassLoader[] candidates = filter == null ? null : filter.getCandidates();
-        if (filter != null && filter.loadBySelf(name)) {
-            return loadBySelf(getClassLoadingLock(name), name, resolve);
-        } else if (filter != null && filter.loadByParent(name)) {
-            return loadByParent(name, resolve, candidates);
-        } else {
-            if (candidates != null) {
-                try {
-                    return loadByClassLoader(candidates, name, resolve, c -> c != this);
-                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-                    // ignore
-                }
-            }
-            return loadByDefault(name, resolve);
-        }
+        return loadBySelf(name, resolve, null);
     }
 
     @Override
     public URL getResource(String name) {
-        URL url = filter == null ? null : filter.getResource(name, this);
-        return url != null ? url : super.getResource(name);
+        if (config.isConfig(name)) {
+            return getConfigFile(name);
+        } else if (config.isIsolation(name)) {
+            return findResource(name);
+        }
+        return super.getResource(name);
     }
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        Enumeration<URL> urls = filter == null ? null : filter.getResources(name, this);
-        return urls != null ? urls : super.getResources(name);
+        if (config.isConfig(name)) {
+            URL url = getConfigFile(name);
+            return url == null ? Collections.emptyEnumeration() : Collections.enumeration(Collections.singleton(url));
+        } else if (config.isIsolation(name)) {
+            return findResources(name);
+        }
+        return super.getResources(name);
     }
 
     @Override
@@ -170,20 +189,26 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         return name;
     }
 
+    public static CandidateFeature getCandidateFeature() {
+        return CONTEXT_LOADER_ENABLED.get();
+    }
+
     /**
      * Attempts to load a class using the local class cache.
      *
-     * @param mutex   the synchronization object to use for thread safety
-     * @param name    the fully qualified name of the desired class
-     * @param resolve if true, resolve the class (perform linking and verification)
+     * @param name      the fully qualified name of the desired class
+     * @param resolve   if true, resolve the class (perform linking and verification)
+     * @param predicate the predicate to determine if the class loader should be used
      * @return the resulting Class object
      * @throws ClassNotFoundException if the class cannot be found in the cache
      */
-    private Class<?> loadBySelf(Object mutex, String name, boolean resolve) throws ClassNotFoundException {
-        ClassCache cache = findClass(name, mutex, resolve);
-        Class<?> type = cache == null ? null : cache.getType();
-        if (type != null) {
-            return type;
+    private Class<?> loadBySelf(String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
+        if (predicate == null || predicate.test(this)) {
+            ClassCache cache = findClassCache(name, resolve);
+            Class<?> type = cache == null ? null : cache.getType();
+            if (type != null) {
+                return type;
+            }
         }
         throw new ClassNotFoundException("class " + name + " is not found by " + getType());
     }
@@ -191,66 +216,74 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     /**
      * Attempts to load a class using the parent class loader delegation model.
      *
-     * @param name        the fully qualified name of the desired class
-     * @param resolve     if true, resolve the class (perform linking and verification)
-     * @param candidates the class loader to use for candidature
+     * @param name      the fully qualified name of the desired class
+     * @param resolve   if true, resolve the class (perform linking and verification)
+     * @param predicate the predicate to determine if the class loader should be used
      * @return the resulting Class object
      * @throws ClassNotFoundException if the class cannot be found by the parent loader
      */
-    private Class<?> loadByParent(String name, boolean resolve, ClassLoader[] candidates) throws ClassNotFoundException {
+    private Class<?> loadByParent(String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
         ClassLoader parent = getParent();
-        try {
-            return loadByClassLoader(parent, name, resolve);
-        } catch (ClassNotFoundException | NoClassDefFoundError e) {
-            // javax.servlet.http.HttpServlet in tomcat-core
-            // spring boot jar
-            return loadByClassLoader(candidates, name, resolve, c -> c != parent);
-        }
-    }
-
-    /**
-     * Attempts to load a class using the default loading sequence (self-first then parent delegation).
-     *
-     * @param name    the fully qualified name of the desired class
-     * @param resolve if true, resolves the class (performs linking and verification)
-     * @return the loaded Class object
-     * @throws ClassNotFoundException if the class cannot be found by either this loader or its parent
-     */
-    private Class<?> loadByDefault(String name, boolean resolve) throws ClassNotFoundException {
-        // self
-        Object mutex = getClassLoadingLock(name);
-        Class<?> type;
-        ClassCache cache = findClass(name, mutex, resolve);
-        type = cache == null ? null : cache.getType();
-        if (type == null) {
-            // parent
-            type = super.loadClass(name, resolve);
-            if (type.getClassLoader() == this) {
-                caches.putIfAbsent(name, new ClassCache(name, mutex, type, resolve));
-            }
-        }
-        return type;
-    }
-
-    /**
-     * Loads a class using the specified class loader with optional resolution.
-     *
-     * @param classLoaders the class loader to use for loading the class
-     * @param name         the fully qualified name of the desired class
-     * @param resolve      if true, resolve the class (perform linking and verification)
-     * @return the resulting Class object
-     * @throws ClassNotFoundException if the class cannot be found by the specified loader
-     */
-    private Class<?> loadByClassLoader(ClassLoader[] classLoaders, String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
-        if (classLoaders != null) {
-            for (ClassLoader classLoader : classLoaders) {
-                if (classLoader != null && (predicate == null || predicate.test(classLoader))) {
-                    try {
-                        return loadByClassLoader(classLoader, name, resolve);
-                    } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-                    }
+        if (!bootstrap.test(name)) {
+            while (parent instanceof LiveClassLoader && (predicate == null || predicate.test(parent))) {
+                ClassCache cache = ((LiveClassLoader) parent).findClassCache(name, resolve);
+                if (cache != null) {
+                    cache.resolve(this::resolveClass);
+                    return cache.getType();
                 }
+                parent = parent.getParent();
             }
+        } else {
+            while (parent instanceof LiveClassLoader) {
+                parent = parent.getParent();
+            }
+            if (predicate == null || predicate.test(parent)) {
+                return parent.loadClass(name);
+            }
+        }
+        throw new ClassNotFoundException("class " + name + " is not found by " + getType());
+    }
+
+    /**
+     * Loads a class using candidate ClassLoaders based on the given predicate.
+     *
+     * @param candidates the array of ClassLoaders to try
+     * @param name       the fully qualified class name
+     * @param resolve    whether to resolve the class
+     * @param predicate  the condition to determine which ClassLoader to use
+     * @return the loaded Class object
+     * @throws ClassNotFoundException if the class cannot be found by any candidate ClassLoader
+     */
+    private Class<?> loadByCandidate(ClassLoader[] candidates, String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
+        // candidates for plugin classloader.
+        Class<?> type;
+        for (ClassLoader candidate : candidates) {
+            type = loadClass(candidate, name, resolve, predicate);
+            if (type != null) {
+                return type;
+            }
+        }
+        throw new ClassNotFoundException("class " + name + " is not found by " + getType());
+    }
+
+    /**
+     * Loads a class using root classloader based on the given predicate.
+     *
+     * @param name      the fully qualified class name
+     * @param resolve   whether to resolve the class
+     * @param predicate the condition to determine which ClassLoader to use
+     * @return the loaded Class object
+     * @throws ClassNotFoundException if the class cannot be found by any candidate ClassLoader
+     */
+    private Class<?> loadByRoot(String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException {
+        // not live agent class.
+        ClassLoader parent = getParent();
+        while (parent instanceof LiveClassLoader) {
+            parent = parent.getParent();
+        }
+        Class<?> type = loadClass(parent, name, resolve, predicate);
+        if (type != null) {
+            return type;
         }
         throw new ClassNotFoundException("class " + name + " is not found by " + getType());
     }
@@ -261,49 +294,84 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
      * @param classLoader the class loader to use for loading the class
      * @param name        the fully qualified name of the desired class
      * @param resolve     if true, resolve the class (perform linking and verification)
+     * @param predicate   the predicate to determine if the class loader should be used
      * @return the resulting Class object
-     * @throws ClassNotFoundException if the class cannot be found by the specified loader
      */
-    private Class<?> loadByClassLoader(ClassLoader classLoader, String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> type = classLoader.loadClass(name);
-        if (resolve) {
-            resolveClass(type);
+    private Class<?> loadClass(ClassLoader classLoader, String name, boolean resolve, Predicate<ClassLoader> predicate) {
+        if (classLoader != null && (predicate == null || predicate.test(classLoader))) {
+            try {
+                Class<?> type = classLoader.loadClass(name);
+                if (resolve) {
+                    resolveClass(type);
+                }
+                return type;
+            } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            }
         }
-        return type;
+        return null;
+    }
+
+    /**
+     * Gets candidate class loaders for fallback loading.
+     *
+     * @return array of candidate class loaders, or null if none available
+     */
+    private ClassLoader[] getFallbacks() {
+        CandidateFeature feature = getCandidateFeature();
+        if (feature == null || !feature.isContextLoaderEnabled()) {
+            return null;
+        }
+        // The thread context class loader may be inconsistent with the framework's boot class loader.
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        contextClassLoader = contextClassLoader == LiveClassLoader.APP_CLASS_LOADER || !feature.test(contextClassLoader) ? null : contextClassLoader;
+        ClassLoader bootClassLoader = LiveClassLoader.BOOT_CLASS_LOADER == LiveClassLoader.APP_CLASS_LOADER || LiveClassLoader.BOOT_CLASS_LOADER == contextClassLoader || !feature.test(LiveClassLoader.BOOT_CLASS_LOADER) ? null : LiveClassLoader.BOOT_CLASS_LOADER;
+        if (bootClassLoader == null) {
+            return contextClassLoader == null ? null : new ClassLoader[]{contextClassLoader};
+        } else if (contextClassLoader == null) {
+            return new ClassLoader[]{bootClassLoader};
+        }
+        return new ClassLoader[]{LiveClassLoader.BOOT_CLASS_LOADER, contextClassLoader};
     }
 
     /**
      * Attempts to find a class in the cache, loading and caching it if not already present.
      *
      * @param name    The name of the class to load.
-     * @param mutex   The lock of the classloader
      * @param resolve Whether to resolve the class or not
      * @return The loaded class, wrapped in a ClassCache object.
      */
-    private ClassCache findClass(String name, Object mutex, boolean resolve) {
+    private ClassCache findClassCache(String name, boolean resolve) {
         ClassCache cache = caches.get(name);
         if (cache == null) {
-            ClassCache newCache = null;
-            synchronized (mutex) {
-                cache = caches.get(name);
-                if (cache == null) {
-                    try {
-                        Class<?> type = findClass(name);
-                        if (resolve) {
-                            resolveClass(type);
-                        }
-                        newCache = new ClassCache(name, mutex, type, resolve);
-                    } catch (ClassNotFoundException e) {
-                        return null;
+            Locker locker = new Locker(getClassLoadingLock(name));
+            cache = locker.callQuietly(() -> {
+                ClassCache c = caches.get(name);
+                if (c == null) {
+                    Class<?> type = findClass(name);
+                    if (resolve) {
+                        resolveClass(type);
                     }
+                    c = new ClassCache(name, locker, type, resolve);
+                    caches.putIfAbsent(name, c);
                 }
-            }
-            if (newCache != null) {
-                caches.put(name, newCache);
-                cache = newCache;
-            }
+                return c;
+            });
+        }
+        if (cache != null && resolve) {
+            cache.resolve(this::resolveClass);
         }
         return cache;
+    }
+
+    private URL getConfigFile(String name) {
+        File file = new File(configPath, name);
+        if (file.exists() && file.isFile()) {
+            try {
+                return file.toURI().toURL();
+            } catch (MalformedURLException ignore) {
+            }
+        }
+        return null;
     }
 
     /**
@@ -317,41 +385,52 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         @Getter
         private final Class<?> type;
 
-        private final Object mutex;
+        private final Locker locker;
 
         private volatile boolean resolved;
 
-        ClassCache(String name, Object mutex, Callable<Class<?>> callable) {
-            this(name, mutex, findClass(callable, mutex), null);
-        }
-
-        ClassCache(String name, Object mutex, Class<?> type, Boolean resolved) {
+        ClassCache(String name, Locker locker, Class<?> type, boolean resolved) {
             this.name = name;
-            this.mutex = mutex;
+            this.locker = locker;
             this.type = type;
-            this.resolved = resolved != null && resolved;
-        }
-
-        private static Class<?> findClass(Callable<Class<?>> callable, Object mutex) {
-            synchronized (mutex) {
-                try {
-                    return callable.call();
-                } catch (Exception ignored) {
-                }
-            }
-            return null;
+            this.resolved = resolved;
         }
 
         public void resolve(Consumer<Class<?>> resolver) {
             if (resolved) {
                 return;
             }
-            synchronized (mutex) {
-                if (resolved) {
-                    return;
+            locker.run(() -> {
+                try {
+                    resolver.accept(type);
+                } catch (Exception ignored) {
                 }
-                resolver.accept(type);
                 resolved = true;
+            });
+        }
+    }
+
+    private static class Locker {
+
+        private final Object mutex;
+
+        Locker(Object mutex) {
+            this.mutex = mutex;
+        }
+
+        public void run(Runnable runnable) {
+            synchronized (mutex) {
+                runnable.run();
+            }
+        }
+
+        public <T> T callQuietly(Callable<T> callable) {
+            synchronized (mutex) {
+                try {
+                    return callable.call();
+                } catch (Exception e) {
+                    return null;
+                }
             }
         }
     }

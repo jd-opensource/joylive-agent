@@ -18,6 +18,7 @@ package com.jd.live.agent.bootstrap.classloader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.function.Predicate;
 
 /**
  * Defines an interface for resource loading and class loading functionalities. This interface extends
@@ -59,6 +60,27 @@ public interface Resourcer extends ResourceFinder {
      * @throws ClassNotFoundException If the class was not found.
      */
     Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException;
+
+    /**
+     * Loads the class with the specified name, with an option to resolve it.
+     *
+     * @param name      The binary name of the class to load.
+     * @param resolve   If {@code true}, then resolve the class.
+     * @param predicate The predicate to determine if the parent class loader should be used.
+     * @return The resulting {@link Class} object.
+     * @throws ClassNotFoundException If the class was not found.
+     */
+    Class<?> loadClass(String name, boolean resolve, Predicate<ClassLoader> predicate) throws ClassNotFoundException;
+
+    /**
+     * Finds and loads a class with the specified name.
+     *
+     * @param name    the fully qualified class name
+     * @param resolve whether to resolve the class
+     * @return the loaded class
+     * @throws ClassNotFoundException if the class cannot be found
+     */
+    Class<?> findClass(String name, boolean resolve) throws ClassNotFoundException;
 
     /**
      * Retrieves a resource located by a specified path.

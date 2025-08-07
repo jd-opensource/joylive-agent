@@ -20,8 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
-import java.net.URL;
-
 public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
 
     private final Resourcer resourcer;
@@ -34,14 +32,7 @@ public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         if (mc.getResult() == null) {
-            String name = mc.getArgument(0);
-            String className = name.replace('/', '.');
-            if (resourcer.test(className)) {
-                URL url = resourcer.findResource(name);
-                if (url != null) {
-                    mc.setResult(url);
-                }
-            }
+            mc.setResult(resourcer.findResource(mc.getArgument(0)));
         }
     }
 }

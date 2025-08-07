@@ -32,11 +32,11 @@ public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
     public void onError(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         String name = ctx.getArgument(0);
-        // This is joy live agent class
+        boolean resolve = mc.getArgument(1);
         if (resourcer.test(name)) {
-            // resourcer is plugin loader manager.
+            // This is joy live agent class
             try {
-                mc.success(resourcer.loadClass(name));
+                mc.success(resourcer.loadClass(name, resolve));
             } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
             }
         }
