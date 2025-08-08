@@ -831,6 +831,23 @@ public class StringUtils {
     }
 
     /**
+     * Extracts the package name from a fully qualified class name.
+     *
+     * @param name the fully qualified class name
+     * @return the package name, or the original name if no package separator found
+     */
+    public static String getPackage(String name) {
+        if (name == null) {
+            return null;
+        }
+        int pos = name.lastIndexOf('.');
+        if (pos > 0) {
+            name = name.substring(0, pos);
+        }
+        return name;
+    }
+
+    /**
      * Converts a kebab-case string to a camel-case string.
      *
      * @param name The kebab-case string to be converted.

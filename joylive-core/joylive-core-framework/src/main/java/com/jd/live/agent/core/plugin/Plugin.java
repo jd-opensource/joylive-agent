@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.plugin;
 
+import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 import com.jd.live.agent.core.extension.ExtensibleLoader;
 import com.jd.live.agent.core.extension.condition.ConditionMatcher;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.add;
+import static com.jd.live.agent.core.util.StringUtils.getPackage;
 
 /**
  * Represents a plugin with capabilities to load, manage, and interact with plugin definitions.
@@ -91,6 +93,11 @@ public class Plugin extends AbstractPluginDescriptor {
     @Override
     protected boolean doLoad() throws Exception {
         definitions = loader.loadExtensible().getExtensions();
+        ClassLoader classLoader = loader.getClassLoader();
+        if (!definitions.isEmpty() && classLoader instanceof LiveClassLoader) {
+            // add package to class loader to faster class loading
+            ((LiveClassLoader) classLoader).addPackage(getPackage(definitions.get(0).getClass().getPackage().getName()));
+        }
         return true;
     }
 

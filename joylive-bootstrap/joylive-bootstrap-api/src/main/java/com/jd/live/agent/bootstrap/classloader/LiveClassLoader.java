@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,6 +66,9 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
      * Flag indicating whether this class loader has been started.
      */
     private final AtomicBoolean started = new AtomicBoolean(true);
+
+    @Getter
+    private final Set<String> packageNames = new HashSet<>();
 
     /**
      * Constructs a new LiveClassLoader with the specified URLs, parent class loader, type, and filter.
@@ -174,6 +175,12 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     @Override
     public ResourcerType getType() {
         return type;
+    }
+
+    public void addPackage(String packageName) {
+        if (packageName != null && !packageName.isEmpty()) {
+            packageNames.add(packageName);
+        }
     }
 
     @Override

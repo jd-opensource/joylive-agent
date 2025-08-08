@@ -83,6 +83,21 @@ public interface Resourcer extends ResourceFinder {
     Class<?> findClass(String name, boolean resolve) throws ClassNotFoundException;
 
     /**
+     * Finds a class without throwing exceptions.
+     *
+     * @param name    the class name
+     * @param resolve whether to resolve the class
+     * @return the class if found, null otherwise
+     */
+    default Class<?> findClassQuietly(String name, boolean resolve) {
+        try {
+            return findClass(name, resolve);
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+            return null;
+        }
+    }
+
+    /**
      * Retrieves a resource located by a specified path.
      *
      * @param path The path to the resource.
