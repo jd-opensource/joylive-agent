@@ -44,11 +44,14 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
 
     private static final String METHOD_STARTED = "started";
 
-    // for spring 2.2.9+
+    // for springboot 2.2.9+
     private static final String METHOD_READY = "ready";
 
-    // for spring 2.2.9
+    // fix for springboot 2.2.9-
     private static final String METHOD_RUNNING = "running";
+
+    // fix for spring boot 1.x
+    private static final String METHOD_FINISHED = "finished";
 
     private static final String METHOD_ENVIRONMENT_PREPARED = "environmentPrepared";
 
@@ -72,7 +75,7 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
                         () -> new ApplicationOnStartedInterceptor(listener, docRegistry, application)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING),
+                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING, METHOD_FINISHED),
                         () -> new ApplicationOnReadyInterceptor(listener, config, registry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
                         () -> new ApplicationOnEnvironmentPreparedInterceptor(listener, config, registry, application))
