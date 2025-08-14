@@ -112,6 +112,7 @@
                 <include>com.jd.live:joylive-router-springweb5</include>
                 <include>com.jd.live:joylive-router-springweb6</include>
                 <include>com.jd.live:joylive-router-springweb7</include>
+                <include>com.jd.live:joylive-router-springcloud1</include>
                 <include>com.jd.live:joylive-router-springcloud2.1</include>
                 <include>com.jd.live:joylive-router-springcloud2.2</include>
                 <include>com.jd.live:joylive-router-springcloud3</include>

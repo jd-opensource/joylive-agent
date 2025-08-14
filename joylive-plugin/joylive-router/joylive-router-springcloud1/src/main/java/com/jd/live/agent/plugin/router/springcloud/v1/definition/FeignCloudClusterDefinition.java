@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2_1.definition;
+package com.jd.live.agent.plugin.router.springcloud.v1.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -24,32 +24,31 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.HttpClientCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.FeignCloudClusterInterceptor;
 
 /**
- * HttpClientCloudClusterDefinition
+ * FeignClusterDefinition
  *
- * @since 1.7.0
+ * @since 1.9.0
  */
 @Injectable
-@Extension(value = "HttpClientCloudClusterDefinition_v2.1")
-@ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(HttpClientCloudClusterDefinition.TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT)
-public class HttpClientCloudClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "FeignClusterDefinition_v1")
+@ConditionalOnSpringCloud1FlowControlEnabled
+@ConditionalOnClass(FeignCloudClusterDefinition.TYPE)
+public class FeignCloudClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient";
+    protected static final String TYPE = "org.springframework.cloud.netflix.feign.ribbon.LoadBalancerFeignClient";
 
-    protected static final String TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RetryableRibbonLoadBalancingHttpClient";
+    private static final String METHOD = "execute";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public HttpClientCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.in(TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT, TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT);
+    public FeignCloudClusterDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
-                        () -> new HttpClientCloudClusterInterceptor(context))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new FeignCloudClusterInterceptor(context))
         };
     }
 }

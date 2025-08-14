@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2_1.definition;
+package com.jd.live.agent.plugin.router.springcloud.v1.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -21,20 +21,20 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.LoadbalancerClientInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.LoadbalancerClientInterceptor;
 
 /**
  * LoadbalancerClientDefinition
  *
- * @since 1.7.0
+ * @since 1.9.0
  */
-@Extension(value = "LoadbalancerClientDefinition_v2.1")
-@ConditionalOnSpringCloud2FlowControlEnabled
+@Extension(value = "LoadbalancerClientDefinition_v1")
+@ConditionalOnSpringCloud1FlowControlEnabled
 @ConditionalOnClass(LoadbalancerClientDefinition.TYPE)
 public class LoadbalancerClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "com.netflix.client.AbstractLoadBalancerAwareClient";
+    protected static final String TYPE = "com.netflix.loadbalancer.AbstractLoadBalancer";
 
     private static final String METHOD = "executeWithLoadBalancer";
 

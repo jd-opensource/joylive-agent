@@ -39,6 +39,8 @@ public class CollectionUtils {
 
     private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
 
+    private static final Class<?> UNMODIFIED_LIST_CLASS = Collections.unmodifiableList(new ArrayList<>()).getClass();
+
     /**
      * Looks up indices in the list of values where the predicate evaluates to true.
      * Iterates through the list with a specified step and adds the index to the result
@@ -673,6 +675,49 @@ public class CollectionUtils {
     }
 
     /**
+     * Returns a modified version of the given map, if necessary.
+     *
+     * @param sources the original map
+     * @return the modified map, or the original map if no modification is needed
+     */
+    @SuppressWarnings("unchecked")
+    public static <V> List<V> modifiedList(List<V> sources) {
+        if (sources == null) {
+            return null;
+        }
+        if (sources.getClass() == UNMODIFIED_LIST_CLASS && Accessor.LIST_FIELD != null) {
+            sources = (List<V>) Accessor.LIST_FIELD.get(sources);
+        }
+        return sources;
+    }
+
+    /**
+     * Returns a modified version of the given headers, if necessary.
+     *
+     * @param sources the original map
+     * @return the modified headers, or the original headers if no modification is needed
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, List<String>> modifiedHeaders(Map<String, List<String>> sources) {
+        if (sources == null) {
+            return null;
+        }
+        if (sources.getClass() == UNMODIFIED_MAP_CLASS && Accessor.MAP_FIELD != null) {
+            sources = (Map<String, List<String>>) Accessor.MAP_FIELD.get(sources);
+            if (sources != null) {
+                for (Map.Entry<String, List<String>> entry : sources.entrySet()) {
+                    List<String> values = entry.getValue();
+                    if (values.getClass() == UNMODIFIED_LIST_CLASS && Accessor.LIST_FIELD != null) {
+                        values = (List<String>) Accessor.LIST_FIELD.get(sources);
+                        entry.setValue(values);
+                    }
+                }
+            }
+        }
+        return sources;
+    }
+
+    /**
      * Instantiate a new {@link LinkedHashMap} with an initial capacity
      * that can accommodate the specified number of elements without
      * any immediate resize/rehash operations to be expected.
@@ -711,6 +756,8 @@ public class CollectionUtils {
          * Field accessor for the internal map data ("m") in {@code UNMODIFIED_MAP_CLASS}.
          */
         private static final FieldAccessor MAP_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "m");
+
+        private static final FieldAccessor LIST_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "list");
     }
 
     /**
