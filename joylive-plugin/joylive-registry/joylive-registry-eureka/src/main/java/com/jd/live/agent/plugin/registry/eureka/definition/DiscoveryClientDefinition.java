@@ -59,13 +59,21 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
             "com.netflix.discovery.shared.resolver.EndpointRandomizer"
     };
 
-    // for version 1
+    // for version 1.10
     private static final String[] ARGUMENTS_CONSTRUCTOR1 = new String[]{
             "com.netflix.appinfo.ApplicationInfoManager",
             "com.netflix.discovery.EurekaClientConfig",
             "com.netflix.discovery.AbstractDiscoveryClientOptionalArgs",
             "javax.inject.Provider",
             "com.netflix.discovery.shared.resolver.EndpointRandomizer"
+    };
+
+    // for version 1.6
+    private static final String[] ARGUMENTS_CONSTRUCTOR3 = new String[]{
+            "com.netflix.appinfo.ApplicationInfoManager",
+            "com.netflix.discovery.EurekaClientConfig",
+            "com.netflix.discovery.AbstractDiscoveryClientOptionalArgs",
+            "javax.inject.Provider"
     };
 
     @Inject(Registry.COMPONENT_REGISTRY)
@@ -78,6 +86,9 @@ public class DiscoveryClientDefinition extends PluginDefinitionAdapter {
                         MatcherBuilder.named(METHOD_GET_AND_STORE_FULL_REGISTRY), () -> new DiscoveryClientFullUpdateInterceptor()),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_UPDATE_DELTA), () -> new DiscoveryClientDeltaUpdateInterceptor()),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR3)),
+                        () -> new DiscoveryClientConstructorInterceptor(registry)),
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS_CONSTRUCTOR2)),
                         () -> new DiscoveryClientConstructorInterceptor(registry)),
