@@ -25,6 +25,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.servlet.ServletException;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+
 /**
  * A concrete implementation of the InboundThrower interface for Spring Cloud 3.x
  *
@@ -32,69 +36,79 @@ import org.springframework.web.server.ResponseStatusException;
  */
 public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequest> {
 
+    // spring web 5+
+    private static final Class<?> TYPE = loadClass("org.springframework.web.server.ResponseStatusException", NestedRuntimeException.class.getClassLoader());
+
     public static final SpringInboundThrower THROWER = new SpringInboundThrower();
 
     @Override
-    protected NestedRuntimeException createUnReadyException(RejectUnreadyException exception, HttpInboundRequest request) {
+    protected Throwable createUnReadyException(RejectUnreadyException exception, HttpInboundRequest request) {
         String message = exception.getMessage() == null ? "The cluster is not ready. " : exception.getMessage();
         return createException(HttpStatus.SERVICE_UNAVAILABLE, message);
     }
 
     @Override
-    protected NestedRuntimeException createLiveException(LiveException exception, HttpInboundRequest request) {
+    protected Throwable createLiveException(LiveException exception, HttpInboundRequest request) {
         return createException(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
 
     @Override
-    protected NestedRuntimeException createPermissionException(RejectPermissionException exception, HttpInboundRequest request) {
+    protected Throwable createPermissionException(RejectPermissionException exception, HttpInboundRequest request) {
         return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
     @Override
-    protected NestedRuntimeException createAuthException(RejectAuthException exception, HttpInboundRequest request) {
+    protected Throwable createAuthException(RejectAuthException exception, HttpInboundRequest request) {
         return createException(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
     @Override
-    protected NestedRuntimeException createLimitException(RejectLimitException exception, HttpInboundRequest request) {
+    protected Throwable createLimitException(RejectLimitException exception, HttpInboundRequest request) {
         return createException(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
     }
 
     @Override
-    protected NestedRuntimeException createCircuitBreakException(RejectCircuitBreakException exception, HttpInboundRequest request) {
+    protected Throwable createCircuitBreakException(RejectCircuitBreakException exception, HttpInboundRequest request) {
         return createException(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), exception);
     }
 
     @Override
-    protected NestedRuntimeException createEscapeException(RejectEscapeException exception, HttpInboundRequest request) {
+    protected Throwable createEscapeException(RejectEscapeException exception, HttpInboundRequest request) {
         return createException(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, exception.getMessage(), exception);
     }
 
     @Override
-    protected NestedRuntimeException createRejectException(RejectException exception, HttpInboundRequest request) {
+    protected Throwable createRejectException(RejectException exception, HttpInboundRequest request) {
         return createException(HttpStatus.FORBIDDEN, exception.getMessage());
     }
 
     /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and headers map.
+     * Creates an {@link Throwable} using the provided status, message, and headers map.
      *
      * @param status  the HTTP status code of the error
      * @param message the error message
      * @return an {@link NestedRuntimeException} instance with the specified details
      */
-    public static NestedRuntimeException createException(HttpStatus status, String message) {
+    public static Throwable createException(HttpStatus status, String message) {
         return createException(status, message, null);
     }
 
     /**
-     * Creates an {@link NestedRuntimeException} using the provided status, message, and {@link HttpHeaders}.
+     * Creates an {@link Throwable} using the provided status, message, and {@link HttpHeaders}.
      *
      * @param status    the HTTP status code of the error
      * @param message   the error message
      * @param throwable the exception
-     * @return an {@link NestedRuntimeException} instance with the specified details
+     * @return an {@link Throwable} instance with the specified details
      */
-    public static NestedRuntimeException createException(HttpStatus status, String message, Throwable throwable) {
-        return new ResponseStatusException(status, message, throwable);
+    public static Throwable createException(HttpStatus status, String message, Throwable throwable) {
+        if (TYPE != null) {
+            // spring web 5+
+            return new ResponseStatusException(status, message, throwable);
+        } else {
+            // spring web 4.x
+            return new ServletException(message, throwable);
+        }
+
     }
 }
