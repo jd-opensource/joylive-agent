@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.springcloud.v2_1.condition;
+package com.jd.live.agent.plugin.registry.springcloud.v1.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
 
 import java.lang.annotation.*;
@@ -26,17 +25,11 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnSpringCloudEnabled
-@ConditionalOnClass(ConditionalOnSpringCloud2Enabled.TYPE_ENABLE_DISCOVERY_CLIENT)
-@ConditionalOnMissingClass(ConditionalOnSpringCloud2Enabled.TYPE_DISCOVERY_LIFECYCLE)
-@ConditionalOnMissingClass(ConditionalOnSpringCloud2Enabled.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
+@ConditionalOnClass(ConditionalOnSpringCloud1Enabled.TYPE_DISCOVERY_LIFECYCLE)
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud2Enabled {
-
-    String TYPE_ENABLE_DISCOVERY_CLIENT = "org.springframework.cloud.client.discovery.EnableDiscoveryClient";
+public @interface ConditionalOnSpringCloud1Enabled {
 
     // spring cloud 1.x
     String TYPE_DISCOVERY_LIFECYCLE = "org.springframework.cloud.client.discovery.DiscoveryLifecycle";
 
-    // spring cloud 2.2+
-    String TYPE_SERVICE_INSTANCE_LIST_SUPPLIER = "org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier";
 }

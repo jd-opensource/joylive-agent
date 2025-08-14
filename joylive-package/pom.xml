@@ -176,6 +176,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-registry-springcloud1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-registry-springcloud2.1</artifactId>
         </dependency>
         <dependency>

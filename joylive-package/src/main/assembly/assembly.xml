@@ -100,6 +100,7 @@
             <unpack>false</unpack>
             <includes>
                 <include>com.jd.live:joylive-application-springboot2</include>
+                <include>com.jd.live:joylive-registry-springcloud1</include>
                 <include>com.jd.live:joylive-registry-springcloud2.1</include>
                 <include>com.jd.live:joylive-registry-springcloud2.2</include>
                 <include>com.jd.live:joylive-registry-springcloud3</include>
