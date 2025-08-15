@@ -3,3 +3,5 @@ com.jd.live.agent.plugin.router.springcloud.v1.definition.BlockingRetryableCloud
 com.jd.live.agent.plugin.router.springcloud.v1.definition.FeignCloudClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v1.definition.HttpClientCloudClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v1.definition.LoadbalancerClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v1.definition.BaseLoadBalancerDefinition
+com.jd.live.agent.plugin.router.springcloud.v1.definition.AbstractLoadBalancerAwareClientDefinition
