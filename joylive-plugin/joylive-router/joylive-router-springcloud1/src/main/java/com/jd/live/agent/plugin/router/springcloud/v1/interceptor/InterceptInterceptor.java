@@ -18,18 +18,18 @@ package com.jd.live.agent.plugin.router.springcloud.v1.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
-import com.netflix.client.ClientRequest;
+import org.springframework.http.HttpRequest;
 
 import static com.jd.live.agent.plugin.router.springcloud.v1.instance.RibbonEndpoint.ATTRIBUTE_CLIENT_REQUEST;
 
 /**
- * ExecuteWithLoadBalancerInterceptor for live and lane route
+ * InterceptInterceptor for live and lane route
  */
-public class ExecuteWithLoadBalancerInterceptor extends InterceptorAdaptor {
+public class InterceptInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        ClientRequest request = ctx.getArgument(0);
+        HttpRequest request = ctx.getArgument(0);
         RequestContext.setAttribute(ATTRIBUTE_CLIENT_REQUEST, request);
     }
 

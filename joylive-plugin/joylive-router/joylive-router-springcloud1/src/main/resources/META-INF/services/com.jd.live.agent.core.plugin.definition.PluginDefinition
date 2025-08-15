@@ -5,3 +5,4 @@ com.jd.live.agent.plugin.router.springcloud.v1.definition.HttpClientCloudCluster
 com.jd.live.agent.plugin.router.springcloud.v1.definition.LoadbalancerClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v1.definition.BaseLoadBalancerDefinition
 com.jd.live.agent.plugin.router.springcloud.v1.definition.AbstractLoadBalancerAwareClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v1.definition.LoadBalancerInterceptorDefinition

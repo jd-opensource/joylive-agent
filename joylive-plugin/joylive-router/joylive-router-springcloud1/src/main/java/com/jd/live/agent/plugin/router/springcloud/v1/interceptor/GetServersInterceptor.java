@@ -50,7 +50,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.router.springcloud.v1.instance.RibbonEndpoint.ATTRIBUTE_CLIENT_REQUEST;
 
 /**
- * BaseLoadBalancerInterceptor
+ * BaseLoadBalancerInterceptor for live and lane route
  */
 public class GetServersInterceptor extends InterceptorAdaptor {
 
@@ -73,7 +73,7 @@ public class GetServersInterceptor extends InterceptorAdaptor {
         }
         BaseLoadBalancer balancer = (BaseLoadBalancer) mc.getTarget();
         String service = balancer.getName();
-        ClientRequest clientRequest = RequestContext.getAttribute(ATTRIBUTE_CLIENT_REQUEST);
+        Object clientRequest = RequestContext.getAttribute(ATTRIBUTE_CLIENT_REQUEST);
         HttpOutboundRequest request = Accessor.build(clientRequest, service);
         if (request == null) {
             return;
