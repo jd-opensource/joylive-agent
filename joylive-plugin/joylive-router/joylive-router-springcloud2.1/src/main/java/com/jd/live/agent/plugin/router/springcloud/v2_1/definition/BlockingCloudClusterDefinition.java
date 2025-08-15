@@ -24,10 +24,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.BlockingCloudClusterInterceptor;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
 
 /**
  * BlockingClusterDefinition
@@ -59,8 +57,7 @@ public class BlockingCloudClusterDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
                                 and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor<LoadBalancerInterceptor>(context,
-                                (registry, interceptor) -> new BlockingCloudCluster(registry, interceptor))
+                        () -> new BlockingCloudClusterInterceptor.LoadBalancerClusterInterceptor(context)
                 )
         };
     }

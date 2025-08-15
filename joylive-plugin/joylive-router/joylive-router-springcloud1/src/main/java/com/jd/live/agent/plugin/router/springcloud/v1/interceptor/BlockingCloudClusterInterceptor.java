@@ -24,6 +24,8 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v1.response.BlockingClusterResponse;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
+import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
@@ -32,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 /**
- * BlockingClusterInterceptor
+ * BlockingCloudClusterInterceptor
  *
  * @since 1.9.0
  */
@@ -42,7 +44,7 @@ public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestIntercep
 
     private final BiFunction<Registry, T, BlockingCloudCluster> factory;
 
-    public BlockingCloudClusterInterceptor(InvocationContext context, BiFunction<Registry, T, BlockingCloudCluster> factory) {
+    protected BlockingCloudClusterInterceptor(InvocationContext context, BiFunction<Registry, T, BlockingCloudCluster> factory) {
         super(context);
         this.factory = factory;
     }
@@ -67,5 +69,29 @@ public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestIntercep
     @Override
     protected String getServiceName(HttpRequest request) {
         return request.getURI().getHost();
+    }
+
+    /**
+     * LoadBalancerClusterInterceptor
+     *
+     * @since 1.9.0
+     */
+    public static class LoadBalancerClusterInterceptor extends BlockingCloudClusterInterceptor<LoadBalancerInterceptor> {
+
+        public LoadBalancerClusterInterceptor(InvocationContext context) {
+            super(context, BlockingCloudCluster::new);
+        }
+    }
+
+    /**
+     * RetryLoadBalancerClusterInterceptor
+     *
+     * @since 1.9.0
+     */
+    public static class RetryLoadBalancerClusterInterceptor extends BlockingCloudClusterInterceptor<RetryLoadBalancerInterceptor> {
+
+        public RetryLoadBalancerClusterInterceptor(InvocationContext context) {
+            super(context, BlockingCloudCluster::new);
+        }
     }
 }
