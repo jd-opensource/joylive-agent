@@ -2,7 +2,8 @@
 
 # 1.9.0
 
-1. 修复dubbo 3.0 兼容性问题
+1. 支持 Spring cloud Dalston.SR1
+2. 修复dubbo 3.0 兼容性问题
 
 ## 1.8.0
 
