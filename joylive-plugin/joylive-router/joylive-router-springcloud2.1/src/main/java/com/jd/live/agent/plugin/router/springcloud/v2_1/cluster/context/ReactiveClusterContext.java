@@ -34,7 +34,7 @@ public class ReactiveClusterContext extends BlockingClusterContext {
     private static final String FIELD_LOAD_BALANCER_FACTORY = "loadBalancerFactory";
 
     public ReactiveClusterContext(Registry registry, ExchangeFilterFunction filterFunction) {
-        super(registry, null);
+        super(registry);
         // LoadBalancerExchangeFilterFunction.loadBalancerClient
         LoadBalancerClient client = getQuietly(filterFunction, FIELD_LOAD_BALANCER_CLIENT);
         if (client != null) {

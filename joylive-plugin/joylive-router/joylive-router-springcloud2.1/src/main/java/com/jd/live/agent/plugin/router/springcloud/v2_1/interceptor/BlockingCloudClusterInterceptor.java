@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.BlockingClusterResponse;
@@ -28,25 +29,30 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 /**
  * BlockingClusterInterceptor
  *
- * @since 1.0.0
+ * @since 1.9.0
  */
-public class BlockingCloudClusterInterceptor extends AbstractCloudClusterInterceptor<HttpRequest> {
+public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestInterceptor> extends AbstractCloudClusterInterceptor<HttpRequest> {
 
-    private final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<T, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    public BlockingCloudClusterInterceptor(InvocationContext context) {
+    private final BiFunction<Registry, T, BlockingCloudCluster> factory;
+
+    public BlockingCloudClusterInterceptor(InvocationContext context, BiFunction<Registry, T, BlockingCloudCluster> factory) {
         super(context);
+        this.factory = factory;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         HttpRequest request = ctx.getArgument(0);
-        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
+        BlockingCloudCluster cluster = clusters.computeIfAbsent((T) ctx.getTarget(), i -> factory.apply(context.getRegistry(), i));
         BlockingCloudClusterRequest clusterRequest = new BlockingCloudClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
         HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
         BlockingClusterResponse response = cluster.request(invocation);
