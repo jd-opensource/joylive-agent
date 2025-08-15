@@ -15,13 +15,15 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.RibbonServiceRegistry;
 import lombok.Getter;
+import org.springframework.cloud.client.loadbalancer.LoadBalancedRetryFactory;
 import org.springframework.cloud.netflix.ribbon.apache.RetryableRibbonLoadBalancingHttpClient;
 import org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient;
 
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 
 /**
  * A concrete implementation of cluster context specifically designed for http clients,
@@ -35,8 +37,16 @@ public class HttpClientClusterContext extends AbstractCloudClusterContext {
     public HttpClientClusterContext(Registry registry, RibbonLoadBalancingHttpClient client) {
         super(registry);
         this.client = client;
-        this.retryFactory = client instanceof RetryableRibbonLoadBalancingHttpClient ? (getQuietly(client, "loadBalancedRetryFactory")) : null;
+        this.retryFactory = client instanceof RetryableRibbonLoadBalancingHttpClient
+                ? (LoadBalancedRetryFactory) Accessor.retryFactory.get(client)
+                : null;
         this.system = service -> new RibbonServiceRegistry(service, client.getLoadBalancer());
+    }
+
+    private static final class Accessor {
+
+        private static final FieldAccessor retryFactory = getAccessor(RetryableRibbonLoadBalancingHttpClient.class, "loadBalancedRetryFactory");
+
     }
 
 }

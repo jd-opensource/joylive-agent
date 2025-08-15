@@ -23,9 +23,8 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.HttpClientCloudClusterInterceptor;
 
 /**
@@ -35,9 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.HttpClientCl
  */
 @Injectable
 @Extension(value = "HttpClientCloudClusterDefinition_v2.1")
-// for ribbon
-@ConditionalOnSpringEnabled
-@ConditionalOnFlowControlEnabled
+@ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnClass(HttpClientCloudClusterDefinition.TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT)
 public class HttpClientCloudClusterDefinition extends PluginDefinitionAdapter {
 

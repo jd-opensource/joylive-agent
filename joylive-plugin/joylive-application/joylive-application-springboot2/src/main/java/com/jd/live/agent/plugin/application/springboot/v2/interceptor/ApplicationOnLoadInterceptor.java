@@ -16,10 +16,12 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
+import org.springframework.boot.SpringApplication;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.ClassUtils;
 
@@ -27,24 +29,38 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
 
+    private static final LockContext lock = new LockContext.DefaultLockContext();
+
     public ApplicationOnLoadInterceptor(AppListener listener) {
         this.listener = listener;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // fix for spring boot devtools, it will create SpringApplication
-        if (Accessor.isDevThread()) {
-            return;
+        // fix for spring boot 1.x
+        if (ctx.tryLock(lock)) {
+            // fix for spring boot devtools, it will create SpringApplication
+            if (Accessor.isDevThread()) {
+                return;
+            }
+            // fix for spring boot 2.1, it will trigger twice.
+            AppLifecycle.load(() -> {
+                Class<?> mainClass = deduceMainApplicationClass();
+                // fix for spring boot 1.x
+                Object arg = ctx.getArgument(0);
+                ResourceLoader resourceLoader = arg instanceof ResourceLoader ? (ResourceLoader) arg : null;
+                ClassLoader classLoader = resourceLoader != null
+                        ? resourceLoader.getClassLoader()
+                        : mainClass != null ? mainClass.getClassLoader() : SpringApplication.class.getClassLoader();
+                InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
+                listener.onLoading(classLoader, mainClass);
+            });
         }
-        // fix for spring boot 2.1, it will trigger twice.
-        AppLifecycle.load(() -> {
-            ResourceLoader resourceLoader = ctx.getArgument(0);
-            ClassLoader classLoader = resourceLoader != null ? resourceLoader.getClassLoader() : ClassUtils.getDefaultClassLoader();
-            Class<?> mainClass = deduceMainApplicationClass();
-            InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
-            listener.onLoading(classLoader, mainClass);
-        });
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        ctx.unlock();
     }
 
     private Class<?> deduceMainApplicationClass() {

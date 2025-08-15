@@ -36,11 +36,6 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "org.springframework.boot.SpringApplication";
 
-    private static final String[] ARGUMENTS = {
-            "org.springframework.core.io.ResourceLoader",
-            "java.lang.Class[]"
-    };
-
     @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
     private AppListener listener;
 
@@ -48,9 +43,8 @@ public class SpringApplicationDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor()
-                                .and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new ApplicationOnLoadInterceptor(listener))
+                        // fix for spring boot 1.x
+                        MatcherBuilder.isConstructor(), () -> new ApplicationOnLoadInterceptor(listener))
         };
     }
 }

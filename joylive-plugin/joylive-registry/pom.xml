@@ -18,6 +18,7 @@
         <module>joylive-registry-dubbo2.7</module>
         <module>joylive-registry-dubbo2.6</module>
         <module>joylive-registry-sofarpc</module>
+        <module>joylive-registry-springcloud1</module>
         <module>joylive-registry-springcloud2.1</module>
         <module>joylive-registry-springcloud2.2</module>
         <module>joylive-registry-springcloud3</module>

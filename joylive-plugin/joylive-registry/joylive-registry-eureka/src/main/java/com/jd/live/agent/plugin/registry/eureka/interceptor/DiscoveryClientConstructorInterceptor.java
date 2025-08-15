@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.eureka.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.plugin.registry.eureka.registry.EurekaRegistryConfig;
@@ -29,6 +30,8 @@ import com.netflix.discovery.EurekaClientConfig;
  */
 public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 
+    private static final LockContext lock = new LockContext.DefaultLockContext();
+
     private final CompositeRegistry registry;
 
     public DiscoveryClientConstructorInterceptor(CompositeRegistry registry) {
@@ -37,13 +40,16 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object[] arguments = ctx.getArguments();
-        ApplicationInfoManager applicationInfoManager = (ApplicationInfoManager) arguments[0];
-        EurekaClientConfig config = (EurekaClientConfig) arguments[1];
-        String zone = applicationInfoManager.getInfo().getMetadata().get("zone");
-        EurekaRegistryService registryService = new EurekaRegistryService(config, zone);
-        arguments[1] = new EurekaRegistryConfig(config, registryService);
-        registry.addSystemRegistry(registryService);
+        // fix for eureka 1.6 & 1.10
+        if (ctx.tryLock(lock)) {
+            Object[] arguments = ctx.getArguments();
+            ApplicationInfoManager applicationInfoManager = (ApplicationInfoManager) arguments[0];
+            EurekaClientConfig config = (EurekaClientConfig) arguments[1];
+            String zone = applicationInfoManager.getInfo().getMetadata().get("zone");
+            EurekaRegistryService registryService = new EurekaRegistryService(config, zone);
+            arguments[1] = new EurekaRegistryConfig(config, registryService);
+            registry.addSystemRegistry(registryService);
+        }
     }
 
     @Override
@@ -52,5 +58,10 @@ public class DiscoveryClientConstructorInterceptor extends InterceptorAdaptor {
         EurekaRegistryConfig config = (EurekaRegistryConfig) client.getEurekaClientConfig();
         EurekaRegistryService registry = (EurekaRegistryService) config.getPublisher();
         registry.setClient(client);
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        ctx.unlock();
     }
 }

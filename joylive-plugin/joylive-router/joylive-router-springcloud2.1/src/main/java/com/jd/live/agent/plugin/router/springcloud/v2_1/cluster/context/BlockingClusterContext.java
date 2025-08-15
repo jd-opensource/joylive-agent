@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
@@ -22,14 +24,11 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.RibbonServiceRe
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.SpringServiceRegistry;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
+import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
+import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
+import org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient;
 import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
  * A concrete implementation of cluster context that provides blocking behavior
@@ -39,28 +38,40 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
 
     private static final String TYPE_BLOCKING_LOAD_BALANCER_CLIENT = "org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient";
     private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
-    private static final String FIELD_LOAD_BALANCER = "loadBalancer";
-    private static final String FIELD_LB_PROPERTIES = "lbProperties";
-    private static final String FIELD_LB_RETRY_FACTORY = "lbRetryFactory";
-    private static final String FIELD_LOAD_BALANCER_CLIENT_FACTORY = "loadBalancerClientFactory";
-    private static final String FIELD_CLIENT_FACTORY = "clientFactory";
-    private static final String FIELD_REQUEST_FACTORY = "requestFactory";
 
     private final LoadBalancerRetryProperties retryProperties;
 
     @Getter
     private final LoadBalancerRequestFactory requestFactory;
 
-    public BlockingClusterContext(Registry registry, ClientHttpRequestInterceptor interceptor) {
+    protected BlockingClusterContext(Registry registry) {
+        super(registry);
+        this.requestFactory = null;
+        this.system = null;
+        this.retryProperties = null;
+        this.retryFactory = null;
+    }
+
+    public BlockingClusterContext(Registry registry, LoadBalancerInterceptor interceptor) {
         super(registry);
         // LoadBalancerInterceptor.requestFactory
-        this.requestFactory = getQuietly(interceptor, FIELD_REQUEST_FACTORY);
+        this.requestFactory = (LoadBalancerRequestFactory) LoadBalancerInterceptorAccessor.requestFactory.get(interceptor);
         // LoadBalancerInterceptor.loadBalancer
-        this.system = createFactory(getQuietly(interceptor, FIELD_LOAD_BALANCER));
+        this.system = createFactory((LoadBalancerClient) LoadBalancerInterceptorAccessor.loadBalancer.get(interceptor));
+        this.retryProperties = null;
+        this.retryFactory = null;
+    }
+
+    public BlockingClusterContext(Registry registry, RetryLoadBalancerInterceptor interceptor) {
+        super(registry);
+        // RetryLoadBalancerInterceptor.requestFactory
+        this.requestFactory = (LoadBalancerRequestFactory) RetryLoadBalancerInterceptorAccessor.requestFactory.get(interceptor);
+        // RetryLoadBalancerInterceptor.loadBalancer
+        this.system = createFactory((LoadBalancerClient) RetryLoadBalancerInterceptorAccessor.loadBalancer.get(interceptor));
         // RetryLoadBalancerInterceptor.lbProperties
-        this.retryProperties = getQuietly(interceptor, FIELD_LB_PROPERTIES);
+        this.retryProperties = (LoadBalancerRetryProperties) RetryLoadBalancerInterceptorAccessor.lbProperties.get(interceptor);
         // RetryLoadBalancerInterceptor.lbRetryFactory
-        this.retryFactory = getQuietly(interceptor, FIELD_LB_RETRY_FACTORY);
+        this.retryFactory = (LoadBalancedRetryFactory) RetryLoadBalancerInterceptorAccessor.lbRetryFactory.get(interceptor);
     }
 
     @Override
@@ -75,6 +86,7 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
      * @param client the {@link LoadBalancerClient} used to determine the factory type
      * @return a {@link ServiceRegistryFactory} that creates a {@link ServiceRegistry} for a given service name, or {@code null} if the client is not supported
      */
+    @SuppressWarnings("unchecked")
     public static ServiceRegistryFactory createFactory(LoadBalancerClient client) {
         if (client == null) {
             return null;
@@ -83,13 +95,45 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
         if (name.equals(TYPE_BLOCKING_LOAD_BALANCER_CLIENT)) {
             // BlockingLoadBalancerClient.loadBalancerClientFactory
             // LoadBalancerClientFactory
-            ReactiveLoadBalancer.Factory<ServiceInstance> factory = getQuietly(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
+            ReactiveLoadBalancer.Factory<ServiceInstance> factory = (ReactiveLoadBalancer.Factory<ServiceInstance>) BlockingLoadBalancerClientAccessor.clientFactory.get(client);
             return service -> new SpringServiceRegistry(service, factory);
         } else if (name.equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
             // RibbonLoadBalancerClient.clientFactory
             // SpringClientFactory
-            return service -> new RibbonServiceRegistry(service, (SpringClientFactory) getQuietly(client, FIELD_CLIENT_FACTORY));
+            return service -> new RibbonServiceRegistry(service, (SpringClientFactory) RibbonLoadBalancerClientAccessor.clientFactory.get(client));
         }
         return null;
+    }
+
+    private static class LoadBalancerInterceptorAccessor {
+
+        private static final FieldAccessor requestFactory = FieldAccessorFactory.getAccessor(LoadBalancerInterceptor.class, "requestFactory");
+
+        private static final FieldAccessor loadBalancer = FieldAccessorFactory.getAccessor(LoadBalancerInterceptor.class, "loadBalancer");
+
+    }
+
+    private static class RetryLoadBalancerInterceptorAccessor {
+
+        private static final FieldAccessor requestFactory = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "requestFactory");
+
+        private static final FieldAccessor loadBalancer = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "loadBalancer");
+
+        private static final FieldAccessor lbProperties = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "lbProperties");
+
+        private static final FieldAccessor lbRetryFactory = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "lbRetryFactory");
+
+    }
+
+    private static class RibbonLoadBalancerClientAccessor {
+
+        private static final FieldAccessor clientFactory = FieldAccessorFactory.getAccessor(RibbonLoadBalancerClient.class, "clientFactory");
+
+    }
+
+    private static class BlockingLoadBalancerClientAccessor {
+
+        private static final FieldAccessor clientFactory = FieldAccessorFactory.getAccessor(BlockingLoadBalancerClient.class, "loadBalancerClientFactory");
+
     }
 }

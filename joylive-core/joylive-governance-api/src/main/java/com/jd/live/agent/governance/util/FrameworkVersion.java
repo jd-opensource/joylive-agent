@@ -31,6 +31,12 @@ public class FrameworkVersion implements Serializable {
         this.version = version;
     }
 
+    public FrameworkVersion(String framework, Class<?> type, String defaultVersion) {
+        this.framework = framework;
+        String ver = type == null ? null : type.getPackage().getImplementationVersion();
+        this.version = ver == null || ver.isEmpty() ? defaultVersion : ver;
+    }
+
     @Override
     public String toString() {
         if (version == null || version.isEmpty()) {

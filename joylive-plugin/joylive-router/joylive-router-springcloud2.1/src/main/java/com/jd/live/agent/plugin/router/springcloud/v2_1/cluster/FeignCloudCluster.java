@@ -25,7 +25,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.FeignClu
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClusterResponse;
-import feign.Client;
+import org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient;
 import org.springframework.core.NestedRuntimeException;
 
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +44,7 @@ public class FeignCloudCluster extends AbstractCloudCluster<
         FeignClusterContext,
         NestedRuntimeException> {
 
-    public FeignCloudCluster(Registry registry, Client client) {
+    public FeignCloudCluster(Registry registry, LoadBalancerFeignClient client) {
         super(new FeignClusterContext(registry, client), new StatusThrowerFactory<>());
     }
 

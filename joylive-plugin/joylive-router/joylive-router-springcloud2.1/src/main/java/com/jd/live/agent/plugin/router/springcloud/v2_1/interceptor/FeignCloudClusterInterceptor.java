@@ -24,8 +24,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.FeignCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClusterResponse;
-import feign.Client;
 import feign.Request;
+import org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FeignCloudClusterInterceptor extends AbstractCloudClusterInterceptor<Request> {
 
-    private final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<LoadBalancerFeignClient, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
 
     public FeignCloudClusterInterceptor(InvocationContext context) {
         super(context);
@@ -45,7 +45,7 @@ public class FeignCloudClusterInterceptor extends AbstractCloudClusterIntercepto
     protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Request request = ctx.getArgument(0);
-        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudCluster cluster = clusters.computeIfAbsent((LoadBalancerFeignClient) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest clusterRequest = new FeignCloudClusterRequest(request, ctx.getArgument(1), cluster.getContext());
         HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
         FeignClusterResponse response = cluster.request(invocation);

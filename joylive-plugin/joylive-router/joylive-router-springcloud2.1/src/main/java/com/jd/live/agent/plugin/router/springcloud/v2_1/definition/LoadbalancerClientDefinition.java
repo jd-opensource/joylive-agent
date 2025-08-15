@@ -21,8 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.LoadbalancerClientInterceptor;
 
 /**
@@ -31,9 +30,7 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.Loadbalancer
  * @since 1.7.0
  */
 @Extension(value = "LoadbalancerClientDefinition_v2.1")
-// for ribbon
-@ConditionalOnSpringEnabled
-@ConditionalOnFlowControlEnabled
+@ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnClass(LoadbalancerClientDefinition.TYPE)
 public class LoadbalancerClientDefinition extends PluginDefinitionAdapter {
 

@@ -25,17 +25,14 @@ import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * A class that represents a service endpoint in the context of Ribbon load balancing.
  */
 public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
-
-    private static final Map<Class<?>, CacheObject<FieldAccessor>> ACCESSOR_MAP = new ConcurrentHashMap<>();
-    private static final String FIELD_METADATA = "metadata";
 
     private final String service;
 
@@ -107,21 +104,35 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, String> getMetadata() {
         if (metadata == null) {
-            Map<String, String> result = null;
-            // for nacos
-            CacheObject<FieldAccessor> cache = ACCESSOR_MAP.computeIfAbsent(server.getClass(), c -> new CacheObject<>(getAccessor(c, FIELD_METADATA)));
-            FieldAccessor accessor = cache.get();
-            if (accessor != null) {
-                Object target = accessor.get(server);
-                if (target instanceof Map) {
-                    result = (Map<String, String>) target;
-                }
-            }
-            metadata = new CacheObject<>(result);
+            metadata = new CacheObject<>(Accessor.getMetadata(server));
         }
         return metadata.get();
+    }
+
+    private static class Accessor {
+        // for nacos
+        private static final Class<?> nacosType = loadClass("com.alibaba.cloud.nacos.ribbon.NacosServer", Server.class.getClassLoader());
+        private static final FieldAccessor nacosMetadata = getAccessor(nacosType, "metadata");
+        // for eureka
+        private static final Class<?> eurekaType = loadClass("com.netflix.niws.loadbalancer.DiscoveryEnabledServer", Server.class.getClassLoader());
+        private static final FieldAccessor instanceInfo = getAccessor(eurekaType, "instanceInfo");
+        private static final Class<?> instanceInfoType = loadClass("com.netflix.appinfo.InstanceInfo", Server.class.getClassLoader());
+        private static final FieldAccessor eurekaMetadata = getAccessor(instanceInfoType, "metadata");
+
+        @SuppressWarnings("unchecked")
+        public static Map<String, String> getMetadata(Server server) {
+            if (nacosType != null && nacosType.isInstance(server)) {
+                return (Map<String, String>) nacosMetadata.get(server);
+            } else if (eurekaType != null && eurekaType.isInstance(server)) {
+                Object info = instanceInfo.get(server);
+                if (instanceInfoType != null && instanceInfoType.isInstance(info)) {
+                    return (Map<String, String>) eurekaMetadata.get(info);
+                }
+            }
+            return null;
+        }
+
     }
 }

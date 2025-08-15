@@ -16,9 +16,15 @@
 package com.jd.live.agent.plugin.registry.eureka.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.netflix.appinfo.InstanceInfo;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.netflix.eureka.CloudEurekaInstanceConfig;
 import org.springframework.cloud.netflix.eureka.serviceregistry.EurekaRegistration;
+
+import java.util.Map;
 
 /**
  * EurekaServiceRegistryInterceptor
@@ -28,12 +34,28 @@ public class EurekaServiceRegistryInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         EurekaRegistration registration = ctx.getArgument(0);
+        Map<String, String> metadata = null;
+        if (registration instanceof ServiceInstance) {
+            metadata = registration.getMetadata();
+        } else {
+            // fix for eureka 1.x
+            CloudEurekaInstanceConfig config = (CloudEurekaInstanceConfig) Accessor.instanceConfig.get(registration);
+            if (config != null) {
+                metadata = config.getMetadataMap();
+            }
+        }
         // info is used to register
         InstanceInfo info = registration.getApplicationInfoManager().getInfo();
-        if (registration.getMetadata() != null
+        if (metadata != null
                 && info.getMetadata() != null
-                && info.getMetadata() != registration.getMetadata()) {
-            info.getMetadata().putAll(registration.getMetadata());
+                && info.getMetadata() != metadata) {
+            info.getMetadata().putAll(metadata);
         }
+    }
+
+    private static class Accessor {
+
+        private static final FieldAccessor instanceConfig = FieldAccessorFactory.getAccessor(EurekaRegistration.class, "instanceConfig");
+
     }
 }

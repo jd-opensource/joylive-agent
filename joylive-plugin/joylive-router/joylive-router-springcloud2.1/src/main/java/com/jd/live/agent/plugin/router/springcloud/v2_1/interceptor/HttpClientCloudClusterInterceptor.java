@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -32,12 +34,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient;
+import org.springframework.cloud.netflix.ribbon.support.AbstractLoadBalancingClient;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 
 /**
  * HttpClientClusterInterceptor
@@ -46,8 +45,6 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<RibbonLoadBalancingHttpClient, HttpClientCloudCluster> clusters = new ConcurrentHashMap<>();
-
     public HttpClientCloudClusterInterceptor(InvocationContext context) {
         this.context = context;
     }
@@ -55,9 +52,8 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         RibbonLoadBalancingHttpClient target = (RibbonLoadBalancingHttpClient) ctx.getTarget();
-        CloseableHttpClient client = target.getDelegate();
-        client = new LiveHttpClient(target, client, context);
-        setValue(target, "delegate", client);
+        LiveHttpClient client = new LiveHttpClient(target, target.getDelegate(), context);
+        client.update();
     }
 
     /**
@@ -66,6 +62,10 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
      */
     private static class LiveHttpClient extends CloseableHttpClient {
 
+        protected static final FieldAccessor delegateAccessor = FieldAccessorFactory.getAccessor(AbstractLoadBalancingClient.class, "delegate");
+
+        private final RibbonLoadBalancingHttpClient client;
+
         private final CloseableHttpClient delegate;
 
         private final InvocationContext context;
@@ -73,6 +73,7 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
         private final HttpClientCloudCluster cluster;
 
         LiveHttpClient(RibbonLoadBalancingHttpClient client, CloseableHttpClient delegate, InvocationContext context) {
+            this.client = client;
             this.delegate = delegate;
             this.context = context;
             this.cluster = new HttpClientCloudCluster(context.getRegistry(), client);
@@ -110,5 +111,10 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
         public ClientConnectionManager getConnectionManager() {
             return delegate.getConnectionManager();
         }
+
+        public void update() {
+            delegateAccessor.set(client, this);
+        }
+
     }
 }
