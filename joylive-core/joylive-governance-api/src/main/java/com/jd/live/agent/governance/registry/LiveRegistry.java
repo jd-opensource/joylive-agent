@@ -303,7 +303,7 @@ public class LiveRegistry extends AbstractService
             case LIVE:
                 // convert service name in getServiceRegistry
                 registry = getServiceRegistry(service, group);
-                return registry == null ? null : registry.getEndpoints();
+                return registry == null ? CompletableFuture.completedFuture(new ArrayList<>()) : registry.getEndpoints();
             case SYSTEM:
                 // don't convert service name in system registry
                 return system.getEndpoints(service);
@@ -311,7 +311,7 @@ public class LiveRegistry extends AbstractService
             default:
                 registry = getServiceRegistry(service, group);
                 if (system == null) {
-                    return registry == null ? null : registry.getEndpoints();
+                    return registry == null ? CompletableFuture.completedFuture(new ArrayList<>()) : registry.getEndpoints();
                 } else if (registry == null) {
                     return system.getEndpoints(service);
                 } else {
