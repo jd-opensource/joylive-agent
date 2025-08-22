@@ -259,6 +259,7 @@ agent:
           - org.apache.tomcat.util.threads.ThreadPoolExecutor
           - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
           - org.apache.tomcat.util.threads.InlineExecutorService
+          - org.apache.juli.AsyncFileHandler$LoggerExecutorService
           - javax.management.NotificationBroadcasterSupport$1
           - com.alibaba.druid.pool.DruidAbstractDataSource$SynchronousExecutor
         excludeTasks:

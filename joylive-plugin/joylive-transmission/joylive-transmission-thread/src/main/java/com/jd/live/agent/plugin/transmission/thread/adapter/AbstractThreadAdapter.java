@@ -62,22 +62,22 @@ public abstract class AbstractThreadAdapter<T> {
     }
 
     protected void after() {
-        try {
-            for (Snapshot snapshot : snapshots) {
+        for (Snapshot snapshot : snapshots) {
+            try {
                 snapshot.remove();
+            } catch (Exception e) {
+                logger.error("failed to remove snapshot at thread {}, caused by {}", Thread.currentThread().getName(), e.getMessage());
             }
-        } catch (Throwable e) {
-            logger.error("failed to remove snapshot at thread " + Thread.currentThread().getName());
         }
     }
 
     protected void before() {
-        try {
-            for (Snapshot snapshot : snapshots) {
+        for (Snapshot snapshot : snapshots) {
+            try {
                 snapshot.restore();
+            } catch (Throwable e) {
+                logger.error("failed to restore snapshot at thread {}, caused by {}", Thread.currentThread().getName(), e.getMessage());
             }
-        } catch (Throwable e) {
-            logger.error("failed to restore snapshot at thread " + Thread.currentThread().getName());
         }
     }
 }
