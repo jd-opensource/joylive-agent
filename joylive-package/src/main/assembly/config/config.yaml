@@ -260,7 +260,6 @@ agent:
           - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
           - org.apache.tomcat.util.threads.InlineExecutorService
           - javax.management.NotificationBroadcasterSupport$1
-          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory
           - com.alibaba.druid.pool.DruidAbstractDataSource$SynchronousExecutor
         excludeTasks:
           - com.jd.live.agent.core.thread.NamedThreadFactory
@@ -276,15 +275,18 @@ agent:
           - io.sermant.implement.service.xds.handler.XdsHandler.NamedThreadFactory
           - io.sermant.discovery.factory.RealmServiceThreadFactory
           - org.apache.skywalking.apm.agent.core.boot.DefaultNamedThreadFactory
+          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory
           - sun.rmi.runtime.RuntimeUtil$1
           - sun.rmi.transport.tcp.TCPTransport$1
           - sun.rmi.transport.DGCImpl$1
           - sun.rmi.transport.DGCAckHandler$1
           - org.apache.tomcat.util.threads.TaskThreadFactory
+          - org.apache.juli.FileHandler$ThreadFactory
+          - com.tongweb.container.startup.HostConfig$DeployWar
+          - sun.nio.fs.PollingWatchService$PollingWatchKey$1
         excludeExecutorPrefixes:
           - com.jd.live.agent.shaded.
           - com.netflix.hystrix.util.HystrixTimer$ScheduledExecutor$
-          - com.netflix.stats.distribution.DataPublisher$PublishThreadFactory$
           - com.alibaba.nacos.
         excludeTaskPrefixes:
           - reactor.core.scheduler.BoundedElasticScheduler$$Lambda
