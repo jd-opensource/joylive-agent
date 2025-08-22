@@ -65,7 +65,7 @@ public abstract class AbstractThreadAdapter<T> {
         for (Snapshot snapshot : snapshots) {
             try {
                 snapshot.remove();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.error("failed to remove snapshot at thread {}, caused by {}", Thread.currentThread().getName(), e.getMessage());
             }
         }
