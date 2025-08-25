@@ -20,6 +20,7 @@ import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -41,6 +42,9 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
     public static ClassLoader BOOT_CLASS_LOADER = null;
 
     public static ClassLoader APP_CLASS_LOADER = null;
+
+    private static final Map<ClassLoader, ClassResolver> resolvers = new ConcurrentHashMap<>();
+
     /**
      * The type of resources this class loader is concerned with.
      */
@@ -235,20 +239,15 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
             while (parent instanceof LiveClassLoader && (predicate == null || predicate.test(parent))) {
                 ClassCache cache = ((LiveClassLoader) parent).findClassCache(name, resolve);
                 if (cache != null) {
-                    cache.resolve(this::resolveClass);
+                    // class is resolved by findClassCache
                     return cache.getType();
                 }
                 parent = parent.getParent();
             }
+            throw new ClassNotFoundException("class " + name + " is not found by " + getType());
         } else {
-            while (parent instanceof LiveClassLoader) {
-                parent = parent.getParent();
-            }
-            if (predicate == null || predicate.test(parent)) {
-                return parent.loadClass(name);
-            }
+            return loadByRoot(name, resolve, predicate);
         }
-        throw new ClassNotFoundException("class " + name + " is not found by " + getType());
     }
 
     /**
@@ -309,10 +308,11 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
             try {
                 Class<?> type = classLoader.loadClass(name);
                 if (resolve) {
-                    resolveClass(type);
+                    // resolve class
+                    resolvers.computeIfAbsent(type.getClassLoader(), ClassResolver::new).resolve(type);
                 }
                 return type;
-            } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            } catch (ClassNotFoundException | LinkageError ignored) {
             }
         }
         return null;
@@ -410,7 +410,8 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
             locker.run(() -> {
                 try {
                     resolver.accept(type);
-                } catch (Exception ignored) {
+                } catch (Throwable ignored) {
+                    // java.lang.LinkageError
                 }
                 resolved = true;
             });
@@ -439,6 +440,81 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
                     return null;
                 }
             }
+        }
+    }
+
+    /**
+     * A utility class for safely resolving classes using ClassLoader's internal locking mechanism.
+     */
+    private static class ClassResolver {
+
+        private final ClassLoader classLoader;
+
+        private final Method lockMethod;
+
+        private final Method resolveMethod;
+
+        ClassResolver(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+            this.lockMethod = getLockMethod(classLoader.getClass());
+            this.resolveMethod = getResolveMethod(classLoader.getClass());
+        }
+
+        /**
+         * Resolves the specified class using proper synchronization.
+         *
+         * @param type the Class to resolve
+         */
+        public void resolve(Class<?> type) {
+            if (lockMethod == null || resolveMethod == null) {
+                return;
+            }
+            try {
+                synchronized (lockMethod.invoke(classLoader, type.getName())) {
+                    resolveMethod.invoke(classLoader, type);
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        /**
+         * Locates the getClassLoadingLock method in the ClassLoader hierarchy.
+         *
+         * @param loaderType the ClassLoader class to search
+         * @return the getClassLoadingLock Method, or null if not found
+         */
+        private static Method getLockMethod(Class<?> loaderType) {
+            // find getClassLoadingLock method of classloader
+            while (loaderType != null && loaderType != Object.class) {
+                try {
+                    Method method = loaderType.getDeclaredMethod("getClassLoadingLock", String.class);
+                    method.setAccessible(true);
+                    return method;
+                } catch (NoSuchMethodException e) {
+                    loaderType = loaderType.getSuperclass();
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Locates the resolveClass method in the ClassLoader hierarchy.
+         *
+         * @param loaderType the ClassLoader class to search
+         * @return the resolveClass Method, or null if not found
+         */
+        private static Method getResolveMethod(Class<?> loaderType) {
+            // find resolveClass method of classloader
+            while (loaderType != null && loaderType != Object.class) {
+                try {
+                    Method method = loaderType.getDeclaredMethod("resolveClass", Class.class);
+                    method.setAccessible(true);
+                    return method;
+                } catch (NoSuchMethodException e) {
+                    loaderType = loaderType.getSuperclass();
+                }
+            }
+            return null;
         }
     }
 }
