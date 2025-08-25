@@ -18,8 +18,8 @@ package com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveRoutePredicate;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveRoutes;
 import org.springframework.cloud.gateway.handler.AsyncPredicate;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.web.server.ServerWebExchange;
@@ -36,6 +36,6 @@ public class GatewayRouteLocatorInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         RouteDefinition routeDefinition = mc.getArgument(0);
         AsyncPredicate<ServerWebExchange> predicate = mc.getResult();
-        mc.setResult(new LiveRoutePredicate(predicate, routeDefinition, LiveRoutes.getVersion()));
+        mc.setResult(new LiveRoutePredicate(predicate, routeDefinition, GatewayRoutes.getVersion()));
     }
 }

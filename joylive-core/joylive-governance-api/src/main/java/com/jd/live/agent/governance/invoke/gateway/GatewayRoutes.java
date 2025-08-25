@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v4.filter;
+package com.jd.live.agent.governance.invoke.gateway;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -25,7 +26,7 @@ import java.util.function.Function;
  * This class provides a global counter to track and manage the version of routes,
  * allowing for version retrieval and increment operations.
  */
-public abstract class LiveRoutes {
+public abstract class GatewayRoutes {
 
     /**
      * A global atomic counter that tracks the current version of the routes.
@@ -36,7 +37,7 @@ public abstract class LiveRoutes {
     /**
      * A thread-safe map that stores live route instances, keyed by their unique identifiers.
      */
-    private static final Map<String, LiveRoute> ROUTES = new ConcurrentHashMap<>();
+    private static final Map<String, GatewayRoute<?>> ROUTES = new ConcurrentHashMap<>();
 
     /**
      * Retrieves the current value of the global route version counter.
@@ -63,7 +64,7 @@ public abstract class LiveRoutes {
      * @param function a function to create a new live route if it does not exist
      * @return the existing or newly created live route
      */
-    public static LiveRoute getOrCreate(String id, Function<String, LiveRoute> function) {
+    private static GatewayRoute<?> getOrCreate(String id, Function<String, GatewayRoute<?>> function) {
         return ROUTES.computeIfAbsent(id, function);
     }
 
@@ -73,8 +74,9 @@ public abstract class LiveRoutes {
      * @param id the unique identifier of the live route
      * @return the live route associated with the identifier, or {@code null} if not found
      */
-    public static LiveRoute get(String id) {
-        return ROUTES.get(id);
+    @SuppressWarnings("unchecked")
+    public static <R> GatewayRoute<R> get(String id) {
+        return (GatewayRoute<R>) ROUTES.get(id);
     }
 
     /**
@@ -83,7 +85,30 @@ public abstract class LiveRoutes {
      * @param id    the unique identifier of the live route
      * @param route the live route to store
      */
-    public static void put(String id, LiveRoute route) {
+    private static void put(String id, GatewayRoute<?> route) {
         ROUTES.put(id, route);
+    }
+
+    /**
+     * Updates the gateway route cache with the given route if conditions are met.
+     *
+     * @param <R>      the route type
+     * @param route    the route to update
+     * @param id       the route identifier
+     * @param supplier the route definition supplier
+     */
+    public static <R> void update(R route, String id, Object supplier) {
+        if (supplier instanceof GatewayRouteDefSupplier) {
+            GatewayRouteDef routeDef = ((GatewayRouteDefSupplier) supplier).getDefinition();
+            Object definition = routeDef.getDefinition();
+            Function<String, GatewayRoute<?>> routeFunction = i -> new GatewayRoute<>(route, definition, routeDef.getVersion());
+            GatewayRoute<?> oldRoute = getOrCreate(id, routeFunction);
+            if (oldRoute.getRoute() != route
+                    && routeDef.getVersion() != oldRoute.getVersion()
+                    && (definition == null || !Objects.equals(definition, oldRoute.getDefinition()))) {
+                put(id, routeFunction.apply(id));
+            }
+        }
+
     }
 }

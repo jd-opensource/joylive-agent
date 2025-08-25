@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.filter;
 
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.gateway.*;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster;
@@ -111,7 +112,8 @@ public class LiveChainBuilder {
      */
     public GatewayFilterChain chain(ServerWebExchange exchange) {
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
-        LiveRouteFilter filter = LiveRoutes.get(route.getId()).getOrCreate(this::createRouteFilter);
+        GatewayRoute<Route> gatewayRoute = GatewayRoutes.get(route.getId());
+        LiveRouteFilter filter = gatewayRoute.getOrCreate(this::createRouteFilter);
         boolean loadbalancer = pareURI(exchange, route, filter.getPathFilters());
         return new DefaultGatewayFilterChain(filter.getFilters(), loadbalancer);
     }
@@ -219,8 +221,8 @@ public class LiveChainBuilder {
      */
     private boolean pareURI(ServerWebExchange exchange, Route route, List<GatewayFilter> pathFilters) {
         Map<String, Object> attributes = exchange.getAttributes();
-        LiveRoutePredicate predicate = route.getPredicate() instanceof LiveRoutePredicate ? (LiveRoutePredicate) route.getPredicate() : null;
-        LiveRouteURI routeURI = predicate != null ? predicate.getUri() : new LiveRouteURI(route.getUri());
+        GatewayRouteDef def = route.getPredicate() instanceof GatewayRouteDefSupplier ? ((GatewayRouteDefSupplier) route.getPredicate()).getDefinition() : null;
+        GatewayRouteURI routeURI = def != null ? def.getUri() : new GatewayRouteURI(route.getUri());
         if (routeURI.getSchemePrefix() != null) {
             attributes.put(GATEWAY_SCHEME_PREFIX_ATTR, routeURI.getSchemePrefix());
         }

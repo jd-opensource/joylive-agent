@@ -17,17 +17,15 @@ package com.jd.live.agent.plugin.router.springgateway.v2_1.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.router.springgateway.v2_1.filter.LiveRoute;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteDefSupplier;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.filter.LiveRoutePredicate;
-import com.jd.live.agent.plugin.router.springgateway.v2_1.filter.LiveRoutes;
 import org.springframework.cloud.gateway.handler.AsyncPredicate;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.web.server.ServerWebExchange;
 
 import java.net.URI;
-import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * GatewayRouteConstructorInterceptor
@@ -36,30 +34,20 @@ import java.util.function.Function;
  */
 public class GatewayRouteConstructorInterceptor extends InterceptorAdaptor {
 
-    @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object[] args = ctx.getArguments();
-        URI uri = (URI) args[1];
-        AsyncPredicate<ServerWebExchange> predicate = (AsyncPredicate<ServerWebExchange>) args[3];
-        if (!(predicate instanceof LiveRoutePredicate)) {
-            args[3] = new LiveRoutePredicate(predicate, uri, LiveRoutes.getVersion());
+        URI uri = ctx.getArgument(1);
+        AsyncPredicate<ServerWebExchange> predicate = ctx.getArgument(3);
+        if (!(predicate instanceof GatewayRouteDefSupplier)) {
+            Object definition = predicate instanceof Supplier ? ((Supplier<?>) predicate).get() : null;
+            ctx.setArgument(3, new LiveRoutePredicate(predicate, definition, uri, GatewayRoutes.getVersion()));
         }
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
         Route route = (Route) ctx.getTarget();
-        String routeId = route.getId();
-        LiveRoutePredicate predicate = (LiveRoutePredicate) route.getPredicate();
-        RouteDefinition definition = predicate.getDefinition();
-        Function<String, LiveRoute> routeFunction = id -> new LiveRoute(route, definition, predicate.getVersion());
-        LiveRoute oldRoute = LiveRoutes.getOrCreate(routeId, routeFunction);
-        if (oldRoute.getRoute() != route
-                && predicate.getVersion() != oldRoute.getVersion()
-                && (definition == null || !Objects.equals(definition, oldRoute.getDefinition()))) {
-            // update cache
-            LiveRoutes.put(routeId, routeFunction.apply(routeId));
-        }
+        // update cache
+        GatewayRoutes.update(route, route.getId(), route.getPredicate());
     }
 }

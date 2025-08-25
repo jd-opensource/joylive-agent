@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v4.filter;
 
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteDef;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteDefSupplier;
 import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.handler.AsyncPredicate;
@@ -23,18 +25,12 @@ import org.springframework.web.server.ServerWebExchange;
 
 import java.net.URI;
 
-public class LiveRoutePredicate implements AsyncPredicate<ServerWebExchange> {
+public class LiveRoutePredicate implements AsyncPredicate<ServerWebExchange>, GatewayRouteDefSupplier {
 
     private final AsyncPredicate<ServerWebExchange> delegate;
 
     @Getter
-    private final RouteDefinition definition;
-
-    @Getter
-    private final long version;
-
-    @Getter
-    private final LiveRouteURI uri;
+    private final GatewayRouteDef definition;
 
     public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, URI uri, long version) {
         this(delegate, null, uri, version);
@@ -44,12 +40,9 @@ public class LiveRoutePredicate implements AsyncPredicate<ServerWebExchange> {
         this(delegate, definition, definition == null ? null : definition.getUri(), version);
     }
 
-    public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, RouteDefinition definition, URI uri, long version) {
+    public LiveRoutePredicate(AsyncPredicate<ServerWebExchange> delegate, Object definition, URI uri, long version) {
         this.delegate = delegate;
-        this.definition = definition;
-        this.version = version;
-        // improve performance in route construction
-        this.uri = new LiveRouteURI(uri);
+        this.definition = new GatewayRouteDef(definition, version, uri);
     }
 
     @Override

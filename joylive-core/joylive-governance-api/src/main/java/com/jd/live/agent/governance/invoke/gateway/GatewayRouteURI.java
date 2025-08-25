@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.filter;
+package com.jd.live.agent.governance.invoke.gateway;
 
 import lombok.Getter;
 
@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 
 @Getter
-public class LiveRouteURI {
+public class GatewayRouteURI {
 
     private static final Pattern SCHEME_PATTERN = Pattern.compile("[a-zA-Z]([a-zA-Z]|\\d|\\+|\\.|-)*:.*");
 
@@ -33,7 +33,7 @@ public class LiveRouteURI {
 
     private final boolean loadBalancer;
 
-    public LiveRouteURI(URI uri) {
+    public GatewayRouteURI(URI uri) {
         // improve performance in route construction
         String schemePrefix = null;
         boolean hasAnotherScheme = uri != null

@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.router.springgateway.v3.filter.LiveRoutes;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 
 /**
  * GatewayRouteInterceptor
@@ -27,6 +27,6 @@ public class GatewayRouteRefreshInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         // update version to remove route filter cache
-        LiveRoutes.incVersion();
+        GatewayRoutes.incVersion();
     }
 }

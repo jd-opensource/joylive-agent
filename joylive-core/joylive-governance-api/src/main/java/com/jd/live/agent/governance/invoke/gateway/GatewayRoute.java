@@ -13,37 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v4.filter;
+package com.jd.live.agent.governance.invoke.gateway;
 
 import lombok.Getter;
-import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.gateway.route.RouteDefinition;
 
 import java.util.function.BiFunction;
 
-public class LiveRoute {
+public class GatewayRoute<R> {
 
     @Getter
-    private final Route route;
+    protected final R route;
 
     @Getter
-    private final RouteDefinition definition;
+    protected final Object definition;
 
     @Getter
-    private final long version;
+    protected final long version;
 
-    private volatile Object reference;
+    protected volatile Object reference;
 
-    private final Object mutex = new Object();
+    protected final Object mutex = new Object();
 
-    public LiveRoute(Route route, RouteDefinition definition, long version) {
+    public GatewayRoute(R route, Object definition, long version) {
         this.route = route;
         this.definition = definition;
         this.version = version;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getOrCreate(BiFunction<Route, Long, T> function) {
+    public <T> T getOrCreate(BiFunction<R, Long, T> function) {
         if (reference == null) {
             synchronized (mutex) {
                 if (reference == null) {
@@ -53,5 +51,4 @@ public class LiveRoute {
         }
         return (T) reference;
     }
-
 }
