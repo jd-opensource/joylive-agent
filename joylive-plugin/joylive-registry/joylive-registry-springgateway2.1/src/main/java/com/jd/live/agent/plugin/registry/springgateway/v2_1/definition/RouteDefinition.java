@@ -34,26 +34,26 @@ import com.jd.live.agent.plugin.registry.springgateway.v2_1.interceptor.RouteInt
 @Injectable
 @Extension(value = "RouteDefinition_v2.1", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnSpringGateway2GovernanceEnabled
-@ConditionalOnClass(RouteDefinition.TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR)
+@ConditionalOnClass(RouteDefinition.TYPE)
 public class RouteDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR = "org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator";
+    protected static final String TYPE = "org.springframework.cloud.gateway.route.Route";
 
-    private static final String METHOD_CONVERT_TO_ROUTE = "convertToRoute";
-
-    private static final String[] ARGUMENT_CONVERT_TO_ROUTE = new String[]{
-            "org.springframework.cloud.gateway.route.RouteDefinition"
+    private static final String[] ARGUMENTS = new String[]{
+            "java.lang.String",
+            "java.net.URI",
+            "int",
+            "org.springframework.cloud.gateway.handler.AsyncPredicate",
+            "java.util.List"
     };
 
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
     public RouteDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_ROUTE_DEFINITION_ROUTE_LOCATOR);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_CONVERT_TO_ROUTE).
-                                and(MatcherBuilder.arguments(ARGUMENT_CONVERT_TO_ROUTE)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor().and(MatcherBuilder.arguments(ARGUMENTS)),
                         () -> new RouteInterceptor(registry))
         };
     }

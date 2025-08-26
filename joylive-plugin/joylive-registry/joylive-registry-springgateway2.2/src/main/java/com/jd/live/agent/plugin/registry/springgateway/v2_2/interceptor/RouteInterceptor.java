@@ -18,16 +18,15 @@ package com.jd.live.agent.plugin.registry.springgateway.v2_2.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteDefSupplier;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteURI;
 import com.jd.live.agent.governance.registry.Registry;
-import org.springframework.cloud.gateway.route.RouteDefinition;
+import org.springframework.cloud.gateway.handler.AsyncPredicate;
 
 import java.net.URI;
-
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
-import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+import java.util.Map;
 
 /**
  * RouteInterceptor
@@ -38,20 +37,20 @@ public class RouteInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final FieldAccessor accessor = getAccessor(RouteDefinition.class, "metadata");
-
     public RouteInterceptor(Registry registry) {
         this.registry = registry;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        RouteDefinition definition = (RouteDefinition) ctx.getArguments()[0];
-        URI uri = definition.getUri();
-        if (PREDICATE_LB.test(uri.getScheme())) {
-            // the getMetadata method is not exists in spring cloud greenwich
-            String group = accessor == null ? null : (String) definition.getMetadata().get(Constants.LABEL_SERVICE_GROUP);
+        URI uri = ctx.getArgument(1);
+        AsyncPredicate<?> predicate = ctx.getArgument(3);
+        Map<String, String> metadata = ctx.getArgument(5);
+        GatewayRouteURI routeURI = predicate instanceof GatewayRouteDefSupplier ? ((GatewayRouteDefSupplier) predicate).getDefinition().getUri() : null;
+        routeURI = routeURI == null && uri != null ? new GatewayRouteURI(uri) : routeURI;
+        if (routeURI != null && routeURI.isLoadBalancer()) {
             String service = uri.getHost();
+            String group = metadata == null ? null : metadata.remove(Constants.LABEL_SERVICE_GROUP);
             if (!registry.isSubscribed(service, group)) {
                 registry.subscribe(service, group);
                 logger.info("Found spring cloud gateway consumer, service: {}, group: {}", service, group);

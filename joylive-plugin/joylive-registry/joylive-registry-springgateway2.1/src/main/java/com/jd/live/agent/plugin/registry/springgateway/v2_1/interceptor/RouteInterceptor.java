@@ -19,12 +19,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteDefSupplier;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRouteURI;
 import com.jd.live.agent.governance.registry.Registry;
-import org.springframework.cloud.gateway.route.RouteDefinition;
+import org.springframework.cloud.gateway.handler.AsyncPredicate;
 
 import java.net.URI;
-
-import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 
 /**
  * RouteInterceptor
@@ -41,10 +41,11 @@ public class RouteInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        RouteDefinition definition = (RouteDefinition) ctx.getArguments()[0];
-        URI uri = definition.getUri();
-        if (PREDICATE_LB.test(uri.getScheme())) {
-            // the getMetadata method is not exists in spring cloud greenwich
+        URI uri = ctx.getArgument(1);
+        AsyncPredicate<?> predicate = ctx.getArgument(3);
+        GatewayRouteURI routeURI = predicate instanceof GatewayRouteDefSupplier ? ((GatewayRouteDefSupplier) predicate).getDefinition().getUri() : null;
+        routeURI = routeURI == null && uri != null ? new GatewayRouteURI(uri) : routeURI;
+        if (routeURI != null && routeURI.isLoadBalancer()) {
             String service = uri.getHost();
             if (!registry.isSubscribed(service)) {
                 registry.subscribe(service);

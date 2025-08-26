@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.invoke.gateway;
 
+import com.jd.live.agent.core.util.http.HttpUtils;
 import lombok.Getter;
 
 import java.net.URI;
@@ -29,35 +30,49 @@ public class GatewayRouteURI {
 
     private final URI uri;
 
+    private final String scheme;
+
+    private final String host;
+
+    private final int port;
+
     private final String schemePrefix;
 
     private final boolean loadBalancer;
 
+    public GatewayRouteURI(String uri) {
+        this(URI.create(uri));
+    }
+
     public GatewayRouteURI(URI uri) {
         // improve performance in route construction
         String schemePrefix = null;
-        boolean hasAnotherScheme = uri != null
-                && uri.getHost() == null
-                && uri.getRawPath() == null
-                && SCHEME_PATTERN.matcher(uri.getSchemeSpecificPart()).matches();
-        if (hasAnotherScheme) {
-            schemePrefix = uri.getScheme();
-            uri = URI.create(uri.getSchemeSpecificPart());
+        String host = null;
+        if (uri.getHost() == null) {
+            if (uri.getRawPath() == null) {
+                String schemeSpecificPart = uri.getSchemeSpecificPart();
+                if (schemeSpecificPart != null && SCHEME_PATTERN.matcher(schemeSpecificPart).matches()) {
+                    // has another scheme. such as lb:ws://SleepService
+                    schemePrefix = uri.getScheme();
+                    uri = URI.create(schemeSpecificPart);
+                }
+            }
+            if (uri.getHost() == null && uri.getAuthority() != null && (PREDICATE_LB.test(uri.getScheme()) || PREDICATE_LB.test(schemePrefix))) {
+                // try fixing special service name. such as "lb://SleepService:DEFAULT"
+                String uriString = uri.toString();
+                host = com.jd.live.agent.core.util.URI.parse(uriString).getHost();
+                if (host != null) {
+                    URI newUri = HttpUtils.newURI(uri, uri.getScheme(), null, host, null, null, null, null, uriString);
+                    uri = newUri != null ? newUri : uri;
+                }
+            }
         }
         this.uri = uri;
         this.schemePrefix = schemePrefix;
-        this.loadBalancer = PREDICATE_LB.test(uri.getScheme()) || PREDICATE_LB.test(schemePrefix);
+        this.scheme = uri.getScheme();
+        this.host = host != null ? host : uri.getHost();
+        this.port = uri.getPort();
+        this.loadBalancer = PREDICATE_LB.test(scheme) || PREDICATE_LB.test(schemePrefix);
     }
 
-    public String getScheme() {
-        return uri.getScheme();
-    }
-
-    public String getHost() {
-        return uri.getHost();
-    }
-
-    public int getPort() {
-        return uri.getPort();
-    }
 }

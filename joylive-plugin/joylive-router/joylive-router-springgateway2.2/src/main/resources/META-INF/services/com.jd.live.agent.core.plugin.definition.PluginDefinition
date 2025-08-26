@@ -3,4 +3,3 @@ com.jd.live.agent.plugin.router.springgateway.v2_2.definition.GatewayDefinition
 com.jd.live.agent.plugin.router.springgateway.v2_2.definition.GatewayRouteDefinition
 com.jd.live.agent.plugin.router.springgateway.v2_2.definition.GatewayRouteLocatorDefinition
 com.jd.live.agent.plugin.router.springgateway.v2_2.definition.GatewayRouteRefreshDefinition
-com.jd.live.agent.plugin.router.springgateway.v2_2.definition.GatewayRouteDefDefinition
