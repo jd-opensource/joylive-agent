@@ -43,7 +43,7 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         // FeignClientFactoryBean is package-private in 2.2.6-, so we can't direct access it.
         String name = Accessor.getName(ctx.getTarget());
-        if (name != null) {
+        if (name != null && !registry.isSubscribed(name)) {
             registry.subscribe(name);
             logger.info("Found feign client consumer, service: {}", name);
         }
