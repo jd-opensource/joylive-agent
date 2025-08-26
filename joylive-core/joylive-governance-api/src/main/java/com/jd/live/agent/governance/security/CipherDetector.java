@@ -20,7 +20,7 @@ package com.jd.live.agent.governance.security;
  */
 public interface CipherDetector {
 
-    String COMPONENT_CIPHER_DETECTOR="CipherDetector";
+    String COMPONENT_CIPHER_DETECTOR = "cipherDetector";
 
     String CIPHER_KEYS = "cipher.keys";
 
