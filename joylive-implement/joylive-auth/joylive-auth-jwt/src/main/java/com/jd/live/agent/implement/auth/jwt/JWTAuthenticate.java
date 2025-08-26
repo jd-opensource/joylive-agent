@@ -23,6 +23,7 @@ import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.security.KeyStore;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
@@ -35,7 +36,6 @@ import com.jd.live.agent.governance.request.HttpRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
-import com.jd.live.agent.governance.security.KeyStore;
 import lombok.Getter;
 
 import java.time.Instant;

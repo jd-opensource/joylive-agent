@@ -24,9 +24,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.core.security.Cipher;
+import com.jd.live.agent.core.security.CipherDetector;
 import com.jd.live.agent.governance.annotation.ConditionalOnCipherEnabled;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.security.CipherFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.AbstractPropertyResolverInterceptor;
 
 @Injectable
@@ -45,17 +45,17 @@ public class AbstractPropertyResolverDefinition extends PluginDefinitionAdapter 
             "java.lang.Class"
     };
 
-    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
-    private GovernanceConfig config;
+    @Inject(Cipher.COMPONENT_CIPHER)
+    private Cipher cipher;
 
-    @Inject(CipherFactory.COMPONENT_CIPHER_FACTORY)
-    private CipherFactory cipherFactory;
+    @Inject(CipherDetector.COMPONENT_CIPHER_DETECTOR)
+    private CipherDetector cipherDetector;
 
     public AbstractPropertyResolverDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new AbstractPropertyResolverInterceptor(config, cipherFactory))
+                        () -> new AbstractPropertyResolverInterceptor(cipher, cipherDetector))
         };
     }
 }

@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.core.security;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-
-import java.lang.annotation.*;
+import java.text.Normalizer;
 
 /**
- * Conditional annotation that enables a component when cipher functionality is enabled.
+ * Utility for normalizing text to Unicode NFC form.
  */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnProperty(value = "cipher.enabled")
-@ConditionalComposite
-public @interface ConditionalOnCipherEnabled {
+public class CipherNormalizer {
 
+    /**
+     * Normalizes the input string to NFC form.
+     *
+     * @param message the text to normalize (may be null)
+     * @return normalized string in NFC form, or null if input was null
+     */
+    public static String normalizeToNfc(final String message) {
+        return Normalizer.normalize(message, Normalizer.Form.NFC);
+    }
 }
+

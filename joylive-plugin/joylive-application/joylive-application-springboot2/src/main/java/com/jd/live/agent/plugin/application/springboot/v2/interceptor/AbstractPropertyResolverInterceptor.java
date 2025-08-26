@@ -19,11 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.security.Cipher;
-import com.jd.live.agent.governance.security.CipherDetector;
-import com.jd.live.agent.governance.security.CipherFactory;
-import com.jd.live.agent.governance.security.detector.DefaultCipherDetector;
+import com.jd.live.agent.core.security.Cipher;
+import com.jd.live.agent.core.security.CipherDetector;
 
 public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
 
@@ -33,9 +30,9 @@ public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
 
     private final CipherDetector detector;
 
-    public AbstractPropertyResolverInterceptor(GovernanceConfig config, CipherFactory cipherFactory) {
-        this.cipher = cipherFactory.create(config.getCipherConfig());
-        this.detector = new DefaultCipherDetector(config.getCipherConfig());
+    public AbstractPropertyResolverInterceptor(Cipher cipher, CipherDetector detector) {
+        this.cipher = cipher;
+        this.detector = detector;
     }
 
     @Override

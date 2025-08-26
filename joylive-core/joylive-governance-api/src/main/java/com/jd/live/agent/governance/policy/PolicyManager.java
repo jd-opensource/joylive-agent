@@ -63,7 +63,6 @@ import com.jd.live.agent.governance.policy.variable.UnitFunction;
 import com.jd.live.agent.governance.policy.variable.VariableFunction;
 import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.security.*;
 import com.jd.live.agent.governance.service.PolicyService;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcher;
 import com.jd.live.agent.governance.subscription.policy.PolicyWatcherManager;
@@ -202,15 +201,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     private List<Propagation> propagationList;
 
-    @Inject
-    private Map<String, CipherAlgorithmFactory> cipherAlgorithmFactories;
-
-    @Inject
-    private Map<String, StringCodec> stringCodecs;
-
-    @Inject
-    private Map<String, CipherGeneratorFactory> saltFactories;
-
     @Getter
     private Propagation propagation;
 
@@ -222,9 +212,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Getter
     private DbConnectionSupervisor dbConnectionSupervisor;
-
-    @Getter
-    private CipherFactory cipherFactory;
 
     @Getter
     private DocumentRegistry docRegistry;
@@ -356,7 +343,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         source.add(InvocationContext.COMPONENT_INVOCATION_CONTEXT, this);
         source.add(Propagation.COMPONENT_PROPAGATION, propagation);
         source.add(DbConnectionSupervisor.COMPONENT_DB_CONNECTION_SUPERVISOR, dbConnectionSupervisor);
-        source.add(CipherFactory.COMPONENT_CIPHER_FACTORY, cipherFactory);
         source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
         source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig == null ? null : governanceConfig.getServiceConfig());
         source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig == null ? null : governanceConfig.getRegistryConfig());
@@ -439,7 +425,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
         liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
 
-        cipherFactory = new DefaultCipherFactory(cipherAlgorithmFactories, stringCodecs, saltFactories);
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);
         counterManager = new InternalCounterManager(timer);

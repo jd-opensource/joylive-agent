@@ -15,16 +15,20 @@
  */
 package com.jd.live.agent.governance.security;
 
-import com.jd.live.agent.governance.config.CipherConfig;
-import com.jd.live.agent.governance.exception.CipherException;
-import com.jd.live.agent.governance.security.cipher.jasypt.StandardPBECipherAlgorithmFactory;
-import com.jd.live.agent.governance.security.cipher.simple.SimplePBECipherAlgorithmFactory;
-import com.jd.live.agent.governance.security.codec.Base64StringCodec;
-import com.jd.live.agent.governance.security.codec.HexStringCodec;
-import com.jd.live.agent.governance.security.generator.Base64GeneratorFactory;
-import com.jd.live.agent.governance.security.generator.EmptyGeneratorFactory;
-import com.jd.live.agent.governance.security.generator.RandomGeneratorFactory;
-import com.jd.live.agent.governance.security.generator.StringGeneratorFactory;
+import com.jd.live.agent.core.config.CipherConfig;
+import com.jd.live.agent.core.exception.CipherException;
+import com.jd.live.agent.core.security.Cipher;
+import com.jd.live.agent.core.security.CipherAlgorithm;
+import com.jd.live.agent.core.security.DefaultCipherFactory;
+import com.jd.live.agent.core.security.StringCodec;
+import com.jd.live.agent.core.security.cipher.jasypt.StandardPBECipherAlgorithmFactory;
+import com.jd.live.agent.core.security.cipher.simple.SimplePBECipherAlgorithmFactory;
+import com.jd.live.agent.core.security.codec.Base64StringCodec;
+import com.jd.live.agent.core.security.codec.HexStringCodec;
+import com.jd.live.agent.core.security.generator.Base64GeneratorFactory;
+import com.jd.live.agent.core.security.generator.EmptyGeneratorFactory;
+import com.jd.live.agent.core.security.generator.RandomGeneratorFactory;
+import com.jd.live.agent.core.security.generator.StringGeneratorFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
