@@ -48,7 +48,7 @@ public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
             String text = (String) value;
             if (detector.isEncrypted(text)) {
                 try {
-                    value = cipher.encrypt(detector.unwrap(text));
+                    value = cipher.decrypt(detector.unwrap(text));
                     ctx.setArgument(0, value);
                 } catch (Exception e) {
                     logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);

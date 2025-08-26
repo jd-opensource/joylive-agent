@@ -172,7 +172,7 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
                 String text = (String) result;
                 if (detector.isEncrypted(name, text)) {
                     try {
-                        return cipher.encrypt(detector.unwrap(text));
+                        return cipher.decrypt(detector.unwrap(text));
                     } catch (Exception e) {
                         logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
                     }

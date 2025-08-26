@@ -65,6 +65,18 @@ public class JConfigSourcer implements Sourcer {
             boolean nullable = value.startsWith("${") && value.endsWith("}");
             result = Template.evaluate((String) result, option, nullable);
         }
+        if (result instanceof String) {
+            // TODO decrypt encrypted value, ENC(abcde)
+            // CipherDetector cipherDetector = option.getObject(CipherDetector.COMPONENT_CIPHER_DETECTOR);
+            // CipherFactory cipherFactory = option.getObject(CipherFactory.COMPONENT_CIPHER_FACTORY);
+            // if(cipherDetector != null && cipherFactory!=null && detector.isEncrypted((String) result)) {
+            //    try {
+            //        result = cipher.decrypt(detector.unwrap((String) result));
+            //    } catch (Exception e) {
+            //        logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
+            //    }
+            // }
+        }
         return result;
     }
 
