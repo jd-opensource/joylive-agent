@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.core.security;
 
-import com.jd.live.agent.core.config.CipherConfig;
-
 /**
  * Enumerates types of cryptographic generators with their size configuration.
  * Each type provides the appropriate size from cipher configuration.

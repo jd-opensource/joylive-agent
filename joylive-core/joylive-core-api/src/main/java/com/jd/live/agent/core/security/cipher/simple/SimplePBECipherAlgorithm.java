@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.security.cipher.simple;
 
-import com.jd.live.agent.core.config.CipherConfig;
+import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.exception.CipherException;
 import com.jd.live.agent.core.security.CipherAlgorithm;
 import com.jd.live.agent.core.security.CipherAlgorithmContext;

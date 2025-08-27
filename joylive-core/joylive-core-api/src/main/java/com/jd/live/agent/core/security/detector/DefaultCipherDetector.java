@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.security.detector;
 
-import com.jd.live.agent.core.config.CipherConfig;
+import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.security.CipherDetector;
 
 import java.util.function.Predicate;

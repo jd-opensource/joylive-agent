@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.config;
+package com.jd.live.agent.core.security;
 
 import com.jd.live.agent.core.inject.annotation.Configurable;
-import com.jd.live.agent.core.security.CipherAlgorithm;
 import lombok.*;
 
 import java.util.Map;

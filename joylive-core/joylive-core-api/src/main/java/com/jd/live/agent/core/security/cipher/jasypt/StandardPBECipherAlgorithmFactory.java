@@ -17,7 +17,7 @@ package com.jd.live.agent.core.security.cipher.jasypt;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.config.CipherConfig;
+import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.security.CipherAlgorithm;
 import com.jd.live.agent.core.security.CipherAlgorithmContext;

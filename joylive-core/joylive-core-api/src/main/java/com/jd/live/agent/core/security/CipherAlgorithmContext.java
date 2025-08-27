@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.core.security;
 
-import com.jd.live.agent.core.config.CipherConfig;
 import lombok.Getter;
 
 @Getter

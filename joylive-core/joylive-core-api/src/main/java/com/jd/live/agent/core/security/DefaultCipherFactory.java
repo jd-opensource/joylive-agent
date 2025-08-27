@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.core.security;
 
-import com.jd.live.agent.core.config.CipherConfig;
 import com.jd.live.agent.core.security.codec.Base64StringCodec;
 import com.jd.live.agent.core.security.generator.EmptyGeneratorFactory;
 import com.jd.live.agent.core.security.generator.RandomGeneratorFactory;

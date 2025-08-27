@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.security.generator;
 
-import com.jd.live.agent.core.config.CipherConfig;
+import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.security.CipherGenerator;
 import com.jd.live.agent.core.security.CipherGeneratorFactory;
