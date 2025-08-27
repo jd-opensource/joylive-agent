@@ -22,7 +22,7 @@ import com.jd.live.agent.core.exception.CipherException;
  */
 public interface CipherAlgorithm {
 
-    String CIPHER_DEFAULT_ALGORITHM = "PBEWithMD5AndDES";
+    String CIPHER_DEFAULT_ALGORITHM = "PBEWITHHMACSHA512ANDAES_256";
 
     /**
      * Decrypts data to its original form.

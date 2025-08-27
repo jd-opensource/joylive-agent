@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.config;
 
 import com.jd.live.agent.core.inject.annotation.Configurable;
+import com.jd.live.agent.core.security.CipherAlgorithm;
 import lombok.*;
 
 import java.util.Map;
@@ -44,7 +45,7 @@ public class CipherConfig {
 
     private String cipher = "StandardPBE";
 
-    private String algorithm = "PBEWithMD5AndDES";
+    private String algorithm = CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM;
 
     private String provider;
 

@@ -85,7 +85,7 @@ public class StandardPBECipherAlgorithm implements CipherAlgorithm {
             setupCipher(cipher, saltBytes, ivBytes, Cipher.ENCRYPT_MODE);
 
             byte[] encoded = cipher.doFinal(data);
-            return append(encoded, saltBytes, ivBytes);
+            return append(encoded, saltBytes, saltSize, ivBytes, ivSize);
         } catch (CipherException e) {
             throw e;
         } catch (Throwable e) {
@@ -180,7 +180,7 @@ public class StandardPBECipherAlgorithm implements CipherAlgorithm {
      * @param ivBytes   IV (nullable if not used)
      * @return combined byte array in format: [salt?][IV?][data]
      */
-    private byte[] append(byte[] encoded, byte[] saltBytes, byte[] ivBytes) {
+    private byte[] append(byte[] encoded, byte[] saltBytes, int saltSize, byte[] ivBytes, int ivSize) {
         if (withSalt && withIV) {
             byte[] result = new byte[saltSize + ivSize + encoded.length];
             System.arraycopy(saltBytes, 0, result, 0, saltSize);
