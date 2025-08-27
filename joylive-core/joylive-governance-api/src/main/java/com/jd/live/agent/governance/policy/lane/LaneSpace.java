@@ -81,15 +81,15 @@ public class LaneSpace {
     @Getter
     private transient Lane currentLane;
 
-    public LaneRule getLaneRule(String id) {
+    public LaneRule getLaneRule(final String id) {
         return id == null ? null : ruleCache.get(id);
     }
 
-    public Lane getLane(String code) {
+    public Lane getLane(final String code) {
         return defaultSpace && (code == null || code.isEmpty()) ? defaultLaneCache.get() : laneCache.get(code);
     }
 
-    public Lane getOrDefault(String code) {
+    public Lane getOrDefault(final String code) {
         return defaultSpace && (code == null || code.isEmpty()) ? defaultLaneCache.get() : laneCache.get(code, defaultLaneCache::get);
     }
 
@@ -97,7 +97,7 @@ public class LaneSpace {
         return defaultLaneCache.get();
     }
 
-    public LaneDomain getDomain(String host) {
+    public LaneDomain getDomain(final String host) {
         return domainCache.get(host);
     }
 
@@ -109,29 +109,29 @@ public class LaneSpace {
         return rules == null ? 0 : rules.size();
     }
 
-    public boolean withTopic(String topic) {
+    public boolean withTopic(final String topic) {
         return topic != null && topics != null && topics.contains(topic);
     }
 
-    public void locate(String lane) {
+    public void locate(final String lane) {
         currentLane = getLane(lane);
     }
 
-    public String getLane(List<String> ruleIds, Matcher<TagCondition> matcher) {
+    public String getLane(final List<String> ruleIds, final Matcher<TagCondition> matcher) {
         if (getRuleSize() == 0) {
             return null;
         }
         if (ruleIds == null || ruleIds.isEmpty()) {
             for (LaneRule rule : rules) {
                 if (rule.match(matcher)) {
-                    return rule.getLaneCode();
+                    return vote(rule);
                 }
             }
         } else {
             for (String ruleId : ruleIds) {
                 LaneRule rule = getLaneRule(ruleId);
                 if (rule != null && rule.match(matcher)) {
-                    return rule.getLaneCode();
+                    return vote(rule);
                 }
             }
         }
@@ -148,6 +148,14 @@ public class LaneSpace {
         if (domains != null) {
             domains.forEach(LaneDomain::cache);
         }
+    }
+
+    private String vote(final LaneRule rule) {
+        if (rule.vote()) {
+            return rule.getLaneCode();
+        }
+        Lane defaultLane = getDefaultLane();
+        return defaultLane != null ? defaultLane.getCode() : rule.getLaneCode();
     }
 
 }

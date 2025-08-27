@@ -19,6 +19,8 @@ import com.jd.live.agent.governance.rule.tag.TagGroup;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 @Getter
 @Setter
 public class LaneRule extends TagGroup {
@@ -26,5 +28,17 @@ public class LaneRule extends TagGroup {
     private String id;
 
     private String laneCode;
+
+    private Double ratio;
+
+    public boolean vote() {
+        if (ratio == null || ratio >= 1.0) {
+            return true;
+        }
+        if (ratio <= 0) {
+            return false;
+        }
+        return ThreadLocalRandom.current().nextDouble() < ratio;
+    }
 
 }
