@@ -43,9 +43,9 @@ public class JComponentSourcer implements Sourcer {
 
     @SuppressWarnings("unchecked")
     protected <T> T getObject(Object context, String name, Class<T> type) {
-        Map<?, ?> components = context instanceof InjectSource ?
-                ((InjectSource) context).getComponents() : (
-                context instanceof Map ? (Map<?, ?>) context : null);
+        Map<?, ?> components = context instanceof InjectSource
+                ? ((InjectSource) context).getComponents()
+                : (context instanceof Map ? (Map<?, ?>) context : null);
         Object result = components == null ? null : components.get(name);
         if (result != null && !type.isAssignableFrom(result.getClass()))
             result = null;

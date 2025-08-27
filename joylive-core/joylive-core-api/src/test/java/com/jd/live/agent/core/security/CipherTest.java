@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.security;
+package com.jd.live.agent.core.security;
 
 import com.jd.live.agent.core.config.CipherConfig;
 import com.jd.live.agent.core.exception.CipherException;
-import com.jd.live.agent.core.security.Cipher;
-import com.jd.live.agent.core.security.CipherAlgorithm;
-import com.jd.live.agent.core.security.DefaultCipherFactory;
-import com.jd.live.agent.core.security.StringCodec;
 import com.jd.live.agent.core.security.cipher.jasypt.StandardPBECipherAlgorithmFactory;
 import com.jd.live.agent.core.security.cipher.simple.SimplePBECipherAlgorithmFactory;
 import com.jd.live.agent.core.security.codec.Base64StringCodec;

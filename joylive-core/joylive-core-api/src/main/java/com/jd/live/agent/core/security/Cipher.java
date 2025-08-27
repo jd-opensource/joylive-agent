@@ -40,7 +40,7 @@ public interface Cipher {
      * @return original plaintext string
      * @throws CipherException if decryption fails
      */
-    String decrypt(String encryptedText);
+    String decrypt(String encryptedText) throws CipherException;
 
     /**
      * Encrypts binary data.

@@ -43,7 +43,7 @@ public class DefaultCipherDetector implements CipherDetector {
                 ? s -> s.endsWith(suffix)
                 : (suffixLen == 0
                 ? s -> s.startsWith(prefix)
-                : s -> s.startsWith(prefix) && s.endsWith(prefix)));
+                : s -> s.startsWith(prefix) && s.endsWith(suffix)));
     }
 
     @Override

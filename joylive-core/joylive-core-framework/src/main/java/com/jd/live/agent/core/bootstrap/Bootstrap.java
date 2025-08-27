@@ -168,6 +168,8 @@ public class Bootstrap implements AgentLifecycle {
 
     private Cipher cipher;
 
+    private StringDecrypter stringDecrypter;
+
     /**
      * Event bus for publishing and subscribing to events within the agent.
      */
@@ -270,6 +272,7 @@ public class Bootstrap implements AgentLifecycle {
             cipherDetector = createCipherDetector(cipherConfig);
             cipherFactory = createCipherFactory();
             cipher = createCipher(cipherConfig, cipherFactory);
+            stringDecrypter = createStringDecrypter(cipherDetector, cipher);
             option = loadConfig(); // load config.yaml and merge bootstrap.properties.
             agentConfig = createAgentConfig(); //depend on option & injector
             timer = createTimer();
@@ -527,6 +530,7 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(CipherDetector.COMPONENT_CIPHER_DETECTOR, cipherDetector);
                 ctx.add(CipherFactory.COMPONENT_CIPHER_FACTORY, cipherFactory);
                 ctx.add(Cipher.COMPONENT_CIPHER, cipher);
+                ctx.add(StringDecrypter.COMPONENT_STRING_DECRYPTER, stringDecrypter);
                 ctx.add(AgentConfig.COMPONENT_AGENT_CONFIG, agentConfig);
                 ctx.add(EnhanceConfig.COMPONENT_ENHANCE_CONFIG, agentConfig == null ? null : agentConfig.getEnhanceConfig());
                 ctx.add(PluginConfig.COMPONENT_PLUGIN_CONFIG, agentConfig == null ? null : agentConfig.getPluginConfig());
@@ -612,6 +616,10 @@ public class Bootstrap implements AgentLifecycle {
 
     private Cipher createCipher(CipherConfig config, CipherFactory factory) {
         return factory.create(config);
+    }
+
+    private StringDecrypter createStringDecrypter(CipherDetector detector, Cipher cipher) {
+        return new DefaultStringDecrypter(detector, cipher);
     }
 
     private ConditionMatcher createConditionMatcher() {

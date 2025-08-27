@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.inject;
 
-import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.inject.InjectComponent.AbstractInjectComponent;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -26,26 +26,20 @@ import java.util.Map;
  * This class provides the functionality to manage and add components that can be injected.
  */
 @Getter
-public class InjectSource {
+public class InjectSource extends AbstractInjectComponent {
 
     /**
      * The options associated with this injection source. These options can define various
      * parameters or configurations used during the injection process.
      */
-    private final Option option;
-
-    /**
-     * A map of component names to their instances. These components are available for injection
-     * and can be dynamically added to the injection source.
-     */
-    private Map<String, Object> components;
+    private final Object option;
 
     /**
      * Constructs an {@code InjectSource} with the specified option and no initial components.
      *
      * @param option The option associated with this injection source.
      */
-    public InjectSource(Option option) {
+    public InjectSource(Object option) {
         this(option, null);
     }
 
@@ -55,9 +49,9 @@ public class InjectSource {
      * @param option     The option associated with this injection source.
      * @param components The initial map of component names to their instances. It can be {@code null}.
      */
-    public InjectSource(Option option, Map<String, Object> components) {
+    public InjectSource(Object option, Map<String, Object> components) {
+        super(components);
         this.option = option;
-        this.components = components;
     }
 
     /**

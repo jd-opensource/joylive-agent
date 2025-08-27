@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.inject.jbind.converter.supplier;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.Injection;
 import com.jd.live.agent.core.inject.jbind.Conversion;
 import com.jd.live.agent.core.inject.jbind.ConversionType;
@@ -54,7 +55,8 @@ public class Map2ObjectSupplier implements ConverterSupplier {
                     return null;
                 }
                 obj = constructor.newInstance();
-                injection.inject(conversion.getSource(), obj);
+                InjectSource source = new InjectSource(conversion.getSource(), conversion.getComponents());
+                injection.inject(source, obj);
             }
             return obj;
         }

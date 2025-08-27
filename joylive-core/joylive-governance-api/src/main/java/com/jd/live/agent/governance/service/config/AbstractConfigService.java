@@ -15,14 +15,12 @@
  */
 package com.jd.live.agent.governance.service.config;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.security.Cipher;
-import com.jd.live.agent.core.security.CipherDetector;
+import com.jd.live.agent.core.security.StringDecrypter;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
@@ -42,19 +40,14 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractConfigService<T extends ConfigClientApi> extends AbstractService implements ConfigService, InjectSourceSupplier {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractConfigService.class);
-
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     protected GovernanceConfig governanceConfig;
 
     @Inject
     protected Map<String, ConfigParser> parsers;
 
-    @Inject(CipherDetector.COMPONENT_CIPHER_DETECTOR)
-    protected CipherDetector cipherDetector;
-
-    @Inject(Cipher.COMPONENT_CIPHER)
-    protected Cipher cipher;
+    @Inject(StringDecrypter.COMPONENT_STRING_DECRYPTER)
+    protected StringDecrypter decrypter;
 
     protected Configurator configurator;
 
@@ -89,9 +82,9 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
                 }
             }
             // add cipher
-            configurator = cipher == null
+            configurator = decrypter == null
                     ? createConfigurator(subscriptions)
-                    : new CipherConfigurator(createConfigurator(subscriptions), cipher, cipherDetector);
+                    : new CipherConfigurator(createConfigurator(subscriptions), decrypter);
             configurator.subscribe();
             return CompletableFuture.completedFuture(null);
         } catch (Throwable e) {
@@ -143,14 +136,11 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
 
         private final Configurator configurator;
 
-        private final Cipher cipher;
+        private final StringDecrypter decrypter;
 
-        private final CipherDetector detector;
-
-        public CipherConfigurator(Configurator configurator, Cipher cipher, CipherDetector detector) {
+        public CipherConfigurator(Configurator configurator, StringDecrypter decrypter) {
             this.configurator = configurator;
-            this.cipher = cipher;
-            this.detector = detector;
+            this.decrypter = decrypter;
         }
 
         @Override
@@ -166,17 +156,7 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
         @Override
         public Object getProperty(String name) {
             Object result = configurator.getProperty(name);
-            if (result instanceof String) {
-                String text = (String) result;
-                if (detector.isEncrypted(name, text)) {
-                    try {
-                        return cipher.decrypt(detector.unwrap(text));
-                    } catch (Exception e) {
-                        logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
-                    }
-                }
-            }
-            return result;
+            return result instanceof String ? decrypter.tryDecrypt((String) result) : result;
         }
 
         @Override

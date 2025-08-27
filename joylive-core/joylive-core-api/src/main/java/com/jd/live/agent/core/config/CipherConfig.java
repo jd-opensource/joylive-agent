@@ -42,7 +42,7 @@ public class CipherConfig {
 
     private boolean enabled;
 
-    private String cipher = "jasypt";
+    private String cipher = "StandardPBE";
 
     private String algorithm = "PBEWithMD5AndDES";
 

@@ -20,6 +20,8 @@ import com.jd.live.agent.core.inject.jbind.InjectionContext.EmbedInjectionContex
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 /**
  * The Conversion class extends ConversionType and represents a conversion operation
  * between two types, providing additional context and methods for type conversion.
@@ -39,6 +41,9 @@ public class Conversion extends ConversionType implements ConverterSelector, Arr
      */
     private final EmbedInjectionContext context;
 
+    @Getter
+    private final Map<String, Object> components;
+
     /**
      * The path associated with the conversion operation.
      */
@@ -55,10 +60,11 @@ public class Conversion extends ConversionType implements ConverterSelector, Arr
      * @param source the object to be converted
      * @param context the context for embeddable injections
      */
-    public Conversion(TypeInfo sourceType, TypeInfo targetType, Object source, EmbedInjectionContext context) {
+    public Conversion(TypeInfo sourceType, TypeInfo targetType, Object source, EmbedInjectionContext context, Map<String, Object> components) {
         super(sourceType, targetType);
         this.source = source;
         this.context = context;
+        this.components = components;
     }
 
     /**
@@ -69,10 +75,11 @@ public class Conversion extends ConversionType implements ConverterSelector, Arr
      * @param source the object to be converted
      * @param context the context for embeddable injections
      */
-    public Conversion(ConversionType type, Object source, EmbedInjectionContext context) {
+    public Conversion(ConversionType type, Object source, EmbedInjectionContext context, Map<String, Object> components) {
         super(type);
         this.source = source;
         this.context = context;
+        this.components = components;
     }
 
     @Override
@@ -105,6 +112,6 @@ public class Conversion extends ConversionType implements ConverterSelector, Arr
      * @return a new Conversion instance
      */
     public Conversion of(TypeInfo sourceType, TypeInfo targetType, Object source) {
-        return new Conversion(sourceType, targetType, source, context);
+        return new Conversion(sourceType, targetType, source, context, components);
     }
 }

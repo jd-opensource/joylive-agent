@@ -15,20 +15,21 @@
  */
 package com.jd.live.agent.core.inject.jbind.supplier;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.inject.InjectComponent;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.jbind.Sourcer;
-import com.jd.live.agent.core.security.Cipher;
-import com.jd.live.agent.core.security.CipherDetector;
+import com.jd.live.agent.core.security.StringDecrypter;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.template.Template;
 
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Configuration sourcer that retrieves values by key with support for
+ * template evaluation and decryption.
+ */
 public class JConfigSourcer implements Sourcer {
-    private static final Logger logger = LoggerFactory.getLogger(JConfigSourcer.class);
     private final String key;
     private final Option option;
 
@@ -39,20 +40,27 @@ public class JConfigSourcer implements Sourcer {
 
     @Override
     public Object getSource(Object context) {
-        Object result = null;
         if (context instanceof JSource) {
             JSource source = (JSource) context;
             if (source.getCurrent() != null) {
-                result = getSource(source.getCurrent(), key, value -> decrypt(source.getRoot(), value));
+                return getSource(source.getCurrent(), key, value -> decrypt(source, value));
             } else if (!source.cascade()) {
-                result = getSource(source.getRoot(), source.getPath(), value -> decrypt(source.getRoot(), value));
+                return getSource(source.getRoot(), source.getPath(), value -> decrypt(source, value));
             }
         } else {
-            result = getSource(context, key, value -> decrypt(context, value));
+            return getSource(context, key, value -> decrypt(context, value));
         }
-        return result;
+        return null;
     }
 
+    /**
+     * Retrieves and processes the source value with decryption.
+     *
+     * @param context   the source context
+     * @param key       the configuration key
+     * @param decrypter the decryption function
+     * @return the processed value
+     */
     protected Object getSource(Object context, String key, Function<String, String> decrypter) {
         Object result = getObject(context, key);
         if (result == null) {
@@ -62,22 +70,22 @@ public class JConfigSourcer implements Sourcer {
             String value = (String) result;
             boolean nullable = value.startsWith("${") && value.endsWith("}");
             result = Template.evaluate((String) result, option, nullable);
-        }
-        if (result instanceof String && decrypter != null) {
             // such as ENC(123)
-            result = decrypter.apply((String) result);
+            return result instanceof String && decrypter != null ? decrypter.apply((String) result) : result;
         }
-
-
         return result;
     }
 
+    /**
+     * Retrieves the raw object value by key from the context.
+     *
+     * @param context the source context
+     * @param key the configuration key
+     * @return the raw value
+     */
     protected Object getObject(Object context, String key) {
-        if (context == null) {
-            return null;
-        } else if (context instanceof InjectSource) {
-            return ((InjectSource) context).getOption().getObject(key);
-        } else if (context instanceof Option) {
+        context = context instanceof InjectSource ? ((InjectSource) context).getOption() : context;
+        if (context instanceof Option) {
             return ((Option) context).getObject(key);
         } else if (context instanceof Map) {
             return ((Map<?, ?>) context).get(key);
@@ -85,26 +93,19 @@ public class JConfigSourcer implements Sourcer {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    protected <T> T getObject(Object context, String key, Class<T> type) {
-        Object result = getObject(context, key);
-        if (type.isInstance(result)) {
-            return (T) result;
-        }
-        return null;
-    }
-
+    /**
+     * Decrypts the given value using the context's decrypter if available.
+     *
+     * @param context the source context
+     * @param value the value to decrypt
+     * @return the decrypted value, or original value if no decrypter found
+     */
     protected String decrypt(Object context, String value) {
-        CipherDetector detector = getObject(context, CipherDetector.COMPONENT_CIPHER_DETECTOR, CipherDetector.class);
-        Cipher cipher = getObject(context, Cipher.COMPONENT_CIPHER, Cipher.class);
-        if (detector != null && cipher != null && detector.isEncrypted(value)) {
-            try {
-                return cipher.decrypt(detector.unwrap(value));
-            } catch (Exception e) {
-                logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
-            }
+        StringDecrypter detector = null;
+        if (context instanceof InjectComponent) {
+            detector = ((InjectComponent) context).getComponent(StringDecrypter.COMPONENT_STRING_DECRYPTER, StringDecrypter.class);
         }
-        return value;
+        return detector == null ? value : detector.tryDecrypt(value);
     }
 
 }
