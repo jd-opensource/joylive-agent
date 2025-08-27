@@ -134,7 +134,7 @@ public class CipherTest {
         // PBEWITHHMACSHA512ANDAES_256 jasypt spring boot starter default algorithm
         encryptor = new StandardPBEStringEncryptor();
         EnvironmentStringPBEConfig config = new EnvironmentStringPBEConfig();
-        config.setAlgorithm("PBEWITHHMACSHA512ANDAES_256");
+        config.setAlgorithm(CipherAlgorithm.CIPHER_DEFAULT_ALGORITHM);
         config.setPassword(PASSWORD);
         config.setKeyObtentionIterations("100000");
         config.setPoolSize("1");
