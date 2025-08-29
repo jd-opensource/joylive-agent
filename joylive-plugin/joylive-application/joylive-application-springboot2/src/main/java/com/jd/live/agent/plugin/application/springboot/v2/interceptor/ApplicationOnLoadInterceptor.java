@@ -45,13 +45,14 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
             }
             // fix for spring boot 2.1, it will trigger twice.
             AppLifecycle.load(() -> {
+                // the mainClass is j2ee type in war
                 Class<?> mainClass = deduceMainApplicationClass();
                 // fix for spring boot 1.x
                 Object arg = ctx.getArgument(0);
                 ResourceLoader resourceLoader = arg instanceof ResourceLoader ? (ResourceLoader) arg : null;
                 ClassLoader classLoader = resourceLoader != null
                         ? resourceLoader.getClassLoader()
-                        : mainClass != null ? mainClass.getClassLoader() : SpringApplication.class.getClassLoader();
+                        : SpringApplication.class.getClassLoader();
                 InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
                 listener.onLoading(classLoader, mainClass);
             });
