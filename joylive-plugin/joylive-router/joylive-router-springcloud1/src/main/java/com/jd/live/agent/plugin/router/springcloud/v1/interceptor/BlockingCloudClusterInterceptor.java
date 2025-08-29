@@ -20,41 +20,34 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v1.response.BlockingClusterResponse;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
 import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 
 /**
  * BlockingCloudClusterInterceptor
  *
  * @since 1.9.0
  */
-public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestInterceptor> extends AbstractCloudClusterInterceptor<HttpRequest> {
+public abstract class BlockingCloudClusterInterceptor extends AbstractCloudClusterInterceptor<HttpRequest> {
 
-    private final Map<T, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<Object, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    private final BiFunction<Registry, T, BlockingCloudCluster> factory;
-
-    protected BlockingCloudClusterInterceptor(InvocationContext context, BiFunction<Registry, T, BlockingCloudCluster> factory) {
+    protected BlockingCloudClusterInterceptor(InvocationContext context) {
         super(context);
-        this.factory = factory;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void request(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         HttpRequest request = ctx.getArgument(0);
-        BlockingCloudCluster cluster = clusters.computeIfAbsent((T) ctx.getTarget(), i -> factory.apply(context.getRegistry(), i));
+        BlockingCloudCluster cluster = clusters.computeIfAbsent(ctx.getTarget(), this::createCluster);
         BlockingCloudClusterRequest clusterRequest = new BlockingCloudClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
         HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
         BlockingClusterResponse response = cluster.request(invocation);
@@ -66,6 +59,8 @@ public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestIntercep
         }
     }
 
+    protected abstract BlockingCloudCluster createCluster(Object interceptor);
+
     @Override
     protected String getServiceName(HttpRequest request) {
         return request.getURI().getHost();
@@ -76,10 +71,15 @@ public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestIntercep
      *
      * @since 1.9.0
      */
-    public static class LoadBalancerClusterInterceptor extends BlockingCloudClusterInterceptor<LoadBalancerInterceptor> {
+    public static class LoadBalancerClusterInterceptor extends BlockingCloudClusterInterceptor {
 
         public LoadBalancerClusterInterceptor(InvocationContext context) {
-            super(context, BlockingCloudCluster::new);
+            super(context);
+        }
+
+        @Override
+        protected BlockingCloudCluster createCluster(Object interceptor) {
+            return new BlockingCloudCluster(context.getRegistry(), (LoadBalancerInterceptor) interceptor);
         }
     }
 
@@ -88,10 +88,15 @@ public class BlockingCloudClusterInterceptor<T extends ClientHttpRequestIntercep
      *
      * @since 1.9.0
      */
-    public static class RetryLoadBalancerClusterInterceptor extends BlockingCloudClusterInterceptor<RetryLoadBalancerInterceptor> {
+    public static class RetryLoadBalancerClusterInterceptor extends BlockingCloudClusterInterceptor {
 
         public RetryLoadBalancerClusterInterceptor(InvocationContext context) {
-            super(context, BlockingCloudCluster::new);
+            super(context);
+        }
+
+        @Override
+        protected BlockingCloudCluster createCluster(Object interceptor) {
+            return new BlockingCloudCluster(context.getRegistry(), (RetryLoadBalancerInterceptor) interceptor);
         }
     }
 }
