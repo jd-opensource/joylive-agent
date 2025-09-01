@@ -18,7 +18,6 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.MapOption;
-import com.jd.live.agent.core.util.option.Options;
 import com.jd.live.agent.governance.config.RateLimiterConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
@@ -27,7 +26,11 @@ import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcCo
 import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcTokenClient;
 import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcTokenClientManager;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static com.jd.live.agent.core.util.CollectionUtils.merge;
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * Rate limiter implementation based on gRPC token service
@@ -43,20 +46,33 @@ public class Limiter4jRateLimiter extends AbstractRateLimiter {
     private final RateLimitPolicy policy;
     private final SlidingWindow window;
     private final String bucketId;
+    private final Map<String, String> parameters;
 
-    public Limiter4jRateLimiter(GrpcTokenClientManager clientManager, RateLimitPolicy policy, RateLimiterConfig config, SlidingWindow window) {
+    public Limiter4jRateLimiter(GrpcTokenClientManager clientManager,
+                                RateLimitPolicy policy,
+                                SlidingWindow window) {
+        this(clientManager, policy, window, policy.getLimiterName());
+    }
+
+    public Limiter4jRateLimiter(GrpcTokenClientManager clientManager,
+                                RateLimitPolicy policy,
+                                SlidingWindow window,
+                                String name) {
         super(policy, TimeUnit.MILLISECONDS);
         this.clientManager = clientManager;
         this.policy = policy;
         this.window = window;
+        this.parameters = createParameters(policy, clientManager.getConfig());
         // Create gRPC configuration
-        this.client = clientManager.getOrCreateClient(new GrpcConfig(policy.getId(), new Options(this.option, new MapOption(config.getConfigs()))));
+        this.client = clientManager.getOrCreateClient(new GrpcConfig(policy.getId(), new MapOption(parameters)));
         // Create token bucket in constructor
-        this.bucketId = client.createTokenBucket(policy, window);
+        this.bucketId = client.createTokenBucket(name, window.getThreshold(), window.getTimeWindowInMs(), parameters);
     }
 
     @Override
-    protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
+    protected boolean doAcquire(final int permits, final long timeout, final TimeUnit timeUnit) {
+        // Update last access time
+        client.setLastAccessTime(System.currentTimeMillis());
         if (!client.isConnected()) {
             // Allow by default when client is unavailable
             return true;
@@ -75,7 +91,21 @@ public class Limiter4jRateLimiter extends AbstractRateLimiter {
 
     @Override
     protected void doClose() {
-        // Delete token bucket
-        client.deleteTokenBucket(bucketId);
+        client.close();
+    }
+
+    /**
+     * Creates a merged parameter map from policy and config sources.
+     * Config parameters override policy parameters for duplicate keys.
+     *
+     * @param policy the rate limit policy containing base parameters
+     * @param config the rate limiter config containing override parameters
+     * @return merged parameter map with non-null, non-empty values
+     */
+    private Map<String, String> createParameters(RateLimitPolicy policy, RateLimiterConfig config) {
+        Map<String, String> map = merge(config.getConfigs(), policy.getParameters(), (k, v) -> !isEmpty(v));
+        map.putIfAbsent("cleanInterval", String.valueOf(config.getCleanInterval()));
+        map.putIfAbsent("expireTime", String.valueOf(config.getExpireTime()));
+        return map;
     }
 }

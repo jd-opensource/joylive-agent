@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Options;
-import com.jd.live.agent.governance.config.RateLimiterConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
@@ -45,13 +44,13 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
 
     private final RRateLimiter limiter;
 
-    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, RateLimiterConfig config, SlidingWindow window) {
-        this(manager, policy, config, window, policy.getLimiterName());
+    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, SlidingWindow window) {
+        this(manager, policy, window, policy.getLimiterName());
     }
 
-    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, RateLimiterConfig config, SlidingWindow window, String name) {
+    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, SlidingWindow window, String name) {
         super(policy, TimeUnit.MILLISECONDS);
-        RedisConfig redisConfig = new RedisConfig(policy.getId(), new Options(option, new MapOption(config.getConfigs())));
+        RedisConfig redisConfig = new RedisConfig(policy.getId(), new Options(option, new MapOption(manager.getConfig().getConfigs())));
         this.client = manager.getOrCreateClient(redisConfig);
         this.limiter = client.getRateLimiter(name);
         if (limiter != null) {
@@ -64,7 +63,7 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
     }
 
     @Override
-    protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {
+    protected boolean doAcquire(final int permits, final long timeout, final TimeUnit timeUnit) {
         client.setLastAccessTime(System.currentTimeMillis());
         try {
             return limiter == null || !client.isConnected() || limiter.tryAcquire(permits, Duration.ofNanos(timeUnit.toNanos(timeout)));

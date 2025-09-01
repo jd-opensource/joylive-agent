@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterFactory;
@@ -43,31 +44,16 @@ public class RedissonRateLimiterFactory extends AbstractRateLimiterFactory {
     @Inject(ServiceConfig.COMPONENT_SERVICE_CONFIG)
     private ServiceConfig config;
 
-    private transient volatile RedisClientManager manager;
+    private final LazyObject<RedisClientManager> cache = LazyObject.of(() -> new RedisClientManager(timer, config.getRateLimiter()));
 
     @Override
     protected RateLimiter create(RateLimitPolicy policy) {
         List<SlidingWindow> windows = policy.getSlidingWindows();
-        RedisClientManager manager = getManager();
+        RedisClientManager manager = cache.get();
         return windows.size() == 1
-                ? new RedissonRateLimiter(manager, policy, config.getRateLimiter(), windows.get(0))
-                : new RedissonRateLimiterGroup(manager, policy, config.getRateLimiter());
+                ? new RedissonRateLimiter(manager, policy, windows.get(0))
+                : new RedissonRateLimiterGroup(manager, policy);
     }
 
-    /**
-     * Retrieves the singleton instance of {@link RedisClientManager}.
-     *
-     * @return The singleton instance of {@link RedisClientManager}.
-     */
-    private RedisClientManager getManager() {
-        if (manager == null) {
-            synchronized (this) {
-                if (manager == null) {
-                    manager = new RedisClientManager(timer, config.getRateLimiter());
-                }
-            }
-        }
-        return manager;
-    }
 
 }

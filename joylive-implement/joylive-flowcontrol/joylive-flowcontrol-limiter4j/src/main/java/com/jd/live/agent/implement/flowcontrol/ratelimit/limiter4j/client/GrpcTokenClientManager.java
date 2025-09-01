@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RateLimiterConfig;
+import lombok.Getter;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,12 +32,14 @@ public class GrpcTokenClientManager {
 
     private static final Logger logger = LoggerFactory.getLogger(GrpcTokenClientManager.class);
 
-    private final ConcurrentHashMap<String, GrpcTokenClient> clients = new ConcurrentHashMap<>();
+    @Getter
     private final RateLimiterConfig config;
+    private final Timer timer;
+    private final ConcurrentHashMap<String, GrpcTokenClient> clients = new ConcurrentHashMap<>();
 
     public GrpcTokenClientManager(Timer timer, RateLimiterConfig config) {
+        this.timer = timer;
         this.config = config;
-        timer.schedule("Recycle-limiter4j", config.getCleanInterval(), this::cleanup);
     }
 
     /**
@@ -46,24 +49,36 @@ public class GrpcTokenClientManager {
      * @return gRPC token client
      */
     public GrpcTokenClient getOrCreateClient(GrpcConfig config) {
-        return clients.computeIfAbsent(config.getAddress(), k -> new GrpcTokenClient(config));
+        return clients.computeIfAbsent(config.getAddress(), k -> new GrpcTokenClient(config, this::removeClient));
     }
 
     /**
-     * Clean up idle clients
+     * Removes a Redis client if its reference count is zero and it has expired.
+     *
+     * @param client the Redis client to be removed
      */
-    private void cleanup() {
-        long currentTime = System.currentTimeMillis();
-        clients.entrySet().removeIf(entry -> {
-            GrpcTokenClient client = entry.getValue();
-            long idleTime = currentTime - client.getLastAccessTime();
-            if (idleTime > config.getExpireTime()) {
-                logger.info("Closing idle gRPC client for address: {}, idle time: {}ms", client.getConfig().getAddress(), idleTime);
-                client.close();
-                return true;
+    private void removeClient(final GrpcTokenClient client) {
+        clients.computeIfPresent(client.getAddress(), (c, v) -> {
+            if (v == client && v.isUseless()) {
+                addTask(v);
+                return null;
             }
-            return false;
+            return v;
         });
     }
 
+    /**
+     * Adds a task to the timer to recycle the grpc token client if its reference count is zero and it has expired.
+     *
+     * @param client the grpc token client to be recycled
+     */
+    private void addTask(GrpcTokenClient client) {
+        timer.delay("Recycle-limiter4j-" + client.getAddress(), config.getClientCleanInterval(), () -> {
+            if (client.isExpired(config.getClientExpireTime())) {
+                client.shutdown();
+            } else {
+                addTask(client);
+            }
+        });
+    }
 }

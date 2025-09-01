@@ -17,7 +17,7 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterFactory;
@@ -42,33 +42,15 @@ public class Limiter4jRateLimiterFactory extends AbstractRateLimiterFactory {
     @Inject(ServiceConfig.COMPONENT_SERVICE_CONFIG)
     private ServiceConfig config;
 
-    @Inject(Application.COMPONENT_APPLICATION)
-    private Application application;
-
-    private transient volatile GrpcTokenClientManager manager;
+    private final LazyObject<GrpcTokenClientManager> cache = LazyObject.of(() -> new GrpcTokenClientManager(timer, config.getRateLimiter()));
 
     @Override
     protected RateLimiter create(RateLimitPolicy policy) {
         List<SlidingWindow> windows = policy.getSlidingWindows();
-        GrpcTokenClientManager manager = getManager();
+        GrpcTokenClientManager manager = cache.get();
         return windows.size() == 1
-                ? new Limiter4jRateLimiter(manager, policy, config.getRateLimiter(), windows.get(0))
-                : new Limiter4jRateLimiterGroup(manager, policy, config.getRateLimiter());
+                ? new Limiter4jRateLimiter(manager, policy, windows.get(0))
+                : new Limiter4jRateLimiterGroup(manager, policy);
     }
 
-    /**
-     * Retrieves the singleton instance of {@link GrpcTokenClientManager}.
-     *
-     * @return The singleton instance of {@link GrpcTokenClientManager}.
-     */
-    private GrpcTokenClientManager getManager() {
-        if (manager == null) {
-            synchronized (this) {
-                if (manager == null) {
-                    manager = new GrpcTokenClientManager(timer, config.getRateLimiter());
-                }
-            }
-        }
-        return manager;
-    }
 }

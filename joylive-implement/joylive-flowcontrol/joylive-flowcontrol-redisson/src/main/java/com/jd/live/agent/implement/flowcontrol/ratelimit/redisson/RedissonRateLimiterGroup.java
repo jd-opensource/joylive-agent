@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson;
 
-import com.jd.live.agent.governance.config.RateLimiterConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterGroup;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client.RedisClientManager;
@@ -27,7 +26,7 @@ import com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client.RedisCl
  */
 public class RedissonRateLimiterGroup extends AbstractRateLimiterGroup {
 
-    public RedissonRateLimiterGroup(RedisClientManager manager, RateLimitPolicy policy, RateLimiterConfig config) {
-        super(policy, (window, name) -> new RedissonRateLimiter(manager, policy, config, window, name));
+    public RedissonRateLimiterGroup(RedisClientManager manager, RateLimitPolicy policy) {
+        super(policy, (window, name) -> new RedissonRateLimiter(manager, policy, window, name));
     }
 }

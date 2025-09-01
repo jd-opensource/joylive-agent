@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client;
 
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RateLimiterConfig;
+import lombok.Getter;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +30,7 @@ public class RedisClientManager {
 
     private final Timer timer;
 
+    @Getter
     private final RateLimiterConfig config;
 
     private final Map<RedisConfig, RedisClient> clients = new ConcurrentHashMap<>();
@@ -71,8 +73,8 @@ public class RedisClientManager {
      * @param client the Redis client to be recycled
      */
     private void addTask(RedisClient client) {
-        timer.delay("Recycle-redisson-" + client.getId(), config.getCleanInterval(), () -> {
-            if (client.isExpired(config.getExpireTime())) {
+        timer.delay("Recycle-redisson-" + client.getId(), config.getClientCleanInterval(), () -> {
+            if (client.isExpired(config.getClientExpireTime())) {
                 client.shutdown();
             } else {
                 addTask(client);

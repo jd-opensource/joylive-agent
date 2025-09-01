@@ -16,7 +16,6 @@
 package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.config.RateLimiterConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterGroup;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcTokenClientManager;
@@ -29,8 +28,8 @@ import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcTo
 @Extension(value = "limiter4j")
 public class Limiter4jRateLimiterGroup extends AbstractRateLimiterGroup {
 
-    public Limiter4jRateLimiterGroup(GrpcTokenClientManager clientManager, RateLimitPolicy policy, RateLimiterConfig config) {
-        super(policy, (window, name) -> new Limiter4jRateLimiter(clientManager, policy, config, window));
+    public Limiter4jRateLimiterGroup(GrpcTokenClientManager clientManager, RateLimitPolicy policy) {
+        super(policy, (window, name) -> new Limiter4jRateLimiter(clientManager, policy, window, name));
     }
 
 }

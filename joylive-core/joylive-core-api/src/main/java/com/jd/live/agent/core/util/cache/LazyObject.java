@@ -40,14 +40,19 @@ public class LazyObject<T> extends CacheObject<T> {
      */
     private volatile boolean loaded;
 
+    protected LazyObject(final T target, final boolean loaded, final Supplier<T> supplier) {
+        super(target);
+        this.loaded = loaded;
+        this.supplier = supplier;
+    }
+
     /**
      * Constructor that initializes the LazyObject with a specific target object, marking it as loaded.
      *
      * @param target The object to be cached.
      */
-    public LazyObject(T target) {
-        super(target);
-        this.loaded = true;
+    public LazyObject(final T target) {
+        this(target, true, null);
     }
 
     /**
@@ -55,8 +60,8 @@ public class LazyObject<T> extends CacheObject<T> {
      *
      * @param supplier The Supplier to use for creating the object when needed.
      */
-    public LazyObject(Supplier<T> supplier) {
-        this.supplier = supplier;
+    public LazyObject(final Supplier<T> supplier) {
+        this(null, false, supplier);
     }
 
     /**
@@ -66,10 +71,10 @@ public class LazyObject<T> extends CacheObject<T> {
      * @return The cached object of type T.
      */
     public T get() {
-        if (!loaded && supplier != null) {
+        if (!loaded) {
             synchronized (this) {
                 if (!loaded) {
-                    target = supplier.get();
+                    target = supplier == null ? null : supplier.get();
                     loaded = true;
                 }
             }

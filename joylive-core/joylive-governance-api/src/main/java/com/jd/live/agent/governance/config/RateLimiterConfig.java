@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.util.option.Converts;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,6 +34,14 @@ public class RateLimiterConfig extends RecyclerConfig {
     private String type;
 
     private Map<String, String> configs;
+
+    public long getClientCleanInterval() {
+        return Converts.getPositive(configs == null ? null : configs.get("clientCleanInterval"), 5000L);
+    }
+
+    public long getClientExpireTime() {
+        return Converts.getPositive(configs == null ? null : configs.get("clientExpireTime"), 10000L);
+    }
 
 }
 

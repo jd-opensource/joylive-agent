@@ -8,12 +8,14 @@ option java_outer_classname = "TokenBucketServiceProto";
 
 // Create token bucket request
 message CreateTokenBucketRequest {
+  // Token bucket name
+  string name = 1;
   // Rate (number of tokens per time window)
-  int64 rate = 1;
+  int64 rate = 2;
   // Time window in milliseconds
-  int64 time_window_ms = 2;
+  int64 time_window_ms = 3;
   // Additional parameters
-  map<string, string> parameters = 3;
+  map<string, string> parameters = 4;
 }
 
 // Create token bucket response
@@ -44,20 +46,6 @@ message AcquireTokensResponse {
   string message = 2;
 }
 
-// Delete token bucket request
-message DeleteTokenBucketRequest {
-  // Token bucket ID
-  string bucket_id = 1;
-}
-
-// Delete token bucket response
-message DeleteTokenBucketResponse {
-  // Whether the operation was successful
-  bool success = 1;
-  // Response message
-  string message = 2;
-}
-
 // Token bucket service definition
 service TokenBucketService {
   // Create a token bucket and return a globally unique name
@@ -66,6 +54,4 @@ service TokenBucketService {
   // Acquire tokens using token bucket ID
   rpc AcquireTokens(AcquireTokensRequest) returns (AcquireTokensResponse);
 
-  // Delete token bucket (optional, for resource cleanup)
-  rpc DeleteTokenBucket(DeleteTokenBucketRequest) returns (DeleteTokenBucketResponse);
 }

@@ -17,8 +17,6 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.proto.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -27,9 +25,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * gRPC token client implementation
@@ -41,14 +40,17 @@ public class GrpcTokenClient {
     private static final Logger logger = LoggerFactory.getLogger(GrpcTokenClient.class);
     @Getter
     private final GrpcConfig config;
+    private final Consumer<GrpcTokenClient> consumer;
     private final ManagedChannel channel;
     private final TokenBucketServiceGrpc.TokenBucketServiceBlockingStub blockingStub;
+    private final AtomicLong counter = new AtomicLong(1);
     @Getter
     @Setter
     private volatile long lastAccessTime;
 
-    public GrpcTokenClient(GrpcConfig config) {
+    public GrpcTokenClient(GrpcConfig config, Consumer<GrpcTokenClient> consumer) {
         this.config = config;
+        this.consumer = consumer;
         this.lastAccessTime = System.currentTimeMillis();
 
         // Create gRPC channel
@@ -68,39 +70,38 @@ public class GrpcTokenClient {
         logger.info("Created gRPC token client for address: {}", config.getAddress());
     }
 
+    public String getAddress() {
+        return config.getAddress();
+    }
+
     /**
-     * Create token bucket
+     * Creates a token bucket with specified configuration.
      *
-     * @param policy Rate limit policy
-     * @param window Sliding window
-     * @return Whether creation was successful
+     * @param name         the token bucket name
+     * @param rate         the token generation rate
+     * @param timeWindowMs the time window in milliseconds
+     * @param parameters   additional configuration parameters, may be null
+     * @return the bucket ID if successful, null otherwise
      */
-    public String createTokenBucket(RateLimitPolicy policy, SlidingWindow window) {
+    public String createTokenBucket(String name, int rate, long timeWindowMs, Map<String, String> parameters) {
         try {
             CreateTokenBucketRequest.Builder requestBuilder = CreateTokenBucketRequest.newBuilder()
-                    .setRate(window.getThreshold())
-                    .setTimeWindowMs(window.getTimeWindowInMs());
-            if (policy.getParameters() != null) {
-                Map<String, String> parameters = new HashMap<>();
-                policy.getParameters().forEach((key, value) -> {
-                    if (value != null) {
-                        parameters.put(key, value.toString());
-                    }
-                });
-                // TODO add application name
+                    .setName(name)
+                    .setRate(rate)
+                    .setTimeWindowMs(timeWindowMs);
+            if (parameters != null) {
                 requestBuilder.putAllParameters(parameters);
             }
             CreateTokenBucketRequest request = requestBuilder.build();
-
             CreateTokenBucketResponse response = blockingStub.createTokenBucket(request);
             if (response.getSuccess()) {
-                logger.info("Successfully created token bucket with ID: {} for policy: {}", response.getBucketId(), policy.getId());
+                logger.info("Successfully created token bucket with ID: {} for {}", response.getBucketId(), name);
                 return response.getBucketId();
             } else {
-                logger.error("Failed to create token bucket for policy: {}, message: {}", policy.getId(), response.getMessage());
+                logger.error("Failed to create token bucket for {}, message: {}", name, response.getMessage());
             }
         } catch (Exception e) {
-            logger.error("Error creating token bucket for policy: {}", policy.getId(), e);
+            logger.error("Error creating token bucket for {}", name, e);
         }
         return null;
     }
@@ -111,7 +112,7 @@ public class GrpcTokenClient {
      * @param permits Number of tokens requested
      * @return Whether tokens were successfully acquired
      */
-    public boolean acquireTokens(String bucketId, int permits, long timeoutMs) {
+    public boolean acquireTokens(final String bucketId, final int permits, final long timeoutMs) {
         if (bucketId == null) {
             // Default to allow when token bucket is not created
             logger.warn("Token bucket not created, cannot acquire tokens");
@@ -134,37 +135,31 @@ public class GrpcTokenClient {
     }
 
     /**
-     * Delete token bucket
+     * Checks if the endpoint is considered useless based on the counter value.
      *
-     * @return Whether deletion was successful
+     * @return true if the counter is zero, indicating the endpoint is useless; false otherwise
      */
-    public boolean deleteTokenBucket(String bucketId) {
-        try {
-            DeleteTokenBucketRequest request = DeleteTokenBucketRequest.newBuilder().setBucketId(bucketId).build();
-            DeleteTokenBucketResponse response = blockingStub.deleteTokenBucket(request);
-            if (response.getSuccess()) {
-                logger.info("Successfully deleted token bucket: {}", bucketId);
-                return true;
-            } else {
-                logger.error("Failed to delete token bucket: {}, message: {}", bucketId, response.getMessage());
-                return false;
-            }
-        } catch (Exception e) {
-            logger.error("Error deleting token bucket: {}", bucketId, e);
-            return false;
-        }
+    public boolean isUseless() {
+        return counter.get() == 0;
     }
-
 
     /**
      * Close client
      */
     public void close() {
-        // Close channel
-        if (channel != null && !channel.isShutdown()) {
-            channel.shutdown();
+        if (counter.decrementAndGet() == 0) {
+            consumer.accept(this);
         }
-        logger.info("gRPC token client closed for address: {}", config.getAddress());
+    }
+
+    /**
+     * Checks if the Redis client has expired based on the specified timeout.
+     *
+     * @param timeout the timeout duration in milliseconds
+     * @return true if the client has expired, false otherwise
+     */
+    public boolean isExpired(long timeout) {
+        return isUseless() && System.currentTimeMillis() - lastAccessTime >= timeout;
     }
 
     /**
@@ -172,6 +167,18 @@ public class GrpcTokenClient {
      */
     public boolean isConnected() {
         return channel != null && !channel.isShutdown();
+    }
+
+    /**
+     * Shuts down the Redis client.
+     * This method should be called when the client is no longer needed to release resources.
+     */
+    protected void shutdown() {
+        // Close channel
+        if (channel != null && !channel.isShutdown()) {
+            channel.shutdown();
+        }
+        logger.info("gRPC token client closed for address: {}", config.getAddress());
     }
 
 }
