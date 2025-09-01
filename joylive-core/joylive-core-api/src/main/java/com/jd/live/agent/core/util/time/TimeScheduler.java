@@ -206,6 +206,22 @@ public class TimeScheduler implements AutoCloseable, Timer {
         return add(new TimeWork(task.getName(), time, task, afterRun, afterCancel));
     }
 
+    @Override
+    public void schedule(String name, long delay, Runnable runnable) {
+        if (runnable == null) {
+            return;
+        }
+        add(name, delay, () -> {
+            try {
+                runnable.run();
+            } finally {
+                if (started.get()) {
+                    add(name, delay, runnable);
+                }
+            }
+        });
+    }
+
     /**
      * Starts and returns a new daemon thread with the given name.
      *

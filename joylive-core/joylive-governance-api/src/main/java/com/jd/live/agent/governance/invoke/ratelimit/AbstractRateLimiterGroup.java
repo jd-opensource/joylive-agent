@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 /**
  * An abstract implementation of a rate limiter group, which is a collection of
@@ -34,38 +35,34 @@ public abstract class AbstractRateLimiterGroup extends AbstractRateLimiter {
     /**
      * A list of rate limiters that are part of this group.
      */
-    protected final List<RateLimiter> limiters = new ArrayList<>();
+    protected final List<RateLimiter> limiters;
 
     /**
      * Constructs a new AbstractRateLimiterGroup with the specified rate limit policy.
      *
      * @param policy The rate limit policy to be applied to the limiters in the group.
      */
-    public AbstractRateLimiterGroup(RateLimitPolicy policy) {
+    public AbstractRateLimiterGroup(RateLimitPolicy policy, BiFunction<SlidingWindow, String, RateLimiter> function) {
         super(policy, TimeUnit.NANOSECONDS);
+        this.limiters = createLimiters(policy, function);
     }
 
     /**
-     * Initializes the rate limiter group by creating the individual rate limiters
-     * based on the sliding windows defined in the rate limit policy.
+     * Creates rate limiters for each sliding window in the policy.
+     *
+     * @param policy the rate limit policy containing sliding windows
+     * @param function the factory function to create individual rate limiters
+     * @return list of created rate limiters
      */
-    public void init() {
+    protected List<RateLimiter> createLimiters(RateLimitPolicy policy, BiFunction<SlidingWindow, String, RateLimiter> function) {
+        List<RateLimiter> limiters = new ArrayList<>();
         int i = 0;
         for (SlidingWindow window : policy.getSlidingWindows()) {
-            limiters.add(create(window, policy.getName() + "-" + policy.getRealizeType() + "-" + i++));
+            limiters.add(function.apply(window, policy.getLimiterName(String.valueOf(i))));
+            i++;
         }
+        return limiters;
     }
-
-    /**
-     * Creates a new rate limiter instance based on the provided sliding window and name.
-     * This method must be implemented by subclasses to provide the specific rate limiter
-     * instances that will be managed by this group.
-     *
-     * @param window The sliding window to be used by the rate limiter.
-     * @param name   The name to be associated with the rate limiter.
-     * @return A new rate limiter instance.
-     */
-    protected abstract RateLimiter create(SlidingWindow window, String name);
 
     @Override
     protected boolean doAcquire(int permits, long timeout, TimeUnit timeUnit) {

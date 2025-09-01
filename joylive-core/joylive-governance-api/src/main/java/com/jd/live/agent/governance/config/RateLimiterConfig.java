@@ -18,6 +18,8 @@ package com.jd.live.agent.governance.config;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 /**
  * Configuration class for rate limiter settings.
  */
@@ -29,6 +31,8 @@ public class RateLimiterConfig extends RecyclerConfig {
      * The type of the rate limiter.
      */
     private String type;
+
+    private Map<String, String> configs;
 
 }
 

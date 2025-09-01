@@ -18,24 +18,24 @@ package com.jd.live.agent.core.util.option;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * Abstract Option
- */
-public abstract class AbstractOption implements Option {
+public class Options implements Option {
 
-    @Override
-    public String getString(final String key) {
-        Object target = getObject(key);
-        return target == null ? null : target.toString();
+    private Option[] options;
+
+    public Options(Option... options) {
+        this.options = options;
     }
 
     @Override
-    public String getString(final String key, final String def) {
-        String value = getString(key);
-        if (value == null || value.isEmpty()) {
-            return def;
-        }
-        return value;
+    public String getString(String key) {
+        Object result = getObject(key);
+        return result == null ? null : result.toString();
+    }
+
+    @Override
+    public String getString(String key, String def) {
+        String result = getString(key);
+        return result == null || result.isEmpty() ? def : result;
     }
 
     @Override
@@ -166,5 +166,25 @@ public abstract class AbstractOption implements Option {
     @Override
     public Double getPositive(final String key, Double def) {
         return Converts.getPositive(getObject(key), def);
+    }
+
+    @Override
+    public <T> T getObject(String key) {
+        Object result = null;
+        Object value;
+        for (Option option : options) {
+            value = option.getObject(key);
+            if (value != null) {
+                result = value;
+                if (result instanceof CharSequence) {
+                    if (((CharSequence) result).length() > 0) {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        return (T) result;
     }
 }

@@ -33,7 +33,7 @@ public class Resilience4jRateLimiter extends AbstractRateLimiter {
     private final AtomicRateLimiter limiter;
 
     public Resilience4jRateLimiter(RateLimitPolicy policy, SlidingWindow window) {
-        this(policy, window, policy.getName());
+        this(policy, window, policy.getLimiterName());
     }
 
     public Resilience4jRateLimiter(RateLimitPolicy policy, SlidingWindow window, String name) {

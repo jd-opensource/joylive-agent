@@ -119,6 +119,18 @@ public class RateLimitPolicy extends AbstractLimitPolicy
         return slidingWindows == null ? 0 : slidingWindows.size();
     }
 
+    public String getLimiterName() {
+        return getLimiterName(null);
+    }
+
+    public String getLimiterName(String suffix) {
+        String name = "LiveAgent-limiter-" + getId();
+        if (suffix == null || suffix.isEmpty()) {
+            return name;
+        }
+        return name + "-" + suffix;
+    }
+
     /**
      * Supplements the current rate limit policy with another policy's details. If the current
      * policy does not have sliding windows defined, it inherits them from the specified source policy.

@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
+
+option java_multiple_files = true;
+option java_package = "com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.proto";
+option java_outer_classname = "TokenServiceProto";
+
+// Create token bucket request
+message CreateTokenBucketRequest {
+  // Rate (number of tokens per time window)
+  int64 rate = 1;
+  // Time window in milliseconds
+  int64 time_window_ms = 2;
+  // Additional parameters
+  map<string, string> parameters = 3;
+}
+
+// Create token bucket response
+message CreateTokenBucketResponse {
+  // Whether the operation was successful
+  bool success = 1;
+  // Globally unique token bucket ID
+  string bucket_id = 2;
+  // Response message
+  string message = 3;
+}
+
+// Acquire tokens request
+message AcquireTokensRequest {
+  // Token bucket ID
+  string bucket_id = 1;
+  // Number of tokens requested
+  int32 tokens = 2;
+  // Time out in milliseconds
+  int64 timeout_ms = 3;
+}
+
+// Acquire tokens response
+message AcquireTokensResponse {
+  // Whether tokens were successfully acquired
+  bool success = 1;
+  // Response message
+  string message = 2;
+}
+
+// Delete token bucket request
+message DeleteTokenBucketRequest {
+  // Token bucket ID
+  string bucket_id = 1;
+}
+
+// Delete token bucket response
+message DeleteTokenBucketResponse {
+  // Whether the operation was successful
+  bool success = 1;
+  // Response message
+  string message = 2;
+}
+
+// Token bucket service definition
+service TokenBucketService {
+  // Create a token bucket and return a globally unique name
+  rpc CreateTokenBucket(CreateTokenBucketRequest) returns (CreateTokenBucketResponse);
+
+  // Acquire tokens using token bucket ID
+  rpc AcquireTokens(AcquireTokensRequest) returns (AcquireTokensResponse);
+
+  // Delete token bucket (optional, for resource cleanup)
+  rpc DeleteTokenBucket(DeleteTokenBucketRequest) returns (DeleteTokenBucketResponse);
+}

@@ -54,6 +54,8 @@ public interface Timer {
      */
     Timeout add(TimeTask task);
 
+    void schedule(String name, long delay, Runnable runnable);
+
     /**
      * Calculates actual retry interval with optional random jitter.
      *

@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson;
+package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
-import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterFactory;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
-import com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client.RedisClientManager;
+import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcTokenClientManager;
 
 import java.util.List;
 
 /**
- * RedissonRateLimiterFactory
+ * Limiter4j rate limiter factory.
  *
- * @since 1.6.0
+ * @since 1.9.0
  */
-@Injectable
-@Extension("Redis")
-public class RedissonRateLimiterFactory extends AbstractRateLimiterFactory {
+@Extension(value = "limiter4j")
+public class Limiter4jRateLimiterFactory extends AbstractRateLimiterFactory {
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
@@ -43,31 +42,33 @@ public class RedissonRateLimiterFactory extends AbstractRateLimiterFactory {
     @Inject(ServiceConfig.COMPONENT_SERVICE_CONFIG)
     private ServiceConfig config;
 
-    private transient volatile RedisClientManager manager;
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
+
+    private transient volatile GrpcTokenClientManager manager;
 
     @Override
     protected RateLimiter create(RateLimitPolicy policy) {
         List<SlidingWindow> windows = policy.getSlidingWindows();
-        RedisClientManager manager = getManager();
+        GrpcTokenClientManager manager = getManager();
         return windows.size() == 1
-                ? new RedissonRateLimiter(manager, policy, config.getRateLimiter(), windows.get(0))
-                : new RedissonRateLimiterGroup(manager, policy, config.getRateLimiter());
+                ? new Limiter4jRateLimiter(manager, policy, config.getRateLimiter(), windows.get(0))
+                : new Limiter4jRateLimiterGroup(manager, policy, config.getRateLimiter());
     }
 
     /**
-     * Retrieves the singleton instance of {@link RedisClientManager}.
+     * Retrieves the singleton instance of {@link GrpcTokenClientManager}.
      *
-     * @return The singleton instance of {@link RedisClientManager}.
+     * @return The singleton instance of {@link GrpcTokenClientManager}.
      */
-    private RedisClientManager getManager() {
+    private GrpcTokenClientManager getManager() {
         if (manager == null) {
             synchronized (this) {
                 if (manager == null) {
-                    manager = new RedisClientManager(timer);
+                    manager = new GrpcTokenClientManager(timer, config.getRateLimiter());
                 }
             }
         }
         return manager;
     }
-
 }

@@ -16,9 +16,7 @@
 package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterGroup;
-import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
 /**
  * SmoothWarmupLimiterGroup
@@ -28,12 +26,6 @@ import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 public class SmoothWarmupLimiterGroup extends AbstractRateLimiterGroup {
 
     public SmoothWarmupLimiterGroup(RateLimitPolicy policy) {
-        super(policy);
-        init();
-    }
-
-    @Override
-    protected RateLimiter create(SlidingWindow window, String name) {
-        return new SmoothWarmupLimiter(policy, window);
+        super(policy, (window, name) -> new SmoothWarmupLimiter(policy, window));
     }
 }

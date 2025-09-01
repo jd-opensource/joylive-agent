@@ -17,6 +17,9 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Options;
+import com.jd.live.agent.governance.config.RateLimiterConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
@@ -42,17 +45,17 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
 
     private final RRateLimiter limiter;
 
-    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, SlidingWindow window) {
-        this(manager, policy, window, policy.getName());
+    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, RateLimiterConfig config, SlidingWindow window) {
+        this(manager, policy, config, window, policy.getLimiterName());
     }
 
-    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, SlidingWindow window, String name) {
+    public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, RateLimiterConfig config, SlidingWindow window, String name) {
         super(policy, TimeUnit.MILLISECONDS);
-        RedisConfig config = new RedisConfig(policy.getId(), option);
-        this.client = manager.getOrCreateClient(config);
-        this.limiter = client.getRateLimiter("LiveAgent-limiter-" + policy.getId());
+        RedisConfig redisConfig = new RedisConfig(policy.getId(), new Options(option, new MapOption(config.getConfigs())));
+        this.client = manager.getOrCreateClient(redisConfig);
+        this.limiter = client.getRateLimiter(name);
         if (limiter != null) {
-            long expireTime = config.getExpireTime();
+            long expireTime = redisConfig.getExpireTime();
             if (expireTime > 0 && expireTime < window.getTimeWindowInMs()) {
                 expireTime = window.getTimeWindowInMs();
             }
@@ -72,7 +75,6 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
     }
 
     @Override
-
     protected void doClose() {
         client.close();
     }

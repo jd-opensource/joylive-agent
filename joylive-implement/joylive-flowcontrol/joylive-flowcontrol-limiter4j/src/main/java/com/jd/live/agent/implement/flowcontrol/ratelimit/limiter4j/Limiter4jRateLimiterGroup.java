@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.ratelimit.resilience4j;
+package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
 
+import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.governance.config.RateLimiterConfig;
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterGroup;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
+import com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client.GrpcTokenClientManager;
 
 /**
- * Resilience4jRateLimiterGroup
+ * Limiter4j rate limiter group
  *
- * @since 1.0.0
+ * @since 1.9.0
  */
-public class Resilience4jRateLimiterGroup extends AbstractRateLimiterGroup {
+@Extension(value = "limiter4j")
+public class Limiter4jRateLimiterGroup extends AbstractRateLimiterGroup {
 
-    public Resilience4jRateLimiterGroup(RateLimitPolicy policy) {
-        super(policy, (window, name) -> new Resilience4jRateLimiter(policy, window, name));
+    public Limiter4jRateLimiterGroup(GrpcTokenClientManager clientManager, RateLimitPolicy policy, RateLimiterConfig config) {
+        super(policy, (window, name) -> new Limiter4jRateLimiter(clientManager, policy, config, window));
     }
+
 }
