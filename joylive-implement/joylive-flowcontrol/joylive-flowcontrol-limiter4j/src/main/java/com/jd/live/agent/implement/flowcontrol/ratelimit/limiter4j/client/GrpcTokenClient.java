@@ -120,7 +120,7 @@ public class GrpcTokenClient {
         try {
             AcquireTokensRequest request = AcquireTokensRequest.newBuilder()
                     .setBucketId(bucketId)
-                    .setTokenCount(permits)
+                    .setTokens(permits)
                     .setTimeoutMs(timeoutMs)
                     .build();
             AcquireTokensResponse response = blockingStub.acquireTokens(request);

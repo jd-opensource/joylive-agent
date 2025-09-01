@@ -4,7 +4,7 @@ package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j;
 
 option java_multiple_files = true;
 option java_package = "com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.proto";
-option java_outer_classname = "TokenServiceProto";
+option java_outer_classname = "TokenBucketServiceProto";
 
 // Create token bucket request
 message CreateTokenBucketRequest {
