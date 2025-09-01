@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
-import com.jd.live.agent.governance.security.KeyStore;
+import com.jd.live.agent.core.security.KeyStore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import static com.jd.live.agent.governance.security.KeyLoader.loadKey;
+import static com.jd.live.agent.core.security.KeyLoader.loadKey;
 
 @Getter
 @AllArgsConstructor

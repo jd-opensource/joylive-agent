@@ -56,7 +56,7 @@ public class JConfigAnnotationInjection extends AbstractInjection {
             fieldSrc = typeSrc.build(field.getKey());
             value = field.getSource(fieldSrc);
             if (value != null) {
-                value = convert(field, value, fieldSrc.getPath());
+                value = convert(field, value, fieldSrc.getPath(), typeSrc.getComponents());
                 fieldSrc.setUpdated(true);
             } else if (!fieldSrc.cascade()) {
                 value = createAndInject(fieldSrc, field);
@@ -81,7 +81,7 @@ public class JConfigAnnotationInjection extends AbstractInjection {
         }
     }
 
-    private Object convert(InjectField field, Object value, String fieldPath) {
+    private Object convert(InjectField field, Object value, String fieldPath, Map<String, Object> components) {
         Class<?> fieldCls = field.getType();
         Class<?> sourceCls = value.getClass();
         Class<?> sourceInboxCls = inbox(sourceCls);
@@ -90,7 +90,7 @@ public class JConfigAnnotationInjection extends AbstractInjection {
                 new TypeInfo(value.getClass(), sourceInboxCls),
                 new TypeInfo(fieldCls, targetInboxCls, field.getGenericType()));
         Converter converter = context.getConverter(conversionType);
-        Conversion conversion = new Conversion(conversionType, value, context);
+        Conversion conversion = new Conversion(conversionType, value, context, components);
         conversion.setPath(fieldPath);
         try {
             return converter.convert(conversion);
@@ -136,9 +136,13 @@ public class JConfigAnnotationInjection extends AbstractInjection {
         Object parent = src != null ? src.getParent() : null;
         Object current = src != null ? src.getCurrent() : source;
         Option option = null;
+        Map<String, Object> components = src == null ? null : src.getComponents();
         if (current instanceof InjectSource) {
-            option = ((InjectSource) current).getOption();
-        } else if (current instanceof Option) {
+            InjectSource is = (InjectSource) current;
+            current = is.getOption();
+            components = is.getComponents();
+        }
+        if (current instanceof Option) {
             option = (Option) current;
         } else if (current instanceof Map) {
             option = new CascadeOption((Map<String, Object>) current);
@@ -154,7 +158,8 @@ public class JConfigAnnotationInjection extends AbstractInjection {
         if (root == null) {
             root = option != null ? option : current;
         }
-        return new JSource(current, parent, root, path);
+
+        return new JSource(current, parent, root, path, components);
     }
 
 }

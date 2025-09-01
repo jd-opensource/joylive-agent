@@ -55,6 +55,8 @@ import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.PluginManager;
 import com.jd.live.agent.core.plugin.PluginSupervisor;
+import com.jd.live.agent.core.security.*;
+import com.jd.live.agent.core.security.detector.DefaultCipherDetector;
 import com.jd.live.agent.core.service.ServiceManager;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.service.ServiceSupervisorAware;
@@ -158,6 +160,16 @@ public class Bootstrap implements AgentLifecycle {
      */
     private ClassLoaderManager classLoaderManager;
 
+    private CipherConfig cipherConfig;
+
+    private CipherDetector cipherDetector;
+
+    private CipherFactory cipherFactory;
+
+    private Cipher cipher;
+
+    private StringDecrypter stringDecrypter;
+
     /**
      * Event bus for publishing and subscribing to events within the agent.
      */
@@ -256,6 +268,11 @@ public class Bootstrap implements AgentLifecycle {
             supplyEnv(); //depend on classLoaderManager
             application = createApplication(); //depend on env option
             setupLogger(); //depend on extensionManager
+            cipherConfig = createCipherConfig();
+            cipherDetector = createCipherDetector(cipherConfig);
+            cipherFactory = createCipherFactory();
+            cipher = createCipher(cipherConfig, cipherFactory);
+            stringDecrypter = createStringDecrypter(cipherDetector, cipher);
             option = loadConfig(); // load config.yaml and merge bootstrap.properties.
             agentConfig = createAgentConfig(); //depend on option & injector
             timer = createTimer();
@@ -509,6 +526,11 @@ public class Bootstrap implements AgentLifecycle {
             if (injectable != null && injectable.enable() || configurable != null) {
                 Map<String, Object> components = new HashMap<>();
                 InjectSource ctx = new InjectSource(option, components);
+                ctx.add(CipherConfig.COMPONENT_CIPHER_CONFIG, cipherConfig);
+                ctx.add(CipherDetector.COMPONENT_CIPHER_DETECTOR, cipherDetector);
+                ctx.add(CipherFactory.COMPONENT_CIPHER_FACTORY, cipherFactory);
+                ctx.add(Cipher.COMPONENT_CIPHER, cipher);
+                ctx.add(StringDecrypter.COMPONENT_STRING_DECRYPTER, stringDecrypter);
                 ctx.add(AgentConfig.COMPONENT_AGENT_CONFIG, agentConfig);
                 ctx.add(EnhanceConfig.COMPONENT_ENHANCE_CONFIG, agentConfig == null ? null : agentConfig.getEnhanceConfig());
                 ctx.add(PluginConfig.COMPONENT_PLUGIN_CONFIG, agentConfig == null ? null : agentConfig.getPluginConfig());
@@ -572,6 +594,32 @@ public class Bootstrap implements AgentLifecycle {
 
     private ClassLoaderManager createClassLoaderManager() {
         return new ClassLoaderManager((LiveClassLoader) classLoader, classLoaderConfig, agentPath);
+    }
+
+    private CipherConfig createCipherConfig() {
+        CipherConfig config = new CipherConfig();
+        injector.inject(config);
+        return config;
+    }
+
+    private CipherDetector createCipherDetector(CipherConfig config) {
+        // TODO how to decrypt config password;
+        return new DefaultCipherDetector(config);
+    }
+
+    private CipherFactory createCipherFactory() {
+        Map<String, CipherAlgorithmFactory> cipherAlgorithmFactories = extensionManager.getOrLoadExtensible(CipherAlgorithmFactory.class).getExtensionMap();
+        Map<String, StringCodec> stringCodecs = extensionManager.getOrLoadExtensible(StringCodec.class).getExtensionMap();
+        Map<String, CipherGeneratorFactory> saltFactories = extensionManager.getOrLoadExtensible(CipherGeneratorFactory.class).getExtensionMap();
+        return new DefaultCipherFactory(cipherAlgorithmFactories, stringCodecs, saltFactories);
+    }
+
+    private Cipher createCipher(CipherConfig config, CipherFactory factory) {
+        return factory.create(config);
+    }
+
+    private StringDecrypter createStringDecrypter(CipherDetector detector, Cipher cipher) {
+        return new DefaultStringDecrypter(detector, cipher);
     }
 
     private ConditionMatcher createConditionMatcher() {

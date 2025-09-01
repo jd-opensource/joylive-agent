@@ -16,43 +16,23 @@
 package com.jd.live.agent.plugin.application.springboot.v2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.security.Cipher;
-import com.jd.live.agent.governance.security.CipherDetector;
-import com.jd.live.agent.governance.security.CipherFactory;
-import com.jd.live.agent.governance.security.detector.DefaultCipherDetector;
+import com.jd.live.agent.core.security.StringDecrypter;
 
 public class AbstractPropertyResolverInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractPropertyResolverInterceptor.class);
+    private final StringDecrypter decrypter;
 
-    private final Cipher cipher;
-
-    private final CipherDetector detector;
-
-    public AbstractPropertyResolverInterceptor(GovernanceConfig config, CipherFactory cipherFactory) {
-        this.cipher = cipherFactory.create(config.getCipherConfig());
-        this.detector = new DefaultCipherDetector(config.getCipherConfig());
+    public AbstractPropertyResolverInterceptor(StringDecrypter decrypter) {
+        this.decrypter = decrypter;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        if (cipher == null) {
-            return;
-        }
-        Object value = ctx.getArgument(0);
-        if (value instanceof String) {
-            String text = (String) value;
-            if (detector.isEncrypted(text)) {
-                try {
-                    value = cipher.decrypt(detector.unwrap(text));
-                    ctx.setArgument(0, value);
-                } catch (Exception e) {
-                    logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
-                }
+        if (decrypter != null) {
+            Object value = ctx.getArgument(0);
+            if (value instanceof String) {
+                decrypter.tryDecrypt(value.toString(), s -> ctx.setArgument(0, s));
             }
         }
     }

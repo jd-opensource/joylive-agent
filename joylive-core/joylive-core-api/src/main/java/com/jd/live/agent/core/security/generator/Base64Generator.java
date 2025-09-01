@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.core.security.generator;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import java.util.Base64;
 
-import java.lang.annotation.*;
+public class Base64Generator extends StringGenerator {
 
-/**
- * Conditional annotation that enables a component when cipher functionality is enabled.
- */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnProperty(value = "cipher.enabled")
-@ConditionalComposite
-public @interface ConditionalOnCipherEnabled {
+    public Base64Generator(String salt, int size) {
+        super(salt, size);
+    }
 
+    @Override
+    protected byte[] setupSalt(byte[] bytes, int size) {
+        return super.setupSalt(Base64.getDecoder().decode(bytes), size);
+    }
 }

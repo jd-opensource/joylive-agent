@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.core.security.generator;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.core.security.CipherGenerator;
 
-import java.lang.annotation.*;
+public class EmptyGenerator extends ByteGenerator {
 
-/**
- * Conditional annotation that enables a component when cipher functionality is enabled.
- */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnProperty(value = "cipher.enabled")
-@ConditionalComposite
-public @interface ConditionalOnCipherEnabled {
+    public static CipherGenerator INSTANCE = new EmptyGenerator(8);
 
+    public EmptyGenerator(int size) {
+        super(new byte[size], size);
+    }
 }

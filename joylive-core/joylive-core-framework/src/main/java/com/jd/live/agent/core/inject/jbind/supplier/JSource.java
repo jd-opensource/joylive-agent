@@ -15,50 +15,35 @@
  */
 package com.jd.live.agent.core.inject.jbind.supplier;
 
-public class JSource {
+import com.jd.live.agent.core.inject.InjectComponent.AbstractInjectComponent;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Map;
+
+@Getter
+public class JSource extends AbstractInjectComponent {
 
     private final Object current;
     private final Object parent;
     private final Object root;
     private final String path;
+    @Setter
     private boolean updated;
 
-    public JSource(Object current, Object parent, Object root, String path) {
+    public JSource(Object current, Object parent, Object root, String path, Map<String, Object> components) {
+        super(components);
         this.current = current;
         this.parent = parent;
         this.root = root;
         this.path = path;
     }
 
-    public Object getCurrent() {
-        return current;
-    }
-
-    public Object getParent() {
-        return parent;
-    }
-
-    public Object getRoot() {
-        return root;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
     public boolean cascade() {
         return parent != null && parent != root;
     }
 
-    public boolean isUpdated() {
-        return updated;
-    }
-
-    public void setUpdated(boolean updated) {
-        this.updated = updated;
-    }
-
     public JSource build(String key) {
-        return new JSource(current, parent, root, path == null || path.isEmpty() ? key : path + "." + key);
+        return new JSource(current, parent, root, path == null || path.isEmpty() ? key : path + "." + key, components);
     }
 }

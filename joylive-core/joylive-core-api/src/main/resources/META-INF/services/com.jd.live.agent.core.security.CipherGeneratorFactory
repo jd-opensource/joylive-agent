@@ -1,0 +1,4 @@
+com.jd.live.agent.core.security.generator.Base64GeneratorFactory
+com.jd.live.agent.core.security.generator.RandomGeneratorFactory
+com.jd.live.agent.core.security.generator.StringGeneratorFactory
+com.jd.live.agent.core.security.generator.EmptyGeneratorFactory

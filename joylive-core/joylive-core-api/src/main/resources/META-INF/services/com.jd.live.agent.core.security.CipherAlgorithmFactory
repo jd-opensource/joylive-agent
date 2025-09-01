@@ -1,0 +1,2 @@
+com.jd.live.agent.core.security.cipher.simple.SimplePBECipherAlgorithmFactory
+com.jd.live.agent.core.security.cipher.jasypt.StandardPBECipherAlgorithmFactory

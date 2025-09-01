@@ -15,21 +15,16 @@
  */
 package com.jd.live.agent.governance.service.config;
 
-import com.jd.live.agent.bootstrap.logger.Logger;
-import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.parser.ConfigParser;
+import com.jd.live.agent.core.security.Cipher;
+import com.jd.live.agent.core.security.StringDecrypter;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.governance.config.CipherConfig;
 import com.jd.live.agent.governance.config.ConfigCenterConfig;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.security.Cipher;
-import com.jd.live.agent.governance.security.CipherDetector;
-import com.jd.live.agent.governance.security.CipherFactory;
-import com.jd.live.agent.governance.security.detector.DefaultCipherDetector;
 import com.jd.live.agent.governance.service.ConfigService;
 import com.jd.live.agent.governance.subscription.config.ConfigListener;
 import com.jd.live.agent.governance.subscription.config.ConfigName;
@@ -45,16 +40,14 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractConfigService<T extends ConfigClientApi> extends AbstractService implements ConfigService, InjectSourceSupplier {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractConfigService.class);
-
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     protected GovernanceConfig governanceConfig;
 
     @Inject
     protected Map<String, ConfigParser> parsers;
 
-    @Inject(CipherFactory.COMPONENT_CIPHER_FACTORY)
-    protected CipherFactory cipherFactory;
+    @Inject(StringDecrypter.COMPONENT_STRING_DECRYPTER)
+    protected StringDecrypter decrypter;
 
     protected Configurator configurator;
 
@@ -89,11 +82,9 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
                 }
             }
             // add cipher
-            CipherConfig cipherConfig = governanceConfig.getCipherConfig();
-            Cipher cipher = cipherFactory.create(cipherConfig);
-            configurator = cipher == null
+            configurator = decrypter == null
                     ? createConfigurator(subscriptions)
-                    : new CipherConfigurator(createConfigurator(subscriptions), cipher, new DefaultCipherDetector(cipherConfig));
+                    : new CipherConfigurator(createConfigurator(subscriptions), decrypter);
             configurator.subscribe();
             return CompletableFuture.completedFuture(null);
         } catch (Throwable e) {
@@ -145,14 +136,11 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
 
         private final Configurator configurator;
 
-        private final Cipher cipher;
+        private final StringDecrypter decrypter;
 
-        private final CipherDetector detector;
-
-        public CipherConfigurator(Configurator configurator, Cipher cipher, CipherDetector detector) {
+        public CipherConfigurator(Configurator configurator, StringDecrypter decrypter) {
             this.configurator = configurator;
-            this.cipher = cipher;
-            this.detector = detector;
+            this.decrypter = decrypter;
         }
 
         @Override
@@ -168,17 +156,7 @@ public abstract class AbstractConfigService<T extends ConfigClientApi> extends A
         @Override
         public Object getProperty(String name) {
             Object result = configurator.getProperty(name);
-            if (result instanceof String) {
-                String text = (String) result;
-                if (detector.isEncrypted(name, text)) {
-                    try {
-                        return cipher.decrypt(detector.unwrap(text));
-                    } catch (Exception e) {
-                        logger.error("Error occurs while decoding config, caused by {}", e.getMessage(), e);
-                    }
-                }
-            }
-            return result;
+            return result instanceof String ? decrypter.tryDecrypt((String) result) : result;
         }
 
         @Override

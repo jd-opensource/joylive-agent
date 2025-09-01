@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.annotation;
+package com.jd.live.agent.core.security;
 
-import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-
-import java.lang.annotation.*;
+import com.jd.live.agent.core.extension.annotation.Extensible;
 
 /**
- * Conditional annotation that enables a component when cipher functionality is enabled.
+ * Factory for creating configured cipher algorithm instances.
+ *
  */
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@ConditionalOnProperty(value = "cipher.enabled")
-@ConditionalComposite
-public @interface ConditionalOnCipherEnabled {
+@Extensible("CipherAlgorithmFactory")
+public interface CipherAlgorithmFactory {
+    /**
+     * Creates a configured cipher algorithm instance.
+     * @param ctx Configuration context (non-null)
+     * @return Initialized cipher instance (non-null)
+     */
+    CipherAlgorithm create(CipherAlgorithmContext ctx);
 
 }
