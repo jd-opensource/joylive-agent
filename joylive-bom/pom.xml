@@ -225,6 +225,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
+                <artifactId>joylive-flowcontrol-limiter4j</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-system-springboot2</artifactId>
                 <version>${revision}</version>
             </dependency>
