@@ -27,6 +27,8 @@ import lombok.ToString;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 @ToString
 public class LaneSpace {
@@ -81,15 +83,15 @@ public class LaneSpace {
     @Getter
     private transient Lane currentLane;
 
-    public LaneRule getLaneRule(String id) {
+    public LaneRule getLaneRule(final String id) {
         return id == null ? null : ruleCache.get(id);
     }
 
-    public Lane getLane(String code) {
+    public Lane getLane(final String code) {
         return defaultSpace && (code == null || code.isEmpty()) ? defaultLaneCache.get() : laneCache.get(code);
     }
 
-    public Lane getOrDefault(String code) {
+    public Lane getOrDefault(final String code) {
         return defaultSpace && (code == null || code.isEmpty()) ? defaultLaneCache.get() : laneCache.get(code, defaultLaneCache::get);
     }
 
@@ -97,7 +99,7 @@ public class LaneSpace {
         return defaultLaneCache.get();
     }
 
-    public LaneDomain getDomain(String host) {
+    public LaneDomain getDomain(final String host) {
         return domainCache.get(host);
     }
 
@@ -109,33 +111,22 @@ public class LaneSpace {
         return rules == null ? 0 : rules.size();
     }
 
-    public boolean withTopic(String topic) {
+    public boolean withTopic(final String topic) {
         return topic != null && topics != null && topics.contains(topic);
     }
 
-    public void locate(String lane) {
+    public void locate(final String lane) {
         currentLane = getLane(lane);
     }
 
-    public String getLane(List<String> ruleIds, Matcher<TagCondition> matcher) {
+    public String getLane(final List<String> ruleIds, final Matcher<TagCondition> matcher) {
         if (getRuleSize() == 0) {
             return null;
         }
         if (ruleIds == null || ruleIds.isEmpty()) {
-            for (LaneRule rule : rules) {
-                if (rule.match(matcher)) {
-                    return rule.getLaneCode();
-                }
-            }
-        } else {
-            for (String ruleId : ruleIds) {
-                LaneRule rule = getLaneRule(ruleId);
-                if (rule != null && rule.match(matcher)) {
-                    return rule.getLaneCode();
-                }
-            }
+            return getLane(rules, r -> r, matcher);
         }
-        return null;
+        return getLane(ruleIds, this::getLaneRule, matcher);
     }
 
     public void cache() {
@@ -148,6 +139,43 @@ public class LaneSpace {
         if (domains != null) {
             domains.forEach(LaneDomain::cache);
         }
+    }
+
+    /**
+     * Selects a lane code based on weighted random selection from matching rules.
+     *
+     * @param <T> the type of rule objects
+     * @param rules the list of rule objects to evaluate
+     * @param function the function to extract LaneRule from rule object
+     * @param matcher the matcher to check if rules match conditions
+     * @return the selected lane code, default lane code if no selection made, or null if no rules match
+     */
+    private <T> String getLane(final List<T> rules, final Function<T, LaneRule> function, final Matcher<TagCondition> matcher) {
+        double seed = -1;
+        double ratio = 0;
+        LaneRule rule;
+        for (T r : rules) {
+            rule = function.apply(r);
+            if (rule.match(matcher)) {
+                // total ratio when multiple rules matching
+                ratio += rule.getRatio();
+                if (ratio >= 1) {
+                    return rule.getLaneCode();
+                }
+                if (seed < 0) {
+                    // initialize
+                    seed = ThreadLocalRandom.current().nextDouble();
+                }
+                if (seed < ratio) {
+                    return rule.getLaneCode();
+                }
+            }
+        }
+        if (ratio > 0) {
+            Lane lane = getDefaultLane();
+            return lane != null ? lane.getCode() : null;
+        }
+        return null;
     }
 
 }

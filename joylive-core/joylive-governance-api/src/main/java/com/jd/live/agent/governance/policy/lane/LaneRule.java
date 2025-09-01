@@ -27,4 +27,15 @@ public class LaneRule extends TagGroup {
 
     private String laneCode;
 
+    private Double ratio;
+
+    public double ratio() {
+        if (ratio == null || ratio >= 1.0) {
+            return 1.0;
+        }
+        if (ratio <= 0) {
+            return 0;
+        }
+        return ratio;
+    }
 }

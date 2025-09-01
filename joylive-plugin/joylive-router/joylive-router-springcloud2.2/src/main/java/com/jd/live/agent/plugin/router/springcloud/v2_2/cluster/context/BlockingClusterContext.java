@@ -39,6 +39,7 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
 
     private static final String TYPE_BLOCKING_LOAD_BALANCER_CLIENT = "org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient";
     private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
+    private static final String TYPE_LOAD_BALANCER_FEIGN_CLIENT = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
 
     private static final String FIELD_REQUEST_FACTORY = "requestFactory";
     private static final String FIELD_LOAD_BALANCER = "loadBalancer";
@@ -69,10 +70,10 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
      * Creates a factory for generating {@link ServiceRegistry} instances based on the type of {@link LoadBalancerClient}.
      * This method determines the appropriate factory implementation by inspecting the class name of the provided client.
      *
-     * @param client the {@link LoadBalancerClient} used to determine the factory type
+     * @param client the client used to determine the factory type
      * @return a {@link ServiceRegistryFactory} that creates a {@link ServiceRegistry} for a given service name, or {@code null} if the client is not supported
      */
-    public static ServiceRegistryFactory createFactory(LoadBalancerClient client) {
+    public static ServiceRegistryFactory createFactory(Object client) {
         if (client == null) {
             return null;
         }
@@ -83,6 +84,10 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
             ReactiveLoadBalancer.Factory<ServiceInstance> factory = getQuietly(client, FIELD_LOAD_BALANCER_CLIENT_FACTORY);
             return service -> new SpringServiceRegistry(service, factory);
         } else if (name.equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
+            // RibbonLoadBalancerClient.clientFactory
+            // SpringClientFactory
+            return service -> new RibbonServiceRegistry(service, getQuietly(client, FIELD_CLIENT_FACTORY));
+        } else if (name.equals(TYPE_LOAD_BALANCER_FEIGN_CLIENT)) {
             // RibbonLoadBalancerClient.clientFactory
             // SpringClientFactory
             return service -> new RibbonServiceRegistry(service, getQuietly(client, FIELD_CLIENT_FACTORY));

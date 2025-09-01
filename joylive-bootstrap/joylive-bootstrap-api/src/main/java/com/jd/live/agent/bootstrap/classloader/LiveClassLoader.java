@@ -39,8 +39,6 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
 
     public static final ThreadLocal<CandidateFeature> CONTEXT_LOADER_ENABLED = ThreadLocal.withInitial(CandidateFeature::new);
 
-    public static ClassLoader BOOT_CLASS_LOADER = null;
-
     public static ClassLoader APP_CLASS_LOADER = null;
 
     private static final Map<ClassLoader, ClassResolver> resolvers = new ConcurrentHashMap<>();
@@ -331,13 +329,13 @@ public class LiveClassLoader extends URLClassLoader implements URLResourcer {
         // The thread context class loader may be inconsistent with the framework's boot class loader.
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         contextClassLoader = contextClassLoader == LiveClassLoader.APP_CLASS_LOADER || !feature.test(contextClassLoader) ? null : contextClassLoader;
-        ClassLoader bootClassLoader = LiveClassLoader.BOOT_CLASS_LOADER == LiveClassLoader.APP_CLASS_LOADER || LiveClassLoader.BOOT_CLASS_LOADER == contextClassLoader || !feature.test(LiveClassLoader.BOOT_CLASS_LOADER) ? null : LiveClassLoader.BOOT_CLASS_LOADER;
-        if (bootClassLoader == null) {
+        ClassLoader appClassLoader = !feature.test(LiveClassLoader.APP_CLASS_LOADER) ? null : LiveClassLoader.APP_CLASS_LOADER;
+        if (appClassLoader == null) {
             return contextClassLoader == null ? null : new ClassLoader[]{contextClassLoader};
         } else if (contextClassLoader == null) {
-            return new ClassLoader[]{bootClassLoader};
+            return new ClassLoader[]{appClassLoader};
         }
-        return new ClassLoader[]{LiveClassLoader.BOOT_CLASS_LOADER, contextClassLoader};
+        return new ClassLoader[]{appClassLoader, contextClassLoader};
     }
 
     /**

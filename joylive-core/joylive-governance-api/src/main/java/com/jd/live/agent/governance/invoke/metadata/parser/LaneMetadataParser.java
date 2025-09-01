@@ -299,7 +299,10 @@ public class LaneMetadataParser implements LaneParser {
         @Override
         protected String fallbackLaneSpace() {
             if (application.getService().isFrontGateway()) {
-                return laneConfig.isFallbackLocationIfNoSpace() ? application.getLocation().getLaneSpaceId() : null;
+                String result = laneConfig.isFallbackLocationIfNoSpace() ? application.getLocation().getLaneSpaceId() : null;
+                LaneSpace laneSpace = result == null || governancePolicy == null ? null : governancePolicy.getLaneSpace(result);
+                laneSpace = laneSpace == null && governancePolicy != null ? governancePolicy.getDefaultLaneSpace() : laneSpace;
+                return laneSpace == null ? result : laneSpace.getId();
             } else {
                 return super.fallbackLaneSpace();
             }
@@ -308,8 +311,19 @@ public class LaneMetadataParser implements LaneParser {
         @Override
         protected String fallbackLane(String laneSpaceId, LaneSpace laneSpace) {
             if (application.getService().isFrontGateway()) {
+                if (laneSpace == null) {
+                    Location location = application.getLocation();
+                    return laneSpaceId != null && laneSpaceId.equals(location.getLaneSpaceId()) ? location.getLane() : null;
+                }
+                String result = laneSpace.getLane(null, matcher);
+                if (result != null) {
+                    return result;
+                }
                 Location location = application.getLocation();
-                return laneSpaceId != null && laneSpaceId.equals(location.getLaneSpaceId()) ? location.getLane() : null;
+                result = laneSpaceId != null && laneSpaceId.equals(location.getLaneSpaceId()) ? location.getLane() : null;
+                Lane lane = laneSpace.getLane(result);
+                lane = lane == null ? laneSpace.getDefaultLane() : lane;
+                return lane == null ? result : lane.getCode();
             }
             return super.fallbackLane(laneSpaceId, laneSpace);
         }

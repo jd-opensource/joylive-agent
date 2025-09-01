@@ -20,6 +20,7 @@ import feign.Client;
 import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient;
+import org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext.createFactory;
@@ -48,7 +49,8 @@ public class FeignClusterContext extends AbstractCloudClusterContext {
         super(registry);
         this.client = client;
         this.delegate = getQuietly(client, FIELD_DELEGATE);
-        this.system = createFactory(getQuietly(client, FIELD_LOAD_BALANCER_CLIENT));
+        Object loadBalancerClient = client instanceof LoadBalancerFeignClient ? client : getQuietly(client, FIELD_LOAD_BALANCER_CLIENT);
+        this.system = createFactory(loadBalancerClient);
         LoadBalancerRetryProperties retryProperties = getQuietly(client, FIELD_RETRY_PROPERTIES, v -> v instanceof LoadBalancerRetryProperties);
         this.defaultRetryPolicy = getDefaultRetryPolicy(retryProperties);
     }
