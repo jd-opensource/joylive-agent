@@ -63,7 +63,7 @@ public class RedissonRateLimiterFactory extends AbstractRateLimiterFactory {
         if (manager == null) {
             synchronized (this) {
                 if (manager == null) {
-                    manager = new RedisClientManager(timer);
+                    manager = new RedisClientManager(timer, config.getRateLimiter());
                 }
             }
         }

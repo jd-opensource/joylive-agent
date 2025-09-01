@@ -26,6 +26,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -62,8 +63,7 @@ public class GrpcTokenClient {
         }
 
         this.channel = channelBuilder.build();
-        this.blockingStub = TokenBucketServiceGrpc.newBlockingStub(channel)
-                .withDeadlineAfter(config.getRequestTimeoutMs(), TimeUnit.MILLISECONDS);
+        this.blockingStub = TokenBucketServiceGrpc.newBlockingStub(channel);
 
         logger.info("Created gRPC token client for address: {}", config.getAddress());
     }
@@ -123,7 +123,9 @@ public class GrpcTokenClient {
                     .setTokens(permits)
                     .setTimeoutMs(timeoutMs)
                     .build();
-            AcquireTokensResponse response = blockingStub.acquireTokens(request);
+            AcquireTokensResponse response = timeoutMs > 0
+                    ? blockingStub.withDeadlineAfter(Duration.ofMillis(timeoutMs)).acquireTokens(request)
+                    : blockingStub.acquireTokens(request);
             return response.getSuccess();
         } catch (Exception e) {
             logger.error("Error acquiring tokens for bucket: {}, tokens: {}", bucketId, permits, e);

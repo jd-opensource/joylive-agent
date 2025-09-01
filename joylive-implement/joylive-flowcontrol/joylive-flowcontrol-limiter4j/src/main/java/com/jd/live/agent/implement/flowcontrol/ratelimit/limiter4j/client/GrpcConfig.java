@@ -49,11 +49,6 @@ public class GrpcConfig {
      */
     private final long connectTimeoutMs;
 
-    /**
-     * Request timeout in milliseconds
-     */
-    private final long requestTimeoutMs;
-
     private final long keepAliveTimeMs;
 
     private final long keepAliveTimeoutMs;
@@ -70,9 +65,8 @@ public class GrpcConfig {
         this.host = addr.getHost();
         this.port = addr.getPort();
         this.connectTimeoutMs = option.getPositive("connectTimeoutMs", 5000L);
-        this.requestTimeoutMs = option.getPositive("requestTimeoutMs", 1000L);
-        this.keepAliveTimeMs = option.getLong("requestTimeoutMs", 30000L);
-        this.keepAliveTimeoutMs = option.getLong("requestTimeoutMs", 5000L);
+        this.keepAliveTimeMs = option.getLong("keepAliveTimeMs", 30000L);
+        this.keepAliveTimeoutMs = option.getLong("keepAliveTimeoutMs", 5000L);
     }
 
     @Override
@@ -80,13 +74,12 @@ public class GrpcConfig {
         if (!(o instanceof GrpcConfig)) return false;
         GrpcConfig that = (GrpcConfig) o;
         return connectTimeoutMs == that.connectTimeoutMs
-                && requestTimeoutMs == that.requestTimeoutMs
                 && id == that.id
                 && Objects.equals(address, that.address);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(address, connectTimeoutMs, requestTimeoutMs, id);
+        return Objects.hash(address, connectTimeoutMs, id);
     }
 }

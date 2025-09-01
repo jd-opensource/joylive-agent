@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @since 1.9.0
  */
-@Extension(value = "limiter4j")
+@Extension(value = "Limiter4j")
 public class Limiter4jRateLimiterFactory extends AbstractRateLimiterFactory {
 
     @Inject(Timer.COMPONENT_TIMER)

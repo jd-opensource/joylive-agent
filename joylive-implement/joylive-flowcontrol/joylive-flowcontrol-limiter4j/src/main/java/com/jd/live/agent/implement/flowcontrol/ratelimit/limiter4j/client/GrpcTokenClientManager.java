@@ -36,7 +36,7 @@ public class GrpcTokenClientManager {
 
     public GrpcTokenClientManager(Timer timer, RateLimiterConfig config) {
         this.config = config;
-        timer.schedule("limiter4j-client-cleanup", config.getCleanInterval(), this::cleanup);
+        timer.schedule("Recycle-limiter4j", config.getCleanInterval(), this::cleanup);
     }
 
     /**
