@@ -16,13 +16,13 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.filter;
 
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.gateway.*;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRoute;
+import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveGatewayFilterChain.DefaultGatewayFilterChain;
 import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.gateway.filter.*;
@@ -33,17 +33,14 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
-import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext.createFactory;
-import static com.jd.live.agent.plugin.router.springgateway.v2_2.util.WebExchangeUtils.getURI;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
  * A utility class that holds the configuration for gateway filters.
@@ -114,8 +111,7 @@ public class LiveChainBuilder {
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
         GatewayRoute<Route> gatewayRoute = GatewayRoutes.get(route.getId());
         LiveRouteFilter filter = gatewayRoute.getOrCreate(this::createRouteFilter);
-        boolean loadbalancer = pareURI(exchange, route, filter.getPathFilters());
-        return new DefaultGatewayFilterChain(filter.getFilters(), loadbalancer);
+        return filter.build(exchange);
     }
 
     /**
@@ -209,30 +205,5 @@ public class LiveChainBuilder {
             }
         }
         return result;
-    }
-
-    /**
-     * Parses the URI and determines whether load balancing is used based on the given route information, the current ServerWebExchange object, and an optional list of GatewayFilters for rewriting the path.
-     *
-     * @param exchange    The current ServerWebExchange object, which contains information about the request and response.
-     * @param route       The current route information, including the path, host, port, etc.
-     * @param pathFilters An optional list of GatewayFilters used to rewrite the path.
-     * @return A boolean indicating whether load balancing is used.
-     */
-    private boolean pareURI(ServerWebExchange exchange, Route route, List<GatewayFilter> pathFilters) {
-        Map<String, Object> attributes = exchange.getAttributes();
-        GatewayRouteDef def = route.getPredicate() instanceof GatewayRouteDefSupplier ? ((GatewayRouteDefSupplier) route.getPredicate()).getDefinition() : null;
-        GatewayRouteURI routeURI = def != null ? def.getUri() : new GatewayRouteURI(route.getUri());
-        if (routeURI.getSchemePrefix() != null) {
-            attributes.put(GATEWAY_SCHEME_PREFIX_ATTR, routeURI.getSchemePrefix());
-        }
-        if (pathFilters != null && !pathFilters.isEmpty()) {
-            LiveGatewayFilterChain chain = new DefaultGatewayFilterChain(pathFilters);
-            chain.filter(exchange).subscribe();
-        }
-        URI uri = getURI(exchange);
-        uri = newURI(uri, routeURI.getScheme(), routeURI.getHost(), routeURI.getPort());
-        attributes.put(GATEWAY_REQUEST_URL_ATTR, uri);
-        return routeURI.isLoadBalancer();
     }
 }

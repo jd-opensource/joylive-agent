@@ -90,5 +90,9 @@ public interface LiveGatewayFilterChain extends GatewayFilterChain {
                 this.index = index;
             }
         }
+
+        public static GatewayFilterChain of(List<GatewayFilter> filters) {
+            return new DefaultGatewayFilterChain(filters);
+        }
     }
 }

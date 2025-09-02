@@ -21,6 +21,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,7 +68,7 @@ public interface LiveGatewayFilterChain extends GatewayFilterChain {
         }
 
         public DefaultGatewayFilterChain(List<GatewayFilter> filters, boolean loadbalancer) {
-            this.filters = filters;
+            this.filters = filters == null ? new ArrayList<>() : filters;
             this.loadbalancer = loadbalancer;
         }
 
@@ -89,6 +90,10 @@ public interface LiveGatewayFilterChain extends GatewayFilterChain {
             if (index >= 0) {
                 this.index = index;
             }
+        }
+
+        public static GatewayFilterChain of(List<GatewayFilter> filters) {
+            return new DefaultGatewayFilterChain(filters);
         }
     }
 }
