@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.condition;
+package com.jd.live.agent.plugin.router.springcloud.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 
 import java.lang.annotation.*;
 
+/**
+ * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnRegistryEnabled
-@ConditionalOnGovernanceEnabled
-@ConditionalOnSpringCloudDisabled
-@ConditionalOnSpringWeb5Enabled
+@ConditionalOnClass(ConditionalOnSpringWeb6Enabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb5RegistryEnabled {
+public @interface ConditionalOnSpringWeb6Enabled {
 
+    // spring web 6
+    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
 }

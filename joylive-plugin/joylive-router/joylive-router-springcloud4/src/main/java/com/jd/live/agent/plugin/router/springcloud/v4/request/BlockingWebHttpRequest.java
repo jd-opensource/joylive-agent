@@ -34,6 +34,7 @@ import org.springframework.lang.NonNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
@@ -78,11 +79,12 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     @Override
     @NonNull
     public ClientHttpResponse execute() throws IOException {
-        IOException throwable = registry.subscribe(service, (message, e) -> new IOException(message, e));
-        if (throwable != null) {
-            throw throwable;
-        }
         try {
+            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
+            if (endpoints == null || endpoints.isEmpty()) {
+                // Failed to convert microservice, fallback to domain reques
+                return execute(uri);
+            }
             return context.isFlowControlEnabled() ? request() : route();
         } catch (IOException | NestedRuntimeException e) {
             throw e;
@@ -103,12 +105,7 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
      */
     public ClientHttpResponse execute(ServiceEndpoint endpoint) throws IOException {
         URI u = newURI(uri, endpoint.getHost(), endpoint.getPort());
-        ClientHttpRequest request = accessor.getRequestFactory().createRequest(u, method);
-        request.getHeaders().putAll(headers);
-        if (outputStream != null && outputStream.size() > 0) {
-            outputStream.writeTo(request.getBody());
-        }
-        return request.execute();
+        return execute(u);
     }
 
     @Override
@@ -136,6 +133,22 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     @NonNull
     public HttpHeaders getHeaders() {
         return headers;
+    }
+
+    /**
+     * Executes the HTTP request with configured headers and body.
+     *
+     * @param uri the target URI for the request
+     * @return the HTTP response
+     * @throws IOException if an I/O error occurs during request execution
+     */
+    private ClientHttpResponse execute(URI uri) throws IOException {
+        ClientHttpRequest request = accessor.getRequestFactory().createRequest(uri, method);
+        request.getHeaders().putAll(headers);
+        if (outputStream != null && outputStream.size() > 0) {
+            outputStream.writeTo(request.getBody());
+        }
+        return request.execute();
     }
 
     /**

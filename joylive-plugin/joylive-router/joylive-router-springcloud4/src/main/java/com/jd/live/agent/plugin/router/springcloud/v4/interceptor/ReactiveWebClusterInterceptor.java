@@ -33,6 +33,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -56,31 +57,22 @@ public class ReactiveWebClusterInterceptor extends InterceptorAdaptor {
         if (arguments != null && arguments.length > 0 && arguments[0] instanceof ExchangeFunction) {
             arguments[0] = ((ExchangeFunction) arguments[0]).filter((request, next) -> {
                 String service = context.getService(request.url());
-                if (service == null || service.isEmpty()) {
-                    return next.exchange(request);
-                } else {
-                    Mono<ClientResponse> error = subscribe(service);
-                    if (error != null) {
-                        return error;
-                    } else if (context.isFlowControlEnabled()) {
-                        return request(request, next, service);
-                    } else {
-                        return route(request, next, service);
+                try {
+                    List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
+                    if (endpoints == null || endpoints.isEmpty()) {
+                        // Failed to convert microservice, fallback to domain reques
+                        return next.exchange(request);
                     }
+                } catch (Throwable e) {
+                    return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
+                }
+                if (context.isFlowControlEnabled()) {
+                    return request(request, next, service);
+                } else {
+                    return route(request, next, service);
                 }
             });
         }
-    }
-
-    /**
-     * Subscribes to governance policies with timeout handling
-     *
-     * @param service Target service name
-     * @return Response mono or error flow
-     */
-    private Mono<ClientResponse> subscribe(String service) {
-        return registry.subscribe(service, (message, e) ->
-                Mono.just(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).body(message).build()));
     }
 
     /**

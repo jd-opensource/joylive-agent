@@ -16,21 +16,26 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnRegistryEnabled
-@ConditionalOnGovernanceEnabled
-@ConditionalOnSpringCloudDisabled
-@ConditionalOnSpringWeb5Enabled
+@ConditionalOnClass(ConditionalOnSpringWeb5Enabled.TYPE_REACTIVE_CLIENT_HTTP_REQUEST)
+@ConditionalOnMissingClass(ConditionalOnSpringWeb5Enabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb5RegistryEnabled {
+public @interface ConditionalOnSpringWeb5Enabled {
 
+    // spring web 6
+    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
+
+    // spring web 4+
+    String TYPE_CLIENT_HTTP_REQUEST = "org.springframework.http.client.ClientHttpRequest";
+
+    // spring web 5+
+    String TYPE_REACTIVE_CLIENT_HTTP_REQUEST = "org.springframework.http.client.reactive.ClientHttpRequest";
 
 }

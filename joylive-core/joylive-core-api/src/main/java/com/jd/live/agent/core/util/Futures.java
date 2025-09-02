@@ -16,8 +16,8 @@
 package com.jd.live.agent.core.util;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.*;
+import java.util.function.BiFunction;
 
 /**
  * This class provides utility methods for working with futures and completion stages.
@@ -69,6 +69,78 @@ public abstract class Futures {
 
     public static <T> CompletableFuture<Void> allOf(List<CompletableFuture<T>> futures) {
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    /**
+     * Synchronously gets the result from a CompletionStage with timeout and error handling.
+     *
+     * @param <T>           the result type
+     * @param stage         the CompletionStage to await
+     * @param timeout       the timeout value
+     * @param unit          the timeout time unit
+     * @param action        the action description for error messages
+     * @param errorFunction function to handle and transform errors
+     * @return the result from the CompletionStage
+     * @throws Throwable if execution fails, times out, or is interrupted
+     */
+    public static <T> T get(final CompletionStage<T> stage,
+                            final long timeout,
+                            final TimeUnit unit,
+                            final String action,
+                            final BiFunction<String, Throwable, Throwable> errorFunction) throws Throwable {
+        try {
+            return stage.toCompletableFuture().get(timeout < 0 ? 0 : timeout, unit);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            String errorMessage = "Failed to " + action + ", caused by " + cause.getMessage();
+            throw errorFunction.apply(errorMessage, cause);
+        } catch (TimeoutException e) {
+            String errorMessage = "Failed to " + action + ", caused by it's timeout.";
+            throw errorFunction.apply(errorMessage, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            String errorMessage = "Failed to " + action + ", caused by it's interrupted";
+            throw errorFunction.apply(errorMessage, e);
+        } catch (Throwable e) {
+            String errorMessage = "Failed to " + action + ", caused by " + e.getMessage();
+            throw errorFunction.apply(errorMessage, e);
+        }
+    }
+
+    /**
+     * Synchronously invokes a void CompletionStage with timeout and error handling.
+     *
+     * @param <T>           the error result type
+     * @param stage         the void CompletionStage to await
+     * @param timeout       the timeout value
+     * @param unit          the timeout time unit
+     * @param action        the action description for error messages
+     * @param errorFunction function to handle and transform errors
+     * @return null on success, or error result from errorFunction on failure
+     */
+    public static <T> T invoke(final CompletionStage<Void> stage,
+                               final long timeout,
+                               final TimeUnit unit,
+                               final String action,
+                               final BiFunction<String, Throwable, T> errorFunction) {
+        try {
+            stage.toCompletableFuture().get(timeout < 0 ? 0 : timeout, unit);
+            return null;
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            String errorMessage = "Failed to " + action + ", caused by " + cause.getMessage();
+            return errorFunction.apply(errorMessage, cause);
+        } catch (TimeoutException e) {
+            String errorMessage = "Failed to " + action + ", caused by it's timeout.";
+            return errorFunction.apply(errorMessage, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            String errorMessage = "Failed to " + action + ", caused by it's interrupted";
+            return errorFunction.apply(errorMessage, e);
+        } catch (Throwable e) {
+            String errorMessage = "Failed to " + action + ", caused by " + e.getMessage();
+            return errorFunction.apply(errorMessage, e);
+        }
     }
 
 }

@@ -266,9 +266,6 @@ public interface InvocationContext {
      *
      * @param uri the service URI to resolve (must include scheme and host)
      * @return resolved service name
-     * @throws NullPointerException if uri is null
-     * @see HostConfig#isEnabled()
-     * @see GovernancePolicy#getServiceByAlias(String)
      */
     default String getService(URI uri) {
         String scheme = uri.getScheme();
@@ -365,7 +362,7 @@ public interface InvocationContext {
      *                   with any associated data. This context is passed through the filter chain for
      *                   processing.
      */
-    default <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation) {
+    default <R extends InboundRequest> CompletionStage<Object> inbound(final InboundInvocation<R> invocation) {
         return inbound(invocation, null);
     }
 
@@ -379,7 +376,7 @@ public interface InvocationContext {
      * @param callable   the callable object to invoke after all the filters have been processed.
      * @return a completion stage that represents the result of the inbound invocation.
      */
-    default <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation, Callable<Object> callable) {
+    default <R extends InboundRequest> CompletionStage<Object> inbound(final InboundInvocation<R> invocation, final Callable<Object> callable) {
         try {
             InboundFilter[] filters = getInboundFilters();
             InboundFilterChain.Chain chain = callable == null
@@ -417,9 +414,9 @@ public interface InvocationContext {
      * @param function   the function to apply to the result of the callable object.
      * @return the result of applying the function to the result of the callable object.
      */
-    default <R extends InboundRequest, T> T inbound(InboundInvocation<R> invocation,
-                                                    Callable<Object> callable,
-                                                    Function<CompletionStage<Object>, T> function) {
+    default <R extends InboundRequest, T> T inbound(final InboundInvocation<R> invocation,
+                                                    final Callable<Object> callable,
+                                                    final Function<CompletionStage<Object>, T> function) {
         try {
             CompletionStage<Object> stage = inbound(invocation, callable);
             return function.apply(stage);
@@ -439,7 +436,8 @@ public interface InvocationContext {
      * @return the result of the callable object.
      * @throws Throwable if any exception occurs during the processing.
      */
-    default <R extends InboundRequest> Object inward(InboundInvocation<R> invocation, Callable<Object> callable) throws Throwable {
+    default <R extends InboundRequest> Object inward(final InboundInvocation<R> invocation,
+                                                     final Callable<Object> callable) throws Throwable {
         try {
             CompletionStage<Object> stage = inbound(invocation, callable);
             return stage.toCompletableFuture().get();
@@ -472,9 +470,9 @@ public interface InvocationContext {
      * @param function   the function to apply to the result of the callable object.
      * @return the result of applying the function to the result of the callable object and the inbound request.
      */
-    default <R extends InboundRequest, T> T inward(InboundInvocation<R> invocation,
-                                                   Callable<Object> callable,
-                                                   Function<Object, T> function) {
+    default <R extends InboundRequest, T> T inward(final InboundInvocation<R> invocation,
+                                                   final Callable<Object> callable,
+                                                   final Function<Object, T> function) {
         try {
             return function.apply(inward(invocation, callable));
         } catch (Throwable e) {
@@ -493,7 +491,7 @@ public interface InvocationContext {
      * @throws RejectNoProviderException if no provider is found for the invocation.
      * @throws RejectException           if the request is rejected during filtering.
      */
-    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation) {
+    default <R extends OutboundRequest, E extends Endpoint> E route(final OutboundInvocation<R> invocation) {
         return route(invocation, (ServiceRegistry) null);
     }
 
@@ -510,7 +508,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, ServiceRegistry system) {
+    default <R extends OutboundRequest, E extends Endpoint> E route(final OutboundInvocation<R> invocation, final ServiceRegistry system) {
         try {
             Registry registry = getRegistry();
             R request = invocation.getRequest();
@@ -538,7 +536,7 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(OutboundInvocation<R> invocation, ServiceRegistry system) {
+    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(final OutboundInvocation<R> invocation, final ServiceRegistry system) {
         try {
             Registry registry = getRegistry();
             R request = invocation.getRequest();
@@ -565,7 +563,7 @@ public interface InvocationContext {
      * @throws RejectNoProviderException if no provider is found for the invocation.
      * @throws RejectException           if the request is rejected during filtering.
      */
-    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
+    default <R extends OutboundRequest, E extends Endpoint> E route(final OutboundInvocation<R> invocation, final List<E> instances) {
         return route(invocation, instances, (RouteFilter[]) null);
     }
 
@@ -584,7 +582,9 @@ public interface InvocationContext {
      * @throws RejectNoProviderException if no provider is found for the invocation.
      * @throws RejectException           if the request is rejected during filtering.
      */
-    default <R extends OutboundRequest, E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
+    default <R extends OutboundRequest, E extends Endpoint, P> E route(final OutboundInvocation<R> invocation,
+                                                                       final List<P> instances,
+                                                                       final Function<P, E> converter) {
         return route(invocation, toList(instances, converter), (RouteFilter[]) null);
     }
 
@@ -607,7 +607,9 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest, E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+    default <R extends OutboundRequest, E extends Endpoint> E route(final OutboundInvocation<R> invocation,
+                                                                    final List<E> instances,
+                                                                    final RouteFilter[] filters) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
@@ -647,7 +649,9 @@ public interface InvocationContext {
      * @throws RejectException           if the request is rejected during filtering.
      */
     @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(final OutboundInvocation<R> invocation,
+                                                                           final List<E> instances,
+                                                                           final RouteFilter[] filters) {
         if (instances != null && !instances.isEmpty()) {
             invocation.setInstances(instances);
         }
@@ -681,7 +685,9 @@ public interface InvocationContext {
      */
     default <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> outbound(OutboundInvocation<R> invocation, E endpoint, Callable<Object> callable) {
+            E extends Endpoint> CompletionStage<O> outbound(final OutboundInvocation<R> invocation,
+                                                            final E endpoint,
+                                                            final Callable<Object> callable) {
         try {
             OutboundFilterChain chain = callable == null
                     ? new OutboundFilterChain.Chain(getOutboundFilters())
@@ -866,77 +872,86 @@ public interface InvocationContext {
         }
 
         @Override
-        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, ClusterPolicy defaultPolicy) {
+        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(final OutboundInvocation<R> invocation, final ClusterPolicy defaultPolicy) {
             // call this method
             return getClusterInvoker(invocation, () -> defaultPolicy);
         }
 
         @Override
-        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(OutboundInvocation<R> invocation, Supplier<ClusterPolicy> policySupplier) {
+        public <R extends OutboundRequest> ClusterInvoker getClusterInvoker(final OutboundInvocation<R> invocation,
+                                                                            final Supplier<ClusterPolicy> policySupplier) {
             return delegate.getClusterInvoker(invocation, policySupplier);
         }
 
         @Override
-        public <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation) {
+        public <R extends InboundRequest> CompletionStage<Object> inbound(final InboundInvocation<R> invocation) {
             // call this method
             return inbound(invocation, null);
         }
 
         @Override
-        public <R extends InboundRequest> CompletionStage<Object> inbound(InboundInvocation<R> invocation, Callable<Object> callable) {
+        public <R extends InboundRequest> CompletionStage<Object> inbound(final InboundInvocation<R> invocation, final Callable<Object> callable) {
             return delegate.inbound(invocation, callable);
         }
 
         @Override
-        public <R extends InboundRequest, T> T inbound(InboundInvocation<R> invocation, Callable<Object> callable, Function<CompletionStage<Object>, T> function) {
+        public <R extends InboundRequest, T> T inbound(final InboundInvocation<R> invocation,
+                                                       final Callable<Object> callable,
+                                                       final Function<CompletionStage<Object>, T> function) {
             return delegate.inbound(invocation, callable, function);
         }
 
         @Override
-        public <R extends InboundRequest> Object inward(InboundInvocation<R> invocation, Callable<Object> callable) throws Throwable {
+        public <R extends InboundRequest> Object inward(final InboundInvocation<R> invocation, final Callable<Object> callable) throws Throwable {
             return delegate.inward(invocation, callable);
         }
 
         @Override
-        public <R extends InboundRequest, T> T inward(InboundInvocation<R> invocation, Callable<Object> callable, Function<Object, T> function) {
+        public <R extends InboundRequest, T> T inward(final InboundInvocation<R> invocation,
+                                                      final Callable<Object> callable,
+                                                      final Function<Object, T> function) {
             return delegate.inward(invocation, callable, function);
         }
 
         @Override
         public <R extends OutboundRequest,
                 O extends OutboundResponse,
-                E extends Endpoint> CompletionStage<O> outbound(OutboundInvocation<R> invocation, E endpoint, Callable<Object> callable) {
+                E extends Endpoint> CompletionStage<O> outbound(final OutboundInvocation<R> invocation,
+                                                                final E endpoint,
+                                                                final Callable<Object> callable) {
             return delegate.outbound(invocation, endpoint, callable);
         }
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances) {
+                E extends Endpoint> E route(final OutboundInvocation<R> invocation, final List<E> instances) {
             // call this method.
             return route(invocation, instances, (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint, P> E route(OutboundInvocation<R> invocation, List<P> instances, Function<P, E> converter) {
+                E extends Endpoint, P> E route(final OutboundInvocation<R> invocation,
+                                               final List<P> instances,
+                                               final Function<P, E> converter) {
             return route(invocation, toList(instances, converter), (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint> E route(OutboundInvocation<R> invocation) {
+                E extends Endpoint> E route(final OutboundInvocation<R> invocation) {
             // call this method.
             return route(invocation, null, (RouteFilter[]) null);
         }
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+                E extends Endpoint> E route(final OutboundInvocation<R> invocation, final List<E> instances, final RouteFilter[] filters) {
             return delegate.route(invocation, instances, filters);
         }
 
         @Override
-        public void publish(TrafficEvent event) {
+        public void publish(final TrafficEvent event) {
             delegate.publish(event);
         }
 
@@ -976,7 +991,9 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint> E route(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+                E extends Endpoint> E route(final OutboundInvocation<R> invocation,
+                                            final List<E> instances,
+                                            final RouteFilter[] filters) {
             if (!liveEnabled) {
                 return null;
             }
@@ -1006,7 +1023,7 @@ public interface InvocationContext {
          * @param invocation the outbound invocation containing the request and route target
          * @param request    the HTTP forward request to be processed
          */
-        private <R extends OutboundRequest> void forward(OutboundInvocation<R> invocation, HttpForwardRequest request) {
+        private <R extends OutboundRequest> void forward(final OutboundInvocation<R> invocation, final HttpForwardRequest request) {
             // change host
             RouteTarget target = invocation.getRouteTarget();
             UnitRoute unitRoute = target.getUnitRoute();
@@ -1048,7 +1065,7 @@ public interface InvocationContext {
          * @param <R>        the type of outbound request, which must extend {@link OutboundRequest}
          * @param invocation the outbound invocation containing the request
          */
-        private <R extends OutboundRequest> void rejectFailover(OutboundInvocation<R> invocation) {
+        private <R extends OutboundRequest> void rejectFailover(final OutboundInvocation<R> invocation) {
             Carrier carrier = invocation.getRequest().getCarrier();
             if (carrier == null) {
                 return;
@@ -1074,7 +1091,7 @@ public interface InvocationContext {
          * @param unit             The unit associated with the request, if any.
          * @return The resolved host for the unit, or {@code null} if it cannot be resolved.
          */
-        private String getUnitHost(String host, GovernancePolicy governancePolicy, Unit unit) {
+        private String getUnitHost(final String host, final GovernancePolicy governancePolicy, final Unit unit) {
             Domain domain = governancePolicy == null ? null : governancePolicy.getDomain(host);
             DomainPolicy domainPolicy = domain == null ? null : domain.getPolicy();
             if (domainPolicy != null) {

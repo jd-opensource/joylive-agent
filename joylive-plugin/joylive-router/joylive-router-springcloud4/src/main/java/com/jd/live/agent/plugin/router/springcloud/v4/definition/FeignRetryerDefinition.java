@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.definition;
+package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -22,15 +22,15 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5Enabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignRetryerInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6Enabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignRetryerInterceptor;
 
 /**
  * FeignRetryerDefinition
  */
-@Extension(value = "FeignRetryerDefinition_v5")
+@Extension(value = "FeignRetryerDefinition_v6")
+@ConditionalOnSpringWeb6Enabled
 @ConditionalOnFlowControlEnabled
-@ConditionalOnSpringWeb5Enabled
 @ConditionalOnClass(FeignRetryerDefinition.TYPE)
 public class FeignRetryerDefinition extends PluginDefinitionAdapter {
 

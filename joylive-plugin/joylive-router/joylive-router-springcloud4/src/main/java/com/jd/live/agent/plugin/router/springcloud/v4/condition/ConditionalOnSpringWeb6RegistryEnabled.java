@@ -16,10 +16,9 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
 import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
 
 import java.lang.annotation.*;
 
@@ -32,11 +31,8 @@ import java.lang.annotation.*;
 @ConditionalOnRegistryEnabled
 @ConditionalOnGovernanceEnabled
 @ConditionalOnSpringCloudDisabled
-@ConditionalOnClass(ConditionalOnSpringWeb6RegistryEnabled.TYPE_ERROR_RESPONSE)
+@ConditionalOnSpringWeb6Enabled
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb6RegistryEnabled {
-
-    // spring web 6
-    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
 }

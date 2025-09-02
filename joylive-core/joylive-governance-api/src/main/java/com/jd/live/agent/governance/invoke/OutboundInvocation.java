@@ -201,6 +201,10 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
     }
 
+    public boolean isEmpty() {
+        return instances == null || instances.isEmpty();
+    }
+
     /**
      * Retrieves the endpoints targeted by this outbound invocation.
      *

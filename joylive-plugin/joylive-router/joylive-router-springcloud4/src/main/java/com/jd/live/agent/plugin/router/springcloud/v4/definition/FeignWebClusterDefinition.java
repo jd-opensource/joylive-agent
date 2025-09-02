@@ -23,28 +23,25 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignCloudClusterInterceptor;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6RegistryEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignWebClusterInterceptor;
 
 /**
- * RetryableFeignClusterDefinition
- *
- * @since 1.0.0
+ * FeignWebClusterDefinition
  */
+@Extension(value = "FeignClientClusterDefinition_v6")
+@ConditionalOnSpringWeb6RegistryEnabled
+@ConditionalOnClass(FeignWebClusterDefinition.TYPE)
 @Injectable
-@Extension(value = "FeignRetryableClientDefinition_v4")
-@ConditionalOnSpringCloud4FlowControlEnabled
-@ConditionalOnSpringRetry
-@ConditionalOnClass(FeignRetryableWebClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
-public class FeignRetryableWebClusterDefinition extends PluginDefinitionAdapter {
+public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient";
+    protected static final String TYPE = "feign.Client";
 
-    private static final String METHOD_EXECUTE = "execute";
+    private static final String METHOD = "execute";
 
-    private static final String[] ARGUMENT_FILTER = new String[]{
+    private static final String[] ARGUMENT = new String[]{
             "feign.Request",
             "feign.Request$Options"
     };
@@ -52,14 +49,14 @@ public class FeignRetryableWebClusterDefinition extends PluginDefinitionAdapter 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FeignRetryableWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
+
+    public FeignWebClusterDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE).
-                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
-                        () -> new FeignCloudClusterInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
+                        () -> new FeignWebClusterInterceptor(context, registry))
         };
     }
 }

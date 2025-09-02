@@ -15,9 +15,14 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.core.util.Futures;
+
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -208,11 +213,11 @@ public interface Registry extends ServiceRegistryFactory {
      * @param service       the name of the service to subscribe to
      * @param timeout       the maximum time to wait for the subscription to complete
      * @param unit          the time unit of the timeout parameter
-     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @param transformer   a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
-    default <T> T subscribe(String service, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(new ServiceId(service), timeout, unit, errorFunction);
+    default <T> T subscribe(String service, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> transformer) {
+        return subscribe(new ServiceId(service), timeout, unit, transformer);
     }
 
     /**
@@ -222,11 +227,11 @@ public interface Registry extends ServiceRegistryFactory {
      * @param <T>           the type of the result returned by the error function
      * @param service       the name of the service to subscribe to
      * @param group         the group associated with the service (optional, can be {@code null})
-     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @param transformer   a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
-    default <T> T subscribe(String service, String group, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(new ServiceId(service, group), 5000, TimeUnit.MILLISECONDS, errorFunction);
+    default <T> T subscribe(String service, String group, BiFunction<String, Throwable, T> transformer) {
+        return subscribe(new ServiceId(service, group), 5000, TimeUnit.MILLISECONDS, transformer);
     }
 
     /**
@@ -238,11 +243,11 @@ public interface Registry extends ServiceRegistryFactory {
      * @param group         the group associated with the service (optional, can be {@code null})
      * @param timeout       the maximum time to wait for the subscription to complete
      * @param unit          the time unit of the timeout parameter
-     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @param transformer   a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
-    default <T> T subscribe(String service, String group, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(new ServiceId(service, group), timeout, unit, errorFunction);
+    default <T> T subscribe(String service, String group, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> transformer) {
+        return subscribe(new ServiceId(service, group), timeout, unit, transformer);
     }
 
     /**
@@ -253,30 +258,13 @@ public interface Registry extends ServiceRegistryFactory {
      * @param serviceId     the id of the service to subscribe to
      * @param timeout       the maximum time to wait for the subscription to complete
      * @param unit          the time unit of the timeout parameter
-     * @param errorFunction a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
+     * @param transformer   a {@link BiFunction} that handles errors by accepting an error message and a {@link Throwable}, and returns a result of type {@code T}
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
-    default <T> T subscribe(ServiceId serviceId, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> errorFunction) {
-        try {
-            subscribe(serviceId).get(timeout, unit);
-            return null;
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by " + cause.getMessage();
-            return errorFunction.apply(errorMessage, cause);
-        } catch (TimeoutException e) {
-            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by it's timeout.";
-            return errorFunction.apply(errorMessage, e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by it's interrupted";
-            return errorFunction.apply(errorMessage, e);
-        } catch (Throwable e) {
-            String errorMessage = "Failed to get governance policy for " + serviceId.getService() + ", caused by " + e.getMessage();
-            return errorFunction.apply(errorMessage, e);
-        }
+    default <T> T subscribe(ServiceId serviceId, long timeout, TimeUnit unit, BiFunction<String, Throwable, T> transformer) {
+        String action = "get governance policy for " + serviceId.getService();
+        return Futures.invoke(subscribe(serviceId), timeout, unit, action, transformer);
     }
-
 
     /**
      * Removes endpoint event subscription for a service.
@@ -367,12 +355,37 @@ public interface Registry extends ServiceRegistryFactory {
     boolean isReady(ServiceId serviceId);
 
     /**
+     * Subscribes to a service and synchronously retrieves its endpoints with custom timeout.
+     *
+     * @param service     the service name to subscribe to
+     * @param timeoutMs   the timeout in milliseconds for both subscription and retrieval
+     * @param transformer function to handle and transform errors
+     * @return list of available service endpoints
+     * @throws Throwable if subscription fails or timeout occurs
+     */
+    default List<ServiceEndpoint> subscribeAndGet(final String service,
+                                                  final long timeoutMs,
+                                                  final BiFunction<String, Throwable, Throwable> transformer) throws Throwable {
+        if (service == null || service.isEmpty()) {
+            return null;
+        }
+        long time = System.currentTimeMillis();
+        Throwable throwable = subscribe(service, timeoutMs, TimeUnit.MILLISECONDS, transformer);
+        if (throwable != null) {
+            throw throwable;
+        }
+        time = timeoutMs + time - System.currentTimeMillis();
+        String action = "get service instances for " + service;
+        return Futures.get(getEndpoints(service), time, TimeUnit.MILLISECONDS, action, transformer);
+    }
+
+    /**
      * Retrieves endpoints for the specified service using the default group.
      *
      * @param service the service name.
      * @return a list of endpoints associated with the service
      */
-    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service) {
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(final String service) {
         return getEndpoints(service, null, (ServiceRegistryFactory) null);
     }
 
@@ -383,7 +396,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @param group   the service group.
      * @return a list of endpoints matching the service and group
      */
-    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service, String group) {
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(final String service, final String group) {
         return getEndpoints(service, group, (ServiceRegistryFactory) null);
     }
 
@@ -395,7 +408,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @param system  the system provider
      * @return list of endpoints
      */
-    default CompletionStage<List<ServiceEndpoint>> getEndpoints(String service, String group, ServiceRegistry system) {
+    default CompletionStage<List<ServiceEndpoint>> getEndpoints(final String service, final String group, final ServiceRegistry system) {
         return getEndpoints(service, group, name -> system);
     }
 

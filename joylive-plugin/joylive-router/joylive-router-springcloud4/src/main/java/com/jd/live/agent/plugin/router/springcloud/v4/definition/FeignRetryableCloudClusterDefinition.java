@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v3.definition;
+package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -23,25 +23,28 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignCloudClusterInterceptor;
 
 /**
- * FeignWebClusterDefinition
+ * RetryableFeignClusterDefinition
+ *
+ * @since 1.0.0
  */
-@Extension(value = "FeignClientClusterDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
-@ConditionalOnClass(FeignWebClusterDefinition.TYPE)
 @Injectable
-public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "FeignRetryableClientDefinition_v4")
+@ConditionalOnSpringCloud4FlowControlEnabled
+@ConditionalOnSpringRetry
+@ConditionalOnClass(FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
+public class FeignRetryableCloudClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "feign.Client";
+    protected static final String TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient";
 
-    private static final String METHOD = "execute";
+    private static final String METHOD_EXECUTE = "execute";
 
-    private static final String[] ARGUMENT = new String[]{
+    private static final String[] ARGUMENT_FILTER = new String[]{
             "feign.Request",
             "feign.Request$Options"
     };
@@ -49,14 +52,14 @@ public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public FeignWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
+    public FeignRetryableCloudClusterDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new FeignWebClusterInterceptor(context, registry))
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_EXECUTE).
+                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
+                        () -> new FeignCloudClusterInterceptor(context)
+                )
         };
     }
 }
