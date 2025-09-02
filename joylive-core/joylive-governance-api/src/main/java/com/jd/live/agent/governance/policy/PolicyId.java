@@ -66,6 +66,8 @@ public class PolicyId implements PolicyIdGen {
 
     public static final String KEY_SERVICE_AUTH = "auth";
 
+    public static final String KEY_SERVICE_CONSUMER = "consumer";
+
     public static final String KEY_SERVICE_ENDPOINT = "endpoint";
 
     /**
@@ -102,7 +104,6 @@ public class PolicyId implements PolicyIdGen {
             target.setId(id);
         }
     }
-
 
     /**
      * Creates or supplements a target policy object:

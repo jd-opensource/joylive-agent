@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
@@ -66,9 +67,9 @@ public class JWTPolicy implements Serializable {
     @Getter
     private long expireTime;
 
-    private transient volatile JWTAlgorithmContext signatureContext;
+    private final transient LazyObject<JWTAlgorithmContext> signatureContext = LazyObject.empty();
 
-    private transient volatile JWTAlgorithmContext verifyContext;
+    private final transient LazyObject<JWTAlgorithmContext> verifyContext = LazyObject.empty();
 
     public JWTPolicy(Map<String, String> map) {
         Option option = MapOption.of(map);
@@ -83,24 +84,14 @@ public class JWTPolicy implements Serializable {
     }
 
     public JWTAlgorithmContext getSignatureContext(Supplier<JWTAlgorithmContext> supplier) {
-        if (signatureContext == null) {
-            synchronized (this) {
-                if (signatureContext == null) {
-                    signatureContext = supplier.get();
-                }
-            }
-        }
-        return signatureContext;
+        return signatureContext.get(supplier);
     }
 
     public JWTAlgorithmContext getVerifyContext(Supplier<JWTAlgorithmContext> supplier) {
-        if (verifyContext == null) {
-            synchronized (this) {
-                if (verifyContext == null) {
-                    verifyContext = supplier.get();
-                }
-            }
-        }
-        return verifyContext;
+        return verifyContext.get(supplier);
+    }
+
+    public String getKeyOrDefault(final String defaultKey) {
+        return key == null || key.isEmpty() ? defaultKey : key;
     }
 }

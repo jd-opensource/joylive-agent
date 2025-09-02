@@ -87,7 +87,7 @@ public class JWTAuthenticate implements Authenticate {
     public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
         try {
             JWTPolicy jwtPolicy = policy.getJwtPolicy();
-            String key = jwtPolicy.getKey();
+            String key = jwtPolicy.getKeyOrDefault(KEY_AUTH);
             if (request.getHeader(key) == null) {
                 JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, consumer, service));
                 if (jwtToken != null && jwtToken.validate()) {
@@ -110,7 +110,7 @@ public class JWTAuthenticate implements Authenticate {
      * @return the token value, or null if not found
      */
     private String decode(ServiceRequest request, AuthPolicy policy) {
-        String key = policy.getJwtPolicy().getKey();
+        String key = policy.getJwtPolicy().getKeyOrDefault(KEY_AUTH);
         String token = request.getHeader(key);
         if (token != null && request instanceof HttpRequest && KEY_AUTH.equalsIgnoreCase(key) && token.startsWith(BEARER_PREFIX)) {
             // bear auth

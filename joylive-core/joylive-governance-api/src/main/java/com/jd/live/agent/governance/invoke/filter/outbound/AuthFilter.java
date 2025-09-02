@@ -56,8 +56,9 @@ public class AuthFilter implements OutboundFilter {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         ServicePolicy servicePolicy = metadata.getServicePolicy();
         AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
-        if (authPolicy != null && authPolicy.getType() != null) {
-            Authenticate authenticate = authenticates.get(authPolicy.getType());
+        if (authPolicy != null) {
+            String authType = authPolicy.getTypeOrDefault(AuthPolicy.DEFAULT_AUTH_TYPE);
+            Authenticate authenticate = authenticates.get(authType);
             if (authenticate != null) {
                 authenticate.inject(
                         invocation.getRequest(),

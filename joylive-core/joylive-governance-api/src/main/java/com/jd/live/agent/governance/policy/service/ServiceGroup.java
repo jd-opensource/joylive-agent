@@ -231,6 +231,23 @@ public class ServiceGroup extends ServicePolicyOwner {
     }
 
     /**
+     * Supplement the authorized for service policy
+     *
+     * @param authorized authorized
+     */
+    protected void supplement(Boolean authorized) {
+        if (authorized == null || !authorized) {
+            return;
+        }
+        if (servicePolicy == null) {
+            servicePolicy = new ServicePolicy();
+        }
+        if (servicePolicy.getAuthorized() == null) {
+            servicePolicy.setAuthorized(authorized);
+        }
+    }
+
+    /**
      * Supplements this service group with data from another source group.
      *
      * @param source The source service group to supplement from.

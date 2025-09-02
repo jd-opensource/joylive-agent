@@ -15,8 +15,10 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
+import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,7 +33,10 @@ import static com.jd.live.agent.core.util.StringUtils.choose;
  *
  * @since 1.2.0
  */
-public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPolicy>, Serializable {
+public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPolicy>, PolicyInheritWithIdGen<AuthPolicy>, Serializable {
+
+    public static final String DEFAULT_AUTH_TYPE = "token";
+
     /**
      * The type of the auth policy.
      */
@@ -41,11 +46,15 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
 
     @Getter
     @Setter
+    private String application;
+
+    @Getter
+    @Setter
     private Map<String, String> params;
 
-    private volatile transient TokenPolicy tokenPolicy;
+    private final transient LazyObject<TokenPolicy> tokenPolicyCache = new LazyObject<>(() -> new TokenPolicy(params));
 
-    private volatile transient JWTPolicy jwtPolicy;
+    private final transient LazyObject<JWTPolicy> jwtPolicyCache = new LazyObject<>(() -> new JWTPolicy(params));
 
     public AuthPolicy() {
     }
@@ -63,6 +72,9 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
         if (type == null) {
             type = source.type;
         }
+        if (application == null) {
+            application = source.application;
+        }
         if (params == null && source.params != null) {
             params = new HashMap<>(source.params);
         }
@@ -77,24 +89,14 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
     }
 
     public TokenPolicy getTokenPolicy() {
-        if (tokenPolicy == null) {
-            synchronized (this) {
-                if (tokenPolicy == null) {
-                    tokenPolicy = new TokenPolicy(params);
-                }
-            }
-        }
-        return tokenPolicy;
+        return tokenPolicyCache.get();
     }
 
     public JWTPolicy getJwtPolicy() {
-        if (jwtPolicy == null) {
-            synchronized (this) {
-                if (jwtPolicy == null) {
-                    this.jwtPolicy = new JWTPolicy(params);
-                }
-            }
-        }
-        return jwtPolicy;
+        return jwtPolicyCache.get();
+    }
+
+    public String getTypeOrDefault(final String defaultValue) {
+        return choose(type, defaultValue);
     }
 }

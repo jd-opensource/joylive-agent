@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
@@ -39,7 +40,9 @@ public class TokenPolicy {
     @Setter
     private String token;
 
-    private volatile String base64Token;
+    private final transient LazyObject<String> encodedCache = new LazyObject<>(() -> token == null || token.isEmpty()
+            ? ""
+            : new String(Base64.getEncoder().encode(token.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
 
     public TokenPolicy() {
     }
@@ -60,16 +63,11 @@ public class TokenPolicy {
     }
 
     public String getBase64Token() {
-        if (base64Token == null) {
-            synchronized (this) {
-                if (base64Token == null) {
-                    base64Token = token == null || token.isEmpty()
-                            ? ""
-                            : new String(Base64.getEncoder().encode(token.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
-                }
-            }
-        }
-        return base64Token;
+        return encodedCache.get();
+    }
+
+    public String getKeyOrDefault(final String defaultKey) {
+        return key == null || key.isEmpty() ? defaultKey : key;
     }
 
 }

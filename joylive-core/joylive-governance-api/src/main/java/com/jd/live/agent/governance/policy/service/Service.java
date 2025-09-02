@@ -54,6 +54,10 @@ public class Service extends PolicyOwner implements ServiceName {
 
     @Getter
     @Setter
+    private Boolean authorized;
+
+    @Getter
+    @Setter
     private Set<String> aliases;
 
     @Getter
@@ -170,6 +174,7 @@ public class Service extends PolicyOwner implements ServiceName {
         if (groups != null) {
             for (ServiceGroup group : groups) {
                 group.setServiceType(serviceType);
+                group.supplement(authorized);
                 group.supplement(() -> uri.parameter(KEY_SERVICE_GROUP, group.getName()));
                 if (group.isDefaultGroup() && group != defaultGroup) {
                     defaultGroup = group;

@@ -51,9 +51,11 @@ public class AuthFilter implements InboundFilter {
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         ServicePolicy servicePolicy = metadata.getServicePolicy();
-        AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
-        if (authPolicy != null && authPolicy.getType() != null) {
-            Authenticate authenticate = authenticates.get(authPolicy.getType());
+        AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy(metadata.getConsumer());
+        if (authPolicy != null) {
+            // check auth policy
+            String authType = authPolicy.getTypeOrDefault(AuthPolicy.DEFAULT_AUTH_TYPE);
+            Authenticate authenticate = authenticates.get(authType);
             if (authenticate != null) {
                 Permission permission = authenticate.authenticate(invocation.getRequest(), authPolicy,
                         metadata.getServiceName(), metadata.getConsumer());
@@ -61,6 +63,9 @@ public class AuthFilter implements InboundFilter {
                     return Futures.future(FaultType.UNAUTHORIZED.reject(permission.getMessage()));
                 }
             }
+        } else if (servicePolicy != null && servicePolicy.authorized()) {
+            // check service auth type
+            return Futures.future(FaultType.UNAUTHORIZED.reject("the consumer is not authorized for service " + metadata.getServiceName()));
         }
         return chain.filter(invocation);
     }

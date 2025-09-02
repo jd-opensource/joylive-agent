@@ -93,13 +93,23 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     @Getter
     @Setter
+    private Boolean authorized;
+
+    @Getter
+    @Setter
     private AuthPolicy authPolicy;
+
+    @Getter
+    @Setter
+    private List<AuthPolicy> authPolicies;
 
     @Getter
     @Setter
     private List<FaultInjectionPolicy> faultInjectionPolicies;
 
     private final transient Cache<String, LanePolicy> lanePolicyCache = new MapCache<>(new ListBuilder<>(() -> lanePolicies, LanePolicy::getLaneSpaceId));
+
+    private final transient Cache<String, AuthPolicy> authPolicyCache = new MapCache<>(new ListBuilder<>(() -> authPolicies, AuthPolicy::getApplication));
 
     public ServicePolicy() {
     }
@@ -125,13 +135,13 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         supplementUri(circuitBreakPolicies, new UriAppender<>(KEY_SERVICE_CIRCUIT_BREAK, CircuitBreakPolicy::getName));
         supplementUri(permissionPolicies, new UriAppender<>(KEY_SERVICE_AUTH, PermissionPolicy::getName));
         supplementUri(faultInjectionPolicies, new UriAppender<>(KEY_FAULT_INJECTION, FaultInjectionPolicy::getName));
+        supplementUri(authPolicies, new UriAppender<>(KEY_SERVICE_CONSUMER, AuthPolicy::getApplication));
 
         if (source != null) {
             livePolicy = supplement(source.livePolicy, livePolicy, s -> new ServiceLivePolicy());
             clusterPolicy = supplement(source.clusterPolicy, clusterPolicy, s -> new ClusterPolicy());
             healthPolicy = supplement(source.healthPolicy, healthPolicy, s -> new HealthPolicy());
             loadBalancePolicy = supplement(source.loadBalancePolicy, loadBalancePolicy, s -> new LoadBalancePolicy());
-            authPolicy = supplement(source.authPolicy, authPolicy, s -> new AuthPolicy());
             rateLimitPolicies = supplement(source.rateLimitPolicies, rateLimitPolicies, s -> new RateLimitPolicy(),
                     s -> uri.parameter(KEY_SERVICE_RATE_LIMIT, s.getName()));
             concurrencyLimitPolicies = supplement(source.concurrencyLimitPolicies, concurrencyLimitPolicies,
@@ -151,11 +161,25 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             faultInjectionPolicies = supplement(source.faultInjectionPolicies, faultInjectionPolicies,
                     s -> new FaultInjectionPolicy(),
                     s -> uri.parameter(KEY_FAULT_INJECTION, s.getName()));
+            authorized = authorized == null ? source.authorized : authorized;
+            authPolicy = supplement(source.authPolicy, authPolicy, s -> new AuthPolicy());
+            authPolicies = supplement(source.authPolicies, authPolicies, s -> new AuthPolicy(),
+                    s -> uri.parameter(KEY_SERVICE_CONSUMER, s.getApplication()));
         }
     }
 
     public LanePolicy getLanePolicy(String laneSpaceId) {
         return lanePolicyCache.get(laneSpaceId);
+    }
+
+    public AuthPolicy getAuthPolicy(String application) {
+        // for provider auth policy.
+        AuthPolicy result = authPolicyCache.get(application);
+        return result == null ? authPolicy : result;
+    }
+
+    public boolean authorized() {
+        return authorized == null ? false : authorized;
     }
 
     @Override
@@ -169,6 +193,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     protected void cache() {
         getLanePolicy("");
+        getAuthPolicy("");
         if (livePolicy != null) {
             livePolicy.cache();
         }

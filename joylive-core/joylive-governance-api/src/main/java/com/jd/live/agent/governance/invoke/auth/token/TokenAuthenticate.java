@@ -45,9 +45,9 @@ public class TokenAuthenticate implements Authenticate {
     public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
         TokenPolicy tokenPolicy = policy.getTokenPolicy();
         if (tokenPolicy != null && tokenPolicy.isValid()) {
-            String key = tokenPolicy.getKey();
+            String key = tokenPolicy.getKeyOrDefault(KEY_AUTH);
             if (request.getHeader(key) == null) {
-                request.setHeader(key, encode(request, tokenPolicy));
+                request.setHeader(key, encode(request, tokenPolicy, key));
             }
         }
     }
@@ -57,10 +57,10 @@ public class TokenAuthenticate implements Authenticate {
      *
      * @param request the HTTP outbound request
      * @param policy  the token policy
+     * @param key     the token ken
      * @return the decorated token value
      */
-    private String encode(OutboundRequest request, TokenPolicy policy) {
-        String key = policy.getKey();
+    private String encode(OutboundRequest request, TokenPolicy policy, String key) {
         String token = policy.getToken();
         if (request instanceof HttpOutboundRequest && key.equalsIgnoreCase(KEY_AUTH) && !token.startsWith(BASIC_PREFIX)) {
             token = BASIC_PREFIX + policy.getBase64Token();
@@ -76,7 +76,7 @@ public class TokenAuthenticate implements Authenticate {
      * @return the token value, or null if not found
      */
     private boolean decodeAndCompare(ServiceRequest request, TokenPolicy policy) {
-        String key = policy.getKey();
+        String key = policy.getKeyOrDefault(KEY_AUTH);
         String token = request.getHeader(key);
         if (token != null
                 && request instanceof HttpRequest

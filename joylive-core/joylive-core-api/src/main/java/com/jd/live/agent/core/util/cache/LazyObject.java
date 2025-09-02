@@ -78,6 +78,24 @@ public class LazyObject<T> extends CacheObject<T> {
     }
 
     /**
+     * Gets the value using lazy initialization with double-checked locking.
+     *
+     * @param supplier the supplier to provide the value if not already loaded
+     * @return the cached value or newly supplied value
+     */
+    public T get(final Supplier<T> supplier) {
+        if (!loaded) {
+            synchronized (this) {
+                if (!loaded) {
+                    target = supplier == null ? null : supplier.get();
+                    loaded = true;
+                }
+            }
+        }
+        return target;
+    }
+
+    /**
      * Static factory method that creates a new LazyObject with the specified target object, marking it as
      * loaded.
      *
