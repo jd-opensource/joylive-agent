@@ -60,7 +60,7 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
 
     @Override
     public void process(Map<String, Object> env) {
-        if (url == null || url.isEmpty()) {
+        if (isEmpty(url)) {
             return;
         }
         String app = choose(application, (String) env.get(Application.KEY_APPLICATION_NAME));
