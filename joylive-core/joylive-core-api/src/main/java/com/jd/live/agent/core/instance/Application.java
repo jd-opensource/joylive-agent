@@ -47,6 +47,11 @@ public class Application {
     public static final String KEY_APPLICATION_NAME = "APPLICATION_NAME";
 
     /**
+     * Constant for the application service namespace key.
+     */
+    public static final String KEY_APPLICATION_SERVICE_NAMESPACE = "APPLICATION_SERVICE_NAMESPACE";
+
+    /**
      * Constant for the application service port.
      */
     public static final String KEY_APPLICATION_SERVICE_PORT = "APPLICATION_SERVICE_PORT";
