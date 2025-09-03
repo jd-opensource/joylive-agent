@@ -62,11 +62,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.getMethodValue());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return HttpMethod.ofNullable(request.getMethodValue());
     }
 
     @Override

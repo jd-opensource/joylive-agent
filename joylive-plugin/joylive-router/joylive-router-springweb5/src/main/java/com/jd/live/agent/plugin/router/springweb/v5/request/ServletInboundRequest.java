@@ -99,11 +99,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.getMethod());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return HttpMethod.ofNullable(request.getMethod());
     }
 
     @Override

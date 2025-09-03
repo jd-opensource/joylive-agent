@@ -135,7 +135,7 @@ public class JakartaRequest extends HttpServletRequestWrapper implements HeaderP
     @Override
     public String getHeader(String name) {
         MultiMap<String, String> headers = getHeaders();
-        return headers == null ? null : headers.getFirst(name);
+        return headers == null || name == null || name.isEmpty() ? null : headers.getFirst(name);
     }
 
     @Override

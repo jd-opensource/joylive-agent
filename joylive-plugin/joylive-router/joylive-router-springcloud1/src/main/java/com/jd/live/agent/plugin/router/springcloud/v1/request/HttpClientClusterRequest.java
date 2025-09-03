@@ -57,18 +57,13 @@ public class HttpClientClusterRequest extends AbstractCloudClusterRequest<HttpRe
 
     @Override
     public HttpMethod getHttpMethod() {
-        String method = request.getRequestLine().getMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method);
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return HttpMethod.ofNullable(request.getRequestLine().getMethod());
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            request.addHeader(key, value);
+            request.setHeader(key, value);
         }
     }
 

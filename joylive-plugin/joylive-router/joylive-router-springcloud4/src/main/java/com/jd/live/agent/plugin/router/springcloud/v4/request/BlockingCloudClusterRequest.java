@@ -62,11 +62,8 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.getMethod().name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        org.springframework.http.HttpMethod method = request.getMethod();
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override

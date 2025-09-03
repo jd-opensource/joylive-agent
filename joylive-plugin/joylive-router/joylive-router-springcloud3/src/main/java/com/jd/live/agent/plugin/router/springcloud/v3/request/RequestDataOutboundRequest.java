@@ -50,11 +50,7 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
     @Override
     public HttpMethod getHttpMethod() {
         org.springframework.http.HttpMethod method = request.getHttpMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override

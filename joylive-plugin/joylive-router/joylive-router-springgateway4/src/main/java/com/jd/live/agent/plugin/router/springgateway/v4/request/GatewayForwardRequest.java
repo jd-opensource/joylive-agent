@@ -58,11 +58,7 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
     @Override
     public HttpMethod getHttpMethod() {
         org.springframework.http.HttpMethod method = request.getMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override

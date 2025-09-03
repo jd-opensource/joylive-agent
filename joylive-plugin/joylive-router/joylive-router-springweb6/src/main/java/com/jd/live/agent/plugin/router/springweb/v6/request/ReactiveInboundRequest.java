@@ -133,15 +133,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     @Override
     public HttpMethod getHttpMethod() {
         org.springframework.http.HttpMethod method = request.getMethod();
-        if (method == null) {
-            return null;
-        }
-        try {
-            // Compatible with spring web 6(class) & 5(enum).
-            return HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override

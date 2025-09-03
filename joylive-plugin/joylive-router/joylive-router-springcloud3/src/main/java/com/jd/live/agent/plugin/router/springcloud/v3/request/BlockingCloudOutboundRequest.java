@@ -52,12 +52,7 @@ public class BlockingCloudOutboundRequest extends AbstractHttpOutboundRequest<Ht
 
     @Override
     public HttpMethod getHttpMethod() {
-        org.springframework.http.HttpMethod method = request.getMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return HttpMethod.ofNullable(request.getMethodValue());
     }
 
     @Override

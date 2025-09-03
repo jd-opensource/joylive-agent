@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import feign.Request;
@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
 
@@ -38,7 +39,7 @@ public class FeignCloudOutboundRequest extends AbstractHttpOutboundRequest<Reque
 
     private final String serviceId;
 
-    private CacheObject<Map<String, Collection<String>>> writeableHeaders;
+    private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
 
     public FeignCloudOutboundRequest(Request request, String serviceId) {
         super(request);
@@ -54,43 +55,23 @@ public class FeignCloudOutboundRequest extends AbstractHttpOutboundRequest<Reque
     @Override
     public HttpMethod getHttpMethod() {
         Request.HttpMethod method = request.httpMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
     public String getHeader(String key) {
-        if (key == null || key.isEmpty()) {
-            return null;
-        }
-        Collection<String> values = request.headers().get(key);
-        if (values == null || values.isEmpty()) {
-            return null;
-        } else if (values instanceof List) {
-            return ((List<String>) values).get(0);
-        }
-        return values.iterator().next();
+        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            getWriteableHeaders().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            cache.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return caseInsensitive(request.headers(), true);
-    }
-
-    protected Map<String, Collection<String>> getWriteableHeaders() {
-        if (writeableHeaders == null) {
-            writeableHeaders = new CacheObject<>(modifiedMap(request.headers()));
-        }
-        return writeableHeaders.get();
     }
 }

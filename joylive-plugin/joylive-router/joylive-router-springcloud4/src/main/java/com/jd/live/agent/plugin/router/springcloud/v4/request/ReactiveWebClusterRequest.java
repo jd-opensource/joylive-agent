@@ -62,11 +62,8 @@ public class ReactiveWebClusterRequest extends AbstractHttpOutboundRequest<Clien
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.method().name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        org.springframework.http.HttpMethod method = request.method();
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override

@@ -15,17 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v1.request;
 
-import com.jd.live.agent.core.util.CollectionUtils;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.BlockingClusterContext;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,7 +48,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
      */
     private final ClientHttpRequestExecution execution;
 
-    private final Map<String, List<String>> writeableHeaders;
+    private final HttpHeaders headers;
 
     public BlockingCloudClusterRequest(HttpRequest request,
                                        byte[] body,
@@ -58,16 +57,13 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
         super(request, request.getURI(), context);
         this.body = body;
         this.execution = execution;
-        this.writeableHeaders = CollectionUtils.modifiedHeaders(request.getHeaders());
+        this.headers = request.getHeaders();
     }
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.getMethod().name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        org.springframework.http.HttpMethod method = request.getMethod();
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
@@ -78,15 +74,17 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            List<String> headerValues = new LinkedList<String>();
-            headerValues.add(value);
-            writeableHeaders.put(key, headerValues);
+            try {
+                headers.set(key, value);
+            } catch (UnsupportedOperationException ignored) {
+                // readonly for commited message
+            }
         }
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return headers;
     }
 
     /**

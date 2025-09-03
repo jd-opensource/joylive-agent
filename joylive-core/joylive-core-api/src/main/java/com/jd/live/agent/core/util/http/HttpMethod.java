@@ -98,5 +98,19 @@ public enum HttpMethod {
     public boolean isWrite() {
         return false;
     }
+
+    /**
+     * Creates an HttpMethod from a string, returning null for invalid values.
+     *
+     * @param method the method name string
+     * @return the HttpMethod enum value, or null if method is null, empty, or invalid
+     */
+    public static HttpMethod ofNullable(String method) {
+        try {
+            return method == null || method.isEmpty() ? null : valueOf(method);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 }
 

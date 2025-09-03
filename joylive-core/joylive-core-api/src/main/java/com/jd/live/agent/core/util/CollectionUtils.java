@@ -607,6 +607,22 @@ public class CollectionUtils {
     }
 
     /**
+     * Gets the first element from a collection.
+     *
+     * @param <T>        the element type
+     * @param collection the collection to get first element from
+     * @return the first element, or null if collection is null or empty
+     */
+    public static <T> T getFirst(Collection<T> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return null;
+        } else if (collection instanceof List) {
+            return ((List<T>) collection).get(0);
+        }
+        return collection.iterator().next();
+    }
+
+    /**
      * Adds all elements from the source collection to the target collection that satisfy the given predicate.
      * If the predicate is null, all elements from the source collection are added to the target collection.
      * If either the source or target collection is null, this method does nothing.

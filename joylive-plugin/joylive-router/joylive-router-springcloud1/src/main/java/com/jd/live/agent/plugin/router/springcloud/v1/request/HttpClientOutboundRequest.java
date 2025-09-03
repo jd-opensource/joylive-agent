@@ -44,19 +44,13 @@ public class HttpClientOutboundRequest extends AbstractHttpOutboundRequest<HttpR
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.getMethod().name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        org.springframework.http.HttpMethod method = request.getMethod();
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
     public String getHeader(String key) {
-        if (key == null || key.isEmpty()) {
-            return null;
-        }
-        return request.getHeaders().getFirst(key);
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
     }
 
     @Override

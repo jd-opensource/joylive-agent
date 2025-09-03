@@ -93,7 +93,7 @@ public class JavaxRequest extends HttpServletRequestWrapper implements HeaderPro
     @Override
     public String getHeader(String name) {
         MultiMap<String, String> headers = getHeaders();
-        return headers == null ? null : headers.getFirst(name);
+        return headers == null || name == null || name.isEmpty() ? null : headers.getFirst(name);
     }
 
     @Override

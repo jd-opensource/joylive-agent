@@ -24,7 +24,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnClass(ConditionalOnSpringWeb5Enabled.TYPE_REACTIVE_CLIENT_HTTP_REQUEST)
+@ConditionalOnClass(ConditionalOnSpringWeb5Enabled.TYPE_SERVLET_REQUEST_PATH_UTILS)
 @ConditionalOnMissingClass(ConditionalOnSpringWeb5Enabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb5Enabled {
@@ -32,10 +32,7 @@ public @interface ConditionalOnSpringWeb5Enabled {
     // spring web 6
     String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
-    // spring web 4+
-    String TYPE_CLIENT_HTTP_REQUEST = "org.springframework.http.client.ClientHttpRequest";
-
-    // spring web 5+
-    String TYPE_REACTIVE_CLIENT_HTTP_REQUEST = "org.springframework.http.client.reactive.ClientHttpRequest";
+    // spring web 5.3+
+    String TYPE_SERVLET_REQUEST_PATH_UTILS = "org.springframework.web.util.ServletRequestPathUtils";
 
 }

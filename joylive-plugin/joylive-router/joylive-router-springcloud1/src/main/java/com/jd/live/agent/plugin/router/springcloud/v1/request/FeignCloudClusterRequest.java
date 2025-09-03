@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v1.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.FeignClusterContext;
@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
 import static com.jd.live.agent.plugin.router.springcloud.v1.util.UriUtils.newURI;
@@ -45,7 +46,7 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
 
     private final Request.Options options;
 
-    private CacheObject<Map<String, Collection<String>>> writeableHeaders;
+    private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
 
     public FeignCloudClusterRequest(Request request, Request.Options options, FeignClusterContext context) {
         super(request, URI.create(request.url()), context);
@@ -54,31 +55,18 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.method());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return HttpMethod.ofNullable(request.method());
     }
 
     @Override
     public String getHeader(String key) {
-        if (key == null || key.isEmpty()) {
-            return null;
-        }
-        Collection<String> values = request.headers().get(key);
-        if (values == null || values.isEmpty()) {
-            return null;
-        } else if (values instanceof List) {
-            return ((List<String>) values).get(0);
-        }
-        return values.iterator().next();
+        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            getWriteableHeaders().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            cache.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
     }
 
@@ -98,13 +86,6 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
         ServiceInstance instance = EndpointInstance.convert(endpoint);
         Request req = Request.create(request.method(), newURI(instance, uri).toString(), request.headers(), request.body(), request.charset());
         return context.getDelegate().execute(req, options);
-    }
-
-    protected Map<String, Collection<String>> getWriteableHeaders() {
-        if (writeableHeaders == null) {
-            writeableHeaders = new CacheObject<>(modifiedMap(request.headers()));
-        }
-        return writeableHeaders.get();
     }
 
 }

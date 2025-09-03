@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.governance.instance.Endpoint;
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 
 /**
@@ -45,7 +46,7 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
 
     private final FeignExecution execution;
 
-    private CacheObject<Map<String, Collection<String>>> writeableHeaders;
+    private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
 
     public FeignWebClusterRequest(Request request,
                                   String service,
@@ -66,23 +67,19 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
 
     @Override
     public HttpMethod getHttpMethod() {
-        try {
-            return HttpMethod.valueOf(request.httpMethod().name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        Request.HttpMethod method = request.httpMethod();
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
     public String getHeader(String key) {
-        Collection<String> values = request.headers().get(key);
-        return values == null || values.isEmpty() ? null : values.iterator().next();
+        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            getWriteableHeaders().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            cache.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
     }
 
@@ -97,13 +94,6 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
 
     public feign.Response execute(Endpoint endpoint) throws IOException {
         return execution.execute(endpoint);
-    }
-
-    protected Map<String, Collection<String>> getWriteableHeaders() {
-        if (writeableHeaders == null) {
-            writeableHeaders = new CacheObject<>(modifiedMap(request.headers()));
-        }
-        return writeableHeaders.get();
     }
 
     @FunctionalInterface
