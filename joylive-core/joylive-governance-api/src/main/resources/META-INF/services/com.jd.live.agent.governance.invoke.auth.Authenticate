@@ -1,1 +1,2 @@
+com.jd.live.agent.governance.invoke.auth.none.NoneAuthenticate
 com.jd.live.agent.governance.invoke.auth.token.TokenAuthenticate

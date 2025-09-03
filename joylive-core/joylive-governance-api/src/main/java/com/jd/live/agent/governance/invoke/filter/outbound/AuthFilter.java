@@ -55,16 +55,18 @@ public class AuthFilter implements OutboundFilter {
             E extends Endpoint> CompletionStage<O> filter(OutboundInvocation<R> invocation, E endpoint, OutboundFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         ServicePolicy servicePolicy = metadata.getServicePolicy();
-        AuthPolicy authPolicy = servicePolicy == null ? null : servicePolicy.getAuthPolicy();
-        if (authPolicy != null) {
-            String authType = authPolicy.getTypeOrDefault(AuthPolicy.DEFAULT_AUTH_TYPE);
-            Authenticate authenticate = authenticates.get(authType);
-            if (authenticate != null) {
-                authenticate.inject(
-                        invocation.getRequest(),
-                        authPolicy,
-                        metadata.getServiceName(),
-                        invocation.getContext().getApplication().getName());
+        if (servicePolicy != null && servicePolicy.authorized()) {
+            AuthPolicy authPolicy = servicePolicy.getAuthPolicy();
+            if (authPolicy != null) {
+                String authType = authPolicy.getTypeOrDefault();
+                Authenticate authenticate = authenticates.get(authType);
+                if (authenticate != null) {
+                    authenticate.inject(
+                            invocation.getRequest(),
+                            authPolicy,
+                            metadata.getServiceName(),
+                            invocation.getContext().getApplication().getName());
+                }
             }
         }
         return chain.filter(invocation, endpoint);

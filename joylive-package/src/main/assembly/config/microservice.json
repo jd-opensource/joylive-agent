@@ -81,6 +81,7 @@
   {
     "name": "service-provider",
     "serviceType": "HTTP",
+    "authorized": true,
     "version": 0,
     "groups": [
       {
