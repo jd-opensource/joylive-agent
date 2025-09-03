@@ -66,19 +66,31 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
     /**
      * Loads configurations from the specified resources.
      *
-     * @param resources The resource to load configurations from.
-     * @return A {@link Map} containing the loaded configurations, or {@code null} if no configurations could be loaded.
+     * @param env the environment map
+     * @param resources the resources to load configurations from
+     * @return a map containing the loaded configurations, or {@code null} if no configurations could be loaded
      */
-    protected Map<String, Object> loadConfigs(BootResource... resources) {
+    protected Map<String, Object> loadConfigs(Map<String, Object> env, BootResource... resources) {
         if (resources != null) {
             for (BootResource resource : resources) {
                 Map<String, Object> result = loadConfigs(resource);
                 if (result != null) {
+                    onLoaded(resource, result, env);
                     return result;
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * Called when a boot resource is loaded with its configurations.
+     *
+     * @param resource the loaded boot resource
+     * @param configs  the configuration map associated with the resource
+     * @param env      the environment map
+     */
+    protected void onLoaded(BootResource resource, Map<String, Object> configs, Map<String, Object> env) {
     }
 
     /**

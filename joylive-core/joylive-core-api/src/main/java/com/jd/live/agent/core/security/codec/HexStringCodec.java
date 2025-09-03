@@ -19,7 +19,7 @@ import com.jd.live.agent.core.exception.CipherException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.security.StringCodec;
 
-@Extension("hex")
+@Extension({"hex", "hexadecimal"})
 public class HexStringCodec implements StringCodec {
 
     private static final char[] hexDigits =

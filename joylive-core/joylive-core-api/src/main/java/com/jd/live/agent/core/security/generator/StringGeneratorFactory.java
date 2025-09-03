@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.core.security.generator;
 
-import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.security.CipherGenerator;
 import com.jd.live.agent.core.security.CipherGeneratorFactory;
 import com.jd.live.agent.core.security.CipherGeneratorType;
 
-@Extension("string")
+@Extension({"string", "org.jasypt.salt.FixedStringSaltGenerator", "org.jasypt.salt.StringFixedSaltGenerator"})
 public class StringGeneratorFactory implements CipherGeneratorFactory {
 
     @Override

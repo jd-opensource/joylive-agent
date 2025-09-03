@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.core.security.generator;
 
-import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.security.CipherConfig;
 import com.jd.live.agent.core.security.CipherGenerator;
 import com.jd.live.agent.core.security.CipherGeneratorFactory;
 import com.jd.live.agent.core.security.CipherGeneratorType;
 
-@Extension("base64")
+@Extension({"base64", "com.ulisesbocchio.jasyptspringboot.encryptor.FixedBase64ByteArraySaltGenerator"})
 public class Base64GeneratorFactory implements CipherGeneratorFactory {
 
     @Override

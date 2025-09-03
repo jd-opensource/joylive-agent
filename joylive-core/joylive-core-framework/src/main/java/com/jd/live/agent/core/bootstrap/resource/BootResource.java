@@ -43,4 +43,9 @@ public class BootResource {
     public boolean withPath() {
         return path != null && !path.isEmpty();
     }
+
+    public BootResource profile(String profile) {
+        String n = !extension.isEmpty() ? name.substring(0, name.length() - extension.length() - 1) : name;
+        return new BootResource(schema, path, n + "-" + profile + "." + extension);
+    }
 }

@@ -21,17 +21,18 @@ import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_CLASSPATH;
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_FILE;
-import static com.jd.live.agent.core.util.StringUtils.CHAR_COMMA;
-import static com.jd.live.agent.core.util.StringUtils.split;
+import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.template.Template.evaluate;
 
 @Injectable
@@ -53,22 +54,25 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     @Override
     public void process(Map<String, Object> env) {
         BootResource[] resources = getResources(env);
-        Map<String, Object> configs = loadConfigs(resources);
-        Object value = getConfigAndResolve(configs, env, KEY_SPRING_APPLICATION_NAME);
-        String name = value == null ? null : value.toString();
-        if (name != null && !name.isEmpty()) {
-            env.put(Application.KEY_APPLICATION_NAME, name);
-        }
-        value = getConfigAndResolve(configs, env, KEY_SPRING_SERVER_PORT);
-        String port = value == null ? null : value.toString();
-        if (port != null && !port.isEmpty()) {
+        Map<String, Object> configs = loadConfigs(env, resources);
+        exist(configs, env, KEY_SPRING_APPLICATION_NAME, app -> env.putIfAbsent(Application.KEY_APPLICATION_NAME, app));
+        exist(configs, env, KEY_SPRING_SERVER_PORT, port -> {
             try {
                 Integer.parseInt(port);
                 env.put(Application.KEY_APPLICATION_SERVICE_PORT, port);
             } catch (NumberFormatException ignored) {
                 env.remove(Application.KEY_APPLICATION_SERVICE_PORT);
             }
-        }
+        });
+        exist(configs, env, "jasypt.encryptor.password", v -> env.putIfAbsent("CONFIG_CIPHER_PASSWORD", v));
+        exist(configs, env, "jasypt.encryptor.algorithm", v -> env.putIfAbsent("CONFIG_CIPHER_ALGORITHM", v));
+        exist(configs, env, "jasypt.encryptor.key-obtention-iterations", v -> env.putIfAbsent("CONFIG_CIPHER_ITERATIONS", v));
+        exist(configs, env, "jasypt.encryptor.provider-name", v -> env.putIfAbsent("CONFIG_CIPHER_PROVIDER", v));
+        exist(configs, env, "jasypt.encryptor.salt-generator-classname", v -> env.putIfAbsent("CONFIG_CIPHER_SALT_TYPE", v));
+        exist(configs, env, "jasypt.encryptor.iv-generator-classname", v -> env.putIfAbsent("CONFIG_CIPHER_IV_TYPE", v));
+        exist(configs, env, "jasypt.encryptor.string-output-type", v -> env.putIfAbsent("CONFIG_CIPHER_CODEC", v));
+        exist(configs, env, "jasypt.encryptor.property.prefix", v -> env.putIfAbsent("CONFIG_CIPHER_PREFIX", v));
+        exist(configs, env, "jasypt.encryptor.property.suffix", v -> env.putIfAbsent("CONFIG_CIPHER_SUFFIX", v));
     }
 
     /**
@@ -135,6 +139,56 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
             }
         }
         return result.toArray(new BootResource[0]);
+    }
+
+    @Override
+    protected void onLoaded(BootResource resource, Map<String, Object> configs, Map<String, Object> env) {
+        // profiles
+        Object obj = getConfigAndResolve(configs, env, "spring.profiles.active");
+        String value = obj == null ? null : obj.toString();
+        if (isEmpty(value)) {
+            return;
+        }
+        if (value.startsWith("[") && value.endsWith("]")) {
+            value = value.substring(1, value.length() - 1);
+        }
+        String[] profiles = StringUtils.split(value);
+        // load profiles
+        for (String profile : profiles) {
+            Map<String, Object> result = loadConfigs(resource.profile(profile));
+            if (result != null) {
+                configs.putAll(result);
+            }
+        }
+    }
+
+    /**
+     * Executes consumer with resolved config value if it exists and is not empty.
+     *
+     * @param configs  configuration map
+     * @param env      environment variables map
+     * @param key      configuration key
+     * @param consumer action to execute with the resolved value
+     */
+    private void exist(Map<String, Object> configs, Map<String, Object> env, String key, Consumer<String> consumer) {
+        Object obj = getConfigAndResolve(configs, env, key);
+        String value = obj == null ? null : obj.toString();
+        if (!isEmpty(value)) {
+            consumer.accept(value);
+        }
+    }
+
+    /**
+     * Gets configuration value as String with placeholder resolution.
+     *
+     * @param configs configuration map
+     * @param env     environment variables map
+     * @param key     configuration key
+     * @return resolved value as String, null if not found
+     */
+    private String getString(Map<String, Object> configs, Map<String, Object> env, String key) {
+        Object result = getConfigAndResolve(configs, env, key);
+        return result == null ? null : result.toString();
     }
 
     /**
