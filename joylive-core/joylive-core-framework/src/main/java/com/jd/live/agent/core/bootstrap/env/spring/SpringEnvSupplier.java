@@ -21,7 +21,6 @@ import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
 
 import java.io.File;
@@ -32,6 +31,7 @@ import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_CLASSPATH;
 import static com.jd.live.agent.core.bootstrap.resource.BootResource.SCHEMA_FILE;
+import static com.jd.live.agent.core.util.CollectionUtils.combine;
 import static com.jd.live.agent.core.util.StringUtils.*;
 import static com.jd.live.agent.core.util.template.Template.evaluate;
 
@@ -40,16 +40,12 @@ import static com.jd.live.agent.core.util.template.Template.evaluate;
 public class SpringEnvSupplier extends AbstractEnvSupplier {
 
     private static final String KEY_SPRING_APPLICATION_NAME = "spring.application.name";
-
     private static final String KEY_SPRING_SERVER_PORT = "server.port";
-
     private static final String KEY_SPRING_CONFIG_LOCATION = "spring.config.location";
-
     private static final String RESOURCE_APPLICATION_PROPERTIES = "application.properties";
-
     private static final String RESOURCE_APPLICATION_YAML = "application.yaml";
-
     private static final String RESOURCE_APPLICATION_YML = "application.yml";
+    private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
     @Override
     public void process(Map<String, Object> env) {
@@ -144,22 +140,22 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     @Override
     protected void onLoaded(BootResource resource, Map<String, Object> configs, Map<String, Object> env) {
         // profiles
-        Object obj = getConfigAndResolve(configs, env, "spring.profiles.active");
-        String value = obj == null ? null : obj.toString();
-        if (isEmpty(value)) {
+        Object obj = getConfigAndResolve(configs, env, SPRING_PROFILES_ACTIVE);
+        String profiles = obj == null ? null : obj.toString().trim();
+        if (isEmpty(profiles)) {
             return;
         }
-        if (value.startsWith("[") && value.endsWith("]")) {
-            value = value.substring(1, value.length() - 1);
+        if (profiles.charAt(0) == '[' && profiles.charAt(profiles.length() - 1) == ']') {
+            profiles = profiles.substring(1, profiles.length() - 1);
         }
-        String[] profiles = StringUtils.split(value);
         // load profiles
-        for (String profile : profiles) {
+        splitList(profiles, SEMICOLON_COMMA, true, false, null, profile -> {
             Map<String, Object> result = loadConfigs(resource.profile(profile));
             if (result != null) {
-                configs.putAll(result);
+                // merge recursively
+                combine(result, configs);
             }
-        }
+        });
     }
 
     /**

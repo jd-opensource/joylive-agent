@@ -530,6 +530,30 @@ public class CollectionUtils {
     }
 
     /**
+     * Combines source map into target map recursively.
+     *
+     * @param <K>    the type of keys
+     * @param <T>    the type of values
+     * @param source the source map to combine from
+     * @param target the target map to combine into
+     */
+    public static <K, T> void combine(Map<K, T> source, Map<K, T> target) {
+        if (source == null || target == null) {
+            return;
+        }
+        source.forEach((srcKey, scrValue) -> {
+            target.compute(srcKey, (targetKey, targetValue) -> {
+                if (targetValue instanceof Map && scrValue instanceof Map) {
+                    combine((Map<K, T>) scrValue, (Map<K, T>) targetValue);
+                    return targetValue;
+                } else {
+                    return scrValue;
+                }
+            });
+        });
+    }
+
+    /**
      * Iterates over an iterable of elements, applying a predicate and a consumer to each element.
      * If the iterable or consumer is null, the method does nothing.
      * If the predicate is null, all elements are consumed.

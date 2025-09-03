@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.CollectionUtils.lookup;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 
 public class CollectionUtilsTest {
 
@@ -57,8 +57,22 @@ public class CollectionUtilsTest {
         map.put("key3.key5", "value4");
         map.put("key61]", "value7");
         map.put("key7[]", "value8");
-        Map<String, Object> cascaded = CollectionUtils.cascade(map);
+        Map<String, Object> cascaded = cascade(map);
         Assertions.assertEquals("{key1=value1, key3={key5=value4, key4=value3}, key4={a=[{c=value5}, {c=value6}]}, key7[]=value8, key8={a=[value5, value6]}, key61]=value7}", cascaded.toString());
+    }
+
+    @Test
+    void testCombine() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("jasypt.encryptor.password", "123456");
+        map.put("jasypt.encryptor.algorithm", "DES");
+        map.put("spring.application.name", "spring-provider");
+        Map<String, Object> targetMap = cascade(map);
+        map = new HashMap<>();
+        map.put("jasypt.encryptor.string-output-type", "base64");
+        Map<String, Object> srcMap = cascade(map);
+        combine(srcMap, targetMap);
+        Assertions.assertEquals("{spring={application={name=spring-provider}}, jasypt={encryptor={password=123456, string-output-type=base64, algorithm=DES}}}", targetMap.toString());
     }
 
 
