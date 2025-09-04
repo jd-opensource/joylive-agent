@@ -234,6 +234,9 @@ agent:
       spring:
         discovery:
           disables: ${CONFIG_SPRING_DISCOVERY_DISABLES}
+        gateway:
+          hostExpression: ${CONFIG_SPRING_GATEWAY_HOST_EXPRESSION}
+          pathFilters: ${CONFIG_SPRING_GATEWAY_PATH_FILTERS}
       phevos:
         groupExpression: ${unit}-${cell}-${group}
     transmission:

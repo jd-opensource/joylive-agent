@@ -18,15 +18,12 @@ package com.jd.live.agent.plugin.router.springgateway.v3.config;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 @Getter
 @Setter
 public class GatewayConfig {
-
-    public static final String CONFIG_SPRING_GATEWAY_PREFIX = "agent.governance.router.springgateway";
 
     public static final String TYPE_REWRITE_PATH_FILTER = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$1";
 
@@ -38,7 +35,7 @@ public class GatewayConfig {
 
     private String hostExpression;
 
-    private Set<String> pathFilters = new HashSet<>(Arrays.asList(TYPE_REWRITE_PATH_FILTER, TYPE_STRIP_PREFIX));
+    private Set<String> pathFilters = new HashSet<>();
 
     /**
      * Checks if the given name is a path filter.
@@ -48,6 +45,11 @@ public class GatewayConfig {
      */
     public boolean isPathFilter(String filter) {
         return pathFilters != null && filter != null && pathFilters.contains(filter);
+    }
+
+    public void initialize() {
+        pathFilters.add(TYPE_REWRITE_PATH_FILTER);
+        pathFilters.add(TYPE_STRIP_PREFIX);
     }
 
 }
