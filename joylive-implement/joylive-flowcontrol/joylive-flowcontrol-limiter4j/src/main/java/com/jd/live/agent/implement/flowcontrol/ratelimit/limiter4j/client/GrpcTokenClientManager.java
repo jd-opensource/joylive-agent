@@ -13,43 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.flowcontrol.ratelimit.redisson.client;
+package com.jd.live.agent.implement.flowcontrol.ratelimit.limiter4j.client;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RateLimiterConfig;
 import lombok.Getter;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manager class for Redis clients.
- * This class manages the creation, retrieval, and recycling of Redis clients based on their configurations.
+ * gRPC Token Client Manager
+ *
+ * @since 1.9.0
  */
-public class RedisClientManager {
+public class GrpcTokenClientManager {
 
-    private final Timer timer;
+    private static final Logger logger = LoggerFactory.getLogger(GrpcTokenClientManager.class);
 
     @Getter
     private final RateLimiterConfig config;
+    private final Timer timer;
+    private final ConcurrentHashMap<String, GrpcTokenClient> clients = new ConcurrentHashMap<>();
 
-    private final Map<RedisConfig, RedisClient> clients = new ConcurrentHashMap<>();
-
-    public RedisClientManager(Timer timer, RateLimiterConfig config) {
+    public GrpcTokenClientManager(Timer timer, RateLimiterConfig config) {
         this.timer = timer;
         this.config = config;
     }
 
     /**
-     * Retrieves an existing Redis client for the given configuration or creates a new one if it does not exist.
+     * Get or create client
      *
-     * @param config the {@link RedisConfig} for the client
-     * @return the Redis client for the given configuration
+     * @param config gRPC configuration
+     * @return gRPC token client
      */
-    public RedisClient getOrCreateClient(RedisConfig config) {
-        RedisClient client = clients.computeIfAbsent(config, c -> new RedisClient(c, this::removeClient));
-        client.start();
-        return client;
+    public GrpcTokenClient getOrCreateClient(GrpcConfig config) {
+        return clients.computeIfAbsent(config.getAddress(), k -> new GrpcTokenClient(config, this::removeClient));
     }
 
     /**
@@ -57,8 +57,8 @@ public class RedisClientManager {
      *
      * @param client the Redis client to be removed
      */
-    private void removeClient(final RedisClient client) {
-        clients.computeIfPresent(client.getConfig(), (c, v) -> {
+    private void removeClient(final GrpcTokenClient client) {
+        clients.computeIfPresent(client.getAddress(), (c, v) -> {
             if (v == client && v.isUseless()) {
                 addTask(v);
                 return null;
@@ -68,12 +68,12 @@ public class RedisClientManager {
     }
 
     /**
-     * Adds a task to the timer to recycle the Redis client if its reference count is zero and it has expired.
+     * Adds a task to the timer to recycle the grpc token client if its reference count is zero and it has expired.
      *
-     * @param client the Redis client to be recycled
+     * @param client the grpc token client to be recycled
      */
-    private void addTask(RedisClient client) {
-        timer.delay("Recycle-redisson-" + client.getId(), config.getClientCleanInterval(), () -> {
+    private void addTask(GrpcTokenClient client) {
+        timer.delay("Recycle-limiter4j-" + client.getAddress(), config.getClientCleanInterval(), () -> {
             if (client.isExpired(config.getClientExpireTime())) {
                 client.shutdown();
             } else {
@@ -81,5 +81,4 @@ public class RedisClientManager {
             }
         });
     }
-
 }

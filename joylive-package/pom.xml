@@ -164,6 +164,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-flowcontrol-limiter4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-system-springboot2</artifactId>
         </dependency>
         <dependency>

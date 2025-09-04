@@ -16,9 +16,7 @@
 package com.jd.live.agent.governance.invoke.ratelimit.leakybucket;
 
 import com.jd.live.agent.governance.invoke.ratelimit.AbstractRateLimiterGroup;
-import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
-import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
 /**
  * LeakyBucketLimiterGroup
@@ -28,12 +26,7 @@ import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 public class LeakyBucketLimiterGroup extends AbstractRateLimiterGroup {
 
     public LeakyBucketLimiterGroup(RateLimitPolicy policy) {
-        super(policy);
-        init();
+        super(policy, (window, name) -> new LeakyBucketLimiter(policy, window));
     }
 
-    @Override
-    protected RateLimiter create(SlidingWindow window, String name) {
-        return new LeakyBucketLimiter(policy, window);
-    }
 }

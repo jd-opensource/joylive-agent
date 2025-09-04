@@ -207,6 +207,7 @@ agent:
         type: SmoothBursty
         cleanInterval: 30000
         expireTime: 60000
+        configs: ${CONFIG_RATE_LIMITER_CONFIG:}
       loadLimiter:
         cpuUsage: ${CONFIG_MAX_CPU_USAGE:}
         loadUsage: ${CONFIG_MAX_LOAD_USAGE:}

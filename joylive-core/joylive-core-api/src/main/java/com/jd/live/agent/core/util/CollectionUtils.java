@@ -19,10 +19,7 @@ import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 import static com.jd.live.agent.core.util.StringUtils.CHAR_DOT;
 import static com.jd.live.agent.core.util.StringUtils.splitList;
@@ -447,6 +444,37 @@ public class CollectionUtils {
             if (predicate == null || predicate.test(t)) {
                 result.put(keyFunction.apply(t), valueFunction.apply(t));
             }
+        }
+        return result;
+    }
+
+    /**
+     * Merges two maps with optional filtering. Values from src2 override src1 for duplicate keys.
+     *
+     * @param <K>       the key type
+     * @param <V>       the value type
+     * @param src1      the first map, may be null
+     * @param src2      the second map, may be null
+     * @param predicate the filter predicate, may be null to include all entries
+     * @return merged map containing filtered entries from both sources
+     */
+    public static <K, V> Map<K, V> merge(Map<K, V> src1, Map<K, V> src2, BiPredicate<K, V> predicate) {
+        int size1 = src1 == null ? 0 : src1.size();
+        int size2 = src2 == null ? 0 : src2.size();
+        Map<K, V> result = new HashMap<>(size1 + size2);
+        if (size1 > 0) {
+            src1.forEach((k, v) -> {
+                if (predicate == null || predicate.test(k, v)) {
+                    result.put(k, v);
+                }
+            });
+        }
+        if (size2 > 0) {
+            src2.forEach((k, v) -> {
+                if (predicate == null || predicate.test(k, v)) {
+                    result.put(k, v);
+                }
+            });
         }
         return result;
     }

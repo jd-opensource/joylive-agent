@@ -34,9 +34,6 @@ import java.util.List;
 @Extension(value = "Resilience4j")
 public class Resilience4jRateLimiterFactory extends AbstractRateLimiterFactory {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected RateLimiter create(RateLimitPolicy policy) {
         List<SlidingWindow> windows = policy.getSlidingWindows();
