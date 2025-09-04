@@ -77,8 +77,9 @@ public class InternalServiceCounter implements ServiceCounter {
      * @param endpoints The list of current endpoints for the service.
      */
     public void tryClean(List<? extends Endpoint> endpoints) {
-        if (System.currentTimeMillis() - cleanTime >= CLEAN_INTERVAL && clean.compareAndSet(false, true)) {
-            cleanTime = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        if (now - cleanTime >= CLEAN_INTERVAL && clean.compareAndSet(false, true)) {
+            cleanTime = now;
             timer.delay("counter-clean-" + name, DELAY_CLEAN, () -> {
                 clean(endpoints);
                 cleanTime = System.currentTimeMillis();
