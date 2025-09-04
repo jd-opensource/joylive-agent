@@ -21,6 +21,7 @@ import com.jd.live.agent.core.bootstrap.resource.BootResource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
 
 import java.io.File;
@@ -69,6 +70,11 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         exist(configs, env, "jasypt.encryptor.string-output-type", v -> env.putIfAbsent("CONFIG_CIPHER_CODEC", v));
         exist(configs, env, "jasypt.encryptor.property.prefix", v -> env.putIfAbsent("CONFIG_CIPHER_PREFIX", v));
         exist(configs, env, "jasypt.encryptor.property.suffix", v -> env.putIfAbsent("CONFIG_CIPHER_SUFFIX", v));
+        exist(configs, env, "spring.cloud.nacos.discovery.service", v -> env.putIfAbsent("CONFIG_NACOS_SERVICE", v));
+        exist(configs, env, "spring.cloud.nacos.discovery.group", v -> env.putIfAbsent("CONFIG_NACOS_GROUP", v));
+        exist(configs, env, "spring.cloud.nacos.discovery.namespace", v -> env.putIfAbsent("CONFIG_NACOS_NAMESPACE", v));
+        exist(configs, env, "spring.cloud.nacos.config.group", v -> env.putIfAbsent("CONFIG_NACOS_GROUP", v));
+        exist(configs, env, "spring.cloud.nacos.config.namespace", v -> env.putIfAbsent("CONFIG_NACOS_NAMESPACE", v));
     }
 
     /**
@@ -142,7 +148,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         // profiles
         Object obj = getConfigAndResolve(configs, env, SPRING_PROFILES_ACTIVE);
         String profiles = obj == null ? null : obj.toString().trim();
-        if (isEmpty(profiles)) {
+        if (StringUtils.isEmpty(profiles)) {
             return;
         }
         if (profiles.charAt(0) == '[' && profiles.charAt(profiles.length() - 1) == ']') {
@@ -164,7 +170,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     private void exist(Map<String, Object> configs, Map<String, Object> env, String key, Consumer<String> consumer) {
         Object obj = getConfigAndResolve(configs, env, key);
         String value = obj == null ? null : obj.toString();
-        if (!isEmpty(value)) {
+        if (!StringUtils.isEmpty(value)) {
             consumer.accept(value);
         }
     }
@@ -191,9 +197,17 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @return the resolved configuration value as a String
      */
     private Object getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
-        Object config = env.get(key);
-        config = config == null || (config instanceof String && ((String) config).isEmpty()) ? getConfig(configs, key) : config;
-        return config == null || (config instanceof String && ((String) config).isEmpty()) ? config : evaluate(config.toString(), env, false);
+        Object obj = env.get(key);
+        String expression = obj == null ? null : obj.toString();
+        if (isEmpty(expression)) {
+            obj = getConfig(configs, key);
+            expression = obj == null ? null : obj.toString();
+            if (isEmpty(expression)) {
+                return null;
+            }
+        }
+        // return null if ${spring.cloud.nacos.discovery.group} is not found
+        return evaluate(expression, env, true);
     }
 
     /**

@@ -19,6 +19,9 @@ import com.jd.live.agent.core.util.template.Template;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.jd.live.agent.core.util.template.Template.context;
 import static com.jd.live.agent.core.util.template.Template.evaluate;
 
@@ -70,5 +73,17 @@ public class TemplateTest {
     void testRegistry() {
         String expression = "${A:${B}:${C:8848}}";
         Assertions.assertEquals("localhost:8848", evaluate(expression, false, "B", "localhost"));
+    }
+
+    @Test
+    void testSpring() {
+        String expression = "${spring.application.name}";
+        Map<String, Object> map = new HashMap<>();
+        map.put("spring.application.name", "test");
+        Assertions.assertEquals("test", evaluate(expression, map, false));
+        expression = "${spring.cloud.nacos.discovery.service}";
+        Assertions.assertNull(evaluate(expression, map, true));
+        expression = "${spring.cloud.nacos.discovery.service:service}";
+        Assertions.assertEquals("service", evaluate(expression, map, true));
     }
 }
