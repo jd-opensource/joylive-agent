@@ -78,7 +78,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     }
 
     private void addNacosGroup(Map<String, Object> env, String group) {
-        if ("DEFAULT_GROUP".equals(group)) {
+        if ("DEFAULT_GROUP".equalsIgnoreCase(group)) {
             return;
         }
         env.put("CONFIG_NACOS_GROUP", group);
