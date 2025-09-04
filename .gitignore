@@ -32,3 +32,4 @@ target/
 
 .flattened-pom.xml
 dependency-reduced-pom.xml
+.checkstyle
