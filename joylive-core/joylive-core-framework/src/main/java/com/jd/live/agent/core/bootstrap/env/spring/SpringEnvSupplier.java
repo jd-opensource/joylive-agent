@@ -71,10 +71,17 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         exist(configs, env, "jasypt.encryptor.property.prefix", v -> env.putIfAbsent("CONFIG_CIPHER_PREFIX", v));
         exist(configs, env, "jasypt.encryptor.property.suffix", v -> env.putIfAbsent("CONFIG_CIPHER_SUFFIX", v));
         exist(configs, env, "spring.cloud.nacos.discovery.service", v -> env.putIfAbsent("CONFIG_NACOS_SERVICE", v));
-        exist(configs, env, "spring.cloud.nacos.discovery.group", v -> env.putIfAbsent("CONFIG_NACOS_GROUP", v));
+        exist(configs, env, "spring.cloud.nacos.discovery.group", v -> addNacosGroup(env, v));
         exist(configs, env, "spring.cloud.nacos.discovery.namespace", v -> env.putIfAbsent("CONFIG_NACOS_NAMESPACE", v));
-        exist(configs, env, "spring.cloud.nacos.config.group", v -> env.putIfAbsent("CONFIG_NACOS_GROUP", v));
+        exist(configs, env, "spring.cloud.nacos.config.group", v -> addNacosGroup(env, v));
         exist(configs, env, "spring.cloud.nacos.config.namespace", v -> env.putIfAbsent("CONFIG_NACOS_NAMESPACE", v));
+    }
+
+    private void addNacosGroup(Map<String, Object> env, String group) {
+        if ("DEFAULT_GROUP".equals(group)) {
+            return;
+        }
+        env.put("CONFIG_NACOS_GROUP", group);
     }
 
     /**
