@@ -21,7 +21,6 @@ import com.alipay.sofa.rpc.config.ServerConfig;
 import com.alipay.sofa.rpc.registry.utils.RegistryUtils;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.interceptor.AbstractRegistryInterceptor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
@@ -29,6 +28,8 @@ import com.jd.live.agent.governance.util.FrameworkVersion;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jd.live.agent.core.util.StringUtils.choose;
 
 /**
  * RegistryInterceptor
@@ -50,10 +51,10 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
                 instances.add(
                         ServiceInstance.builder()
                                 .interfaceMode(true)
-                                .framework(new FrameworkVersion("sofa-rpc", Version.VERSION))
+                                .framework(FrameworkVersion.sofaRpc(Version.VERSION))
                                 .service(config.getInterfaceId())
-                                .group(StringUtils.isEmpty(config.getGroup()) ? config.getUniqueId() : config.getGroup())
-                                .version(StringUtils.isEmpty(config.getVersion()) ? "1.0" : config.getVersion())
+                                .group(choose(config.getGroup(), config.getUniqueId()))
+                                .version(choose(config.getVersion(), "1.0"))
                                 .scheme(serverConfig.getProtocol())
                                 .host(RegistryUtils.getServerHost(serverConfig))
                                 .port(getPort(serverConfig))

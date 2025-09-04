@@ -37,6 +37,7 @@ import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.setValue;
 import static com.jd.live.agent.core.Constants.*;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -97,10 +98,7 @@ public class UrlUtils {
             service = url.getServiceInterface();
             interfaceMode = true;
         }
-        String group = url.getParameter(LABEL_GROUP, "");
-        if (group == null || group.isEmpty()) {
-            group = url.getParameter(LABEL_SERVICE_GROUP, "");
-        }
+        String group = choose(url.getParameter(LABEL_GROUP), () -> url.getParameter(LABEL_SERVICE_GROUP));
         return new ServiceId(service, group, interfaceMode);
     }
 
@@ -141,7 +139,7 @@ public class UrlUtils {
         metadata.remove(REGISTRY_TYPE_KEY);
         return ServiceInstance.builder()
                 .interfaceMode(serviceId.isInterfaceMode())
-                .framework(new FrameworkVersion(DUBBO, url.getParameter(RELEASE, VERSION)))
+                .framework(FrameworkVersion.dubbo(url.getParameter(RELEASE, VERSION)))
                 .service(serviceId.getService())
                 .group(serviceId.getGroup())
                 .scheme(url.getProtocol())
@@ -172,7 +170,7 @@ public class UrlUtils {
         URLParams urlParams = getUrlParams(metadata, parser);
         return ServiceInstance.builder()
                 .interfaceMode(false)
-                .framework(new FrameworkVersion(DUBBO, urlParams.getRelease()))
+                .framework(FrameworkVersion.dubbo(urlParams.getRelease()))
                 .service(instance.getServiceName())
                 .scheme(urlParams.getProtocol())
                 .group(instance.getMetadata(LABEL_GROUP))

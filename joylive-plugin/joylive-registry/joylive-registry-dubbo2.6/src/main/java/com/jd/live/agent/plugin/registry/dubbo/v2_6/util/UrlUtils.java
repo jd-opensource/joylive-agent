@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.*;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 
 /**
  * Utility class for URL parsing operations.
@@ -49,10 +50,7 @@ public class UrlUtils {
      */
     public static ServiceId toServiceId(URL url) {
         String service = url.getServiceInterface();
-        String group = url.getParameter(LABEL_GROUP, "");
-        if (group == null || group.isEmpty()) {
-            group = url.getParameter(LABEL_SERVICE_GROUP, "");
-        }
+        String group = choose(url.getParameter(LABEL_GROUP), () -> url.getParameter(LABEL_SERVICE_GROUP));
         return new ServiceId(service, group, true);
     }
 
@@ -69,7 +67,7 @@ public class UrlUtils {
         ServiceId serviceId = toServiceId(url);
         return ServiceInstance.builder()
                 .interfaceMode(serviceId.isInterfaceMode())
-                .framework(new FrameworkVersion(DUBBO, url.getParameter(RELEASE, VERSION)))
+                .framework(FrameworkVersion.dubbo(url.getParameter(RELEASE, VERSION)))
                 .service(serviceId.getService())
                 .group(serviceId.getGroup())
                 .scheme(url.getProtocol())

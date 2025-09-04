@@ -22,6 +22,11 @@ import java.io.Serializable;
 @Getter
 public class FrameworkVersion implements Serializable {
 
+    public static final String DUBBO = "dubbo";
+    public static final String SPRING_CLOUD = "spring-cloud";
+    public static final String SPRING_BOOT = "spring-boot";
+    public static final String SOFA_RPC = "sofa-rpc";
+
     private final String framework;
 
     private final String version;
@@ -44,4 +49,21 @@ public class FrameworkVersion implements Serializable {
         }
         return framework + "-" + version;
     }
+
+    public static FrameworkVersion dubbo(String version) {
+        return new FrameworkVersion(DUBBO, version);
+    }
+
+    public static FrameworkVersion springCloud(String version) {
+        return new FrameworkVersion(SPRING_CLOUD, version);
+    }
+
+    public static FrameworkVersion springBoot(String version) {
+        return new FrameworkVersion(SPRING_BOOT, version);
+    }
+
+    public static FrameworkVersion sofaRpc(String version) {
+        return new FrameworkVersion(SOFA_RPC, version);
+    }
+
 }

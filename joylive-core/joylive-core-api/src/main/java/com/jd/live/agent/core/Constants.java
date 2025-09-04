@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core;
 
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -203,6 +204,11 @@ public interface Constants {
     String K8S_SERVICE_SUFFIX = ".svc.cluster.local";
 
     /**
+     * The default group name for the service.
+     */
+    String DEFAULT_GROUP = "default";
+
+    /**
      * Predicate that tests if a string ends with {@link #K8S_SERVICE_SUFFIX} (case-insensitive).
      */
     Predicate<String> PREDICATE_K8S_SERVICE = s -> {
@@ -230,5 +236,24 @@ public interface Constants {
         return pos < 1 ? null : s.substring(0, pos);
     };
 
+    /**
+     * Predicate to check if a string represents the default group (null, empty, or equals DEFAULT_GROUP).
+     */
+    Predicate<String> DEFAULT_GROUP_PREDICATE = s -> s == null || s.isEmpty() || DEFAULT_GROUP.equalsIgnoreCase(s);
+
+    /**
+     * BiPredicate to check if the first string is null, empty, or equals the second string (case-insensitive).
+     */
+    BiPredicate<String, String> DEFAULT_GROUP_BIPREDICATE = (s, g) -> s == null || s.isEmpty() || s.equalsIgnoreCase(g);
+
+    /**
+     * BiPredicate to check if two groups are considered the same, treating default groups as equivalent.
+     */
+    BiPredicate<String, String> SAME_GROUP_PREDICATE = (source, target) -> {
+        if (DEFAULT_GROUP_PREDICATE.test(source)) {
+            return DEFAULT_GROUP_PREDICATE.test(target) ? true : false;
+        }
+        return source.equalsIgnoreCase(target);
+    };
 }
 

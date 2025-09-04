@@ -71,11 +71,6 @@ public class PolicyId implements PolicyIdGen {
     public static final String KEY_SERVICE_ENDPOINT = "endpoint";
 
     /**
-     * The default group name for the service.
-     */
-    public static final String DEFAULT_GROUP = "default";
-
-    /**
      * The unique identifier for the policy, generated based on the URI.
      */
     @Setter

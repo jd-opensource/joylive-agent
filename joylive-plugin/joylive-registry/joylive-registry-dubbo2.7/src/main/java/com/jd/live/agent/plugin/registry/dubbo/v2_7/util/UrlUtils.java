@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.core.Constants.*;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 import static org.apache.dubbo.common.constants.CommonConstants.*;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.EXPORTED_SERVICES_REVISION_PROPERTY_NAME;
@@ -102,10 +103,7 @@ public class UrlUtils {
             service = url.getServiceInterface();
             interfaceMode = true;
         }
-        String group = url.getParameter(LABEL_GROUP, "");
-        if (group == null || group.isEmpty()) {
-            group = url.getParameter(LABEL_SERVICE_GROUP, "");
-        }
+        String group = choose(url.getParameter(LABEL_GROUP), () -> url.getParameter(LABEL_SERVICE_GROUP));
         return new ServiceId(service, group, interfaceMode);
     }
 
@@ -136,7 +134,7 @@ public class UrlUtils {
         metadata.remove(REGISTRY_TYPE_KEY);
         return ServiceInstance.builder()
                 .interfaceMode(serviceId.isInterfaceMode())
-                .framework(new FrameworkVersion(DUBBO, url.getParameter(RELEASE, VERSION)))
+                .framework(FrameworkVersion.dubbo(url.getParameter(RELEASE, VERSION)))
                 .service(serviceId.getService())
                 .group(serviceId.getGroup())
                 .scheme(url.getProtocol())

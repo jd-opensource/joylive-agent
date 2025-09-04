@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.governance.policy.service;
 
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
-import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -112,7 +112,7 @@ public class Service extends PolicyOwner implements ServiceName {
                 }
             }
             if (defaultGroup == null) {
-                defaultGroup = new ServiceGroup(PolicyId.DEFAULT_GROUP, true, new ServicePolicy(), serviceType);
+                defaultGroup = new ServiceGroup(Constants.DEFAULT_GROUP, true, new ServicePolicy(), serviceType);
                 addGroup(defaultGroup);
             }
         }

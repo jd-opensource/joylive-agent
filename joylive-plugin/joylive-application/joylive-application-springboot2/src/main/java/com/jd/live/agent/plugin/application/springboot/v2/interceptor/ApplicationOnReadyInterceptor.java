@@ -26,6 +26,7 @@ import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
+import com.jd.live.agent.governance.util.FrameworkVersion;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
@@ -90,8 +91,8 @@ public class ApplicationOnReadyInterceptor extends InterceptorAdaptor {
         instance.setGroup(appService.getGroup());
         instance.setHost(address);
         Map<String, String> metadata = new HashMap<>();
-        application.labelRegistry(metadata::putIfAbsent, true);
-        metadata.put(Constants.LABEL_FRAMEWORK, "spring-boot-" + SpringBootVersion.getVersion());
+        application.labelRegistry(metadata::putIfAbsent);
+        metadata.put(Constants.LABEL_FRAMEWORK, FrameworkVersion.springBoot(SpringBootVersion.getVersion()).toString());
         if (port != null) {
             instance.setPort(port.getPort());
             instance.setId(instance.getAddress());

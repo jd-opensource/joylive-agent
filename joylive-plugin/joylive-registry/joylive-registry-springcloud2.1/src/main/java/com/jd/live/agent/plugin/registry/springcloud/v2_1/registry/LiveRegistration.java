@@ -38,8 +38,8 @@ public class LiveRegistration implements Registration {
         this.metadata = registration.getMetadata() == null ? new HashMap<>() : registration.getMetadata();
         String ver = Registration.class.getPackage().getImplementationVersion();
         ver = ver == null || ver.isEmpty() ? "2.1" : ver;
-        this.version = new FrameworkVersion("spring-cloud", ver);
-        application.labelRegistry(metadata::putIfAbsent, true);
+        this.version = FrameworkVersion.springCloud(ver);
+        application.labelRegistry(metadata::putIfAbsent);
         metadata.put(Constants.LABEL_FRAMEWORK, version.toString());
         if (registration.isSecure()) {
             metadata.put(Constants.LABEL_SECURE, String.valueOf(registration.isSecure()));

@@ -202,19 +202,9 @@ public class Application {
     /**
      * Applies labels to the application based on its properties.
      *
-     * @param consumer label consumer
+     * @param consumer     label consumer
      */
     public void labelRegistry(BiConsumer<String, String> consumer) {
-        labelRegistry(consumer, false);
-    }
-
-    /**
-     * Applies labels to the application based on its properties.
-     *
-     * @param consumer     label consumer
-     * @param serviceGroup a flag indicating whether to include the service group in the labeling process.
-     */
-    public void labelRegistry(BiConsumer<String, String> consumer, boolean serviceGroup) {
         if (consumer != null) {
             labelInstance(consumer);
             if (location != null) {
@@ -225,7 +215,7 @@ public class Application {
             if (meta != null) {
                 accept(consumer, Constants.LABEL_AGENT_VERSION, meta.get(Constants.LABEL_AGENT_VERSION));
             }
-            labelService(consumer, serviceGroup);
+            labelService(consumer);
         }
     }
 
@@ -268,14 +258,11 @@ public class Application {
      * Labels the service information using the provided consumer.
      *
      * @param consumer the BiConsumer to use for labeling. It takes two parameters: the label key and the label value.
-     * @param group    a flag indicating whether to include the service group in the labeling process.
      */
-    private void labelService(BiConsumer<String, String> consumer, boolean group) {
+    private void labelService(BiConsumer<String, String> consumer) {
         if (service != null) {
             accept(consumer, Constants.LABEL_WEIGHT, service.getWeight() == null ? null : service.getWeight().toString());
             accept(consumer, Constants.LABEL_WARMUP, service.getWarmupDuration() == null ? null : service.getWarmupDuration().toString());
-            // The control plane requires service grouping
-            // accept(consumer, Constants.LABEL_SERVICE_GROUP, !group ? null : service.getGroup());
             accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
             Map<String, String> serviceMeta = service.getMeta();
             if (serviceMeta != null) {

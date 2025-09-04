@@ -48,17 +48,28 @@ public class AppService {
     private String namespace;
 
     /**
-     * Group the service is part of.
+     * Group label that the service is tagged with for logical grouping and categorization.
      */
     private String group;
+
+    /**
+     * Registry group that the service belongs to for service discovery and registration.
+     */
+    private String catalog;
 
     /**
      * Communication protocol used by the service.
      */
     private String protocol;
 
+    /**
+     * Weight of the service instance for load balancing purposes.
+     */
     private Integer weight;
 
+    /**
+     * Duration in milliseconds for the service instance to warm up before receiving full traffic.
+     */
     private Integer warmupDuration;
 
     /**

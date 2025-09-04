@@ -48,7 +48,7 @@ public class LiveRegistration implements Registration {
         this.port = instance == null ? -1 : instance.getPort();
         this.metadata = instance == null ? new HashMap<>() : instance.getMetadata();
         this.version = new FrameworkVersion("spring-cloud", Registration.class, "1");
-        application.labelRegistry(metadata::putIfAbsent, true);
+        application.labelRegistry(metadata::putIfAbsent);
         metadata.put(Constants.LABEL_FRAMEWORK, version.toString());
         if (instance != null && instance.isSecure()) {
             metadata.put(Constants.LABEL_SECURE, String.valueOf(Boolean.TRUE));

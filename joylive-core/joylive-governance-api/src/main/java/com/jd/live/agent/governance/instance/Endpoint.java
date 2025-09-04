@@ -24,7 +24,6 @@ import com.jd.live.agent.core.util.tag.Label;
 import com.jd.live.agent.governance.counter.Counter;
 import com.jd.live.agent.governance.counter.EndpointCounter;
 import com.jd.live.agent.governance.counter.ServiceCounter;
-import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.rule.tag.TagCondition;
 
@@ -32,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.Constants.SAME_GROUP_PREDICATE;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.core.util.StringUtils.isEqualsOrEmpty;
 
 /**
@@ -295,7 +296,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return The lane, or the default value if not specified.
      */
     default String getGroup() {
-        return getLabel(Constants.LABEL_SERVICE_GROUP, PolicyId.DEFAULT_GROUP);
+        return getLabel(Constants.LABEL_SERVICE_GROUP, Constants.DEFAULT_GROUP);
     }
 
     /**
@@ -425,13 +426,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the unit matches, false otherwise.
      */
     default boolean isGroup(String group) {
-        String label = getGroup();
-        // default group
-        if (group == null || group.isEmpty() || PolicyId.DEFAULT_GROUP.equals(group)) {
-            return label == null || label.isEmpty() || PolicyId.DEFAULT_GROUP.equalsIgnoreCase(label);
-        } else {
-            return group.equals(label);
-        }
+        return SAME_GROUP_PREDICATE.test(group, getGroup());
     }
 
     /**
@@ -461,8 +456,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return The value of the label, or the default value if not found.
      */
     default String getLabel(String key, String defaultValue) {
-        String result = getLabel(key);
-        return result == null || result.isEmpty() ? defaultValue : result;
+        return choose(getLabel(key), defaultValue);
     }
 
     /**

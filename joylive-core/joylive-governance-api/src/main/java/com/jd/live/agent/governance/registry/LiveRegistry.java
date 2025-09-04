@@ -26,6 +26,7 @@ import com.jd.live.agent.core.inject.InjectSource;
 import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
@@ -46,6 +47,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.core.Constants.SAME_GROUP_PREDICATE;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 
 /**
  * {@code LiveRegistry} is an implementation of {@link Registry} that manages the registration and unregistration
@@ -351,23 +355,17 @@ public class LiveRegistry extends AbstractService
      * Resets unique name if any changes were made.
      */
     private void customize(ServiceInstance instance) {
-        int count = 0;
         ServiceId serviceId = customize(instance, ServiceRole.PROVIDER);
-        if (serviceId == null) {
+        if (serviceId == null || serviceId == instance) {
+            // service is empty or unmodified;
             return;
         }
-        String service = serviceId.getService();
-        String group = serviceId.getGroup();
-        if (service != null && !service.isEmpty() && !service.equals(instance.getService())) {
-            instance.setService(service);
-            count++;
+        if (!serviceId.getService().equalsIgnoreCase(instance.getService())) {
+            instance.setService(serviceId.getService());
+            instance.setUniqueName(null);
         }
-        if (group != null && !group.isEmpty() && !group.equals(instance.getGroup())) {
-            instance.setGroup(group);
-            count++;
-        }
-        if (count > 0) {
-            // recreate unique name
+        if (!SAME_GROUP_PREDICATE.test(serviceId.getGroup(), instance.getGroup())) {
+            instance.setGroup(serviceId.getGroup());
             instance.setUniqueName(null);
         }
     }
@@ -384,24 +382,11 @@ public class LiveRegistry extends AbstractService
         if (serviceId == null) {
             return null;
         }
-        String service = serviceId.getService();
-        if (service == null || service.isEmpty()) {
-            service = application.getService().getName();
-        }
-        if (service == null || service.isEmpty()) {
-            return null;
-        }
-        String alias = aliases.get(service);
-        service = alias == null || alias.isEmpty() ? service : alias;
-
-        String group = serviceId.getGroup();
-        if (group == null || group.isEmpty()) {
-            group = role == ServiceRole.CONSUMER ? serviceConfig.getGroup(service) : application.getService().getGroup();
-        }
-        if (Objects.equals(service, serviceId.getService()) && Objects.equals(group, serviceId.getGroup())) {
-            return serviceId;
-        }
-        return new ServiceId(service, group, serviceId.isInterfaceMode());
+        AppService appService = application.getService();
+        String service = choose(serviceId.getService(), appService.getName());
+        final String target = choose(aliases.get(service), service);
+        String group = choose(serviceId.getGroup(), () -> role == ServiceRole.CONSUMER ? serviceConfig.getGroup(target) : appService.getGroup());
+        return serviceId.of(target, group);
     }
 
     /**

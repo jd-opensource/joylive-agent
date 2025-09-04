@@ -60,7 +60,7 @@ public class ApplicationOnEnvironmentPreparedInterceptor extends InterceptorAdap
         AppLifecycle.prepared(() -> {
             if (config.getRegistryConfig().isRegisterAppServiceEnabled()) {
                 // subscribe policy
-                registry.register(application.getService().getName(), application.getService().getGroup());
+                registry.register(application.getService().getName());
             }
             InnerListener.foreach(l -> l.onEnvironmentPrepared(context, environment));
             listener.onEnvironmentPrepared(context, environment);

@@ -21,6 +21,8 @@ import lombok.Setter;
 
 import java.io.Serializable;
 
+import static com.jd.live.agent.core.Constants.DEFAULT_GROUP_BIPREDICATE;
+
 @Getter
 @Setter
 public class ServiceId implements Serializable {
@@ -69,6 +71,17 @@ public class ServiceId implements Serializable {
     }
 
     /**
+     * Creates a new ServiceId with the specified service name and group.
+     *
+     * @param newService the new service name
+     * @param newGroup   the new group name
+     * @return a new ServiceId instance with the specified parameters
+     */
+    public ServiceId of(String newService, String newGroup) {
+        return new ServiceId(namespace, newService, newGroup, interfaceMode);
+    }
+
+    /**
      * Checks if this service matches the target service using the same rules as {@link #match(ServiceId, ServiceId, String)}.
      *
      * @param target target service to match against (may be null)
@@ -89,15 +102,16 @@ public class ServiceId implements Serializable {
      */
     public static boolean match(ServiceId source, ServiceId target, String defaultGroup) {
         String sourceService = source == null ? null : source.getService();
-        String sourceGroup = source == null ? null : source.getGroup();
         String targetService = target == null ? null : target.getService();
-        String targetGroup = target == null ? null : target.getGroup();
         if (sourceService == null || !sourceService.equalsIgnoreCase(targetService)) {
             return false;
         }
-        if (sourceGroup == null || sourceGroup.isEmpty()) {
-            return targetGroup == null || targetGroup.isEmpty() || targetGroup.equalsIgnoreCase(defaultGroup);
+        String sourceGroup = source == null ? null : source.getGroup();
+        String targetGroup = target == null ? null : target.getGroup();
+        if (DEFAULT_GROUP_BIPREDICATE.test(sourceGroup, defaultGroup)) {
+            return DEFAULT_GROUP_BIPREDICATE.test(targetGroup, defaultGroup);
         }
         return sourceGroup.equalsIgnoreCase(targetGroup);
     }
+
 }

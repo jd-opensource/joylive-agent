@@ -17,10 +17,7 @@ package com.jd.live.agent.core.util;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 /**
  * StringUtils
@@ -173,8 +170,26 @@ public class StringUtils {
         }
     }
 
+    /**
+     * Returns the first non-null and non-empty string, otherwise returns the second string.
+     *
+     * @param cs1 the first string to check
+     * @param cs2 the fallback string
+     * @return cs1 if not null or empty, otherwise cs2
+     */
     public static String choose(String cs1, String cs2) {
         return cs1 == null || cs1.isEmpty() ? cs2 : cs1;
+    }
+
+    /**
+     * Returns the first non-null and non-empty string, otherwise returns the supplier result.
+     *
+     * @param cs1      the first string to check
+     * @param supplier the fallback string supplier
+     * @return cs1 if not null or empty, otherwise supplier result
+     */
+    public static String choose(String cs1, Supplier<String> supplier) {
+        return cs1 == null || cs1.isEmpty() ? supplier.get() : cs1;
     }
 
     /**
