@@ -15,11 +15,14 @@
  */
 package com.jd.live.agent.core.util.option;
 
-import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
+import com.jd.live.agent.core.util.type.ValuePath.MapPath;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.StringUtils.CHAR_DOT;
+import static com.jd.live.agent.core.util.StringUtils.split;
 
 public class CascadeOption extends AbstractOption {
 
@@ -35,8 +38,7 @@ public class CascadeOption extends AbstractOption {
         if (key == null || map == null) {
             return null;
         }
-
-        ValuePath path = new ValuePath.MapPath(key, o -> o instanceof Map);
+        ValuePath path = new MapPath(key, o -> o instanceof Map);
         return (T) path.get(map);
     }
 
@@ -47,7 +49,7 @@ public class CascadeOption extends AbstractOption {
         } else if (map == null) {
             map = new HashMap<>();
         }
-        String[] keys = StringUtils.split(key, '.');
+        String[] keys = split(key, CHAR_DOT);
         Map<String, Object> parent = map;
         Object next;
         for (int i = 0; i < keys.length - 1; i++) {

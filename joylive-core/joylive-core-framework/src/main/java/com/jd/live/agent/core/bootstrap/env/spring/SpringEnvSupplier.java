@@ -148,14 +148,9 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         if (profiles.charAt(0) == '[' && profiles.charAt(profiles.length() - 1) == ']') {
             profiles = profiles.substring(1, profiles.length() - 1);
         }
-        // load profiles
-        splitList(profiles, SEMICOLON_COMMA, true, false, null, profile -> {
-            Map<String, Object> result = loadConfigs(resource.profile(profile));
-            if (result != null) {
-                // merge recursively
-                combine(result, configs);
-            }
-        });
+        // load profiles, merge recursively
+        splitList(profiles, SEMICOLON_COMMA, true, false, null,
+                profile -> combine(loadConfigs(resource.profile(profile)), configs));
     }
 
     /**

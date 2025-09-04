@@ -138,7 +138,8 @@ public class ValuePath implements ObjectGetter {
                     pos = path.indexOf('.', start);
                     level++;
                 }
-                if (level > 1 && start < path.length() - 1) {
+                if (level > 1 && start < path.length()) {
+                    // start is after '.'
                     result.add(new PropertyPath(path.substring(start)));
                 }
             }
