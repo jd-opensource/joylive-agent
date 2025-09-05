@@ -251,7 +251,7 @@ public interface Constants {
      */
     BiPredicate<String, String> SAME_GROUP_PREDICATE = (source, target) -> {
         if (DEFAULT_GROUP_PREDICATE.test(source)) {
-            return DEFAULT_GROUP_PREDICATE.test(target) ? true : false;
+            return DEFAULT_GROUP_PREDICATE.test(target);
         }
         return source.equalsIgnoreCase(target);
     };
