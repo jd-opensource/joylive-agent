@@ -50,7 +50,7 @@ public class TimerTest {
         long elapseTime;
         long count;
 
-        public Counter(long elapseTime, long count) {
+        Counter(long elapseTime, long count) {
             this.elapseTime = elapseTime;
             this.count = count;
         }
