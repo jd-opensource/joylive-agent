@@ -190,9 +190,20 @@
                     <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
-                        <encoding>${project.build.sourceEncoding}</encoding>
-                        <parameters>true</parameters>
+	                    <target>${maven.compiler.target}</target>
+	                    <encoding>${project.build.sourceEncoding}</encoding>
+	                    <parameters>true</parameters>
+	                    <compilerArgs>
+	                        <arg>-Xlint:all,-processing</arg>
+				            <arg>--add-exports</arg>
+				            <arg>java.base/jdk.internal.misc=ALL-UNNAMED</arg>
+				            <arg>--add-opens</arg>
+				            <arg>java.base/jdk.internal.misc=ALL-UNNAMED</arg>
+				            <arg>--add-exports</arg>
+				            <arg>java.base/sun.net.www=ALL-UNNAMED</arg>
+				            <arg>--add-opens</arg>
+				            <arg>java.base/sun.net.www=ALL-UNNAMED</arg>
+	                    </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -397,6 +408,10 @@
                         </licenseSet>
                     </licenseSets>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
