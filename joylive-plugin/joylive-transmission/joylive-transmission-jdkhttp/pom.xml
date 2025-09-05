@@ -20,6 +20,10 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Xlint:unchecked,-deprecation</arg>
+                        <arg>--add-exports</arg>
+				        <arg>java.base/sun.net.www=ALL-UNNAMED</arg>
+				        <arg>--add-opens</arg>
+				        <arg>java.base/sun.net.www=ALL-UNNAMED</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
