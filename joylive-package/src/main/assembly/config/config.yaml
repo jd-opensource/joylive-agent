@@ -33,6 +33,8 @@ agent:
       com.jd.live.agent.core.util.http.HttpUtils:
         - java.net.URI
   timer:
+    tickTime: ${CONFIG_TIMER_TICK_TIME:100}
+    ticks: ${CONFIG_TIMER_TICKS:512}
     workerThreads: ${CONFIG_TIMER_WORKER_THREADS:4}
   publisher:
     configs:
