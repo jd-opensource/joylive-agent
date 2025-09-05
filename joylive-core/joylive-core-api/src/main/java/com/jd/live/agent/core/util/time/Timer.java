@@ -54,7 +54,26 @@ public interface Timer {
      */
     Timeout add(TimeTask task);
 
-    void schedule(String name, long delay, Runnable runnable);
+    /**
+     * Schedules a task with specified interval.
+     *
+     * @param name     task name
+     * @param interval delay in milliseconds
+     * @param runnable task to execute
+     */
+    default void schedule(String name, long interval, Runnable runnable) {
+        schedule(name, interval, 0, runnable);
+    }
+
+    /**
+     * Schedules a task with specified interval and random jitter.
+     *
+     * @param name     task name
+     * @param interval base delay in milliseconds
+     * @param random   additional random delay in milliseconds
+     * @param runnable task to execute
+     */
+    void schedule(String name, long interval, long random, Runnable runnable);
 
     /**
      * Calculates actual retry interval with optional random jitter.
@@ -64,6 +83,6 @@ public interface Timer {
      * @return calculated interval (base + random jitter if applicable)
      */
     static long getRetryInterval(long interval, long random) {
-        return interval + (random > 0 ? ThreadLocalRandom.current().nextLong(random) : 0);
+        return random <= 0 ? interval : (interval + ThreadLocalRandom.current().nextLong(random));
     }
 }

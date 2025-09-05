@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
+
 /**
  * A TimeScheduler is a scheduler that manages timed tasks using a time wheel mechanism. It can schedule tasks to be
  * executed after a specified delay or at a scheduled time. The Timer is responsible for managing the lifecycle
@@ -193,7 +195,7 @@ public class TimeScheduler implements AutoCloseable, Timer {
         if (runnable == null) {
             return null;
         }
-        long time = timeWheel.getLeastOneTick(delay + System.currentTimeMillis());
+        long time = timeWheel.getDelayedLeastOneTick(delay);
         return add(new TimeWork(name, time, runnable, afterRun, afterCancel));
     }
 
@@ -202,21 +204,21 @@ public class TimeScheduler implements AutoCloseable, Timer {
         if (task == null) {
             return null;
         }
-        long time = timeWheel.getLeastOneTick(task instanceof DelayTask ? System.currentTimeMillis() + task.getTime() : task.getTime());
+        long time = task instanceof DelayTask ? timeWheel.getDelayedLeastOneTick(task.getTime()) : timeWheel.getLeastOneTick(task.getTime());
         return add(new TimeWork(task.getName(), time, task, afterRun, afterCancel));
     }
 
     @Override
-    public void schedule(String name, long delay, Runnable runnable) {
+    public void schedule(String name, long interval, long random, Runnable runnable) {
         if (runnable == null) {
             return;
         }
-        add(name, delay, () -> {
+        delay(name, getRetryInterval(interval, random), () -> {
             try {
                 runnable.run();
             } finally {
                 if (started.get()) {
-                    add(name, delay, runnable);
+                    schedule(name, interval, random, runnable);
                 }
             }
         });

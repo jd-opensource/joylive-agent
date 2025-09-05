@@ -104,7 +104,29 @@ public class TimeWheel {
      * @return The time point at least one tick in the future.
      */
     public long getLeastOneTick(final long time) {
-        long result = System.currentTimeMillis() + tickTime;
+        return getLeastOneTick(time, System.currentTimeMillis());
+    }
+
+    /**
+     * Calculates the time point at least one tick ahead after the specified delay.
+     *
+     * @param delay delay in milliseconds
+     * @return time point at least one tick after the delay
+     */
+    public long getDelayedLeastOneTick(final long delay) {
+        long now = System.currentTimeMillis();
+        return getLeastOneTick(now + delay, now);
+    }
+
+    /**
+     * Calculates the time point at least one tick ahead of the current time.
+     *
+     * @param time reference time
+     * @param now  current time
+     * @return time point at least one tick in the future
+     */
+    public long getLeastOneTick(final long time, final long now) {
+        long result = now + tickTime;
         return Math.max(time, result);
     }
 

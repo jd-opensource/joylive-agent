@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -62,7 +61,7 @@ public class InternalServiceCounter implements ServiceCounter {
         this.name = name;
         this.timer = timer;
         this.cleanTime = System.currentTimeMillis();
-        scheduleSnapshot();
+        timer.schedule("counter-snapshot-" + name, SNAPSHOT_INTERVAL, SNAPSHOT_SPAN, this::snapshot);
     }
 
     @Override
@@ -108,18 +107,6 @@ public class InternalServiceCounter implements ServiceCounter {
                 counters.remove(entry.getKey());
             }
         }
-    }
-
-    /**
-     * Schedules a task to take a snapshot of all counters for this service. The task is scheduled with a random
-     * delay between 20 and 30 seconds.
-     */
-    private void scheduleSnapshot() {
-        int delay = SNAPSHOT_INTERVAL + ThreadLocalRandom.current().nextInt(SNAPSHOT_SPAN);
-        timer.delay("counter-snapshot-" + name, delay, () -> {
-            snapshot();
-            scheduleSnapshot();
-        });
     }
 
     /**
