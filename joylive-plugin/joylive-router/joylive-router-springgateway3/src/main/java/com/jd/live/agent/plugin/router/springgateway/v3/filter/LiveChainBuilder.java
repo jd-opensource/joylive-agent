@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 import com.jd.live.agent.plugin.router.springgateway.v3.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.*;
@@ -73,12 +74,12 @@ public class LiveChainBuilder {
      */
     private final List<GatewayFilter> globalFilters;
 
+    private final ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
+
     /**
      * The gateway cluster for this filter configuration.
      */
     private final GatewayCluster cluster;
-
-    private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
     private final Map<String, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
@@ -93,7 +94,9 @@ public class LiveChainBuilder {
         this.context = context;
         this.gatewayConfig = gatewayConfig;
         this.target = target;
-        this.globalFilters = getGlobalFilters(target);
+        FilterDescriptor descriptor = getGlobalFilters(target);
+        this.globalFilters = descriptor.getFilters();
+        this.clientFactory = descriptor.getClientFactory();
         this.cluster = new GatewayCluster(context.getRegistry(), clientFactory);
     }
 
@@ -170,10 +173,10 @@ public class LiveChainBuilder {
      * @param target the target object
      * @return the list of global filters
      */
-    private List<GatewayFilter> getGlobalFilters(Object target) {
+    private FilterDescriptor getGlobalFilters(Object target) {
         // this is sorted by order
         List<GatewayFilter> filters = getQuietly(target, FIELD_GLOBAL_FILTERS);
-        List<GatewayFilter> result = new ArrayList<>(filters.size());
+        FilterDescriptor result = new FilterDescriptor(filters.size());
         GatewayFilter delegate;
         GlobalFilter globalFilter;
         // filter
@@ -185,7 +188,7 @@ public class LiveChainBuilder {
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
                 globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                    result.setClientFactory(getQuietly(globalFilter, FIELD_CLIENT_FACTORY));
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);
@@ -195,5 +198,21 @@ public class LiveChainBuilder {
             }
         }
         return result;
+    }
+
+    private static class FilterDescriptor {
+        @Getter
+        private List<GatewayFilter> filters;
+        @Getter
+        @Setter
+        private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
+
+        FilterDescriptor(int size) {
+            this.filters = new ArrayList<>(size);
+        }
+
+        public void add(GatewayFilter filter) {
+            filters.add(filter);
+        }
     }
 }

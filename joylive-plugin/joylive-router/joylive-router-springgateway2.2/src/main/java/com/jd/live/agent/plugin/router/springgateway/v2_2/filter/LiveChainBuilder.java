@@ -24,6 +24,7 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.GatewayCluster
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
@@ -55,6 +56,7 @@ public class LiveChainBuilder {
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
+    private static final String FIELD_LOAD_BALANCER = "loadBalancer";
     private static final int WRITE_RESPONSE_FILTER_ORDER = -1;
 
     /**
@@ -82,8 +84,6 @@ public class LiveChainBuilder {
      */
     private final GatewayCluster cluster;
 
-    private ServiceRegistryFactory system;
-
     private final Map<String, LiveRouteFilter> routeFilters = new ConcurrentHashMap<>();
 
     /**
@@ -97,8 +97,9 @@ public class LiveChainBuilder {
         this.context = context;
         this.gatewayConfig = gatewayConfig;
         this.target = target;
-        this.globalFilters = getGlobalFilters(target);
-        this.cluster = new GatewayCluster(new GatewayClusterContext(context.getRegistry(), system, context.getPropagation()));
+        FilterDescriptor descriptor = getGlobalFilters(target);
+        this.globalFilters = descriptor.getFilters();
+        this.cluster = new GatewayCluster(new GatewayClusterContext(context.getRegistry(), descriptor.getSystem(), context.getPropagation()));
     }
 
     /**
@@ -175,10 +176,10 @@ public class LiveChainBuilder {
      * @return the list of global filters
      */
     @SuppressWarnings("deprecation")
-    private List<GatewayFilter> getGlobalFilters(Object target) {
+    private FilterDescriptor getGlobalFilters(Object target) {
         // this is sorted by order
         List<GatewayFilter> filters = getQuietly(target, FIELD_GLOBAL_FILTERS);
-        List<GatewayFilter> result = new ArrayList<>(filters.size());
+        FilterDescriptor result = new FilterDescriptor(filters.size());
         GatewayFilter delegate;
         GlobalFilter globalFilter;
         // filter
@@ -188,14 +189,13 @@ public class LiveChainBuilder {
                 delegate = ((OrderedGatewayFilter) filter).getDelegate();
             }
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
-
                 globalFilter = getQuietly(delegate, FIELD_DELEGATE);
                 if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
                     LoadBalancerClientFactory clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
-                    system = service -> new SpringServiceRegistry(service, clientFactory);
+                    result.setSystem(service -> new SpringServiceRegistry(service, clientFactory));
                 } else if (globalFilter instanceof LoadBalancerClientFilter) {
-                    LoadBalancerClient client = getQuietly(globalFilter, "loadBalancer");
-                    system = createFactory(client);
+                    LoadBalancerClient client = getQuietly(globalFilter, FIELD_LOAD_BALANCER);
+                    result.setSystem(createFactory(client));
                 } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
                     // the filter is implemented by parseURI
                     result.add(filter);
@@ -205,5 +205,21 @@ public class LiveChainBuilder {
             }
         }
         return result;
+    }
+
+    private static class FilterDescriptor {
+        @Getter
+        private List<GatewayFilter> filters;
+        @Getter
+        @Setter
+        private ServiceRegistryFactory system;
+
+        FilterDescriptor(int size) {
+            this.filters = new ArrayList<>(size);
+        }
+
+        public void add(GatewayFilter filter) {
+            filters.add(filter);
+        }
     }
 }
