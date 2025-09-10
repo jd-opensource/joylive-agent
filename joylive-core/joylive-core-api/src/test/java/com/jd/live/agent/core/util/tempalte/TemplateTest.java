@@ -76,6 +76,16 @@ public class TemplateTest {
     }
 
     @Test
+    void testPrefixAndSuffix() {
+        String expression = "${a!A!b}";
+        Assertions.assertNull(evaluate(expression, true));
+        Assertions.assertEquals("a1b", evaluate(expression, true, "A", "1"));
+        expression = "${a!A!b:2}";
+        Assertions.assertEquals("a2b", evaluate(expression, true));
+        Assertions.assertEquals("a1b", evaluate(expression, true, "A", "1"));
+    }
+
+    @Test
     void testSpring() {
         String expression = "${spring.application.name}";
         Map<String, Object> map = new HashMap<>();

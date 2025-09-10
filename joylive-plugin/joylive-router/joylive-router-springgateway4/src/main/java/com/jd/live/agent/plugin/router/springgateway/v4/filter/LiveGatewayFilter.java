@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springgateway.v4.filter;
 
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.GatewayForwardContext;
@@ -103,12 +104,13 @@ public class LiveGatewayFilter implements GatewayFilter {
         Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
         if (route == null) {
             return chain.filter(exchange);
+        } else if (chain instanceof LiveGatewayFilterChain && ((LiveGatewayFilterChain) chain).isLoadbalancer()) {
+            // lb://
+            return request(exchange, chain);
         }
-        Object enabled = route.getMetadata().get(Constants.GATEWAY_ROUTE_LIVE_ENABLED);
-        enabled = enabled == null ? Boolean.TRUE : enabled;
-        boolean liveEnabled = enabled instanceof Boolean ? (Boolean) enabled : !"false".equalsIgnoreCase(enabled.toString());
-        boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        return loadbalancer ? request(exchange, chain) : forward(exchange, chain, liveEnabled);
+        // TODO route to dedicated unit and lane domain
+        boolean liveEnabled = Converts.getBoolean(route.getMetadata().get(Constants.GATEWAY_ROUTE_LIVE_ENABLED), Boolean.TRUE);
+        return forward(exchange, chain, liveEnabled);
     }
 
     /**

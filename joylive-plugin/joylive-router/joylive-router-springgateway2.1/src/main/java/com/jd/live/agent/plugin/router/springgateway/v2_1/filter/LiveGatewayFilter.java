@@ -104,10 +104,12 @@ public class LiveGatewayFilter implements GatewayFilter {
         Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
         if (route == null) {
             return chain.filter(exchange);
+        } else if (chain instanceof LiveGatewayFilterChain && ((LiveGatewayFilterChain) chain).isLoadbalancer()) {
+            // lb://
+            return request(exchange, chain);
         }
-        boolean loadbalancer = ((LiveGatewayFilterChain) chain).isLoadbalancer();
-        // TODO route has no metadata, so liveEnabled is always false
-        return loadbalancer ? request(exchange, chain) : forward(exchange, chain, false);
+        // TODO route to dedicated unit and lane domain
+        return forward(exchange, chain, true);
     }
 
     /**

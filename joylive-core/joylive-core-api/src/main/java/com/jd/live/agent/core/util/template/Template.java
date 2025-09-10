@@ -478,11 +478,11 @@ public class Template implements Evaluator {
 
         private final String value;
 
-        private final Section variable;
+        private final VariableSection variable;
 
         private final Section defaultValue;
 
-        ExpressionSection(Position position, String value, Section variable, Section defaultValue) {
+        ExpressionSection(Position position, String value, VariableSection variable, Section defaultValue) {
             this.position = position;
             this.value = value;
             this.variable = variable;
@@ -504,7 +504,7 @@ public class Template implements Evaluator {
                 if (candidate == null) {
                     return nullable ? result : value;
                 }
-                return candidate;
+                return variable == null ? candidate : variable.wrap(candidate);
             }
             return result;
         }
@@ -536,19 +536,32 @@ public class Template implements Evaluator {
         VariableSection(Position position, String variable) {
             this.position = position;
             this.expression = variable;
-            if (variable != null) {
-                if (!variable.isEmpty() && variable.charAt(0) == '\'') {
-                    int pos = variable.indexOf('\'', 1);
+            if (variable != null && !variable.isEmpty()) {
+                // new formats
+                int pos = variable.indexOf('!');
+                if (pos >= 0) {
+                    prefix = variable.substring(0, pos);
+                    variable = variable.substring(pos + 1);
+                    if (!variable.isEmpty()) {
+                        pos = variable.lastIndexOf('!');
+                        if (pos >= 0) {
+                            suffix = variable.substring(pos + 1);
+                            variable = variable.substring(0, pos);
+                        }
+                    }
+                } else if (variable.charAt(0) == '\'') {
+                    // Compatible with old formats
+                    pos = variable.indexOf('\'', 1);
                     if (pos > 0) {
                         prefix = variable.substring(1, pos);
                         variable = variable.substring(pos + 1);
-                    }
-                }
-                if (!variable.isEmpty() && variable.charAt(variable.length() - 1) == '\'') {
-                    int pos = variable.lastIndexOf('\'', variable.length() - 2);
-                    if (pos >= 0) {
-                        suffix = variable.substring(pos + 1, variable.length() - 1);
-                        variable = variable.substring(0, pos);
+                        if (!variable.isEmpty() && variable.charAt(variable.length() - 1) == '\'') {
+                            pos = variable.lastIndexOf('\'', variable.length() - 2);
+                            if (pos >= 0) {
+                                suffix = variable.substring(pos + 1, variable.length() - 1);
+                                variable = variable.substring(0, pos);
+                            }
+                        }
                     }
                 }
             }
@@ -558,7 +571,10 @@ public class Template implements Evaluator {
 
         @Override
         public Object evaluate(EvalContext context) {
-            Object obj = getter == null ? null : getter.get(context.getContext());
+            return wrap(getter == null ? null : getter.get(context.getContext()));
+        }
+
+        protected Object wrap(Object obj) {
             if (obj == null) {
                 return null;
             } else if (prefix == null && suffix == null) {
