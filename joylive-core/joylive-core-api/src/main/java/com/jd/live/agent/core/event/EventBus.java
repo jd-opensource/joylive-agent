@@ -60,6 +60,19 @@ public interface EventBus {
     <E> Publisher<E> getPublisher(String topic);
 
     /**
+     * Subscribe to a topic with the given subscription.
+     *
+     * @param subscription the subscription to add, if null no operation performed
+     * @param <E>          the type of subscription events
+     */
+    default <E> void subscribe(Subscription<E> subscription) {
+        if (subscription != null) {
+            Publisher<E> publisher = getPublisher(subscription.getTopic());
+            publisher.addHandler(subscription);
+        }
+    }
+
+    /**
      * Stops the event bus. This method is responsible for performing any necessary cleanup
      * or shutdown procedures to safely stop the event bus. Implementations may handle this
      * in different ways depending on the specific requirements of the event dispatching mechanism.

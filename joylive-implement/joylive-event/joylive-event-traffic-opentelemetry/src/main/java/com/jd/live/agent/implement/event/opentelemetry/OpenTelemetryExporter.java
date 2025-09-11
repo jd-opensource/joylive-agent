@@ -15,9 +15,8 @@
  */
 package com.jd.live.agent.implement.event.opentelemetry;
 
-import com.jd.live.agent.core.event.Subscriber;
-import com.jd.live.agent.core.event.Subscription;
-import com.jd.live.agent.core.extension.ExtensionInitializer;
+import com.jd.live.agent.core.event.*;
+import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -37,12 +36,13 @@ import io.opentelemetry.sdk.resources.Resource;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Configurable
 @Injectable
 @Extension("OpenTelemetryExporter")
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_EXPORTER_ENABLED, matchIfMissing = true)
-public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
+public class OpenTelemetryExporter implements Subscriber {
 
     private static final String LIVE_SCOPE = "com.jd.live";
     private static final String SERVICE_NAME = "service.name";
@@ -53,6 +53,9 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
+    @Inject(value = EventBus.COMPONENT_EVENT_BUS, component = true)
+    private EventBus eventBus;
+
     @Inject
     private Map<String, ExporterFactory> exporterFactories;
 
@@ -61,29 +64,11 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
 
     private OpenTelemetrySdk sdk;
 
-    @Override
-    public void initialize() {
-        Resource resource = Resource.getDefault().toBuilder().put(SERVICE_NAME, application.getName()).build();
-        ExporterFactory factory = config.getType() == null ? null : exporterFactories.get(config.getType());
-        factory = factory == null ? new LoggingExporterFactory() : factory;
-        MetricReader reader = factory.create(config);
-
-        SdkMeterProvider provider = SdkMeterProvider.builder().setResource(resource).registerMetricReader(reader).build();
-        sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
-    }
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Override
     public Subscription<?>[] subscribe() {
-        if (metricFactories == null || metricFactories.isEmpty()) {
-            return new Subscription[0];
-        }
-        Meter meter = sdk.getMeter(LIVE_SCOPE);
-        Subscription<?>[] subscriptions = new Subscription[metricFactories.size()];
-        int i = 0;
-        for (MetricFactory<?> factory : metricFactories) {
-            subscriptions[i++] = factory.create(config, application, meter);
-        }
-        return subscriptions;
+        return new Subscription[]{new SystemSubscription()};
     }
 
     @Override
@@ -91,4 +76,35 @@ public class OpenTelemetryExporter implements Subscriber, ExtensionInitializer {
         Close.instance().close(sdk).close(metricFactories);
     }
 
+    private class SystemSubscription implements Subscription<AgentEvent> {
+
+        @Override
+        public String getTopic() {
+            return Publisher.SYSTEM;
+        }
+
+        @Override
+        public void handle(List<Event<AgentEvent>> events) {
+            for (Event<AgentEvent> event : events) {
+                if (event.getData().getType() == EventType.APPLICATION_READY) {
+                    // delay initialization until application is ready to avoid lock contention with other agent.
+                    if (initialized.compareAndSet(false, true)) {
+                        Resource resource = Resource.getDefault().toBuilder().put(SERVICE_NAME, application.getName()).build();
+                        ExporterFactory factory = config.getType() == null ? null : exporterFactories.get(config.getType());
+                        factory = factory == null ? new LoggingExporterFactory() : factory;
+                        MetricReader reader = factory.create(config);
+
+                        SdkMeterProvider provider = SdkMeterProvider.builder().setResource(resource).registerMetricReader(reader).build();
+                        sdk = OpenTelemetrySdk.builder().setMeterProvider(provider).buildAndRegisterGlobal();
+                        if (metricFactories != null) {
+                            Meter meter = sdk.getMeter(LIVE_SCOPE);
+                            for (MetricFactory<?> metricFactory : metricFactories) {
+                                eventBus.subscribe(metricFactory.create(config, application, meter));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
