@@ -718,9 +718,7 @@ public class Bootstrap implements AgentLifecycle {
             for (Subscriber subscriber : subscribers) {
                 Subscription[] subscriptions = subscriber.subscribe();
                 for (Subscription subscription : subscriptions) {
-                    if (subscription != null) {
-                        eventBus.getPublisher(subscription.getTopic()).addHandler(subscription);
-                    }
+                    eventBus.subscribe(subscription);
                 }
             }
         }
