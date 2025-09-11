@@ -78,19 +78,6 @@ public class PathDataListener implements TreeCacheListener {
             case NODE_REMOVED:
                 notify(data.getPath(), null, EventType.NodeDeleted);
                 break;
-            case CONNECTION_LOST:
-                notify(null, null, EventType.CONNECTION_LOST);
-                break;
-            case CONNECTION_RECONNECTED:
-                notify(null, null, EventType.CONNECTION_RECONNECTED);
-                break;
-            case CONNECTION_SUSPENDED:
-                notify(null, null, EventType.CONNECTION_SUSPENDED);
-                break;
-            case INITIALIZED:
-            default:
-                notify(null, null, EventType.INITIALIZED);
-                break;
         }
     }
 
