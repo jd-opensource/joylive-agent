@@ -53,7 +53,7 @@ public class SpringServiceRegistry implements ServiceRegistry {
 
     public SpringServiceRegistry(String service, ReactiveLoadBalancer.Factory<ServiceInstance> factory) {
         this.service = service;
-        this.balancer = factory.getInstance(service);
+        this.balancer = service == null ? null : factory.getInstance(service);
         this.supplier = getSupplier(balancer);
     }
 
