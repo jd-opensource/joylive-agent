@@ -29,12 +29,6 @@ public class GatewayConfig {
 
     public static final String TYPE_STRIP_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$1";
 
-    public static final String KEY_HOST_EXPRESSION = "hostExpression";
-
-    protected static final String DEFAULT_HOST_EXPRESSION = "${unit}-${host}";
-
-    private String hostExpression;
-
     private Set<String> pathFilters = new HashSet<>();
 
     /**

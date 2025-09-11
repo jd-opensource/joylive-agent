@@ -51,7 +51,7 @@ import static com.jd.live.agent.governance.invoke.Invocation.*;
 @Injectable
 @Extension(value = "UnitFilter", order = RouteFilter.ORDER_LIVE_UNIT)
 @ConditionalOnLiveEnabled
-public class UnitFilter implements RouteFilter, LiveFilter {
+public class UnitFilter implements RouteFilter, LiveFilter.UnitLiveFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {
@@ -207,25 +207,28 @@ public class UnitFilter implements RouteFilter, LiveFilter {
         int remaining = election.getInstances();
         Candidate target = candidates.get(0);
         Unit unit = target.getUnit();
-        remaining -= target.getInstances();
-        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
-        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
-        ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
-        Integer threshold = livePolicy.getUnitThreshold(unit.getCode());
-        threshold = threshold == null ? serviceConfig.getUnitFailoverThreshold(unit.getCode()) : threshold;
-        threshold = threshold == null ? 0 : threshold;
-        int shortage = threshold - target.getInstances();
-        if (shortage > 0) {
-            // failover other unit
-            Random random = invocation.getRandom();
-            if (random.nextInt(threshold) < shortage) {
-                int randomWeight = random.nextInt(remaining);
-                int weight = 0;
-                for (int j = 1; j < candidates.size(); j++) {
-                    Candidate failoverTarget = candidates.get(j);
-                    weight += failoverTarget.getInstances();
-                    if (weight > randomWeight) {
-                        return RouteTarget.forward(group, failoverTarget.getUnit(), failoverTarget.getRoute());
+        // optimize for web forward request without instances .
+        if (remaining > 0) {
+            remaining -= target.getInstances();
+            ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
+            ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
+            ServiceLivePolicy livePolicy = serviceMetadata.getServiceLivePolicy();
+            Integer threshold = livePolicy == null ? null : livePolicy.getUnitThreshold(unit.getCode());
+            threshold = threshold == null ? serviceConfig.getUnitFailoverThreshold(unit.getCode()) : threshold;
+            threshold = threshold == null ? 0 : threshold;
+            int shortage = threshold - target.getInstances();
+            if (shortage > 0) {
+                // failover other unit
+                Random random = invocation.getRandom();
+                if (random.nextInt(threshold) < shortage) {
+                    int randomWeight = random.nextInt(remaining);
+                    int weight = 0;
+                    for (int j = 1; j < candidates.size(); j++) {
+                        Candidate failoverTarget = candidates.get(j);
+                        weight += failoverTarget.getInstances();
+                        if (weight > randomWeight) {
+                            return RouteTarget.forward(group, failoverTarget.getUnit(), failoverTarget.getRoute());
+                        }
                     }
                 }
             }

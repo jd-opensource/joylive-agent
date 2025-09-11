@@ -43,7 +43,7 @@ public class Cell implements Place {
 
     private transient String cloud;
 
-    private final transient LazyObject<String> hostPrefix = new LazyObject<>(() -> code == null ? "" : code.replace('_', '-'));
+    private final transient LazyObject<String> decorator = new LazyObject<>(() -> code == null ? "" : code.replace('_', '-'));
 
     public String getLabel(String key) {
         return labels == null ? null : labels.get(key);
@@ -66,8 +66,8 @@ public class Cell implements Place {
         return FaultType.CELL;
     }
 
-    public String getHostPrefix() {
-        return hostPrefix.get();
+    public String decorator() {
+        return decorator.get();
     }
 
     @Override

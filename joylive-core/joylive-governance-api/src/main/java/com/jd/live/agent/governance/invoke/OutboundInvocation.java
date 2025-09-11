@@ -26,7 +26,7 @@ import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.Ou
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.RpcOutboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LiveParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
-import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayForwardServiceMetadataParser;
+import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.ForwardServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.GatewayOutboundServiceMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.ServiceMetadataParser.OutboundServiceMetadataParser;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
@@ -317,6 +317,27 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
     }
 
     /**
+     * A specialized implementation of {@link HttpOutboundInvocation} for handling HTTP forwarding requests.
+     *
+     * @param <T> the type of HTTP outbound request, which must extend {@link HttpOutboundRequest}
+     */
+    public static class HttpForwardInvocation<T extends HttpOutboundRequest> extends HttpOutboundInvocation<T> {
+
+        public HttpForwardInvocation(T request, InvocationContext context) {
+            super(request, context);
+        }
+
+        public HttpForwardInvocation(T request, Invocation<?> invocation) {
+            super(request, invocation);
+        }
+
+        @Override
+        protected ServiceParser createServiceParser() {
+            return new ForwardServiceMetadataParser(context.getGovernanceConfig().getServiceConfig());
+        }
+    }
+
+    /**
      * A specialized static inner class representing an HTTP outbound invocation that is specifically
      * designed for use in a gateway scenario. This class extends the HttpOutboundInvocation to provide
      * additional gateway-specific logic for handling outbound requests.
@@ -335,10 +356,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         public GatewayRole getGateway() {
-            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
-                return GatewayRole.FRONTEND;
-            }
-            return GatewayRole.BACKEND;
+            return context.getGatewayRole() == GatewayRole.FRONTEND ? GatewayRole.FRONTEND : GatewayRole.BACKEND;
         }
 
         @Override
@@ -349,8 +367,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            GatewayRole role = context.getApplication().getService().getGateway();
-            return super.configure(builder).componentType(role == GatewayRole.FRONTEND
+            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }
@@ -374,10 +391,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         public GatewayRole getGateway() {
-            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
-                return GatewayRole.FRONTEND;
-            }
-            return GatewayRole.BACKEND;
+            return context.getGatewayRole() == GatewayRole.FRONTEND ? GatewayRole.FRONTEND : GatewayRole.BACKEND;
         }
 
         @Override
@@ -388,8 +402,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            GatewayRole role = context.getApplication().getService().getGateway();
-            return super.configure(builder).componentType(role == GatewayRole.FRONTEND
+            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }
@@ -402,7 +415,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      *
      * @param <T> the type of HTTP outbound request, which must extend {@link HttpOutboundRequest}
      */
-    public static class GatewayHttpForwardInvocation<T extends HttpOutboundRequest> extends HttpOutboundInvocation<T> {
+    public static class GatewayHttpForwardInvocation<T extends HttpOutboundRequest> extends HttpForwardInvocation<T> {
 
         public GatewayHttpForwardInvocation(T request, InvocationContext context) {
             super(request, context);
@@ -414,21 +427,12 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         public GatewayRole getGateway() {
-            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
-                return GatewayRole.FRONTEND;
-            }
-            return GatewayRole.BACKEND;
-        }
-
-        @Override
-        protected ServiceParser createServiceParser() {
-            return new GatewayForwardServiceMetadataParser(context.getGovernanceConfig().getServiceConfig());
+            return context.getGatewayRole() == GatewayRole.FRONTEND ? GatewayRole.FRONTEND : GatewayRole.BACKEND;
         }
 
         @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder, Endpoint endpoint) {
-            GatewayRole role = context.getApplication().getService().getGateway();
-            return super.configure(builder).componentType(role == GatewayRole.FRONTEND
+            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }

@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springgateway.v2_1.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2_1.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
@@ -41,15 +40,12 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     private final ServerWebExchange exchange;
 
-    private final GatewayConfig gatewayConfig;
-
     private final HttpHeaders writeableHeaders;
 
-    public GatewayForwardRequest(ServerWebExchange exchange, GatewayConfig gatewayConfig) {
+    public GatewayForwardRequest(ServerWebExchange exchange) {
         super(exchange.getRequest());
         this.uri = getURI(exchange);
         this.exchange = exchange;
-        this.gatewayConfig = gatewayConfig;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
@@ -84,11 +80,6 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
     @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
-    }
-
-    @Override
-    public String getForwardHostExpression() {
-        return gatewayConfig != null ? gatewayConfig.getHostExpression() : null;
     }
 
     @Override

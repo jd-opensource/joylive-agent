@@ -34,6 +34,10 @@ public class Unit implements Place {
 
     @Getter
     @Setter
+    private String decorator;
+
+    @Getter
+    @Setter
     private String name;
 
     @Getter
@@ -52,7 +56,10 @@ public class Unit implements Place {
     @Setter
     private List<Cell> cells;
 
-    private final transient LazyObject<String> hostPrefix = new LazyObject<>(() -> code == null ? "" : code.replace('_', '-'));
+    private final transient LazyObject<String> decoratorCache = new LazyObject<>(() -> {
+        String result = decorator == null || decorator.isEmpty() ? code : decorator;
+        return result == null ? "" : result.replace('_', '-').toLowerCase();
+    });
 
     private final transient Cache<String, Cell> cellCache = new MapCache<>(new ListBuilder<>(() -> cells, Cell::getCode));
 
@@ -73,7 +80,7 @@ public class Unit implements Place {
         getCell("");
     }
 
-    public String getHostPrefix() {
-        return hostPrefix.get();
+    public String decorator() {
+        return decoratorCache.get();
     }
 }

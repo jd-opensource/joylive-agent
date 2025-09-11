@@ -30,6 +30,7 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.service.ServiceSupervisorAware;
@@ -53,7 +54,7 @@ import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.InboundFilter;
-import com.jd.live.agent.governance.invoke.filter.LiveFilter;
+import com.jd.live.agent.governance.invoke.filter.LiveFilter.UnitLiveFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -189,7 +190,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private OutboundFilter[] outboundFilters;
 
     @Getter
-    private RouteFilter[] liveFilters;
+    private RouteFilter[] unitFilters;
 
     @Getter
     @Inject
@@ -200,6 +201,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
     @Inject
     private List<Propagation> propagationList;
+
+    @Getter
+    private GatewayRole gatewayRole;
 
     @Getter
     private Propagation propagation;
@@ -251,7 +255,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
                          InboundFilter[] inboundFilters,
                          RouteFilter[] routeFilters,
                          OutboundFilter[] outboundFilters,
-                         RouteFilter[] liveFilters,
+                         RouteFilter[] unitFilters,
                          Timer timer,
                          Map<String, Propagation> propagations,
                          List<Propagation> propagationList,
@@ -278,7 +282,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         this.inboundFilters = inboundFilters;
         this.routeFilters = routeFilters;
         this.outboundFilters = outboundFilters;
-        this.liveFilters = liveFilters;
+        this.unitFilters = unitFilters;
         this.timer = timer;
         this.propagations = propagations;
         this.propagationList = propagationList;
@@ -420,10 +424,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         // initialize system ticker
         SleepingStopwatch.Ticker.SYSTEM_TICKER.read();
 
+        gatewayRole = application.getService().getGateway();
         docRegistry = new LiveDocumentRegistry();
 
-        List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof LiveFilter ? filter : null);
-        liveFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
+        List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof UnitLiveFilter ? filter : null);
+        unitFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
 
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);

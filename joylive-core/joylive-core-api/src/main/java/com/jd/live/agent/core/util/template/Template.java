@@ -23,12 +23,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A template engine that processes a template string with variable placeholders.
  * Variables are denoted by the pattern ${anything}.
  */
 public class Template implements Evaluator {
+
+    private static final Map<String, Template> TEMPLATES = new ConcurrentHashMap<>();
 
     /**
      * The original template source string.
@@ -82,7 +85,7 @@ public class Template implements Evaluator {
      * @return the evaluated result
      */
     public Object evaluate(Object context, boolean nullable) {
-        return doEvaluate(new EvalContext(context, nullable), sections);
+        return variables <= 0 ? source : doEvaluate(new EvalContext(context, nullable), sections);
     }
 
     /**
@@ -128,9 +131,31 @@ public class Template implements Evaluator {
      * @return the evaluated result
      */
     public static String evaluate(String expression, boolean nullable, String... args) {
-        Map<String, Object> context = context(args);
-        Object result = parse(expression).evaluate(context, nullable);
+        Template template = parse(expression);
+        if (template.variables <= 0) {
+            return expression;
+        }
+        Object result = template.evaluate(context(args), nullable);
         return result == null ? null : result.toString();
+    }
+
+    /**
+     * Evaluates the expression with given values.
+     *
+     * @param expression   the expression to evaluate
+     * @param defaultValue default value when no variables found
+     * @param context      the context object to evaluate
+     * @return the evaluated result or default value
+     */
+    public static String evaluate(String expression, String defaultValue, Map<String, Object> context) {
+        if (expression == null || expression.isEmpty()) {
+            return defaultValue;
+        }
+        Template template = cache(expression);
+        if (template.getVariables() <= 0) {
+            return defaultValue;
+        }
+        return template.render(context);
     }
 
     /**
@@ -144,14 +169,24 @@ public class Template implements Evaluator {
      * @return a new map containing the key-value pairs (never null)
      */
     public static Map<String, Object> context(String... args) {
-        Map<String, Object> context = new HashMap<>();
+        int len = args == null ? 0 : args.length / 2;
+        Map<String, Object> context = new HashMap<>(len);
         if (args != null) {
-            int len = args.length / 2;
             for (int i = 0; i < len; i++) {
                 context.put(args[i * 2], args[i * 2 + 1]);
             }
         }
         return context;
+    }
+
+    /**
+     * Parses and caches the given expression as a template.
+     *
+     * @param expression the expression to parse
+     * @return the cached template instance
+     */
+    public static Template cache(String expression) {
+        return TEMPLATES.computeIfAbsent(expression, Template::parse);
     }
 
     /**

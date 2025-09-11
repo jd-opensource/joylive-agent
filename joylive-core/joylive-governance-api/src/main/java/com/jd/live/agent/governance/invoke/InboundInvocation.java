@@ -196,10 +196,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         public GatewayRole getGateway() {
-            if (GatewayRole.FRONTEND == context.getApplication().getService().getGateway()) {
-                return GatewayRole.FRONTEND;
-            }
-            return GatewayRole.BACKEND;
+            return context.getGatewayRole() == GatewayRole.FRONTEND ? GatewayRole.FRONTEND : GatewayRole.BACKEND;
         }
 
         @Override
@@ -246,8 +243,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            GatewayRole role = context.getApplication().getService().getGateway();
-            return super.configure(builder).componentType(role == GatewayRole.FRONTEND
+            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }

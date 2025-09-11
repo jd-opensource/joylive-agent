@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.lane;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -31,6 +32,10 @@ public class Lane {
      * Lane code
      */
     private String code;
+
+    @Getter
+    @Setter
+    private String decorator;
 
     /**
      * Lane name
@@ -52,5 +57,14 @@ public class Lane {
      * If there is still no corresponding instance, the request is denied.
      */
     private String fallbackLane;
+
+    private final transient LazyObject<String> decoratorCache = new LazyObject<>(() -> {
+        String result = decorator == null || decorator.isEmpty() ? code : decorator;
+        return result == null ? "" : result.replace('_', '-').toLowerCase();
+    });
+
+    public String decorator() {
+        return decoratorCache.get();
+    }
 
 }

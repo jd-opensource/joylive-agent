@@ -225,23 +225,26 @@ agent:
     mq:
       liveMode: ${CONFIG_LIVE_MQ_MODE:ISOLATION_CLUSTER}
       laneMode: ${CONFIG_LANE_MQ_MODE:SHARED}
-      groupExpression: ${CONFIG_MQ_GROUP_EXPRESSION:${group}${'_lane_'lane}}
+      groupExpression: ${CONFIG_MQ_GROUP_EXPRESSION:${group}${_!lane}}
       topics:
     db:
       accessMode: ${CONFIG_DB_ACCESS_MODE:READ_WRITE}
     live:
       fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
+      hostEnabled: ${CONFIG_LIVE_HOST_ENABLED:false}
+      hostExpression: ${CONFIG_LIVE_HOST_EXPRESSION}
+      hosts: ${CONFIG_LIVE_HOSTS}
     lane:
       fallbackLocationIfNoSpace: ${CONFIG_FALLBACK_LOCATION_IF_NO_SPACE:false}
+      hostEnabled: ${CONFIG_LANE_HOST_ENABLED:false}
+      hostExpression: ${CONFIG_LANE_HOST_EXPRESSION}
+      hosts: ${CONFIG_LANE_HOSTS}
     router:
       spring:
         discovery:
           disables: ${CONFIG_SPRING_DISCOVERY_DISABLES}
         gateway:
-          hostExpression: ${CONFIG_SPRING_GATEWAY_HOST_EXPRESSION}
           pathFilters: ${CONFIG_SPRING_GATEWAY_PATH_FILTERS}
-      phevos:
-        groupExpression: ${unit}-${cell}-${group}
     transmission:
       type: ${CONFIG_TRANSMISSION_TYPE:live}
       autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:NONE}

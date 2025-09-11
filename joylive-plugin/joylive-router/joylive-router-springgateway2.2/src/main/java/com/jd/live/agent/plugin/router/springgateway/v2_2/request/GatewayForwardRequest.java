@@ -18,9 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v2_2.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import lombok.Getter;
-import org.springframework.cloud.gateway.route.Route;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -31,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
-import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
  * GatewayForwardRequest
@@ -43,15 +40,12 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     private final ServerWebExchange exchange;
 
-    private final GatewayConfig gatewayConfig;
-
     private final HttpHeaders writeableHeaders;
 
-    public GatewayForwardRequest(ServerWebExchange exchange, GatewayConfig gatewayConfig) {
+    public GatewayForwardRequest(ServerWebExchange exchange) {
         super(exchange.getRequest());
         this.uri = getURI(exchange);
         this.exchange = exchange;
-        this.gatewayConfig = gatewayConfig;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
@@ -86,15 +80,6 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
     @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
-    }
-
-    @Override
-    public String getForwardHostExpression() {
-        Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
-        Map<String, Object> metadata = route == null ? null : route.getMetadata();
-        String result = metadata == null ? null : (String) metadata.get(GatewayConfig.KEY_HOST_EXPRESSION);
-        result = result == null && gatewayConfig != null ? gatewayConfig.getHostExpression() : result;
-        return result;
     }
 
     @Override

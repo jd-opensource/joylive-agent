@@ -20,13 +20,15 @@ import com.jd.live.agent.bootstrap.exception.RejectException.RejectNoProviderExc
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.instance.Location;
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.template.Template;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.HostConfig;
-import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.config.LaneConfig;
+import com.jd.live.agent.governance.config.LiveConfig;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.counter.CounterManager;
 import com.jd.live.agent.governance.db.DbConnectionSupervisor;
@@ -34,8 +36,6 @@ import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
-import com.jd.live.agent.governance.invoke.CellAction.CellActionType;
-import com.jd.live.agent.governance.invoke.UnitAction.UnitActionType;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -44,7 +44,10 @@ import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
-import com.jd.live.agent.governance.policy.live.*;
+import com.jd.live.agent.governance.policy.lane.Lane;
+import com.jd.live.agent.governance.policy.live.Unit;
+import com.jd.live.agent.governance.policy.live.UnitDomain;
+import com.jd.live.agent.governance.policy.live.UnitRoute;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
@@ -61,13 +64,10 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -75,6 +75,8 @@ import java.util.function.Supplier;
 import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
 import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.template.Template.context;
+import static com.jd.live.agent.core.util.template.Template.evaluate;
 
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
@@ -105,6 +107,10 @@ public interface InvocationContext {
      */
     default Location getLocation() {
         return getApplication().getLocation();
+    }
+
+    default GatewayRole getGatewayRole() {
+        return getApplication().getService().getGateway();
     }
 
     /**
@@ -339,12 +345,12 @@ public interface InvocationContext {
     RouteFilter[] getRouteFilters();
 
     /**
-     * Retrieves an array of live filters.
+     * Retrieves an array of unit filters.
      *
      * @return An array of {@link RouteFilter} instances that are used for routing decisions. The list may be empty
      * if no route filters are configured.
      */
-    RouteFilter[] getLiveFilters();
+    RouteFilter[] getUnitFilters();
 
     /**
      * Retrieves an array of outbound filters.
@@ -757,6 +763,11 @@ public interface InvocationContext {
         }
 
         @Override
+        public GatewayRole getGatewayRole() {
+            return delegate.getGatewayRole();
+        }
+
+        @Override
         public boolean isGovernReady() {
             return delegate.isGovernReady();
         }
@@ -862,8 +873,8 @@ public interface InvocationContext {
         }
 
         @Override
-        public RouteFilter[] getLiveFilters() {
-            return delegate.getLiveFilters();
+        public RouteFilter[] getUnitFilters() {
+            return delegate.getUnitFilters();
         }
 
         @Override
@@ -967,26 +978,14 @@ public interface InvocationContext {
      *
      * @see DelegateContext
      */
-    class GatewayForwardContext extends DelegateContext {
+    class HttpForwardContext extends DelegateContext {
 
         private static final String KEY_UNIT = "unit";
-
-        private static final String KEY_CELL = "cell";
-
+        private static final String KEY_LANE = "lane";
         private static final String KEY_HOST = "host";
 
-        private static final Map<String, Template> TEMPLATES = new ConcurrentHashMap<>();
-
-        private final boolean liveEnabled;
-
-        /**
-         * Constructs an {@code HttpForwardInvocationContext} with the specified delegate context.
-         *
-         * @param delegate The delegate {@code InvocationContext} to which this context adds additional functionality.
-         */
-        public GatewayForwardContext(InvocationContext delegate, boolean liveEnabled) {
+        public HttpForwardContext(InvocationContext delegate) {
             super(delegate);
-            this.liveEnabled = liveEnabled;
         }
 
         @Override
@@ -994,19 +993,17 @@ public interface InvocationContext {
                 E extends Endpoint> E route(final OutboundInvocation<R> invocation,
                                             final List<E> instances,
                                             final RouteFilter[] filters) {
-            if (!liveEnabled) {
-                return null;
-            }
             try {
                 HttpForwardRequest request = (HttpForwardRequest) invocation.getRequest();
-                // handle live filter.
-                invocation.setInstances(new ArrayList<>(0));
-                RouteFilter[] forwards = getLiveFilters();
-                if (forwards != null && forwards.length > 0) {
-                    RouteFilterChain chain = new RouteFilterChain.Chain(forwards);
+                invocation.setInstances(null);
+                RouteFilter[] unitFilters = getUnitFilters();
+                if (unitFilters != null && unitFilters.length > 0) {
+                    // unit filter
+                    RouteFilterChain chain = new RouteFilterChain.Chain(unitFilters);
                     chain.filter(invocation);
-                    forward(invocation, request);
                 }
+                // update the host
+                forward(invocation, request);
                 return null;
             } catch (RejectException e) {
                 invocation.onReject(e);
@@ -1024,61 +1021,52 @@ public interface InvocationContext {
          * @param request    the HTTP forward request to be processed
          */
         private <R extends OutboundRequest> void forward(final OutboundInvocation<R> invocation, final HttpForwardRequest request) {
-            // change host
             RouteTarget target = invocation.getRouteTarget();
             UnitRoute unitRoute = target.getUnitRoute();
-            CellRoute cellRoute = target.getCellRoute();
             Unit unit = unitRoute == null ? null : unitRoute.getUnit();
-            Cell cell = cellRoute == null ? null : cellRoute.getCell();
-            String host = request.getHost();
-            String failoverHost = null;
-            if (unit != null || cell != null) {
-                String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
-                if (unitHost == null) {
-                    unitHost = request.getForwardHostExpression();
-                }
-                if (unitHost != null) {
-                    Template template = TEMPLATES.computeIfAbsent(unitHost, v -> new Template(v, 128));
-                    if (template.getVariables() > 0) {
-                        Map<String, Object> context = new HashMap<>();
-                        context.put(KEY_UNIT, unit == null ? "" : unit.getHostPrefix());
-                        context.put(KEY_CELL, cell == null ? "" : cell.getHostPrefix());
-                        context.put(KEY_HOST, host);
-                        failoverHost = template.render(context);
-                    } else {
-                        failoverHost = unitHost;
-                    }
-                }
-            }
-            if (failoverHost != null) {
-                request.forward(failoverHost);
-            } else {
-                rejectFailover(invocation);
-            }
-        }
-
-        /**
-         * Rejects the outbound request with an appropriate fault based on the unit or cell failover action.
-         * If a unit failover action is present, the request is rejected with a unit fault; otherwise,
-         * if a cell failover action is present, the request is rejected with a cell fault.
-         *
-         * @param <R>        the type of outbound request, which must extend {@link OutboundRequest}
-         * @param invocation the outbound invocation containing the request
-         */
-        private <R extends OutboundRequest> void rejectFailover(final OutboundInvocation<R> invocation) {
-            Carrier carrier = invocation.getRequest().getCarrier();
-            if (carrier == null) {
+            Lane lane = invocation.getLaneMetadata().getTargetLane();
+            if (unit == null && lane == null) {
+                // No need to modify the domain name
                 return;
             }
-            UnitAction unitAction = carrier.getAttribute(Carrier.ATTRIBUTE_FAILOVER_UNIT);
-            if (unitAction != null && unitAction.getType() != UnitActionType.FORWARD) {
-                throw FaultType.UNIT.reject(unitAction.getMessage());
-            } else {
-                CellAction cellAction = carrier.getAttribute(Carrier.ATTRIBUTE_FAILOVER_CELL);
-                if (cellAction != null && cellAction.getType() != CellActionType.FORWARD) {
-                    throw FaultType.CELL.reject(cellAction.getMessage());
+            String host = request.getHost();
+            if (!Ipv4.isHost(host)) {
+                return;
+            }
+            // lower case host
+            host = host.toLowerCase();
+            GovernanceConfig governanceConfig = invocation.getContext().getGovernanceConfig();
+            LiveConfig liveConfig = governanceConfig.getLiveConfig();
+            LaneConfig laneConfig = governanceConfig.getLaneConfig();
+            boolean liveEnabled = unit != null && liveConfig.isEnabled(host);
+            boolean laneEnabled = lane != null && laneConfig.isEnabled(host);
+            if (!liveEnabled && !laneEnabled) {
+                // No need to modify the domain name
+                return;
+            }
+
+            // add prefix or suffix to domain
+            int pos = host.indexOf('.');
+            String first = pos < 0 ? host : host.substring(0, pos);
+            String other = pos < 0 ? "" : host.substring(pos);
+            if (liveEnabled) {
+                // specific unit host
+                String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
+                if (unitHost != null && !unitHost.isEmpty()) {
+                    if (!laneEnabled) {
+                        request.forward(unitHost);
+                        return;
+                    }
+                    pos = unitHost.indexOf('.');
+                    first = pos < 0 ? unitHost : unitHost.substring(0, pos);
+                } else {
+                    first = evaluate(liveConfig.getHostExpression(), first, context(KEY_UNIT, unit.decorator(), KEY_HOST, first));
                 }
             }
+            if (laneEnabled) {
+                first = evaluate(laneConfig.getHostExpression(), first, context(KEY_LANE, lane.decorator(), KEY_HOST, first));
+            }
+            request.forward(first + other);
         }
 
         /**

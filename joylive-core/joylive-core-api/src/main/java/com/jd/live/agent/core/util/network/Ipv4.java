@@ -149,6 +149,43 @@ public class Ipv4 {
     }
 
     /**
+     * Checks if the host is a domain name.
+     *
+     * @param host the host string to check
+     * @return true if host is a domain name (not an IP address), false otherwise
+     */
+    public static boolean isHost(String host) {
+        if (host == null) {
+            return false;
+        }
+        int length = host.length();
+        for (int i = 0; i < length; i++) {
+            switch (host.charAt(i)) {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '.':
+                    continue;
+                case '[':
+                case ']':
+                case ':':
+                    // ipv6
+                    return false;
+                default:
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Checks whether the system prefers IPv4 stack.
      *
      * @return {@code true} if the system prefers IPv4 stack, {@code false} otherwise.

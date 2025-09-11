@@ -15,11 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v2_2.filter;
 
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.invoke.InvocationContext.GatewayForwardContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
@@ -114,9 +112,7 @@ public class LiveGatewayFilter implements GatewayFilter {
             // lb://
             return request(exchange, chain);
         }
-        // TODO route to dedicated unit and lane domain
-        boolean liveEnabled = Converts.getBoolean(route.getMetadata().get(Constants.GATEWAY_ROUTE_LIVE_ENABLED), Boolean.TRUE);
-        return forward(exchange, chain, liveEnabled);
+        return forward(exchange, chain);
     }
 
     /**
@@ -151,12 +147,11 @@ public class LiveGatewayFilter implements GatewayFilter {
      *
      * @param exchange    the {@link ServerWebExchange} representing the current HTTP request and response
      * @param chain       the {@link GatewayFilterChain} to proceed with the filter chain
-     * @param liveEnabled a boolean flag indicating whether live routing features are enabled
      * @return a {@link Mono} that completes when the request is forwarded, or emits an error if an exception occurs
      */
-    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain, boolean liveEnabled) {
-        GatewayForwardRequest request = new GatewayForwardRequest(exchange, gatewayConfig);
-        GatewayForwardContext ctx = new GatewayForwardContext(context, liveEnabled);
+    private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
+        GatewayForwardRequest request = new GatewayForwardRequest(exchange);
+        HttpForwardContext ctx = new HttpForwardContext(context);
         try {
             ctx.route(new GatewayHttpForwardInvocation<>(request, ctx));
             return chain.filter(exchange);

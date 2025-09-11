@@ -32,5 +32,12 @@ public class Ipv4Test {
         Assertions.assertFalse(Ipv4.isIpv4("256.255.255."));
     }
 
+    @Test
+    void testHost() {
+        Assertions.assertFalse(Ipv4.isHost("192.168.1.1"));
+        Assertions.assertFalse(Ipv4.isHost("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"));
+        Assertions.assertTrue(Ipv4.isHost("www.google.com"));
+    }
+
 
 }

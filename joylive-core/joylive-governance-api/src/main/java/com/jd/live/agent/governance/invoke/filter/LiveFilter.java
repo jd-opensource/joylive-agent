@@ -20,4 +20,11 @@ package com.jd.live.agent.governance.invoke.filter;
  */
 public interface LiveFilter {
 
+    /**
+     * A marker interface indicating that an RouteFilter can handle unit routing.
+     */
+    interface UnitLiveFilter extends LiveFilter {
+
+    }
+
 }

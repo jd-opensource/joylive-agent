@@ -15,8 +15,12 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * LiveConfig is a configuration class that holds the keys for managing live settings within a system.
@@ -26,6 +30,29 @@ import lombok.Setter;
 public class LiveConfig {
 
     private boolean fallbackLocationIfNoSpace;
+
+    private boolean hostEnabled;
+
+    private Set<String> hosts;
+
+    private String hostExpression;
+
+    private transient final LazyObject<Set<String>> hostCache = new LazyObject<>(() -> {
+        if (hosts == null) {
+            return new HashSet<>();
+        }
+        Set<String> result = new HashSet<>();
+        hosts.forEach(host -> result.add(host.toLowerCase()));
+        return result;
+    });
+
+    public boolean isEnabled(String host) {
+        if (hostEnabled && host != null && !host.isEmpty()) {
+            Set<String> cache = hostCache.get();
+            return cache.isEmpty() || cache.contains(host);
+        }
+        return false;
+    }
 
 }
 

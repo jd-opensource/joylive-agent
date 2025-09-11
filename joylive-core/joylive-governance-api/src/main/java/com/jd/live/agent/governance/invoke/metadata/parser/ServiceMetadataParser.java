@@ -201,6 +201,23 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     }
 
     /**
+     * A parser implementation for extracting and building {@link ServiceMetadata} related to forwarding request.
+     */
+    public static class ForwardServiceMetadataParser implements ServiceParser {
+
+        protected final ServiceConfig serviceConfig;
+
+        public ForwardServiceMetadataParser(ServiceConfig serviceConfig) {
+            this.serviceConfig = serviceConfig;
+        }
+
+        @Override
+        public ServiceMetadata parse() {
+            return ServiceMetadata.builder().serviceConfig(serviceConfig).build();
+        }
+    }
+
+    /**
      * The {@code InboundServiceMetadataParser} class is a concrete implementation of the
      * {@code ServiceMetadataParser} class, specifically designed to parse metadata for
      * inbound service requests.
@@ -337,23 +354,6 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             policy = policy != null ? policy.clone() : new ServicePolicy();
             policy.setLivePolicy(livePolicy);
             return metadata.copyWith(policy);
-        }
-    }
-
-    /**
-     * A parser implementation for extracting and building {@link ServiceMetadata} related to gateway forwarding request.
-     */
-    public static class GatewayForwardServiceMetadataParser implements ServiceParser {
-
-        private final ServiceConfig serviceConfig;
-
-        public GatewayForwardServiceMetadataParser(ServiceConfig serviceConfig) {
-            this.serviceConfig = serviceConfig;
-        }
-
-        @Override
-        public ServiceMetadata parse() {
-            return ServiceMetadata.builder().serviceConfig(serviceConfig).build();
         }
     }
 }
