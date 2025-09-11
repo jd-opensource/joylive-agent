@@ -257,8 +257,7 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
      * @return A map of cookie names to their corresponding values, or null if no cookies were found
      */
     protected Map<String, List<String>> parseCookies() {
-        List<String> cookies = getHeaders(HttpHeader.COOKIE);
-        return cookies == null || cookies.isEmpty() ? null : HttpUtils.parseCookie(getHeader(HttpHeader.COOKIE));
+        return HttpUtils.parseCookie(getHeaders(HttpHeader.COOKIE));
     }
 
     /**
