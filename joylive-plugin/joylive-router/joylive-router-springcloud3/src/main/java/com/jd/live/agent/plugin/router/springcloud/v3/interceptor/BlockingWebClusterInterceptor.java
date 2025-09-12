@@ -18,13 +18,15 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingWebHttpRequest;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.client.support.HttpAccessor;
 
 import java.net.URI;
+
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * BlockingWebClusterInterceptor
@@ -33,24 +35,37 @@ public class BlockingWebClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Registry registry;
+    private final GovernanceConfig config;
 
-    public BlockingWebClusterInterceptor(InvocationContext context, Registry registry) {
+    public BlockingWebClusterInterceptor(InvocationContext context) {
         this.context = context;
-        this.registry = registry;
+        this.config = context.getGovernanceConfig();
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        HttpAccessor restTemplate = (HttpAccessor) mc.getTarget();
         URI uri = ctx.getArgument(0);
-        HttpMethod method = ctx.getArgument(1);
-        String service = context.getService(uri);
-        if (service != null && !service.isEmpty()) {
-            BlockingWebHttpRequest request = new BlockingWebHttpRequest(uri, method, service, restTemplate, context, registry);
-            mc.skipWithResult(request);
+        if (Accessor.lbType != null) {
+            // with spring cloud
+            String scheme = uri.getScheme();
+            if (scheme != null && !scheme.isEmpty() && !PREDICATE_LB.test(scheme) && context.isLocationEnabled()) {
+                // web request
+                mc.skipWithResult(new BlockingWebHttpRequest(uri, ctx.getArgument(1), null, (HttpAccessor) mc.getTarget(), context));
+            }
+        } else {
+            // only spring boot
+            String service = config.getRegistryConfig().isEnabled() && context.isGovernEnabled() ? context.getService(uri) : null;
+            if (service != null && !service.isEmpty() || context.isLocationEnabled()) {
+                mc.skipWithResult(new BlockingWebHttpRequest(uri, ctx.getArgument(1), service, (HttpAccessor) mc.getTarget(), context));
+            }
         }
+    }
+
+    private static class Accessor {
+
+        private static Class<?> lbType = loadClass("org.springframework.cloud.client.loadbalancer.LoadBalanced", HttpAccessor.class.getClassLoader());
+
     }
 
 }

@@ -135,6 +135,12 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private boolean flowControlEnabled;
 
     @Getter
+    private boolean governEnabled;
+
+    @Getter
+    private boolean locationEnabled;
+
+    @Getter
     @Config(GovernanceConfig.CONFIG_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 
@@ -425,6 +431,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         SleepingStopwatch.Ticker.SYSTEM_TICKER.read();
 
         gatewayRole = application.getService().getGateway();
+        governEnabled = flowControlEnabled || laneEnabled || liveEnabled;
+        locationEnabled = laneEnabled || liveEnabled;
         docRegistry = new LiveDocumentRegistry();
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof UnitLiveFilter ? filter : null);

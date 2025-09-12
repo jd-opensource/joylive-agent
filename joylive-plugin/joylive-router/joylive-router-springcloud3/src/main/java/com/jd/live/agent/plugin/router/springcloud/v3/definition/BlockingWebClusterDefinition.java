@@ -23,16 +23,15 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5RegistryEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.BlockingWebClusterInterceptor;
 
 /**
  * RestTemplateClusterDefinition
  */
 @Extension(value = "RestTemplateDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
+@ConditionalOnGovernanceEnabled
 @ConditionalOnClass(BlockingWebClusterDefinition.TYPE)
 @Injectable
 public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
@@ -44,14 +43,11 @@ public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
     public BlockingWebClusterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new BlockingWebClusterInterceptor(context, registry))
+                        () -> new BlockingWebClusterInterceptor(context))
         };
     }
 }

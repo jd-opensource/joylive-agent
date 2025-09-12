@@ -56,7 +56,7 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+        return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
     }
 
     @Override

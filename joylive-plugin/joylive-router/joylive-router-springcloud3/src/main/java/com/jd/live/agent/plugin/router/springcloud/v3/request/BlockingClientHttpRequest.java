@@ -25,12 +25,17 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.BlockingWebCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.lang.NonNull;
@@ -40,6 +45,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
@@ -48,13 +54,15 @@ import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
  * HTTP request implementation with integrated service discovery and governance policy enforcement.
  * Handles endpoint resolution through registry and executes requests via configured cluster strategy.
  */
-public class BlockingWebHttpRequest implements ClientHttpRequest {
+public class BlockingClientHttpRequest implements ClientHttpRequest {
+
+    private static final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
+
+    private final ClientHttpRequest request;
 
     private final URI uri;
 
     private final HttpMethod method;
-
-    private final String service;
 
     private final HttpAccessor accessor;
 
@@ -64,20 +72,19 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
 
     private final HttpHeaders headers = new HttpHeaders();
 
+    @Getter
+    @Setter
+    private String service;
+
     private UnsafeByteArrayOutputStream outputStream;
 
-    public BlockingWebHttpRequest(URI uri,
-                                  HttpMethod method,
-                                  String service,
-                                  HttpAccessor accessor,
-                                  InvocationContext context) {
-        this.uri = uri;
-        this.method = method;
-        this.service = service;
+    public BlockingClientHttpRequest(ClientHttpRequest request, HttpAccessor accessor, InvocationContext context) {
+        this.request = request;
+        this.uri = request.getURI();
+        this.method = request.getMethod();
         this.accessor = accessor;
         this.context = context;
         this.registry = context.getRegistry();
-        accessor.getClientHttpRequestInitializers().forEach(initializer -> initializer.initialize(this));
     }
 
     @Override
@@ -103,7 +110,7 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     public ClientHttpResponse execute() throws IOException {
         try {
             if (service != null) {
-                // lb
+                // spring web
                 List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
                 if (endpoints == null || endpoints.isEmpty()) {
                     // Failed to convert microservice, fallback to domain reques
@@ -122,6 +129,26 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw cause instanceof IOException ? (IOException) cause : new IOException(cause.getMessage(), cause);
+        } catch (Throwable e) {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    public ClientHttpResponse execute(ClientHttpRequestInterceptor interceptor, byte[] body, ClientHttpRequestExecution execution) throws IOException {
+        try {
+            // spring cloud
+            BlockingCloudCluster cluster = clusters.computeIfAbsent(interceptor, i -> new BlockingCloudCluster(context.getRegistry(), i));
+            BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(this, body, execution, cluster.getContext());
+            HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
+            BlockingClusterResponse response = cluster.request(invocation);
+            ServiceError error = response.getError();
+            if (error != null && !error.isServerError()) {
+                throw error.getThrowable();
+            } else {
+                return response.getResponse();
+            }
+        } catch (IOException | NestedRuntimeException e) {
+            throw e;
         } catch (Throwable e) {
             throw new IOException(e.getMessage(), e);
         }
@@ -201,13 +228,13 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     /**
      * BlockingForwardRequest
      */
-    private static class BlockingForwardRequest extends AbstractHttpOutboundRequest<BlockingWebHttpRequest> implements HttpForwardRequest {
+    private static class BlockingForwardRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> implements HttpForwardRequest {
 
         private final HttpHeaders writeableHeaders;
 
         private URI uri;
 
-        BlockingForwardRequest(BlockingWebHttpRequest request) {
+        BlockingForwardRequest(BlockingClientHttpRequest request) {
             super(request);
             this.uri = request.getURI();
             this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());

@@ -114,6 +114,24 @@ public interface InvocationContext {
     }
 
     /**
+     * Checks if the governance feature is enabled.
+     *
+     * @return {@code true} if the live feature is enabled, {@code false} otherwise
+     */
+    default boolean isGovernEnabled() {
+        return isFlowControlEnabled() || isLaneEnabled() || isLiveEnabled();
+    }
+
+    /**
+     * Checks if the location feature is enabled.
+     *
+     * @return {@code true} if the live feature is enabled, {@code false} otherwise
+     */
+    default boolean isLocationEnabled() {
+        return isLaneEnabled() || isLiveEnabled();
+    }
+
+    /**
      * Checks if the live feature is enabled.
      *
      * @return {@code true} if the live feature is enabled, {@code false} otherwise
@@ -770,6 +788,16 @@ public interface InvocationContext {
         @Override
         public boolean isGovernReady() {
             return delegate.isGovernReady();
+        }
+
+        @Override
+        public boolean isGovernEnabled() {
+            return delegate.isGovernEnabled();
+        }
+
+        @Override
+        public boolean isLocationEnabled() {
+            return delegate.isLocationEnabled();
         }
 
         @Override
