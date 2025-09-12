@@ -15,9 +15,11 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 
+import com.jd.live.agent.core.bytekit.type.TypePool;
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.description.type.TypeList;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,8 +31,29 @@ import java.util.stream.Collectors;
  */
 public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements TypeDesc {
 
+    /**
+     * The pool that created this type description. It's needed for further type lookups.
+     */
+    private final TypePool typePool;
+
+    // TODO typePool may not be null
     public BuddyTypeDesc(TypeDescription desc) {
         super(desc);
+        typePool = null;
+    }
+
+    /**
+     * The primary constructor that includes the TypePool.
+     *
+     * @param desc     The Byte Buddy type description to wrap.
+     * @param typePool The pool this description belongs to.
+     */
+    public BuddyTypeDesc(TypeDescription desc, TypePool typePool) {
+        super(desc);
+        if (typePool == null) {
+            throw new IllegalArgumentException("TypePool cannot be null for " + desc.getName());
+        }
+        this.typePool = typePool;
     }
 
     @Override
@@ -64,16 +87,6 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
     }
 
     @Override
-    public TypeDesc getComponentType() {
-        return new BuddyTypeDesc(desc.getComponentType());
-    }
-
-    @Override
-    public List<AnnotationDesc> getDeclaredAnnotations() {
-        return desc.getDeclaredAnnotations().stream().map(BuddyAnnotationDesc::new).collect(Collectors.toList());
-    }
-
-    @Override
     public boolean isAssignableFrom(Class<?> type) {
         return desc.isAssignableFrom(type);
     }
@@ -84,8 +97,39 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
     }
 
     @Override
-    public String getSimpleName() {
-        return desc.getSimpleName();
+    public TypeDesc getComponentType() {
+        TypeDescription componentType = desc.getComponentType();
+        // Propagate the TypePool to the component type description as well.
+        return componentType == null ? null : new BuddyTypeDesc(componentType, this.typePool);
+    }
+
+    @Override
+    public List<AnnotationDesc> getDeclaredAnnotations() {
+        return desc.getDeclaredAnnotations().stream().map(BuddyAnnotationDesc::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public String getSuperName() {
+        TypeDescription.Generic superClass = desc.getSuperClass();
+        // For java.lang.Object or interfaces, superClass is null.
+        if (superClass == null) {
+            return null;
+        }
+        // This is a safe operation that reads the name from bytecode metadata.
+        return superClass.asErasure().getName();
+    }
+
+    @Override
+    public String[] getInterfaceNames() {
+        TypeList.Generic interfaces = desc.getInterfaces();
+        return interfaces.stream()
+                .map(iface -> iface.asErasure().getName())
+                .toArray(String[]::new);
+    }
+
+    @Override
+    public TypePool getTypePool() {
+        return typePool;
     }
 
     public static class BuddyGeneric extends BuddyTypeDef<TypeDescription.Generic> implements Generic {
@@ -96,7 +140,8 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
 
         @Override
         public Generic getComponentType() {
-            return new BuddyGeneric(desc.getComponentType());
+            TypeDescription.Generic componentType = desc.getComponentType();
+            return componentType == null ? null : new BuddyGeneric(componentType);
         }
     }
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,12 +15,11 @@
  */
 package com.jd.live.agent.core.bytekit.matcher;
 
-import com.jd.live.agent.core.bytekit.type.TypeDef;
+import com.jd.live.agent.core.bytekit.type.TypePool;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 /**
  * SubTypeMatcher
@@ -50,36 +49,51 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
         return target != null && type != null && target.isAssignableTo(type) && !(implement && target.isInterface());
     }
 
+    /**
+     * The entry point for safely getting parent types.
+     * It now requires the target TypeDesc to access its TypePool for lookups.
+     */
     private static <T extends TypeDesc> Set<String> getParentTypes(T target) {
+        // The key is still the class name.
         return PARENT_TYPES.computeIfAbsent(target.getActualName(), k -> loadParentTypes(target));
     }
 
     /**
-     * Loads all the types that are part of the inheritance hierarchy of the given type definition.
+     * Safely loads all parent type names by traversing the type hierarchy using only
+     * bytecode-level metadata, avoiding class loading.
      *
-     * @param typeDef The type definition to start from.
-     * @return A set of strings representing the names of all the types in the inheritance hierarchy.
+     * @param typeDef The starting type definition.
+     * @return A set of all parent and interface names.
      */
     private static Set<String> loadParentTypes(TypeDesc typeDef) {
         Set<String> result = new HashSet<>();
-        Queue<TypeDesc> queue = new ArrayDeque<>();
-        result.add(typeDef.getActualName());
-        queue.add(typeDef);
-        TypeDef current;
-        TypeDesc desc;
+        Queue<String> queue = new ArrayDeque<>();
+        TypePool pool = typeDef.getTypePool();
+
+        String startName = typeDef.getActualName();
+        if (startName != null) {
+            result.add(startName);
+            queue.add(startName);
+        }
+
         while (!queue.isEmpty()) {
-            current = queue.poll();
-            for (TypeDesc.Generic generic : current.getInterfaces()) {
-                desc = generic.asErasure();
-                if (result.add(desc.getActualName())) {
-                    queue.add(desc);
-                }
+            String currentName = queue.poll();
+            TypeDesc currentDesc = pool.describe(currentName);
+            if (currentDesc == null) {
+                continue;
             }
-            TypeDesc.Generic parent = current.getSuperClass();
-            if (parent != null) {
-                desc = parent.asErasure();
-                if (result.add(desc.getActualName())) {
-                    queue.add(desc);
+
+            String superName = currentDesc.getSuperName();
+            if (superName != null && result.add(superName)) {
+                queue.add(superName);
+            }
+
+            String[] interfaceNames = currentDesc.getInterfaceNames();
+            if (interfaceNames != null) {
+                for (String interfaceName : interfaceNames) {
+                    if (result.add(interfaceName)) {
+                        queue.add(interfaceName);
+                    }
                 }
             }
         }

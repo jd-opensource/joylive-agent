@@ -27,23 +27,26 @@ package com.jd.live.agent.core.bytekit.type;
 public interface TypeDesc extends TypeDef, ModifierDesc, AnnotationSource {
 
     /**
-     * Retrieves the simple name of the type as represented by this type description.
-     * For instance, in the case of a generic type parameter, this method would return
-     * the name of the type parameter.
+     * Safely gets the name of the super class by reading bytecode metadata, without triggering class loading.
      *
-     * @return a String representing the simple name of the type
+     * @return The fully qualified name of the super class, or {@code null} if this type is an interface or java.lang.Object.
      */
-    String getSimpleName();
+    String getSuperName();
 
     /**
-     * Obtains the component type of this type description if it represents an array type.
-     * For generic types, this method returns the type that the generic type parameterizes.
-     * For example, for a parameterized type such as {@code List<String>}, this method would return
-     * a {@code TypeDesc} representing the {@code String} type.
+     * Safely gets the names of all implemented interfaces by reading bytecode metadata, without triggering class loading.
      *
-     * @return a {@code TypeDesc} representing the component type of the array or the parameterized type
+     * @return An array of fully qualified interface names, or an empty array if none.
      */
-    TypeDesc getComponentType();
+    String[] getInterfaceNames();
+
+    /**
+     * Gets the TypePool that this type description belongs to. This is necessary for looking up
+     * other related types without triggering class loading.
+     *
+     * @return The associated TypePool.
+     */
+    TypePool getTypePool();
 
     /**
      * The {@code Generic} subinterface of {@code TypeDesc} represents a generic type.

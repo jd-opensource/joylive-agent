@@ -21,6 +21,7 @@ import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
+import com.jd.live.agent.core.bytekit.type.TypePool;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDeclare;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -30,6 +31,7 @@ import com.jd.live.agent.implement.bytekit.bytebuddy.advice.MemberMethodAdvice;
 import com.jd.live.agent.implement.bytekit.bytebuddy.advice.StaticMethodAdvice;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyMethodDesc;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc;
+import com.jd.live.agent.implement.bytekit.bytebuddy.type.TypePoolFactory;
 import com.jd.live.agent.implement.bytekit.bytebuddy.util.ModuleUtil;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -96,8 +98,8 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         if (types.containsKey(adviceKey)) {
             return true;
         }
-
-        BuddyTypeDesc typeDesc = new BuddyTypeDesc(description);
+        TypePool typePool = TypePoolFactory.get(loader);
+        BuddyTypeDesc typeDesc = new BuddyTypeDesc(description, typePool);
         List<InterceptorDefinition> interceptors = new ArrayList<>();
         List<PluginDefinition> definitions = plugin.match(typeDesc, loader);
         for (PluginDefinition definition : definitions) {
