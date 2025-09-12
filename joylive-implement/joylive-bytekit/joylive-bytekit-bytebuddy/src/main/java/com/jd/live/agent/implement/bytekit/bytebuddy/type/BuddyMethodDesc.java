@@ -18,6 +18,7 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.MethodDesc;
 import com.jd.live.agent.core.bytekit.type.ParameterDesc;
+import com.jd.live.agent.core.bytekit.type.TypePool;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.ParameterDescription;
 
@@ -32,14 +33,16 @@ import java.util.stream.Collectors;
 public class BuddyMethodDesc implements MethodDesc {
 
     private final MethodDescription desc;
+    private final TypePool typePool;
 
-    public BuddyMethodDesc(MethodDescription desc) {
+    public BuddyMethodDesc(MethodDescription desc, TypePool typePool) {
         this.desc = desc;
+        this.typePool = typePool;
     }
 
     @Override
     public List<AnnotationDesc> getDeclaredAnnotations() {
-        return desc.getDeclaredAnnotations().stream().map(BuddyAnnotationDesc::new).collect(Collectors.toList());
+        return desc.getDeclaredAnnotations().stream().map(annoDesc -> new BuddyAnnotationDesc(annoDesc, typePool)).collect(Collectors.toList());
     }
 
     @Override
@@ -94,7 +97,7 @@ public class BuddyMethodDesc implements MethodDesc {
 
     @Override
     public List<ParameterDesc> getParameters() {
-        return desc.getParameters().stream().map(BuddyParameterDesc::new).collect(Collectors.toList());
+        return desc.getParameters().stream().map(paramDesc -> new BuddyParameterDesc(paramDesc, typePool)).collect(Collectors.toList());
     }
 
     @Override

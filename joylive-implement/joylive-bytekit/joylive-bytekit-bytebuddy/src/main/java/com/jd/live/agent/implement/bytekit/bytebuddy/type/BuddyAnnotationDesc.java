@@ -17,6 +17,7 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
+import com.jd.live.agent.core.bytekit.type.TypePool;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 
 /**
@@ -27,13 +28,21 @@ import net.bytebuddy.description.annotation.AnnotationDescription;
 public class BuddyAnnotationDesc implements AnnotationDesc {
 
     private final AnnotationDescription desc;
+    private final TypePool typePool; // <<< 1. 添加 TypePool 字段
 
-    public BuddyAnnotationDesc(AnnotationDescription desc) {
+    /**
+     * Updated constructor to accept the TypePool context.
+     *
+     * @param desc     The Byte Buddy annotation description to wrap.
+     * @param typePool The TypePool context needed for creating further type descriptions.
+     */
+    public BuddyAnnotationDesc(AnnotationDescription desc, TypePool typePool) {
         this.desc = desc;
+        this.typePool = typePool;
     }
 
     @Override
     public TypeDesc getAnnotationType() {
-        return new BuddyTypeDesc(desc.getAnnotationType());
+        return new BuddyTypeDesc(desc.getAnnotationType(), this.typePool);
     }
 }

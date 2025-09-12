@@ -36,11 +36,10 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
      */
     private final TypePool typePool;
 
-    // TODO typePool may not be null
-    public BuddyTypeDesc(TypeDescription desc) {
-        super(desc);
-        typePool = null;
-    }
+    //public BuddyTypeDesc(TypeDescription desc) {
+    //    super(desc);
+    //    typePool = null;
+    //}
 
     /**
      * The primary constructor that includes the TypePool.
@@ -49,7 +48,7 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
      * @param typePool The pool this description belongs to.
      */
     public BuddyTypeDesc(TypeDescription desc, TypePool typePool) {
-        super(desc);
+        super(desc, typePool);
         if (typePool == null) {
             throw new IllegalArgumentException("TypePool cannot be null for " + desc.getName());
         }
@@ -105,7 +104,7 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
 
     @Override
     public List<AnnotationDesc> getDeclaredAnnotations() {
-        return desc.getDeclaredAnnotations().stream().map(BuddyAnnotationDesc::new).collect(Collectors.toList());
+        return desc.getDeclaredAnnotations().stream().map(annoDesc -> new BuddyAnnotationDesc(annoDesc, typePool)).collect(Collectors.toList());
     }
 
     @Override
@@ -134,14 +133,19 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
 
     public static class BuddyGeneric extends BuddyTypeDef<TypeDescription.Generic> implements Generic {
 
-        public BuddyGeneric(TypeDescription.Generic generic) {
-            super(generic);
+        /**
+         * Updated constructor to accept the TypePool context.
+         * @param generic The Byte Buddy generic type description to wrap.
+         * @param typePool The TypePool this description belongs to.
+         */
+        public BuddyGeneric(TypeDescription.Generic generic, TypePool typePool) {
+            super(generic, typePool);
         }
 
         @Override
         public Generic getComponentType() {
             TypeDescription.Generic componentType = desc.getComponentType();
-            return componentType == null ? null : new BuddyGeneric(componentType);
+            return componentType == null ? null : new BuddyGeneric(componentType, typePool);
         }
     }
 }

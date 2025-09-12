@@ -75,9 +75,9 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * Constructs a new {@code PluginTransformer} with the specified instrumentation,
      * plugin declaration, and condition matcher.
      *
-     * @param instrumentation  the {@link Instrumentation} object provided by the Java agent mechanism.
-     * @param plugin           the plugin declaration that contains the definitions for class and method
-     *                         transformations.
+     * @param instrumentation the {@link Instrumentation} object provided by the Java agent mechanism.
+     * @param plugin          the plugin declaration that contains the definitions for class and method
+     *                        transformations.
      */
     public PluginTransformer(Instrumentation instrumentation, PluginDeclare plugin) {
         this.instrumentation = instrumentation;
@@ -171,7 +171,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
             if (methodDesc.isNative() || methodDesc.isAbstract()) {
                 continue;
             }
-            interceptors = getInterceptors(methodDesc, interceptorDefinitions);
+            interceptors = getInterceptors(methodDesc, TypePoolFactory.get(loader), interceptorDefinitions);
             if (!interceptors.isEmpty()) {
                 String desc = BuddyMethodDesc.getDescription(methodDesc);
                 try {
@@ -197,12 +197,13 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * Each interceptor definition includes a matcher that determines whether the interceptor should be applied to the method.
      *
      * @param methodDesc   The description of the method for which interceptors are being retrieved.
+     * @param typePool     The type pool used for resolving types during matching.
      * @param interceptors A list of interceptor definitions to evaluate against the method.
      * @return A list of {@link Interceptor} instances that match the method according to their respective definitions.
      */
-    private List<Interceptor> getInterceptors(InDefinedShape methodDesc, List<InterceptorDefinition> interceptors) {
+    private List<Interceptor> getInterceptors(InDefinedShape methodDesc, TypePool typePool, List<InterceptorDefinition> interceptors) {
         List<Interceptor> result = new ArrayList<>(interceptors.size());
-        BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc);
+        BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc, typePool);
         for (InterceptorDefinition interceptor : interceptors) {
             if (!interceptor.getMatcher().match(desc)) {
                 continue;
