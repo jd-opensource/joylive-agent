@@ -5,7 +5,8 @@ agent:
     poolEnabled: true
     loggerEnabled: true
     exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
-    excludePrefixes: null
+    excludePrefixes:
+      - com.jd.jr.sgm.
     excludeTypes: null
     excludeClassLoaders:
       - com.jd.jr.sgm.agent.loader.ClientLibClassLoader
