@@ -61,38 +61,38 @@ public class IgnoredHandler implements BuilderHandler {
         }
 
         @Override
-        public boolean matches(@NeverNull TypeDescription typeDescription,
+        public boolean matches(@NeverNull TypeDescription description,
                                @MaybeNull ClassLoader classLoader,
                                @MaybeNull JavaModule javaModule,
                                @MaybeNull Class<?> aClass,
                                @MaybeNull ProtectionDomain protectionDomain) {
-            return isArray(typeDescription)
-                    || isPrimitive(typeDescription)
-                    || isAgent(typeDescription, classLoader)
-                    || isExcluded(typeDescription, classLoader)
-                    || isReflectionDynamicCreated(typeDescription);
+            return isArray(description)
+                    || isPrimitive(description)
+                    || isAgent(description, classLoader)
+                    || isExcluded(description, classLoader)
+                    || isReflectionDynamicCreated(description);
         }
 
-        protected boolean isArray(TypeDescription typeDesc) {
-            return typeDesc.isArray();
+        protected boolean isArray(TypeDescription description) {
+            return description.isArray();
         }
 
-        protected boolean isPrimitive(TypeDescription typeDesc) {
-            return typeDesc.isPrimitive();
+        protected boolean isPrimitive(TypeDescription description) {
+            return description.isPrimitive();
         }
 
-        protected boolean isAgent(TypeDescription typeDescription, ClassLoader classLoader) {
-            return classLoader instanceof LiveClassLoader || typeDescription.getActualName().startsWith("com.jd.live.agent.");
+        protected boolean isAgent(TypeDescription description, ClassLoader classLoader) {
+            return classLoader instanceof LiveClassLoader || description.getActualName().startsWith("com.jd.live.agent.");
         }
 
-        protected boolean isExcluded(TypeDescription typeDesc, ClassLoader classLoader) {
-            return config.isExclude(typeDesc.getActualName(), classLoader);
+        protected boolean isExcluded(TypeDescription description, ClassLoader classLoader) {
+            return config.isExclude(description.getActualName(), classLoader);
         }
 
-        protected boolean isReflectionDynamicCreated(TypeDescription typeDesc) {
+        protected boolean isReflectionDynamicCreated(TypeDescription description) {
             // jdk.internal.reflect.GeneratedMethodAccessor
             // jdk.internal.reflect.GeneratedConstructorAccessor
-            return typeDesc.getActualName().startsWith("jdk.internal.reflect.Generated");
+            return description.getActualName().startsWith("jdk.internal.reflect.Generated");
         }
     }
 }
