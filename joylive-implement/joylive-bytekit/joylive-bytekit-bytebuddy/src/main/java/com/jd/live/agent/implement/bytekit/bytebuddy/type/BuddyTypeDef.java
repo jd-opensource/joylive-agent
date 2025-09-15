@@ -29,6 +29,7 @@ import net.bytebuddy.pool.TypePool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * BuddyTypeDef
@@ -101,29 +102,57 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     @Override
     public TypeDesc.Generic getSuperClass() {
-        try {
-            T def = safeDesc.get();
-            TypeDescription.Generic superClass = def.getSuperClass();
-            return superClass == null ? null : new BuddyGeneric(superClass, classLoader);
-        } catch (TypePool.Resolution.NoSuchTypeException e) {
-            return null;
-        }
+        return getGeneric(safeDesc.get(), () -> getGeneric(desc, null));
     }
 
     @Override
     public List<TypeDesc.Generic> getInterfaces() {
+        return getInterfaces(safeDesc.get(), () -> getInterfaces(desc, null));
+    }
+
+    /**
+     * Safely retrieves the generic superclass of the given type descriptor.
+     * Falls back to supplier if type resolution fails.
+     *
+     * @param desc     the type descriptor
+     * @param supplier fallback supplier for unresolvable types, may be null
+     * @return the generic superclass or fallback result, null if none available
+     */
+    protected TypeDesc.Generic getGeneric(T desc, Supplier<TypeDesc.Generic> supplier) {
         try {
-            T def = safeDesc.get();
-            TypeList.Generic interfaces = def.getInterfaces();
+            TypeDescription.Generic superClass = desc.getSuperClass();
+            return superClass == null ? null : new BuddyGeneric(superClass, classLoader);
+        } catch (TypePool.Resolution.NoSuchTypeException e) {
+            return supplier == null ? null : supplier.get();
+        }
+    }
+
+    /**
+     * Safely retrieves all generic interfaces implemented by the given type descriptor.
+     * Falls back to supplier if type resolution fails.
+     *
+     * @param desc     the type descriptor
+     * @param supplier fallback supplier for unresolvable types, may be null
+     * @return list of generic interfaces or fallback result, empty list if none available
+     */
+    protected List<TypeDesc.Generic> getInterfaces(T desc, Supplier<List<TypeDesc.Generic>> supplier) {
+        try {
+            TypeList.Generic interfaces = desc.getInterfaces();
             List<TypeDesc.Generic> result = new ArrayList<>(interfaces.size());
             for (TypeDescription.Generic type : interfaces) {
                 result.add(new BuddyGeneric(type, classLoader));
             }
             return result;
-        } catch (TypePool.Resolution.NoSuchTypeException ignored) {
-            return new ArrayList<>();
+        } catch (TypePool.Resolution.NoSuchTypeException e) {
+            return supplier == null ? new ArrayList<>() : supplier.get();
         }
     }
 
+    /**
+     * Converts a resolved TypeDescription to the target type descriptor.
+     *
+     * @param resolved the resolved type description
+     * @return the converted type descriptor
+     */
     protected abstract T convert(TypeDescription resolved);
 }
