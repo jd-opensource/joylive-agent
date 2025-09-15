@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 /**
  * Provides a set of static factory methods for creating various types of {@link ElementMatcher}s.
@@ -39,6 +40,8 @@ import java.util.Set;
  * @since 2024-01-21
  */
 public class MatcherBuilder {
+
+    public static BiPredicate<String, ClassLoader> exclusion;
 
     private MatcherBuilder() {
 
@@ -132,7 +135,7 @@ public class MatcherBuilder {
      * @return A matcher that matches elements that are subtypes of the specified type.
      */
     public static <T extends TypeDesc> Junction<T> isSubTypeOf(String type) {
-        return new SubNameMatcher<>(type);
+        return new SubNameMatcher<>(type, exclusion);
     }
 
     /**
@@ -143,7 +146,7 @@ public class MatcherBuilder {
      * @return A matcher that checks for subtype relationships
      */
     public static <T extends TypeDesc> Junction<T> isSubTypeOf(Set<String> types) {
-        return new SubNamesMatcher<>(types);
+        return new SubNamesMatcher<>(types, exclusion);
     }
 
     /**
@@ -165,7 +168,7 @@ public class MatcherBuilder {
      * @return A matcher that matches elements that implement the specified interface.
      */
     public static <T extends TypeDesc> Junction<T> isImplement(String type) {
-        return new SubNameMatcher<>(type, true);
+        return new SubNameMatcher<>(type, exclusion, true);
     }
 
     /**
