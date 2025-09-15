@@ -5,7 +5,14 @@ agent:
     poolEnabled: true
     loggerEnabled: true
     exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
-    excludePrefixes: null
+    excludePrefixes:
+      - com.jd.jr.sgm.
+      - org.apache.skywalking.apm.
+      - com.jd.pfinder.profiler.
+      - io.opentelemetry.javaagent.
+      - com.navercorp.pinpoint.
+      - com.huaweicloud.sermant.
+      - com.alipay.sofa.ark.
     excludeTypes: null
     excludeClassLoaders:
       - com.jd.jr.sgm.agent.loader.ClientLibClassLoader

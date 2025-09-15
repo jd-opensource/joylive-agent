@@ -26,6 +26,7 @@ import com.jd.live.agent.bootstrap.util.option.ValueResolver;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
+import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
 import com.jd.live.agent.core.command.Command;
 import com.jd.live.agent.core.config.*;
@@ -644,6 +645,7 @@ public class Bootstrap implements AgentLifecycle {
     }
 
     private ByteSupplier createByteSupplier() {
+        MatcherBuilder.exclusion = agentConfig.getEnhanceConfig()::isExclude;
         ByteSupplier result = extensionManager.getOrLoadExtension(ByteSupplier.class, classLoaderManager.getCoreImplLoader());
         Map<String, Set<String>> addOpens = agentConfig.getEnhanceConfig().getAddOpens();
         if (addOpens != null) {

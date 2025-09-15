@@ -27,28 +27,6 @@ package com.jd.live.agent.core.bytekit.type;
 public interface TypeDesc extends TypeDef, ModifierDesc, AnnotationSource {
 
     /**
-     * Safely gets the name of the super class by reading bytecode metadata, without triggering class loading.
-     *
-     * @return The fully qualified name of the super class, or {@code null} if this type is an interface or java.lang.Object.
-     */
-    String getSuperName();
-
-    /**
-     * Safely gets the names of all implemented interfaces by reading bytecode metadata, without triggering class loading.
-     *
-     * @return An array of fully qualified interface names, or an empty array if none.
-     */
-    String[] getInterfaceNames();
-
-    /**
-     * Gets the TypePool that this type description belongs to. This is necessary for looking up
-     * other related types without triggering class loading.
-     *
-     * @return The associated TypePool.
-     */
-    TypePool getTypePool();
-
-    /**
      * The {@code Generic} subinterface of {@code TypeDesc} represents a generic type.
      * It extends {@code TypeDef} to provide additional methods specific to generic types.
      */

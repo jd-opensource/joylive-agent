@@ -68,7 +68,7 @@ public class IgnoredHandler implements BuilderHandler {
                                @MaybeNull ProtectionDomain protectionDomain) {
             return isArray(typeDescription)
                     || isPrimitive(typeDescription)
-                    || isAgent(classLoader)
+                    || isAgent(typeDescription, classLoader)
                     || isExcluded(typeDescription, classLoader)
                     || isReflectionDynamicCreated(typeDescription);
         }
@@ -81,8 +81,8 @@ public class IgnoredHandler implements BuilderHandler {
             return typeDesc.isPrimitive();
         }
 
-        protected boolean isAgent(ClassLoader classLoader) {
-            return classLoader instanceof LiveClassLoader;
+        protected boolean isAgent(TypeDescription typeDescription, ClassLoader classLoader) {
+            return classLoader instanceof LiveClassLoader || typeDescription.getActualName().startsWith("com.jd.live.agent.");
         }
 
         protected boolean isExcluded(TypeDescription typeDesc, ClassLoader classLoader) {

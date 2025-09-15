@@ -18,14 +18,17 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 import com.jd.live.agent.core.bytekit.type.MethodDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDef;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
-import com.jd.live.agent.core.bytekit.type.TypePool;
+import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc.BuddyGeneric;
+import com.jd.live.agent.implement.bytekit.bytebuddy.util.PoolUtil;
+import net.bytebuddy.description.method.MethodList;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeList;
+import net.bytebuddy.pool.TypePool;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * BuddyTypeDef
@@ -34,12 +37,23 @@ import java.util.stream.Collectors;
  */
 public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef {
 
-    protected final TypePool typePool;
     protected final T desc;
 
-    public BuddyTypeDef(T desc, TypePool typePool) {
+    protected final ClassLoader classLoader;
+
+    protected final LazyObject<T> safeDesc;
+
+    public BuddyTypeDef(T desc, ClassLoader classLoader) {
         this.desc = desc;
-        this.typePool = typePool;
+        this.classLoader = classLoader;
+        this.safeDesc = new LazyObject<>(() -> {
+            if (desc instanceof TypeDescription.ForLoadedType) {
+                // avoid class loading conflict with other agent.
+                TypeDescription resolved = PoolUtil.getTypePool(classLoader).describe(desc.getActualName()).resolve();
+                return convert(resolved);
+            }
+            return desc;
+        });
     }
 
     @Override
@@ -74,34 +88,42 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     @Override
     public List<MethodDesc> getDeclaredMethods() {
-        return desc.getDeclaredMethods().stream().map(methodDesc -> new BuddyMethodDesc(methodDesc, typePool)).collect(Collectors.toList());
+        MethodList<?> methods = desc.getDeclaredMethods();
+        List<MethodDesc> result = new ArrayList<>(methods.size());
+        methods.forEach(method -> result.add(new BuddyMethodDesc(method, classLoader)));
+        return result;
     }
 
     @Override
     public TypeDesc asErasure() {
-        return new BuddyTypeDesc(desc.asErasure(), typePool);
+        return new BuddyTypeDesc(desc.asErasure(), classLoader);
     }
 
     @Override
     public TypeDesc.Generic getSuperClass() {
         try {
-            TypeDescription.Generic superClass = desc.getSuperClass();
-            return superClass == null ? null : new BuddyTypeDesc.BuddyGeneric(superClass, typePool);
-        } catch (net.bytebuddy.pool.TypePool.Resolution.NoSuchTypeException e) {
+            T def = safeDesc.get();
+            TypeDescription.Generic superClass = def.getSuperClass();
+            return superClass == null ? null : new BuddyGeneric(superClass, classLoader);
+        } catch (TypePool.Resolution.NoSuchTypeException e) {
             return null;
         }
     }
 
     @Override
     public List<TypeDesc.Generic> getInterfaces() {
-        List<TypeDesc.Generic> result = new ArrayList<>();
         try {
-            TypeList.Generic types = desc.getInterfaces();
-            for (TypeDescription.Generic type : types) {
-                result.add(new BuddyTypeDesc.BuddyGeneric(type, typePool));
+            T def = safeDesc.get();
+            TypeList.Generic interfaces = def.getInterfaces();
+            List<TypeDesc.Generic> result = new ArrayList<>(interfaces.size());
+            for (TypeDescription.Generic type : interfaces) {
+                result.add(new BuddyGeneric(type, classLoader));
             }
-        } catch (net.bytebuddy.pool.TypePool.Resolution.NoSuchTypeException ignored) {
+            return result;
+        } catch (TypePool.Resolution.NoSuchTypeException ignored) {
+            return new ArrayList<>();
         }
-        return result;
     }
+
+    protected abstract T convert(TypeDescription resolved);
 }
