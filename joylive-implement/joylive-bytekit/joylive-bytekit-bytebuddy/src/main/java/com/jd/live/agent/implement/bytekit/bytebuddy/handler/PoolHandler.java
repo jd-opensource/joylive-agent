@@ -25,9 +25,9 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.implement.bytekit.bytebuddy.BuilderHandler;
+import com.jd.live.agent.implement.bytekit.bytebuddy.util.PoolUtil;
 import com.jd.live.agent.implement.bytekit.bytebuddy.util.PoolCache;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.agent.builder.AgentBuilder.PoolStrategy;
 
 import java.lang.instrument.Instrumentation;
 import java.util.concurrent.ThreadLocalRandom;
@@ -47,35 +47,26 @@ public class PoolHandler implements BuilderHandler, ExtensionInitializer {
     @Inject(EnhanceConfig.COMPONENT_ENHANCE_CONFIG)
     private EnhanceConfig enhanceConfig;
 
-    @Inject(value = Timer.COMPONENT_TIMER, nullable = true)
+    @Inject(value = Timer.COMPONENT_TIMER)
     private Timer timer;
-
-    private final PoolCache poolCache = new PoolCache(256);
 
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
-        return builder.with(new PoolStrategy.WithTypePoolCache.Simple(poolCache));
+        return builder.with(PoolUtil.getPoolStrategy());
     }
 
     @Override
     public void initialize() {
         if (enhanceConfig.getPoolExpireTime() > 0) {
-            addCleanTask();
-        }
-    }
-
-    private void addCleanTask() {
-        if (timer != null) {
-            timer.delay("LiveAgent-ByteBuddy-Pool-Cleaner", enhanceConfig.getPoolCleanInterval(), () -> {
-                int old = poolCache.size();
-                poolCache.recycle(enhanceConfig.getPoolExpireTime());
-                int current = poolCache.size();
+            timer.schedule("LiveAgent-ByteBuddy-Pool-Cleaner", enhanceConfig.getPoolCleanInterval(), () -> {
+                PoolCache typePoolCache = PoolUtil.getTypePoolCache();
+                int old = typePoolCache.size();
+                typePoolCache.recycle(enhanceConfig.getPoolExpireTime());
+                int current = typePoolCache.size();
                 if (old != current || ThreadLocalRandom.current().nextInt(10) == 0) {
                     logger.info("Clean expired cache from byte buddy pool. " + old + " -> " + current);
                 }
-                addCleanTask();
             });
         }
-
     }
 }

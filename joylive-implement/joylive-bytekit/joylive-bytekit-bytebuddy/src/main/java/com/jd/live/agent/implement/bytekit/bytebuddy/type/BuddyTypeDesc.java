@@ -15,14 +15,13 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 
-import com.jd.live.agent.core.bytekit.type.TypePool;
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
+import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.description.type.TypeList;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * BuddyTypeDesc
@@ -31,29 +30,8 @@ import java.util.stream.Collectors;
  */
 public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements TypeDesc {
 
-    /**
-     * The pool that created this type description. It's needed for further type lookups.
-     */
-    private final TypePool typePool;
-
-    // TODO typePool may not be null
-    public BuddyTypeDesc(TypeDescription desc) {
-        super(desc);
-        typePool = null;
-    }
-
-    /**
-     * The primary constructor that includes the TypePool.
-     *
-     * @param desc     The Byte Buddy type description to wrap.
-     * @param typePool The pool this description belongs to.
-     */
-    public BuddyTypeDesc(TypeDescription desc, TypePool typePool) {
-        super(desc);
-        if (typePool == null) {
-            throw new IllegalArgumentException("TypePool cannot be null for " + desc.getName());
-        }
-        this.typePool = typePool;
+    public BuddyTypeDesc(TypeDescription desc, ClassLoader classLoader) {
+        super(desc, classLoader);
     }
 
     @Override
@@ -100,48 +78,37 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
     public TypeDesc getComponentType() {
         TypeDescription componentType = desc.getComponentType();
         // Propagate the TypePool to the component type description as well.
-        return componentType == null ? null : new BuddyTypeDesc(componentType, this.typePool);
+        return componentType == null ? null : new BuddyTypeDesc(componentType, classLoader);
     }
 
     @Override
     public List<AnnotationDesc> getDeclaredAnnotations() {
-        return desc.getDeclaredAnnotations().stream().map(BuddyAnnotationDesc::new).collect(Collectors.toList());
+        AnnotationList annotations = desc.getDeclaredAnnotations();
+        List<AnnotationDesc> result = new ArrayList<>(annotations.size());
+        annotations.forEach(annotation -> result.add(new BuddyAnnotationDesc(annotation, classLoader)));
+        return result;
     }
 
     @Override
-    public String getSuperName() {
-        TypeDescription.Generic superClass = desc.getSuperClass();
-        // For java.lang.Object or interfaces, superClass is null.
-        if (superClass == null) {
-            return null;
-        }
-        // This is a safe operation that reads the name from bytecode metadata.
-        return superClass.asErasure().getName();
-    }
-
-    @Override
-    public String[] getInterfaceNames() {
-        TypeList.Generic interfaces = desc.getInterfaces();
-        return interfaces.stream()
-                .map(iface -> iface.asErasure().getName())
-                .toArray(String[]::new);
-    }
-
-    @Override
-    public TypePool getTypePool() {
-        return typePool;
+    protected TypeDescription convert(TypeDescription resolved) {
+        return resolved;
     }
 
     public static class BuddyGeneric extends BuddyTypeDef<TypeDescription.Generic> implements Generic {
 
-        public BuddyGeneric(TypeDescription.Generic generic) {
-            super(generic);
+        public BuddyGeneric(TypeDescription.Generic generic, ClassLoader classLoader) {
+            super(generic, classLoader);
         }
 
         @Override
         public Generic getComponentType() {
             TypeDescription.Generic componentType = desc.getComponentType();
-            return componentType == null ? null : new BuddyGeneric(componentType);
+            return componentType == null ? null : new BuddyGeneric(componentType, classLoader);
+        }
+
+        @Override
+        protected TypeDescription.Generic convert(TypeDescription resolved) {
+            return resolved.asGenericType();
         }
     }
 }

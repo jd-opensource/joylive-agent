@@ -18,11 +18,13 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.MethodDesc;
 import com.jd.live.agent.core.bytekit.type.ParameterDesc;
+import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.ParameterDescription;
+import net.bytebuddy.description.method.ParameterList;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * BuddyMethodDesc
@@ -33,13 +35,19 @@ public class BuddyMethodDesc implements MethodDesc {
 
     private final MethodDescription desc;
 
-    public BuddyMethodDesc(MethodDescription desc) {
+    private final ClassLoader classLoader;
+
+    public BuddyMethodDesc(MethodDescription desc, ClassLoader classLoader) {
         this.desc = desc;
+        this.classLoader = classLoader;
     }
 
     @Override
     public List<AnnotationDesc> getDeclaredAnnotations() {
-        return desc.getDeclaredAnnotations().stream().map(BuddyAnnotationDesc::new).collect(Collectors.toList());
+        AnnotationList annotations = desc.getDeclaredAnnotations();
+        List<AnnotationDesc> result = new ArrayList<>(annotations.size());
+        annotations.forEach(annotation -> result.add(new BuddyAnnotationDesc(annotation, classLoader)));
+        return result;
     }
 
     @Override
@@ -94,7 +102,10 @@ public class BuddyMethodDesc implements MethodDesc {
 
     @Override
     public List<ParameterDesc> getParameters() {
-        return desc.getParameters().stream().map(BuddyParameterDesc::new).collect(Collectors.toList());
+        ParameterList<?> parameters = desc.getParameters();
+        List<ParameterDesc> result = new ArrayList<>(parameters.size());
+        parameters.forEach(parameter -> result.add(new BuddyParameterDesc(parameter, classLoader)));
+        return result;
     }
 
     @Override

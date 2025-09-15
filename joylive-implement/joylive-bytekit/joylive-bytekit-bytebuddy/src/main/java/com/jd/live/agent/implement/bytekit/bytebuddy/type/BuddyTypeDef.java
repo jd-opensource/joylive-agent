@@ -18,6 +18,10 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 import com.jd.live.agent.core.bytekit.type.MethodDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDef;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
+import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc.BuddyGeneric;
+import com.jd.live.agent.implement.bytekit.bytebuddy.util.PoolUtil;
+import net.bytebuddy.description.method.MethodList;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.description.type.TypeList;
@@ -25,7 +29,6 @@ import net.bytebuddy.pool.TypePool;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * BuddyTypeDef
@@ -36,8 +39,21 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     protected final T desc;
 
-    public BuddyTypeDef(T desc) {
+    protected final ClassLoader classLoader;
+
+    protected final LazyObject<T> safeDesc;
+
+    public BuddyTypeDef(T desc, ClassLoader classLoader) {
         this.desc = desc;
+        this.classLoader = classLoader;
+        this.safeDesc = new LazyObject<>(() -> {
+            if (desc instanceof TypeDescription.ForLoadedType) {
+                // avoid class loading conflict with other agent.
+                TypeDescription resolved = PoolUtil.getTypePool(classLoader).describe(desc.getActualName()).resolve();
+                return convert(resolved);
+            }
+            return desc;
+        });
     }
 
     @Override
@@ -72,19 +88,23 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     @Override
     public List<MethodDesc> getDeclaredMethods() {
-        return desc.getDeclaredMethods().stream().map(BuddyMethodDesc::new).collect(Collectors.toList());
+        MethodList<?> methods = desc.getDeclaredMethods();
+        List<MethodDesc> result = new ArrayList<>(methods.size());
+        methods.forEach(method -> result.add(new BuddyMethodDesc(method, classLoader)));
+        return result;
     }
 
     @Override
     public TypeDesc asErasure() {
-        return new BuddyTypeDesc(desc.asErasure());
+        return new BuddyTypeDesc(desc.asErasure(), classLoader);
     }
 
     @Override
     public TypeDesc.Generic getSuperClass() {
         try {
-            TypeDescription.Generic superClass = desc.getSuperClass();
-            return superClass == null ? null : new BuddyTypeDesc.BuddyGeneric(superClass);
+            T def = safeDesc.get();
+            TypeDescription.Generic superClass = def.getSuperClass();
+            return superClass == null ? null : new BuddyGeneric(superClass, classLoader);
         } catch (TypePool.Resolution.NoSuchTypeException e) {
             return null;
         }
@@ -94,12 +114,15 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
     public List<TypeDesc.Generic> getInterfaces() {
         List<TypeDesc.Generic> result = new ArrayList<>();
         try {
-            TypeList.Generic types = desc.getInterfaces();
-            for (TypeDescription.Generic type : types) {
-                result.add(new BuddyTypeDesc.BuddyGeneric(type));
+            T def = safeDesc.get();
+            TypeList.Generic interfaces = def.getInterfaces();
+            for (TypeDescription.Generic type : interfaces) {
+                result.add(new BuddyGeneric(type, classLoader));
             }
         } catch (TypePool.Resolution.NoSuchTypeException ignored) {
         }
         return result;
     }
+
+    protected abstract T convert(TypeDescription resolved);
 }

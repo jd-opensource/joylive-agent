@@ -28,12 +28,15 @@ public class BuddyAnnotationDesc implements AnnotationDesc {
 
     private final AnnotationDescription desc;
 
-    public BuddyAnnotationDesc(AnnotationDescription desc) {
+    private final ClassLoader classLoader;
+
+    public BuddyAnnotationDesc(AnnotationDescription desc, ClassLoader classLoader) {
         this.desc = desc;
+        this.classLoader = classLoader;
     }
 
     @Override
     public TypeDesc getAnnotationType() {
-        return new BuddyTypeDesc(desc.getAnnotationType());
+        return new BuddyTypeDesc(desc.getAnnotationType(), classLoader);
     }
 }

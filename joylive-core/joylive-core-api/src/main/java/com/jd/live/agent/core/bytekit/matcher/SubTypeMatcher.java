@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.bytekit.matcher;
 
-import com.jd.live.agent.core.bytekit.type.TypePool;
+import com.jd.live.agent.core.bytekit.type.TypeDef;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 
 import java.util.*;
@@ -59,41 +59,31 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
     }
 
     /**
-     * Safely loads all parent type names by traversing the type hierarchy using only
-     * bytecode-level metadata, avoiding class loading.
+     * Loads all the types that are part of the inheritance hierarchy of the given type definition.
      *
-     * @param typeDef The starting type definition.
-     * @return A set of all parent and interface names.
+     * @param typeDef The type definition to start from.
+     * @return A set of strings representing the names of all the types in the inheritance hierarchy.
      */
     private static Set<String> loadParentTypes(TypeDesc typeDef) {
         Set<String> result = new HashSet<>();
-        Queue<String> queue = new ArrayDeque<>();
-        TypePool pool = typeDef.getTypePool();
-
-        String startName = typeDef.getActualName();
-        if (startName != null) {
-            result.add(startName);
-            queue.add(startName);
-        }
-
+        Queue<TypeDesc> queue = new ArrayDeque<>();
+        result.add(typeDef.getActualName());
+        queue.add(typeDef);
+        TypeDef current;
+        TypeDesc desc;
         while (!queue.isEmpty()) {
-            String currentName = queue.poll();
-            TypeDesc currentDesc = pool.describe(currentName);
-            if (currentDesc == null) {
-                continue;
+            current = queue.poll();
+            for (TypeDesc.Generic generic : current.getInterfaces()) {
+                desc = generic.asErasure();
+                if (result.add(desc.getActualName())) {
+                    queue.add(desc);
+                }
             }
-
-            String superName = currentDesc.getSuperName();
-            if (superName != null && result.add(superName)) {
-                queue.add(superName);
-            }
-
-            String[] interfaceNames = currentDesc.getInterfaceNames();
-            if (interfaceNames != null) {
-                for (String interfaceName : interfaceNames) {
-                    if (result.add(interfaceName)) {
-                        queue.add(interfaceName);
-                    }
+            TypeDesc.Generic parent = current.getSuperClass();
+            if (parent != null) {
+                desc = parent.asErasure();
+                if (result.add(desc.getActualName())) {
+                    queue.add(desc);
                 }
             }
         }

@@ -30,10 +30,10 @@ import java.util.Set;
 public class EnhanceConfig {
 
     public static final String SUPPORT_JAVA_VERSION = "[,1.8);[1.8.0_60,]";
-
     public static final String COMPONENT_ENHANCE_CONFIG = "enhanceConfig";
 
     private static final int DEFAULT_POOL_CLEAN_INTERVAL = 60 * 1000;
+    private static final int DEFAULT_POOL_EXPIRE_TIME = 10 * 60 * 1000;
 
     @Setter
     @Getter
@@ -41,7 +41,7 @@ public class EnhanceConfig {
 
     @Setter
     @Getter
-    private long poolExpireTime = 10 * 60 * 1000;
+    private long poolExpireTime = DEFAULT_POOL_EXPIRE_TIME;
 
     @Setter
     private long poolCleanInterval = DEFAULT_POOL_CLEAN_INTERVAL;

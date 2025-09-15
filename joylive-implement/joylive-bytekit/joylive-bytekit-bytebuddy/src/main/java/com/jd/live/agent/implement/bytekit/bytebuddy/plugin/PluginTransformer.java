@@ -21,7 +21,6 @@ import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
-import com.jd.live.agent.core.bytekit.type.TypePool;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDeclare;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -31,7 +30,6 @@ import com.jd.live.agent.implement.bytekit.bytebuddy.advice.MemberMethodAdvice;
 import com.jd.live.agent.implement.bytekit.bytebuddy.advice.StaticMethodAdvice;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyMethodDesc;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc;
-import com.jd.live.agent.implement.bytekit.bytebuddy.type.TypePoolFactory;
 import com.jd.live.agent.implement.bytekit.bytebuddy.util.ModuleUtil;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
@@ -98,10 +96,8 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
         if (types.containsKey(adviceKey)) {
             return true;
         }
-        TypePool typePool = TypePoolFactory.get(loader);
-        BuddyTypeDesc typeDesc = new BuddyTypeDesc(description, typePool);
         List<InterceptorDefinition> interceptors = new ArrayList<>();
-        List<PluginDefinition> definitions = plugin.match(typeDesc, loader);
+        List<PluginDefinition> definitions = plugin.match(new BuddyTypeDesc(description, loader), loader);
         for (PluginDefinition definition : definitions) {
             interceptors.addAll(Arrays.asList(definition.getInterceptors()));
             // export internal java module packages to plugin
@@ -156,10 +152,10 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
     @Override
     public DynamicType.Builder<?> transform(@NeverNull DynamicType.Builder<?> builder,
                                             @NeverNull TypeDescription description,
-                                            @MaybeNull ClassLoader loader,
+                                            @MaybeNull ClassLoader classLoader,
                                             @MaybeNull JavaModule module,
                                             @MaybeNull ProtectionDomain domain) {
-        AdviceKey typeKey = new AdviceKey(description.getActualName(), loader);
+        AdviceKey typeKey = new AdviceKey(description.getActualName(), classLoader);
         List<InterceptorDefinition> interceptorDefinitions = types.get(typeKey);
         if (interceptorDefinitions == null || interceptorDefinitions.isEmpty()) {
             return builder;
@@ -171,11 +167,11 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
             if (methodDesc.isNative() || methodDesc.isAbstract()) {
                 continue;
             }
-            interceptors = getInterceptors(methodDesc, interceptorDefinitions);
+            interceptors = getInterceptors(methodDesc, classLoader, interceptorDefinitions);
             if (!interceptors.isEmpty()) {
                 String desc = BuddyMethodDesc.getDescription(methodDesc);
                 try {
-                    Object methodKey = new AdviceKey(desc, loader);
+                    Object methodKey = new AdviceKey(desc, classLoader);
                     if (methodDesc.isStatic()) {
                         newBuilder = enhanceMethod(newBuilder, methodDesc, interceptors, StaticMethodAdvice.class, methodKey);
                     } else if (methodDesc.isConstructor()) {
@@ -197,12 +193,15 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
      * Each interceptor definition includes a matcher that determines whether the interceptor should be applied to the method.
      *
      * @param methodDesc   The description of the method for which interceptors are being retrieved.
+     * @param classLoader  The class loader associated with the method.
      * @param interceptors A list of interceptor definitions to evaluate against the method.
      * @return A list of {@link Interceptor} instances that match the method according to their respective definitions.
      */
-    private List<Interceptor> getInterceptors(InDefinedShape methodDesc, List<InterceptorDefinition> interceptors) {
+    private List<Interceptor> getInterceptors(InDefinedShape methodDesc,
+                                              ClassLoader classLoader,
+                                              List<InterceptorDefinition> interceptors) {
         List<Interceptor> result = new ArrayList<>(interceptors.size());
-        BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc);
+        BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc, classLoader);
         for (InterceptorDefinition interceptor : interceptors) {
             if (!interceptor.getMatcher().match(desc)) {
                 continue;
