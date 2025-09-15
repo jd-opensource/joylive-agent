@@ -112,16 +112,17 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     @Override
     public List<TypeDesc.Generic> getInterfaces() {
-        List<TypeDesc.Generic> result = new ArrayList<>();
         try {
             T def = safeDesc.get();
             TypeList.Generic interfaces = def.getInterfaces();
+            List<TypeDesc.Generic> result = new ArrayList<>(interfaces.size());
             for (TypeDescription.Generic type : interfaces) {
                 result.add(new BuddyGeneric(type, classLoader));
             }
+            return result;
         } catch (TypePool.Resolution.NoSuchTypeException ignored) {
+            return new ArrayList<>();
         }
-        return result;
     }
 
     protected abstract T convert(TypeDescription resolved);
