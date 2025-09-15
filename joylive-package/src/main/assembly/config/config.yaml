@@ -7,8 +7,8 @@ agent:
     exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
     excludePrefixes:
       - com.jd.jr.sgm.
-      - org.apache.skywalking.
-      - com.jd.pfinder.
+      - org.apache.skywalking.apm.
+      - com.jd.pfinder.profiler.
       - io.opentelemetry.javaagent.
       - com.navercorp.pinpoint.
       - com.huaweicloud.sermant.
