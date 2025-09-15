@@ -16,11 +16,6 @@
 package com.jd.live.agent.implement.bytekit.bytebuddy.util;
 
 import net.bytebuddy.agent.builder.AgentBuilder.PoolStrategy;
-import net.bytebuddy.dynamic.ClassFileLocator;
-import net.bytebuddy.pool.TypePool;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility class for managing ByteBuddy TypePool instances with caching support.
@@ -31,8 +26,6 @@ public class PoolUtil {
     private static PoolCache typePoolCache = new PoolCache(256);
 
     private static PoolStrategy poolStrategy = new PoolStrategy.WithTypePoolCache.Simple(typePoolCache);
-
-    private static Map<ClassLoader, TypePool> typePoolMap = new ConcurrentHashMap<>(256);
 
     /**
      * Returns the global TypePool cache instance.
@@ -50,20 +43,6 @@ public class PoolUtil {
      */
     public static PoolStrategy getPoolStrategy() {
         return poolStrategy;
-    }
-
-    /**
-     * Gets or creates a TypePool for the specified ClassLoader.
-     * Uses system ClassLoader if the provided ClassLoader is null.
-     * The same ClassLoader will always return the same cached TypePool instance.
-     *
-     * @param classLoader the ClassLoader to create TypePool for, null for system ClassLoader
-     * @return cached TypePool instance for the ClassLoader
-     */
-    public static TypePool getTypePool(ClassLoader classLoader) {
-        ClassLoader loader = classLoader == null ? ClassLoader.getSystemClassLoader() : classLoader;
-        // the same classloader will get the same type pool and cache
-        return typePoolMap.computeIfAbsent(loader, cl -> poolStrategy.typePool(ClassFileLocator.ForClassLoader.of(classLoader), cl));
     }
 
 }

@@ -89,11 +89,6 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
         return result;
     }
 
-    @Override
-    protected TypeDescription convert(TypeDescription resolved) {
-        return resolved;
-    }
-
     public static class BuddyGeneric extends BuddyTypeDef<TypeDescription.Generic> implements Generic {
 
         public BuddyGeneric(TypeDescription.Generic generic, ClassLoader classLoader) {
@@ -104,11 +99,6 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
         public Generic getComponentType() {
             TypeDescription.Generic componentType = desc.getComponentType();
             return componentType == null ? null : new BuddyGeneric(componentType, classLoader);
-        }
-
-        @Override
-        protected TypeDescription.Generic convert(TypeDescription resolved) {
-            return resolved.asGenericType();
         }
     }
 }
