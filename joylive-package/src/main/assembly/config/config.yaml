@@ -7,6 +7,12 @@ agent:
     exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
     excludePrefixes:
       - com.jd.jr.sgm.
+      - org.apache.skywalking.
+      - com.jd.pfinder.
+      - io.opentelemetry.javaagent.
+      - com.navercorp.pinpoint.
+      - com.huaweicloud.sermant.
+      - com.alipay.sofa.ark.
     excludeTypes: null
     excludeClassLoaders:
       - com.jd.jr.sgm.agent.loader.ClientLibClassLoader
