@@ -27,15 +27,15 @@ public class FastJson2JsonParserTest {
 
     @Test
     public void testJson() throws IOException {
+        Fastjson2JsonParser jsonParser = new Fastjson2JsonParser();
+        jsonParser.initialize();
+        Fastjson2JsonPathParser pathParser = new Fastjson2JsonPathParser();
         try (InputStream inputStream = this.getClass().getResourceAsStream("/person.json")) {
             Assertions.assertNotNull(inputStream);
-            byte[] bytes = IOUtils.read(inputStream);
-            String json = new String(bytes);
-            Fastjson2JsonParser parser = new Fastjson2JsonParser();
-            Person person = parser.read(new StringReader(json), Person.class);
+            String json = new String(IOUtils.read(inputStream));
+            Person person = jsonParser.read(new StringReader(json), Person.class);
             Assertions.assertEquals(person.getSex(), Sex.FEMALE);
-            Fastjson2JsonPathParser jp = new Fastjson2JsonPathParser();
-            Assertions.assertEquals(jp.read(json, "$.name"), "person");
+            Assertions.assertEquals(pathParser.read(json, "$.name"), "person");
         }
 
     }
