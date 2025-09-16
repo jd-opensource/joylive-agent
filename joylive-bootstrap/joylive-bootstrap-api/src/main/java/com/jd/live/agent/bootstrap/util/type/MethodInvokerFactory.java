@@ -81,10 +81,92 @@ public class MethodInvokerFactory {
             MethodInvoker result = CACHE.get(method);
             if (result == null) {
                 MethodHandle handle = Modifier.isPublic(method.getModifiers()) ? PUBLIC_LOOKUP.unreflect(method) : LOOKUP.unreflect(method);
-                MethodHandleCaller caller = new MethodHandleCaller(handle, Modifier.isStatic(method.getModifiers()));
+                MethodInvoker caller = Modifier.isStatic(method.getModifiers()) ? createStaticCaller(method, handle) : createInstanceCaller(method, handle);
                 result = CACHE.computeIfAbsent(method, k -> caller);
             }
             return result;
         }
+
+        /**
+         * Creates a specialized static method caller based on parameter count.
+         * Uses optimized caller implementations for methods with 0-10 parameters,
+         * falls back to generic caller for methods with more parameters.
+         *
+         * @param method the target method to create caller for
+         * @param handle the method handle for the target method
+         * @return specialized static method caller instance
+         */
+        private static MethodInvoker createStaticCaller(Method method, MethodHandle handle) {
+            switch (method.getParameterCount()) {
+                case 0:
+                    return (target, args) -> handle.invoke();
+                case 1:
+                    return (target, args) -> handle.invoke(args[0]);
+                case 2:
+                    return (target, args) -> handle.invoke(args[0], args[1]);
+                case 3:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2]);
+                case 4:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3]);
+                case 5:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3], args[4]);
+                case 6:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3], args[4], args[5]);
+                case 7:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+                case 8:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+                case 9:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+                case 10:
+                    return (target, args) -> handle.invoke(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+                default:
+                    return (target, args) -> handle.asSpreader(Object[].class, args.length).invoke(args);
+            }
+        }
+
+        /**
+         * Creates a specialized instance method caller based on parameter count.
+         * Uses optimized caller implementations for methods with 0-10 parameters,
+         * falls back to generic caller for methods with more parameters.
+         *
+         * @param method the target method to create caller for
+         * @param handle the method handle for the target method
+         * @return specialized instance method caller instance
+         */
+        private static MethodInvoker createInstanceCaller(Method method, MethodHandle handle) {
+            switch (method.getParameterCount()) {
+                case 0:
+                    return (target, args) -> handle.invoke(target);
+                case 1:
+                    return (target, args) -> handle.invoke(target, args[0]);
+                case 2:
+                    return (target, args) -> handle.invoke(target, args[0], args[1]);
+                case 3:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2]);
+                case 4:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3]);
+                case 5:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3], args[4]);
+                case 6:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3], args[4], args[5]);
+                case 7:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+                case 8:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+                case 9:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+                case 10:
+                    return (target, args) -> handle.invoke(target, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+                default:
+                    return (target, args) -> {
+                        Object[] newArgs = new Object[args.length + 1];
+                        newArgs[0] = target;
+                        System.arraycopy(args, 0, newArgs, 1, args.length);
+                        return handle.invoke(newArgs);
+                    };
+            }
+        }
+
     }
 }

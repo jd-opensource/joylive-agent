@@ -19,6 +19,7 @@ package com.jd.live.agent.bootstrap.util.type;
  * Functional interface for invoking methods on target objects.
  * Similar to {@link java.lang.reflect.Method#invoke} but with simpler exception handling.
  */
+@FunctionalInterface
 public interface MethodInvoker {
 
     /**
