@@ -100,19 +100,11 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
     public ClientHttpResponse execute() throws IOException {
         try {
             if (service != null) {
-                // lb for spring boot
-                List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
-                if (endpoints == null || endpoints.isEmpty()) {
-                    // Failed to convert microservice, fallback to domain reques
-                    return execute(uri);
-                }
-                return context.isFlowControlEnabled() ? request() : route();
+                // Convert regular spring web requests to microservice calls
+                return request();
             } else {
-                // lane or live for http request
-                HttpForwardContext ctx = new HttpForwardContext(context);
-                BlockingClientForwardRequest forwardRequest = new BlockingClientForwardRequest(this);
-                ctx.route(new HttpForwardInvocation<>(forwardRequest, ctx));
-                return execute(forwardRequest.getURI());
+                // Handle multi-active and lane domains
+                return forward();
             }
         } catch (IOException | NestedRuntimeException e) {
             throw e;
@@ -145,6 +137,13 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         return outputStream;
     }
 
+    private ClientHttpResponse forward() throws IOException {
+        HttpForwardContext ctx = new HttpForwardContext(context);
+        BlockingClientForwardRequest req = new BlockingClientForwardRequest(this);
+        ctx.route(new HttpForwardInvocation<>(req, ctx));
+        return execute(req.getURI());
+    }
+
     /**
      * Executes the HTTP request with configured headers and body.
      *
@@ -162,12 +161,17 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
     }
 
     /**
-     * Executes request through cluster strategy with error handling conversion.
+     * Executes microservice call with service discovery and load balancing.
      *
-     * @return Successful response from cluster-routed request
-     * @throws Throwable Service-defined client errors or underlying exceptions
+     * @return the HTTP response from microservice or fallback domain request
+     * @throws Throwable if service call fails or client error occurs
      */
     private ClientHttpResponse request() throws Throwable {
+        List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
+        if (endpoints == null || endpoints.isEmpty()) {
+            // Failed to convert microservice, fallback to domain reques
+            return execute(uri);
+        }
         BlockingClientCluster cluster = BlockingClientCluster.INSTANCE;
         BlockingClientClusterRequest request = new BlockingClientClusterRequest(this, service, registry);
         HttpOutboundInvocation<BlockingClientClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
@@ -179,19 +183,4 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
             return response.getResponse();
         }
     }
-
-    /**
-     * Directly routes request to context-selected endpoint.
-     *
-     * @return Response from directly executed endpoint request
-     * @throws Throwable Routing failures or execution errors
-     * @see InvocationContext#route  Custom routing logic implementation
-     */
-    private ClientHttpResponse route() throws Throwable {
-        BlockingCloudOutboundRequest request = new BlockingCloudOutboundRequest(this, service);
-        HttpOutboundInvocation<BlockingCloudOutboundRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        ServiceEndpoint endpoint = context.route(invocation);
-        return execute(endpoint);
-    }
-
 }

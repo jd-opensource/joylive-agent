@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ReactiveOutboundRequest
+ * BlockingCloudOutboundRequest
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
