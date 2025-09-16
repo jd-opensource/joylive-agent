@@ -6,6 +6,9 @@ agent:
     loggerEnabled: true
     exporterEnabled: ${CONFIG_ENHANCE_EXPORTER_ENABLED:false}
     excludePrefixes:
+      - jdk.internal.reflect.Generated
+      - sun.reflect.Generated
+      - java.lang.invoke.StringConcatFactory$$StringConcat
       - com.jd.jr.sgm.
       - org.apache.skywalking.apm.
       - com.jd.pfinder.profiler.

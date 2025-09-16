@@ -76,8 +76,7 @@ public class IgnoredHandler implements BuilderHandler {
             return isArray(description)
                     || isPrimitive(description)
                     || isAgent(description, classLoader)
-                    || isExcluded(description, classLoader)
-                    || isReflectionDynamicCreated(description);
+                    || isExcluded(description, classLoader);
         }
 
         protected boolean isArray(TypeDescription description) {
@@ -94,13 +93,21 @@ public class IgnoredHandler implements BuilderHandler {
         }
 
         protected boolean isExcluded(TypeDescription description, ClassLoader classLoader) {
-            return enhanceConfig.isExclude(description.getActualName(), classLoader);
-        }
-
-        protected boolean isReflectionDynamicCreated(TypeDescription description) {
             // jdk.internal.reflect.GeneratedMethodAccessor
             // jdk.internal.reflect.GeneratedConstructorAccessor
-            return description.getActualName().startsWith("jdk.internal.reflect.Generated");
+            // jdk.internal.reflect.GeneratedSerializationConstructorAccessor
+            // sun.reflect.GeneratedMethodAccessor
+            // sun.reflect.GeneratedConstructorAccessor
+            // java.lang.invoke.StringConcatFactory$$StringConcat/
+
+            // com.jd.jr.sgm.
+            // org.apache.skywalking.apm.
+            // com.jd.pfinder.profiler.
+            // io.opentelemetry.javaagent.
+            // com.navercorp.pinpoint.
+            // com.huaweicloud.sermant.
+            // com.alipay.sofa.ark.
+            return enhanceConfig.isExclude(description.getActualName(), classLoader);
         }
     }
 }

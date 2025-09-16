@@ -78,13 +78,13 @@ public class EnhanceConfig {
     @Getter
     private boolean shutdownOnError;
 
-    private transient Inclusion inclusion;
+    private transient Inclusion exclusion;
 
     public boolean isExclude(String className, ClassLoader classLoader) {
-        if (inclusion == null) {
-            inclusion = new Inclusion(excludeTypes, excludePrefixes);
+        if (exclusion == null) {
+            exclusion = new Inclusion(excludeTypes, excludePrefixes);
         }
-        if (inclusion.test(className)) {
+        if (exclusion.test(className)) {
             return true;
         }
         if (excludeClassLoaders != null && classLoader != null) {
