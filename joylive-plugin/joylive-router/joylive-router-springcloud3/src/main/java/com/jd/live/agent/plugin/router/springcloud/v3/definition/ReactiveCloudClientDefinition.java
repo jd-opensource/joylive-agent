@@ -49,8 +49,6 @@ public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
             "org.springframework.web.reactive.function.client.ExchangeFunction"
     };
 
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
-
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 

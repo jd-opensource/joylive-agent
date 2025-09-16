@@ -43,5 +43,7 @@ public interface Request extends Attributes {
 
     String KEY_ERROR_POLICY = "x-error-policy";
 
+    String KEY_CLOUD_REQUEST = "x-cloud-request";
+
 }
 

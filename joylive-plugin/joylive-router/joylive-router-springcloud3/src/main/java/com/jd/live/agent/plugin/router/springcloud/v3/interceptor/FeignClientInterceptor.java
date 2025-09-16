@@ -44,8 +44,8 @@ import java.net.URI;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.governance.request.Request.KEY_CLOUD_REQUEST;
 import static com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3Enabled.TYPE_HINT_REQUEST_CONTEXT;
-import static com.jd.live.agent.plugin.router.springcloud.v3.request.FeignCloudClusterRequest.FEIGN_CLOUD_REQUEST;
 import static com.jd.live.agent.plugin.router.springcloud.v3.request.FeignOutboundRequest.createRequest;
 
 /**
@@ -71,7 +71,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         try {
             if (Accessor.isCloudEnabled()) {
                 // with spring cloud
-                if (!RequestContext.hasAttribute(FEIGN_CLOUD_REQUEST) && context.isLocationEnabled()) {
+                if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST) && context.isLocationEnabled()) {
                     // lane or live for http request
                     forward(request, URI.create(request.url()), mc);
                 }
