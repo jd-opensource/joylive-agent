@@ -50,14 +50,18 @@ public class BlockingClientInterceptor extends InterceptorAdaptor {
         if (Accessor.isCloudEnabled()) {
             // with spring cloud
             if (!Accessor.isCloudClient(template) && context.isDomainSensitive()) {
-                // web request
+                // Handle multi-active and lane domains
                 mc.skipWithResult(new BlockingClientHttpRequest(uri, ctx.getArgument(1), null, (HttpAccessor) mc.getTarget(), context));
             }
         } else {
             // only spring boot
             String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
-            if (service != null && !service.isEmpty() || context.isDomainSensitive()) {
+            if (service != null && !service.isEmpty()) {
+                // Convert regular spring web requests to microservice calls
                 mc.skipWithResult(new BlockingClientHttpRequest(uri, ctx.getArgument(1), service, (HttpAccessor) mc.getTarget(), context));
+            } else if (context.isDomainSensitive()) {
+                // Handle multi-active and lane domains
+                mc.skipWithResult(new BlockingClientHttpRequest(uri, ctx.getArgument(1), null, (HttpAccessor) mc.getTarget(), context));
             }
         }
     }

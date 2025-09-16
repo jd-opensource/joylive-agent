@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
@@ -25,9 +24,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveWebCluster;
+import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientForwardRequest;
-import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveCloudOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveWebClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.http.HttpStatus;
@@ -62,38 +60,59 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
         if (Accessor.isCloudEnabled()) {
             // with spring cloud
             if (!Accessor.isCloudClient(builder) && context.isDomainSensitive()) {
-                addDomainFilter(ctx.getArgument(0), ctx);
-            }
-        } else {
-            if (context.isMicroserviceTransformEnabled()) {
-                // Convert regular spring web requests to microservice calls
-                addFlowControlFilter(ctx.getArgument(0), ctx);
-            } else if (context.isDomainSensitive()) {
                 // Handle multi-active and lane domains
                 addDomainFilter(ctx.getArgument(0), ctx);
             }
+        } else if (context.isMicroserviceTransformEnabled()) {
+            // Convert regular spring web requests to microservice calls
+            addFlowControlFilter(ctx.getArgument(0), ctx);
+        } else if (context.isDomainSensitive()) {
+            // Handle multi-active and lane domains
+            addDomainFilter(ctx.getArgument(0), ctx);
         }
     }
 
+    /**
+     * Adds domain filter to handle request routing and URI transformation.
+     *
+     * @param exchanger the exchange function to filter
+     * @param ctx       the executable context to update
+     */
     private void addDomainFilter(ExchangeFunction exchanger, ExecutableContext ctx) {
-        ctx.setArgument(0, exchanger.filter((request, next) -> {
-            HttpForwardContext fc = new HttpForwardContext(context);
-            ReactiveClientForwardRequest ffr = new ReactiveClientForwardRequest(request);
-            fc.route(new HttpForwardInvocation<>(ffr, fc));
-            URI newUri = ffr.getURI();
-            if (newUri != request.url()) {
-                return next.exchange(ClientRequest.from(request).url(newUri).build());
-            } else {
-                return next.exchange(request);
-            }
-        }));
+        ctx.setArgument(0, exchanger.filter(this::forward));
     }
 
+    /**
+     * Forwards the request with potential URI transformation.
+     *
+     * @param request the client request to forward
+     * @param next    the next exchange function in the chain
+     * @return the response mono
+     */
+    private Mono<ClientResponse> forward(ClientRequest request, ExchangeFunction next) {
+        HttpForwardContext fc = new HttpForwardContext(context);
+        ReactiveClientForwardRequest ffr = new ReactiveClientForwardRequest(request);
+        fc.route(new HttpForwardInvocation<>(ffr, fc));
+        URI newUri = ffr.getURI();
+        if (newUri != request.url()) {
+            return next.exchange(ClientRequest.from(request).url(newUri).build());
+        } else {
+            return next.exchange(request);
+        }
+    }
+
+    /**
+     * Adds flow control filter to convert web requests to microservice calls.
+     *
+     * @param exchanger the exchange function to filter
+     * @param ctx       the executable context to update
+     */
     private void addFlowControlFilter(ExchangeFunction exchanger, ExecutableContext ctx) {
         ctx.setArgument(0, exchanger.filter((request, next) -> {
             String service = context.getService(request.url());
             if (service == null || service.isEmpty()) {
-                return next.exchange(request);
+                // Handle multi-active and lane domains
+                return forward(request, next);
             }
             try {
                 List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
@@ -104,27 +123,11 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
             } catch (Throwable e) {
                 return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
             }
-            ReactiveWebClusterRequest clusterRequest = new ReactiveWebClusterRequest(request, service, registry, next);
-            HttpOutboundInvocation<ReactiveWebClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
+            ReactiveClientClusterRequest req = new ReactiveClientClusterRequest(request, service, registry, next);
+            HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(req, context);
             CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
             return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
         }));
-    }
-
-    /**
-     * Routes request to selected service endpoint
-     *
-     * @param request Original client request
-     * @param next    Exchange function
-     * @param service Target service identifier
-     * @return Proxied response stream
-     */
-    private Mono<ClientResponse> route(ClientRequest request, ExchangeFunction next, String service) {
-        ReactiveCloudOutboundRequest ror = new ReactiveCloudOutboundRequest(request, service);
-        HttpOutboundInvocation<ReactiveCloudOutboundRequest> invocation = new HttpOutboundInvocation<>(ror, context);
-        ServiceEndpoint endpoint = context.route(invocation);
-        request = ClientRequest.from(request).url(HttpUtils.newURI(request.url(), endpoint.getHost(), endpoint.getPort())).build();
-        return next.exchange(request);
     }
 
     /**

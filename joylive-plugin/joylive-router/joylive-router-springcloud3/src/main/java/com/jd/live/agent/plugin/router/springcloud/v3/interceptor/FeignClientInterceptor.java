@@ -72,7 +72,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
             if (Accessor.isCloudEnabled()) {
                 // with spring cloud
                 if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST) && context.isDomainSensitive()) {
-                    // lane or live for http request
+                    // Handle multi-active and lane domains
                     forward(request, URI.create(request.url()), mc);
                 }
             } else {
@@ -81,15 +81,10 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                 // determine whether is a microservice request
                 String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
                 if (service != null && !service.isEmpty()) {
-                    List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
-                            new InternalServerError(message, request, request.body(), request.headers()));
-                    if (endpoints == null || endpoints.isEmpty()) {
-                        // Failed to convert microservice, fallback to domain reques
-                        return;
-                    }
+                    // Convert regular spring web requests to microservice calls
                     request(request, service, uri, mc);
                 } else if (context.isDomainSensitive()) {
-                    // lane or live for http request
+                    // Handle multi-active and lane domains
                     forward(request, uri, mc);
                 }
             }
@@ -123,7 +118,14 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
      * @param uri       the request URI
      * @param mc        the method context for handling results and exceptions
      */
-    private void request(Request request, String service, URI uri, MethodContext mc) {
+    private void request(Request request, String service, URI uri, MethodContext mc) throws Throwable {
+        // subscribe service endpoint and governance policy.
+        List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
+                new InternalServerError(message, request, request.body(), request.headers()));
+        if (endpoints == null || endpoints.isEmpty()) {
+            // Failed to convert microservice, fallback to domain reques
+            return;
+        }
         FeignClientClusterRequest fr = new FeignClientClusterRequest(request, service, uri, registry, endpoint -> {
             // invoke a endpoint
             mc.setArgument(0, createRequest(uri, request, endpoint));
