@@ -132,11 +132,20 @@ public interface InvocationContext {
     }
 
     /**
-     * Checks if the location feature is enabled.
+     * Checks if microservice transformation is enabled.
      *
-     * @return {@code true} if the live feature is enabled, {@code false} otherwise
+     * @return true if both registry and flow control are enabled, false otherwise
      */
-    default boolean isLocationEnabled() {
+    default boolean isMicroserviceTransformEnabled() {
+        return isRegistryEnabled() && isFlowControlEnabled();
+    }
+
+    /**
+     * Checks if domain sensitivity is enabled.
+     *
+     * @return true if lane or live mode is enabled, false otherwise
+     */
+    default boolean isDomainSensitive() {
         return isLaneEnabled() || isLiveEnabled();
     }
 
@@ -810,8 +819,13 @@ public interface InvocationContext {
         }
 
         @Override
-        public boolean isLocationEnabled() {
-            return delegate.isLocationEnabled();
+        public boolean isMicroserviceTransformEnabled() {
+            return delegate.isMicroserviceTransformEnabled();
+        }
+
+        @Override
+        public boolean isDomainSensitive() {
+            return delegate.isDomainSensitive();
         }
 
         @Override

@@ -25,8 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5RegistryEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactiveClientInterceptor;
 
 /**
@@ -34,7 +33,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactiveClient
  */
 @Injectable
 @Extension(value = "ReactiveClientDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
+@ConditionalOnSpringWeb5GovernanceEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(ReactiveClientDefinition.TYPE_DEFAULT_WEB_CLIENT)
 public class ReactiveClientDefinition extends PluginDefinitionAdapter {
@@ -44,15 +43,12 @@ public class ReactiveClientDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
     public ReactiveClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_WEB_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(),
-                        () -> new ReactiveClientInterceptor(context, registry))
+                        () -> new ReactiveClientInterceptor(context))
         };
     }
 }

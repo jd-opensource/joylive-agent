@@ -49,14 +49,14 @@ public class BlockingClientInterceptor extends InterceptorAdaptor {
         URI uri = ctx.getArgument(0);
         if (Accessor.isCloudEnabled()) {
             // with spring cloud
-            if (!Accessor.isCloudClient(template) && context.isLocationEnabled()) {
+            if (!Accessor.isCloudClient(template) && context.isDomainSensitive()) {
                 // web request
                 mc.skipWithResult(new BlockingClientHttpRequest(uri, ctx.getArgument(1), null, (HttpAccessor) mc.getTarget(), context));
             }
         } else {
             // only spring boot
-            String service = context.isRegistryEnabled() && context.isFlowControlEnabled() ? context.getService(uri) : null;
-            if (service != null && !service.isEmpty() || context.isLocationEnabled()) {
+            String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
+            if (service != null && !service.isEmpty() || context.isDomainSensitive()) {
                 mc.skipWithResult(new BlockingClientHttpRequest(uri, ctx.getArgument(1), service, (HttpAccessor) mc.getTarget(), context));
             }
         }

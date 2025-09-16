@@ -15,26 +15,32 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.interceptor;
 
-import com.jd.live.agent.bootstrap.bytekit.context.ConstructorContext;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
+import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveWebCluster;
+import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveWebClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
+import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.reactive.function.client.ClientRequest;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.springframework.http.client.support.HttpAccessor;
+import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3Enabled.TYPE_HINT_REQUEST_CONTEXT;
 
 /**
  * ReactiveClientInterceptor
@@ -45,34 +51,64 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    public ReactiveClientInterceptor(InvocationContext context, Registry registry) {
+    public ReactiveClientInterceptor(InvocationContext context) {
         this.context = context;
-        this.registry = registry;
+        this.registry = context.getRegistry();
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        ConstructorContext cc = (ConstructorContext) ctx;
-        Object[] arguments = cc.getArguments();
-        if (arguments != null && arguments.length > 0 && arguments[0] instanceof ExchangeFunction) {
-            arguments[0] = ((ExchangeFunction) arguments[0]).filter((request, next) -> {
-                String service = context.getService(request.url());
-                try {
-                    List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
-                    if (endpoints == null || endpoints.isEmpty()) {
-                        // Failed to convert microservice, fallback to domain reques
-                        return next.exchange(request);
-                    }
-                } catch (Throwable e) {
-                    return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
-                }
-                if (context.isFlowControlEnabled()) {
-                    return request(request, next, service);
-                } else {
-                    return route(request, next, service);
-                }
-            });
+        WebClient.Builder builder = ctx.getArgument(5);
+        if (Accessor.isCloudEnabled()) {
+            // with spring cloud
+            if (!Accessor.isCloudClient(builder) && context.isDomainSensitive()) {
+                addDomainFilter(ctx.getArgument(0), ctx);
+            }
+        } else {
+            if (context.isMicroserviceTransformEnabled()) {
+                // Convert regular spring web requests to microservice calls
+                addFlowControlFilter(ctx.getArgument(0), ctx);
+            } else if (context.isDomainSensitive()) {
+                // Handle multi-active and lane domains
+                addDomainFilter(ctx.getArgument(0), ctx);
+            }
         }
+    }
+
+    private void addDomainFilter(ExchangeFunction exchanger, ExecutableContext ctx) {
+        ctx.setArgument(0, exchanger.filter((request, next) -> {
+            HttpForwardContext fc = new HttpForwardContext(context);
+            ReactiveClientForwardRequest ffr = new ReactiveClientForwardRequest(request);
+            fc.route(new HttpForwardInvocation<>(ffr, fc));
+            URI newUri = ffr.getURI();
+            if (newUri != request.url()) {
+                return next.exchange(ClientRequest.from(request).url(newUri).build());
+            } else {
+                return next.exchange(request);
+            }
+        }));
+    }
+
+    private void addFlowControlFilter(ExchangeFunction exchanger, ExecutableContext ctx) {
+        ctx.setArgument(0, exchanger.filter((request, next) -> {
+            String service = context.getService(request.url());
+            if (service == null || service.isEmpty()) {
+                return next.exchange(request);
+            }
+            try {
+                List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
+                if (endpoints == null || endpoints.isEmpty()) {
+                    // Failed to convert microservice, fallback to domain request
+                    return next.exchange(request);
+                }
+            } catch (Throwable e) {
+                return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
+            }
+            ReactiveWebClusterRequest clusterRequest = new ReactiveWebClusterRequest(request, service, registry, next);
+            HttpOutboundInvocation<ReactiveWebClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
+            CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
+            return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
+        }));
     }
 
     /**
@@ -92,17 +128,39 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
     }
 
     /**
-     * Executes load-balanced cluster request
-     *
-     * @param request Inbound request
-     * @param next    Downstream handler
-     * @param service Destination service
-     * @return Async response pipeline
+     * Utility class for detecting Spring Cloud environment and load balancer configuration.
      */
-    private Mono<ClientResponse> request(ClientRequest request, ExchangeFunction next, String service) {
-        ReactiveWebClusterRequest clusterRequest = new ReactiveWebClusterRequest(request, service, registry, next);
-        HttpOutboundInvocation<ReactiveWebClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
-        CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
-        return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
+    private static class Accessor {
+
+        // spring cloud 3+
+        private static final Class<?> lbType = loadClass(TYPE_HINT_REQUEST_CONTEXT, HttpAccessor.class.getClassLoader());
+
+        /**
+         * Checks if Spring Cloud is available in the classpath.
+         *
+         * @return true if Spring Cloud is present, false otherwise
+         */
+        public static boolean isCloudEnabled() {
+            return lbType != null;
+        }
+
+        /**
+         * Checks if the WebClient builder is configured for cloud load balancing.
+         *
+         * @param builder the WebClient builder to check
+         * @return true if the builder contains load balancing filters, false otherwise
+         */
+        public static boolean isCloudClient(WebClient.Builder builder) {
+            final boolean[] result = new boolean[]{false};
+            builder.filters(filters -> {
+                for (ExchangeFilterFunction filter : filters) {
+                    if (filter instanceof LoadBalancedExchangeFilterFunction) {
+                        result[0] = true;
+                        break;
+                    }
+                }
+            });
+            return result[0];
+        }
     }
 }

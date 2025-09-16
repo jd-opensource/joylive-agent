@@ -103,8 +103,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
      * @return a {@link Mono} emitting the {@link ClientResponse} containing the response data
      */
     public Mono<ClientResponse> exchange(ServiceInstance instance) {
-        ClientRequest newRequest = createRequest(instance);
-        return next.exchange(newRequest);
+        return next.exchange(createRequest(instance));
     }
 
     /**
@@ -130,7 +129,11 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
                         cookies.add(instanceIdCookieName, serviceInstance.getInstanceId());
                     }
                 })
-                .attributes(attributes -> attributes.putAll(request.attributes()))
+                .attributes(attributes -> {
+                    // cloud request
+                    attributes.put(KEY_CLOUD_REQUEST, Boolean.TRUE);
+                    attributes.putAll(request.attributes());
+                })
                 .body(request.body())
                 .build();
         List<LoadBalancerClientRequestTransformer> transformers = context.getTransformers();

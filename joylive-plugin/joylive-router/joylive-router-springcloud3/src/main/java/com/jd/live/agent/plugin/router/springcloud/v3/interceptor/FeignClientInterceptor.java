@@ -59,9 +59,9 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
 
     private final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
 
-    public FeignClientInterceptor(InvocationContext context, Registry registry) {
+    public FeignClientInterceptor(InvocationContext context) {
         this.context = context;
-        this.registry = registry;
+        this.registry = context.getRegistry();
     }
 
     @Override
@@ -71,7 +71,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         try {
             if (Accessor.isCloudEnabled()) {
                 // with spring cloud
-                if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST) && context.isLocationEnabled()) {
+                if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST) && context.isDomainSensitive()) {
                     // lane or live for http request
                     forward(request, URI.create(request.url()), mc);
                 }
@@ -79,7 +79,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                 // only spring boot
                 URI uri = URI.create(request.url());
                 // determine whether is a microservice request
-                String service = context.isRegistryEnabled() && context.isFlowControlEnabled() ? context.getService(uri) : null;
+                String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
                 if (service != null && !service.isEmpty()) {
                     List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
                             new InternalServerError(message, request, request.body(), request.headers()));
@@ -88,7 +88,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                         return;
                     }
                     request(request, service, uri, mc);
-                } else if (context.isLocationEnabled()) {
+                } else if (context.isDomainSensitive()) {
                     // lane or live for http request
                     forward(request, uri, mc);
                 }

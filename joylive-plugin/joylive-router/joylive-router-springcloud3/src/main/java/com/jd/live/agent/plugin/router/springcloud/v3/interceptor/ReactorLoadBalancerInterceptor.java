@@ -42,6 +42,7 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         String serviceId = loadBalancers.computeIfAbsent((ReactorLoadBalancer<?>) ctx.getTarget(), this::getServiceId).get();
         if (serviceId != null) {
+            // it's used by service instance list supplier interceptor
             RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceId);
         }
     }
