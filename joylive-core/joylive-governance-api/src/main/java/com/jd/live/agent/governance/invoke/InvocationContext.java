@@ -123,6 +123,15 @@ public interface InvocationContext {
     }
 
     /**
+     * Checks if the registry is enabled in governance configuration.
+     *
+     * @return true if registry is enabled, false otherwise
+     */
+    default boolean isRegistryEnabled() {
+        return getGovernanceConfig().getRegistryConfig().isEnabled();
+    }
+
+    /**
      * Checks if the location feature is enabled.
      *
      * @return {@code true} if the live feature is enabled, {@code false} otherwise
@@ -793,6 +802,11 @@ public interface InvocationContext {
         @Override
         public boolean isGovernEnabled() {
             return delegate.isGovernEnabled();
+        }
+
+        @Override
+        public boolean isRegistryEnabled() {
+            return delegate.isRegistryEnabled();
         }
 
         @Override

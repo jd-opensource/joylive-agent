@@ -138,6 +138,9 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private boolean governEnabled;
 
     @Getter
+    private boolean registryEnabled;
+
+    @Getter
     private boolean locationEnabled;
 
     @Getter
@@ -432,6 +435,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
         gatewayRole = application.getService().getGateway();
         governEnabled = flowControlEnabled || laneEnabled || liveEnabled;
+        registryEnabled = governanceConfig.getRegistryConfig().isEnabled();
         locationEnabled = laneEnabled || liveEnabled;
         docRegistry = new LiveDocumentRegistry();
 

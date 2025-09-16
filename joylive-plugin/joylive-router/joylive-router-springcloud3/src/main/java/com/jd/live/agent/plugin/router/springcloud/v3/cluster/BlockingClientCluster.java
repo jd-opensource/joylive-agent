@@ -25,7 +25,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.status.StatusThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingWebClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.DegradeHttpResponse;
 import org.springframework.core.NestedRuntimeException;
@@ -44,7 +44,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @see AbstractCloudCluster
  */
-public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRequest, BlockingClusterResponse, ServiceEndpoint> {
+public class BlockingClientCluster extends AbstractLiveCluster<BlockingClientClusterRequest, BlockingClusterResponse, ServiceEndpoint> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -53,11 +53,11 @@ public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRe
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private final SpringOutboundThrower<NestedRuntimeException, BlockingWebClusterRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
+    private final SpringOutboundThrower<NestedRuntimeException, BlockingClientClusterRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
-    public static final BlockingWebCluster INSTANCE = new BlockingWebCluster();
+    public static final BlockingClientCluster INSTANCE = new BlockingClientCluster();
 
-    public BlockingWebCluster() {
+    public BlockingClientCluster() {
     }
 
     @Override
@@ -66,7 +66,7 @@ public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRe
     }
 
     @Override
-    public CompletionStage<BlockingClusterResponse> invoke(BlockingWebClusterRequest request, ServiceEndpoint endpoint) {
+    public CompletionStage<BlockingClusterResponse> invoke(BlockingClientClusterRequest request, ServiceEndpoint endpoint) {
         try {
             ClientHttpResponse response = request.getRequest().execute(endpoint);
             return CompletableFuture.completedFuture(new BlockingClusterResponse(response));
@@ -76,17 +76,17 @@ public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRe
     }
 
     @Override
-    protected BlockingClusterResponse createResponse(BlockingWebClusterRequest request) {
+    protected BlockingClusterResponse createResponse(BlockingClientClusterRequest request) {
         return createResponse(request, DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build());
     }
 
     @Override
-    public CompletionStage<List<ServiceEndpoint>> route(BlockingWebClusterRequest request) {
+    public CompletionStage<List<ServiceEndpoint>> route(BlockingClientClusterRequest request) {
         return request.getInstances();
     }
 
     @Override
-    protected BlockingClusterResponse createResponse(BlockingWebClusterRequest request, DegradeConfig degradeConfig) {
+    protected BlockingClusterResponse createResponse(BlockingClientClusterRequest request, DegradeConfig degradeConfig) {
         return new BlockingClusterResponse(new DegradeHttpResponse(degradeConfig, request));
     }
 
@@ -96,17 +96,17 @@ public class BlockingWebCluster extends AbstractLiveCluster<BlockingWebClusterRe
     }
 
     @Override
-    public Throwable createException(Throwable throwable, BlockingWebClusterRequest request) {
+    public Throwable createException(Throwable throwable, BlockingClientClusterRequest request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, BlockingWebClusterRequest request, ServiceEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, BlockingClientClusterRequest request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, OutboundInvocation<BlockingWebClusterRequest> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<BlockingClientClusterRequest> invocation) {
         return thrower.createException(throwable, invocation);
     }
 

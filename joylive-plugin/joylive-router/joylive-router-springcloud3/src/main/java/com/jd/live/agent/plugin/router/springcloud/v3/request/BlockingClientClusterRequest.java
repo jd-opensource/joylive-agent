@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
@@ -25,10 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-/**
- * RestTemplateOutboundRequest
- */
-public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<BlockingWebHttpRequest> {
+public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> {
 
     private final String service;
 
@@ -36,7 +32,7 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
 
     private final HttpHeaders writeableHeaders;
 
-    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, Registry registry) {
+    public BlockingClientClusterRequest(BlockingClientHttpRequest request, String service, Registry registry) {
         super(request);
         this.service = service;
         this.registry = registry;
@@ -50,8 +46,8 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
     }
 
     @Override
-    public HttpMethod getHttpMethod() {
-        return HttpMethod.ofNullable(request.getMethodValue());
+    public com.jd.live.agent.core.util.http.HttpMethod getHttpMethod() {
+        return com.jd.live.agent.core.util.http.HttpMethod.ofNullable(request.getMethodValue());
     }
 
     @Override
