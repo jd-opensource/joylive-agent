@@ -82,6 +82,7 @@ public class IgnoredHandler implements BuilderHandler {
         }
 
         protected boolean isAgent(TypeDescription description, ClassLoader classLoader) {
+            // some class is loaded by app classloader, such as bootstrap class.
             return classLoader instanceof LiveClassLoader || description.getActualName().startsWith("com.jd.live.agent.");
         }
 
