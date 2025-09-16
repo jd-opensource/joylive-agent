@@ -19,6 +19,7 @@ import com.alibaba.fastjson2.JSONFactory;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
 import com.jd.live.agent.core.exception.ParseException;
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
@@ -28,18 +29,16 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Type;
 
-@Extension(value = ObjectParser.JSON, provider = "fastjson2")
-public class Fastjson2JsonParser implements ObjectParser {
+import static com.alibaba.fastjson2.JSON.parseObject;
+import static com.alibaba.fastjson2.JSON.writeTo;
 
-    static {
-        JSONFactory.getDefaultObjectWriterProvider().register(new JoyLiveWriterModule());
-        JSONFactory.getDefaultObjectReaderProvider().register(new JoyLiveReaderModule());
-    }
+@Extension(value = ObjectParser.JSON, provider = "fastjson2")
+public class Fastjson2JsonParser implements ObjectParser, ExtensionInitializer {
 
     @Override
     public <T> T read(Reader reader, Class<T> clazz) {
         try {
-            return com.alibaba.fastjson2.JSON.parseObject(reader, clazz, JSONReader.Feature.FieldBased);
+            return parseObject(reader, clazz, JSONReader.Feature.FieldBased);
         } catch (Exception e) {
             throw new ParseException(e.getMessage(), e);
         }
@@ -48,7 +47,7 @@ public class Fastjson2JsonParser implements ObjectParser {
     @Override
     public <T> T read(Reader reader, TypeReference<T> reference) {
         try {
-            return com.alibaba.fastjson2.JSON.parseObject(reader, reference.getType(), JSONReader.Feature.FieldBased);
+            return parseObject(reader, reference.getType(), JSONReader.Feature.FieldBased);
         } catch (Exception e) {
             throw new ParseException(e.getMessage(), e);
         }
@@ -57,7 +56,7 @@ public class Fastjson2JsonParser implements ObjectParser {
     @Override
     public <T> T read(Reader reader, Type type) {
         try {
-            return com.alibaba.fastjson2.JSON.parseObject(reader, type, JSONReader.Feature.FieldBased);
+            return parseObject(reader, type, JSONReader.Feature.FieldBased);
         } catch (Exception e) {
             throw new ParseException(e.getMessage(), e);
         }
@@ -67,11 +66,17 @@ public class Fastjson2JsonParser implements ObjectParser {
     public void write(Writer writer, Object obj) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream(1000);
         try {
-            com.alibaba.fastjson2.JSON.writeTo(stream, obj, JSONWriter.Feature.FieldBased);
+            writeTo(stream, obj, JSONWriter.Feature.FieldBased);
             writer.write(stream.toString());
         } catch (Throwable e) {
             throw new ParseException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void initialize() {
+        JSONFactory.getDefaultObjectWriterProvider().register(new LiveWriterModule());
+        JSONFactory.getDefaultObjectReaderProvider().register(new LiveReaderModule());
     }
 }
 

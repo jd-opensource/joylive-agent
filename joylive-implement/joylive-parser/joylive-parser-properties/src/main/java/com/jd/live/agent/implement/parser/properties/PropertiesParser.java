@@ -36,8 +36,9 @@ public class PropertiesParser implements ConfigParser {
 
     @Override
     public Map<String, Object> parse(Reader reader) {
-        if (reader == null)
+        if (reader == null) {
             return new HashMap<>();
+        }
         try {
             Properties properties = new Properties();
             properties.load(reader);
@@ -45,7 +46,7 @@ public class PropertiesParser implements ConfigParser {
             properties.forEach((key, value) -> result.put(key.toString(), value));
             return result;
         } catch (IOException e) {
-            throw new ParseException("an error occurred while parsing properties.", e);
+            throw new ParseException("an error occurred while parsing properties. caused by " + e.getMessage(), e);
         }
     }
 

@@ -37,7 +37,7 @@ import static com.jd.live.agent.implement.parser.fastjson2.Converters.getOrCreat
 /**
  * A module for the ObjectWriter that handles custom annotations for JSON serialization.
  */
-public class JoyLiveWriterModule implements ObjectWriterModule {
+public class LiveWriterModule implements ObjectWriterModule {
 
     /**
      * Gets the annotation processor for this module.
@@ -45,15 +45,15 @@ public class JoyLiveWriterModule implements ObjectWriterModule {
      * @return The annotation processor instance.
      */
     public ObjectWriterAnnotationProcessor getAnnotationProcessor() {
-        return JoyLiveWriteAnnotationProcessor.INSTANCE;
+        return LiveWriteAnnotationProcessor.INSTANCE;
     }
 
     /**
      * A private static class that implements the ObjectWriterAnnotationProcessor interface.
      */
-    private static class JoyLiveWriteAnnotationProcessor implements ObjectWriterAnnotationProcessor {
+    private static class LiveWriteAnnotationProcessor implements ObjectWriterAnnotationProcessor {
 
-        private static final JoyLiveWriteAnnotationProcessor INSTANCE = new JoyLiveWriteAnnotationProcessor();
+        private static final LiveWriteAnnotationProcessor INSTANCE = new LiveWriteAnnotationProcessor();
 
         @Override
         public void getFieldInfo(BeanInfo beanInfo, FieldInfo fieldInfo, Class objectClass, Field field) {
@@ -69,20 +69,12 @@ public class JoyLiveWriterModule implements ObjectWriterModule {
          */
         private void processAnnotation(FieldInfo fieldInfo, Annotation[] annotations, Field field) {
             for (Annotation annotation : annotations) {
-                Class<? extends Annotation> annotationType = annotation.annotationType();
-                String annotationTypeName = annotationType.getName();
-                switch (annotationTypeName) {
-                    case "com.jd.live.agent.core.parser.json.JsonField":
-                        processJsonField(fieldInfo, (JsonField) annotation);
-                        break;
-                    case "com.jd.live.agent.core.parser.json.JsonFormat":
-                        processJsonFormat(fieldInfo, (JsonFormat) annotation, field);
-                        break;
-                    case "com.jd.live.agent.core.parser.json.SerializeConverter":
-                        processSerializerConverter(fieldInfo, (SerializeConverter) annotation, field);
-                        break;
-                    default:
-                        break;
+                if (annotation instanceof JsonField) {
+                    processJsonField(fieldInfo, (JsonField) annotation);
+                } else if (annotation instanceof JsonFormat) {
+                    processJsonFormat(fieldInfo, (JsonFormat) annotation, field);
+                } else if (annotation instanceof SerializeConverter) {
+                    processSerializerConverter(fieldInfo, (SerializeConverter) annotation, field);
                 }
             }
         }

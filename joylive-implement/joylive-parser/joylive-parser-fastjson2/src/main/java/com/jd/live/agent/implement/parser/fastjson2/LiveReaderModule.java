@@ -32,21 +32,21 @@ import static com.jd.live.agent.implement.parser.fastjson2.Converters.getConvert
 /**
  * A module for the ObjectReader that handles custom annotations for JSON deserialization.
  */
-public class JoyLiveReaderModule implements ObjectReaderModule {
+public class LiveReaderModule implements ObjectReaderModule {
 
-    public JoyLiveReaderModule() {
+    public LiveReaderModule() {
     }
 
     public ObjectReaderAnnotationProcessor getAnnotationProcessor() {
-        return JoyLiveReadAnnotationProcessor.INSTANCE;
+        return LiveReadAnnotationProcessor.INSTANCE;
     }
 
     /**
      * A private static class that implements the ObjectReaderAnnotationProcessor interface.
      */
-    private static class JoyLiveReadAnnotationProcessor implements ObjectReaderAnnotationProcessor {
+    private static class LiveReadAnnotationProcessor implements ObjectReaderAnnotationProcessor {
 
-        private static final JoyLiveReadAnnotationProcessor INSTANCE = new JoyLiveReadAnnotationProcessor();
+        private static final LiveReadAnnotationProcessor INSTANCE = new LiveReadAnnotationProcessor();
 
         @Override
         public void getFieldInfo(FieldInfo fieldInfo, Class objectClass, Field field) {
@@ -62,21 +62,14 @@ public class JoyLiveReaderModule implements ObjectReaderModule {
          */
         private void processAnnotation(FieldInfo fieldInfo, Annotation[] annotations, Field field) {
             for (Annotation annotation : annotations) {
-                Class<? extends Annotation> annotationType = annotation.annotationType();
-                String annotationTypeName = annotationType.getName();
-                switch (annotationTypeName) {
-                    case "com.jd.live.agent.core.parser.json.JsonField":
-                        processJsonField(fieldInfo, (JsonField) annotation);
-                        break;
-                    case "com.jd.live.agent.core.parser.json.JsonAlias":
-                        processJsonAlias(fieldInfo, (JsonAlias) annotation);
-                        break;
-                    case "com.jd.live.agent.core.parser.json.JsonFormat":
-                        processJsonFormat(fieldInfo, (JsonFormat) annotation, field);
-                        break;
-                    case "com.jd.live.agent.core.parser.json.DeserializeConverter":
-                        processDeserializerConverter(fieldInfo, (DeserializeConverter) annotation, field);
-                        break;
+                if (annotation instanceof JsonField) {
+                    processJsonField(fieldInfo, (JsonField) annotation);
+                } else if (annotation instanceof JsonAlias) {
+                    processJsonAlias(fieldInfo, (JsonAlias) annotation);
+                } else if (annotation instanceof JsonFormat) {
+                    processJsonFormat(fieldInfo, (JsonFormat) annotation, field);
+                } else if (annotation instanceof DeserializeConverter) {
+                    processDeserializerConverter(fieldInfo, (DeserializeConverter) annotation, field);
                 }
             }
         }
