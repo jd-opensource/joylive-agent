@@ -16,6 +16,7 @@
 package com.jd.live.agent.implement.bytekit.bytebuddy.handler;
 
 import com.jd.live.agent.bootstrap.classloader.LiveClassLoader;
+import com.jd.live.agent.core.config.ClassLoaderConfig;
 import com.jd.live.agent.core.config.EnhanceConfig;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -42,9 +43,12 @@ public class IgnoredHandler implements BuilderHandler {
     @Inject(EnhanceConfig.COMPONENT_ENHANCE_CONFIG)
     private EnhanceConfig enhanceConfig;
 
+    @Inject(value = ClassLoaderConfig.COMPONENT_CLASSLOADER_CONFIG)
+    private ClassLoaderConfig classLoaderConfig;
+
     @Override
     public AgentBuilder configure(AgentBuilder builder, Instrumentation instrumentation) {
-        return builder.ignore(new IgnoredMatcher(enhanceConfig));
+        return builder.ignore(new IgnoredMatcher(enhanceConfig, classLoaderConfig));
     }
 
     /**
@@ -54,10 +58,13 @@ public class IgnoredHandler implements BuilderHandler {
      */
     protected static class IgnoredMatcher implements AgentBuilder.RawMatcher {
 
-        private final EnhanceConfig config;
+        private final EnhanceConfig enhanceConfig;
 
-        public IgnoredMatcher(EnhanceConfig config) {
-            this.config = config;
+        private final ClassLoaderConfig classLoaderConfig;
+
+        public IgnoredMatcher(EnhanceConfig enhanceConfig, ClassLoaderConfig classLoaderConfig) {
+            this.enhanceConfig = enhanceConfig;
+            this.classLoaderConfig = classLoaderConfig;
         }
 
         @Override
@@ -83,11 +90,11 @@ public class IgnoredHandler implements BuilderHandler {
 
         protected boolean isAgent(TypeDescription description, ClassLoader classLoader) {
             // some class is loaded by app classloader, such as bootstrap class.
-            return classLoader instanceof LiveClassLoader || description.getActualName().startsWith("com.jd.live.agent.");
+            return classLoader instanceof LiveClassLoader || classLoaderConfig.isEssential(description.getActualName());
         }
 
         protected boolean isExcluded(TypeDescription description, ClassLoader classLoader) {
-            return config.isExclude(description.getActualName(), classLoader);
+            return enhanceConfig.isExclude(description.getActualName(), classLoader);
         }
 
         protected boolean isReflectionDynamicCreated(TypeDescription description) {
