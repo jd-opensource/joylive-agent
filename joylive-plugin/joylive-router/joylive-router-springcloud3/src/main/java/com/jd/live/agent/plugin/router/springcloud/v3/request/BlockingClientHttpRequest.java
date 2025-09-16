@@ -23,8 +23,6 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocat
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.BlockingClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
@@ -39,7 +37,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
@@ -113,7 +110,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
             } else {
                 // lane or live for http request
                 HttpForwardContext ctx = new HttpForwardContext(context);
-                BlockingForwardRequest forwardRequest = new BlockingForwardRequest(this);
+                BlockingClientForwardRequest forwardRequest = new BlockingClientForwardRequest(this);
                 ctx.route(new HttpForwardInvocation<>(forwardRequest, ctx));
                 return execute(forwardRequest.getURI());
             }
@@ -197,50 +194,4 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         return execute(endpoint);
     }
 
-    /**
-     * BlockingForwardRequest
-     */
-    private static class BlockingForwardRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> implements HttpForwardRequest {
-
-        private final HttpHeaders writeableHeaders;
-
-        BlockingForwardRequest(BlockingClientHttpRequest request) {
-            super(request);
-            this.uri = request.getURI();
-            this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
-        }
-
-        @Override
-        public String getService() {
-            return null;
-        }
-
-        @Override
-        public com.jd.live.agent.core.util.http.HttpMethod getHttpMethod() {
-            return com.jd.live.agent.core.util.http.HttpMethod.ofNullable(request.getMethodValue());
-        }
-
-        @Override
-        public String getHeader(String key) {
-            return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
-        }
-
-        @Override
-        public void setHeader(String key, String value) {
-            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-                writeableHeaders.set(key, value);
-            }
-        }
-
-        @Override
-        public void forward(String host) {
-            uri = newURI(uri, host);
-        }
-
-        @Override
-        protected Map<String, List<String>> parseHeaders() {
-            return writeableHeaders;
-        }
-
-    }
 }

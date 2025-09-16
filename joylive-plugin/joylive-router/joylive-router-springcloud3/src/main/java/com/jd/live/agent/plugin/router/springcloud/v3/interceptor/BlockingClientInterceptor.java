@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URI;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3Enabled.TYPE_HINT_REQUEST_CONTEXT;
 
 /**
  * BlockingClientInterceptor
@@ -67,7 +68,7 @@ public class BlockingClientInterceptor extends InterceptorAdaptor {
     private static class Accessor {
 
         // spring cloud 3+
-        private static final Class<?> lbType = loadClass("org.springframework.cloud.client.loadbalancer.HintRequestContext", HttpAccessor.class.getClassLoader());
+        private static final Class<?> lbType = loadClass(TYPE_HINT_REQUEST_CONTEXT, HttpAccessor.class.getClassLoader());
 
         /**
          * Checks if Spring Cloud is available in the classpath.

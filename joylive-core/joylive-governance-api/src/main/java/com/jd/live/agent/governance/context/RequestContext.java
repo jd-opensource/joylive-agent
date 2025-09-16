@@ -161,6 +161,17 @@ public class RequestContext {
     }
 
     /**
+     * Checks if the specified attribute key exists in the current carrier.
+     *
+     * @param key the attribute key to check
+     * @return true if the attribute exists, false otherwise
+     */
+    public static boolean hasAttribute(String key) {
+        Carrier carrier = CARRIER.get();
+        return carrier == null ? false : carrier.hasAttribute(key);
+    }
+
+    /**
      * Removes a specific attribute by key from the current {@link Carrier} instance.
      *
      * @param <T> The type of the attribute to remove.

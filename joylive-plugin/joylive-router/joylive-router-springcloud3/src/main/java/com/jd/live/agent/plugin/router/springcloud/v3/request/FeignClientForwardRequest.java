@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import feign.Request;
 
 import java.net.URI;
@@ -27,45 +27,54 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
-import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
- * FeignWebOutboundRequest
+ * FeignForwardRequest
  */
-public class FeignWebOutboundRequest extends AbstractHttpOutboundRequest<Request> implements FeignOutboundRequest {
+public class FeignClientForwardRequest extends AbstractHttpOutboundRequest<Request> implements HttpForwardRequest {
 
-    private final String service;
-
-    private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
-
-    public FeignWebOutboundRequest(Request request, String service, URI uri) {
+    public FeignClientForwardRequest(Request request, URI uri) {
         super(request);
-        this.service = service;
         this.uri = uri;
     }
 
     @Override
     public String getService() {
-        return service;
+        return null;
     }
 
     @Override
     public HttpMethod getHttpMethod() {
-        Request.HttpMethod method = request.httpMethod();
-        return method == null ? null : HttpMethod.ofNullable(method.name());
+        return HttpMethod.ofNullable(request.httpMethod().name());
     }
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
+        if (key == null || key.isEmpty()) {
+            return null;
+        }
+        Collection<String> values = request.headers().get(key);
+        if (values == null || values.isEmpty()) {
+            return null;
+        } else if (values instanceof List) {
+            return ((List<String>) values).get(0);
+        }
+        return values.iterator().next();
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            cache.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            List<String> values = new ArrayList<>();
+            values.add(value);
+            request.headers().put(key, values);
         }
+    }
+
+    @Override
+    public void forward(String host) {
+        uri = newURI(uri, host);
     }
 
     @Override

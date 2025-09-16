@@ -28,6 +28,9 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignClientInterceptor;
 
+import static com.jd.live.agent.plugin.router.springcloud.v3.definition.FeignCloudClientDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
+import static com.jd.live.agent.plugin.router.springcloud.v3.definition.FeignRetryCloudClientDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
+
 /**
  * FeignClientDefinition
  */
@@ -53,7 +56,8 @@ public class FeignClientDefinition extends PluginDefinitionAdapter {
     private Registry registry;
 
     public FeignClientDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE).and(MatcherBuilder.not(MatcherBuilder.in(
+                TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT, TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
                         () -> new FeignClientInterceptor(context, registry))

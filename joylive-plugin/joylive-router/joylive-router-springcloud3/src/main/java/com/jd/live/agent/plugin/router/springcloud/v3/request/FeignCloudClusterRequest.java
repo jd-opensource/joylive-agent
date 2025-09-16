@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.context.FeignClusterContext;
 import feign.Request;
@@ -45,6 +46,7 @@ import static com.jd.live.agent.plugin.router.springcloud.v3.util.UriUtils.newUR
  */
 public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Request, FeignClusterContext> {
 
+    public static final String FEIGN_CLOUD_REQUEST = "feignCloudRequest";
     private final Request.Options options;
 
     private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
@@ -97,9 +99,20 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
     public Response execute(ServiceEndpoint endpoint) throws IOException {
         String url = newURI(endpoint, uri).toString();
         // TODO sticky session
-        Request req = Request.create(request.httpMethod(), url, request.headers(),
-                request.body(), request.charset(), request.requestTemplate());
-        return context.getDelegate().execute(req, options);
+        Request req = Request.create(
+                request.httpMethod(),
+                url,
+                request.headers(),
+                request.body(),
+                request.charset(),
+                request.requestTemplate());
+        // the FEIGN_CLOUD_REQUEST attribute will be used by feign client interceptor.
+        RequestContext.setAttribute(FEIGN_CLOUD_REQUEST, Boolean.TRUE);
+        try {
+            return context.getDelegate().execute(req, options);
+        } finally {
+            RequestContext.removeAttribute(FEIGN_CLOUD_REQUEST);
+        }
     }
 
 }
