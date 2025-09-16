@@ -23,43 +23,36 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
+import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignCloudClusterInterceptor;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5RegistryEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactiveClientInterceptor;
 
 /**
- * FeignRetryableClientDefinition
- *
- * @since 1.0.0
+ * ReactiveClientDefinition
  */
 @Injectable
-@Extension(value = "FeignRetryableClientDefinition_v3")
-@ConditionalOnSpringCloud3FlowControlEnabled
-@ConditionalOnSpringRetry
-@ConditionalOnClass(FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
-public class FeignRetryableCloudClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "ReactiveClientDefinition_v5")
+@ConditionalOnSpringWeb5RegistryEnabled
+@ConditionalOnReactive
+@ConditionalOnClass(ReactiveClientDefinition.TYPE_DEFAULT_WEB_CLIENT)
+public class ReactiveClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient";
-
-    private static final String METHOD_EXECUTE = "execute";
-
-    private static final String[] ARGUMENT_FILTER = new String[]{
-            "feign.Request",
-            "feign.Request$Options"
-    };
+    protected static final String TYPE_DEFAULT_WEB_CLIENT = "org.springframework.web.reactive.function.client.DefaultWebClient";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FeignRetryableCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
+
+    public ReactiveClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_WEB_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE).
-                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
-                        () -> new FeignCloudClusterInterceptor(context)
-                )
+                        MatcherBuilder.isConstructor(),
+                        () -> new ReactiveClientInterceptor(context, registry))
         };
     }
 }

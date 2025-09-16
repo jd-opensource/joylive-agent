@@ -23,36 +23,44 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactiveWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.BlockingCloudClientInterceptor;
 
 /**
- * WebClientClusterDefinition
+ * BlockingRetryCloudClientDefinition
+ *
+ * @since 1.0.0
  */
 @Injectable
-@Extension(value = "WebClientClusterDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
-@ConditionalOnReactive
-@ConditionalOnClass(ReactiveWebClusterDefinition.TYPE_DEFAULT_WEB_CLIENT)
-public class ReactiveWebClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "BlockingRetryCloudClientDefinition_v3")
+@ConditionalOnSpringCloud3FlowControlEnabled
+@ConditionalOnSpringRetry
+@ConditionalOnClass(BlockingRetryCloudClientDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
+public class BlockingRetryCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_WEB_CLIENT = "org.springframework.web.reactive.function.client.DefaultWebClient";
+    protected static final String TYPE_RETRY_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor";
+
+    private static final String METHOD_INTERCEPT = "intercept";
+
+    private static final String[] ARGUMENT_INTERCEPT = new String[]{
+            "org.springframework.http.HttpRequest",
+            "byte[]",
+            "org.springframework.http.client.ClientHttpRequestExecution"
+    };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public ReactiveWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_WEB_CLIENT);
+    public BlockingRetryCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_RETRY_LOADBALANCER_INTERCEPTOR);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new ReactiveWebClusterInterceptor(context, registry))
+                        MatcherBuilder.named(METHOD_INTERCEPT).
+                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
+                        () -> new BlockingCloudClientInterceptor(context)
+                )
         };
     }
 }

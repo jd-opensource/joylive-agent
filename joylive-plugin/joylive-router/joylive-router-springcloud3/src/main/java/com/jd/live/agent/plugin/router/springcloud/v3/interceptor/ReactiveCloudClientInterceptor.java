@@ -33,17 +33,17 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ReactiveClusterInterceptor
+ * ReactiveCloudClientInterceptor
  *
  * @since 1.0.0
  */
-public class ReactiveCloudClusterInterceptor extends InterceptorAdaptor {
+public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
     private final Map<LoadBalancedExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    public ReactiveCloudClusterInterceptor(InvocationContext context) {
+    public ReactiveCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
 

@@ -42,9 +42,9 @@ import java.util.List;
 import static com.jd.live.agent.plugin.router.springcloud.v3.request.FeignOutboundRequest.createRequest;
 
 /**
- * FeignWebClusterInterceptor
+ * FeignClientInterceptor
  */
-public class FeignWebClusterInterceptor extends InterceptorAdaptor {
+public class FeignClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
@@ -52,7 +52,7 @@ public class FeignWebClusterInterceptor extends InterceptorAdaptor {
 
     private final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
 
-    public FeignWebClusterInterceptor(InvocationContext context, Registry registry) {
+    public FeignClientInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
         this.registry = registry;
     }

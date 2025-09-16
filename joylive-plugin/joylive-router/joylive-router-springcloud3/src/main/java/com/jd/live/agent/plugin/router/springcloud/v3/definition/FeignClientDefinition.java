@@ -25,17 +25,17 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringWeb5GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignClientInterceptor;
 
 /**
- * FeignWebClusterDefinition
+ * FeignClientDefinition
  */
-@Extension(value = "FeignClientClusterDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
-@ConditionalOnClass(FeignWebClusterDefinition.TYPE)
+@Extension(value = "FeignClientDefinition_v5")
+@ConditionalOnSpringWeb5GovernanceEnabled
+@ConditionalOnClass(FeignClientDefinition.TYPE)
 @Injectable
-public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
+public class FeignClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "feign.Client";
 
@@ -52,11 +52,11 @@ public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
-    public FeignWebClusterDefinition() {
+    public FeignClientDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new FeignWebClusterInterceptor(context, registry))
+                        () -> new FeignClientInterceptor(context, registry))
         };
     }
 }

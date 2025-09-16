@@ -37,15 +37,15 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
- * ReactiveWebClusterInterceptor
+ * ReactiveClientInterceptor
  */
-public class ReactiveWebClusterInterceptor extends InterceptorAdaptor {
+public class ReactiveClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
     private final Registry registry;
 
-    public ReactiveWebClusterInterceptor(InvocationContext context, Registry registry) {
+    public ReactiveClientInterceptor(InvocationContext context, Registry registry) {
         this.context = context;
         this.registry = registry;
     }

@@ -23,41 +23,44 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.ReactiveCloudClientInterceptor;
 
 /**
- * BlockingClusterDefinition
+ * ReactiveCloudClientDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "BlockingClusterDefinition_v3")
+@Extension(value = "ReactiveCloudClientDefinition_v3")
 @ConditionalOnSpringCloud3FlowControlEnabled
-@ConditionalOnClass(BlockingCloudClusterDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
-public class BlockingCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnReactive
+@ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_LOADBALANCED_EXCHANGE_FILTER_FUNCTION)
+public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor";
+    protected static final String TYPE_LOADBALANCED_EXCHANGE_FILTER_FUNCTION = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction";
 
-    private static final String METHOD_INTERCEPT = "intercept";
+    private static final String METHOD_FILTER = "filter";
 
-    private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.http.HttpRequest",
-            "byte[]",
-            "org.springframework.http.client.ClientHttpRequestExecution"
+    private static final String[] ARGUMENT_FILTER = new String[]{
+            "org.springframework.web.reactive.function.client.ClientRequest",
+            "org.springframework.web.reactive.function.client.ExchangeFunction"
     };
+
+    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_INTERCEPTOR);
+    public ReactiveCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_LOADBALANCED_EXCHANGE_FILTER_FUNCTION);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INTERCEPT).
-                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor(context)
+                        MatcherBuilder.named(METHOD_FILTER).
+                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
+                        () -> new ReactiveCloudClientInterceptor(context)
                 )
         };
     }

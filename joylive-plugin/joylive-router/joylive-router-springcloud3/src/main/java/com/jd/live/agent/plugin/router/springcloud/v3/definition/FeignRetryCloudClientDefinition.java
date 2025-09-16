@@ -23,32 +23,43 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v3.interceptor.FeignCloudClientInterceptor;
 
 /**
- * FeignClusterDefinition
+ * FeignRetryCloudClientDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FeignClusterDefinition_v3")
+@Extension(value = "FeignRetryCloudClientDefinition_v3")
 @ConditionalOnSpringCloud3FlowControlEnabled
-@ConditionalOnClass(FeignCloudClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
-public class FeignCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnSpringRetry
+@ConditionalOnClass(FeignRetryCloudClientDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
+public class FeignRetryCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.FeignBlockingLoadBalancerClient";
+    protected static final String TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient";
 
     private static final String METHOD_EXECUTE = "execute";
+
+    private static final String[] ARGUMENT_FILTER = new String[]{
+            "feign.Request",
+            "feign.Request$Options"
+    };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FeignCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
+    public FeignRetryCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClusterInterceptor(context))
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD_EXECUTE).
+                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
+                        () -> new FeignCloudClientInterceptor(context)
+                )
         };
     }
 }
