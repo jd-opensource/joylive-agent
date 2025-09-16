@@ -27,6 +27,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveWebCluster
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
+import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.support.HttpAccessor;
@@ -157,7 +158,7 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
             final boolean[] result = new boolean[]{false};
             builder.filters(filters -> {
                 for (ExchangeFilterFunction filter : filters) {
-                    if (filter instanceof LoadBalancedExchangeFilterFunction) {
+                    if (filter instanceof LoadBalancedExchangeFilterFunction || filter instanceof DeferringLoadBalancerExchangeFilterFunction) {
                         result[0] = true;
                         break;
                     }
