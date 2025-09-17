@@ -15,63 +15,62 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.request;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.http.HttpHeaders;
+import feign.Request;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
+import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 
 /**
- * RestTemplateOutboundRequest
+ * FeignWebOutboundRequest
  */
-public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<BlockingWebHttpRequest> {
+public class FeignClientOutboundRequest extends AbstractHttpOutboundRequest<Request> implements FeignOutboundRequest {
 
     private final String service;
 
-    private final Registry registry;
+    private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
 
-    private final HttpHeaders writeableHeaders;
-
-    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, Registry registry) {
+    public FeignClientOutboundRequest(Request request, String service, URI uri) {
         super(request);
         this.service = service;
-        this.registry = registry;
-        this.uri = request.getURI();
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
+        this.uri = uri;
     }
 
     @Override
     public String getService() {
-        return service == null || service.isEmpty() ? super.getService() : service;
+        return service;
     }
 
     @Override
     public HttpMethod getHttpMethod() {
-        return HttpMethod.ofNullable(request.getMethodValue());
+        Request.HttpMethod method = request.httpMethod();
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            cache.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return MultiLinkedMap.caseInsensitive(request.headers(), true);
     }
 
-    public CompletionStage<List<ServiceEndpoint>> getInstances() {
-        return registry.getEndpoints(service);
-    }
 }

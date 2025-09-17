@@ -25,7 +25,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.reactive.WebClientThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.request.ReactiveWebClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.request.ReactiveClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveClusterResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -39,7 +39,7 @@ import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveClusterResponse.create;
 
-public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRequest, ReactiveClusterResponse, ServiceEndpoint> {
+public class ReactiveClientCluster extends AbstractLiveCluster<ReactiveClientClusterRequest, ReactiveClusterResponse, ServiceEndpoint> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -48,11 +48,11 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRe
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private final SpringOutboundThrower<WebClientException, ReactiveWebClusterRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
+    private final SpringOutboundThrower<WebClientException, ReactiveClientClusterRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
 
-    public static final ReactiveWebCluster INSTANCE = new ReactiveWebCluster();
+    public static final ReactiveClientCluster INSTANCE = new ReactiveClientCluster();
 
-    public ReactiveWebCluster() {
+    public ReactiveClientCluster() {
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRe
     }
 
     @Override
-    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveWebClusterRequest request, ServiceEndpoint endpoint) {
+    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveClientClusterRequest request, ServiceEndpoint endpoint) {
         try {
             return request.exchange(endpoint).toFuture().thenApply(ReactiveClusterResponse::new);
         } catch (Throwable e) {
@@ -70,17 +70,17 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRe
     }
 
     @Override
-    protected ReactiveClusterResponse createResponse(ReactiveWebClusterRequest request) {
+    protected ReactiveClusterResponse createResponse(ReactiveClientClusterRequest request) {
         return createResponse(request, DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build());
     }
 
     @Override
-    public CompletionStage<List<ServiceEndpoint>> route(ReactiveWebClusterRequest request) {
+    public CompletionStage<List<ServiceEndpoint>> route(ReactiveClientClusterRequest request) {
         return request.getInstances();
     }
 
     @Override
-    protected ReactiveClusterResponse createResponse(ReactiveWebClusterRequest request, DegradeConfig degradeConfig) {
+    protected ReactiveClusterResponse createResponse(ReactiveClientClusterRequest request, DegradeConfig degradeConfig) {
         return create(request.getRequest(), degradeConfig, ExchangeStrategies.withDefaults());
     }
 
@@ -90,17 +90,17 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveWebClusterRe
     }
 
     @Override
-    public Throwable createException(Throwable throwable, ReactiveWebClusterRequest request) {
+    public Throwable createException(Throwable throwable, ReactiveClientClusterRequest request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, ReactiveWebClusterRequest request, ServiceEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, ReactiveClientClusterRequest request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, OutboundInvocation<ReactiveWebClusterRequest> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<ReactiveClientClusterRequest> invocation) {
         return thrower.createException(throwable, invocation);
     }
 

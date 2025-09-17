@@ -23,35 +23,32 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.BlockingWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringWeb5GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.ReactiveClientInterceptor;
 
 /**
- * RestTemplateClusterDefinition
+ * ReactiveClientDefinition
  */
-@Extension(value = "RestTemplateDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
-@ConditionalOnClass(BlockingWebClusterDefinition.TYPE)
 @Injectable
-public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "ReactiveClientDefinition_v5")
+@ConditionalOnSpringWeb5GovernanceEnabled
+@ConditionalOnReactive
+@ConditionalOnClass(ReactiveClientDefinition.TYPE_DEFAULT_WEB_CLIENT)
+public class ReactiveClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
-
-    private static final String METHOD = "createRequest";
+    protected static final String TYPE_DEFAULT_WEB_CLIENT = "org.springframework.web.reactive.function.client.DefaultWebClient";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public BlockingWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE);
+    public ReactiveClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_WEB_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new BlockingWebClusterInterceptor(context, registry))
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor(),
+                        () -> new ReactiveClientInterceptor(context))
         };
     }
 }

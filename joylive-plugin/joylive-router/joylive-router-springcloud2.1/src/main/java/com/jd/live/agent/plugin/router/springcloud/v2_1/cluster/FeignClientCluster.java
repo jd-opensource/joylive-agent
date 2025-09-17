@@ -26,7 +26,7 @@ import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.feign.FeignThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignWebClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClusterResponse;
 import feign.FeignException;
 
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest, FeignClusterResponse, ServiceEndpoint> {
+public class FeignClientCluster extends AbstractLiveCluster<FeignClientClusterRequest, FeignClusterResponse, ServiceEndpoint> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -46,11 +46,11 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private final SpringOutboundThrower<FeignException, FeignWebClusterRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
+    private final SpringOutboundThrower<FeignException, FeignClientClusterRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
 
-    public static final FeignWebCluster INSTANCE = new FeignWebCluster();
+    public static final FeignClientCluster INSTANCE = new FeignClientCluster();
 
-    public FeignWebCluster() {
+    public FeignClientCluster() {
     }
 
     @Override
@@ -59,7 +59,7 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
     }
 
     @Override
-    public CompletionStage<FeignClusterResponse> invoke(FeignWebClusterRequest request, ServiceEndpoint endpoint) {
+    public CompletionStage<FeignClusterResponse> invoke(FeignClientClusterRequest request, ServiceEndpoint endpoint) {
         try {
             feign.Response response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new FeignClusterResponse(response));
@@ -69,17 +69,17 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
     }
 
     @Override
-    protected FeignClusterResponse createResponse(FeignWebClusterRequest request) {
+    protected FeignClusterResponse createResponse(FeignClientClusterRequest request) {
         return createResponse(request, DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build());
     }
 
     @Override
-    public CompletionStage<List<ServiceEndpoint>> route(FeignWebClusterRequest request) {
+    public CompletionStage<List<ServiceEndpoint>> route(FeignClientClusterRequest request) {
         return request.getInstances();
     }
 
     @Override
-    protected FeignClusterResponse createResponse(FeignWebClusterRequest request, DegradeConfig degradeConfig) {
+    protected FeignClusterResponse createResponse(FeignClientClusterRequest request, DegradeConfig degradeConfig) {
         return FeignClusterResponse.create(request.getRequest(), degradeConfig);
     }
 
@@ -89,17 +89,17 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
     }
 
     @Override
-    public Throwable createException(Throwable throwable, FeignWebClusterRequest request) {
+    public Throwable createException(Throwable throwable, FeignClientClusterRequest request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, FeignWebClusterRequest request, ServiceEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, FeignClientClusterRequest request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, OutboundInvocation<FeignWebClusterRequest> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<FeignClientClusterRequest> invocation) {
         return thrower.createException(throwable, invocation);
     }
 

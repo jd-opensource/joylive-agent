@@ -27,24 +27,15 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.ReactiveCloudClusterInterceptor;
 
-/**
- * LoadBalancerExchangeFilterFunctionDefinition
- *
- * <p>
- * When <code>spring.cloud.loadbalancer.ribbon.enabled=false</code> is configured in the application, ReactorLoadBalancerExchangeFilterFunction is automatically injected;
- * otherwise, LoadBalancerExchangeFilterFunction is injected. Note that they have an either-or relationship.
- * </p>
- *
- * @author yuanjinzhong
- * @see org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction
- */
 @Injectable
-@Extension(value = "LoadBalancerExchangeFilterFunction_v2.1")
+@Extension(value = "ReactiveCloudClusterDefinition_v2.1")
 @ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnClass(ReactiveCloudClusterDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
 public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction";
+
+    protected static final String TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction";
 
     private static final String METHOD_INTERCEPT = "filter";
 
@@ -57,7 +48,7 @@ public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public ReactiveCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_EXCHANGE_FILTER);
+        this.matcher = () -> MatcherBuilder.in(TYPE_LOADBALANCER_EXCHANGE_FILTER, TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
