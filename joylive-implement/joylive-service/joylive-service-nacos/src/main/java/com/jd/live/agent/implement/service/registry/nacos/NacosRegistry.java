@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.util.Locks;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.task.RetryExecution;
@@ -55,6 +57,7 @@ import static com.jd.live.agent.core.util.option.Converts.getInteger;
  */
 public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, NamingService> implements RegistryService {
 
+    private static final Logger logger = LoggerFactory.getLogger(NacosRegistry.class);
     protected final String name;
     protected final Map<ServiceKey, Instance> registers = new ConcurrentHashMap<>();
     protected final Map<ServiceKey, InstanceListener> subscriptions = new ConcurrentHashMap<>();
@@ -382,6 +385,7 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
         public Boolean call() throws Exception {
             if (registers.get(key) == instance) {
                 client.registerInstance(key.getService(), key.group, instance);
+                logger.debug("Registered instance {}:{} to {}", instance.getIp(), instance.getPort(), name);
             }
             return true;
         }
