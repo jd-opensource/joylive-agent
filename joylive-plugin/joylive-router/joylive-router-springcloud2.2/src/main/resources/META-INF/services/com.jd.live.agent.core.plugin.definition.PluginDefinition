@@ -8,5 +8,4 @@ com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRetryerDefiniti
 com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRibbonCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_2.definition.ReactiveClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_2.definition.ReactiveCloudClientDefinition
-com.jd.live.agent.plugin.router.springcloud.v2_2.definition.ReactorCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_2.definition.ServiceInstanceListSupplierDefinition

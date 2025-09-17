@@ -28,23 +28,17 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnS
 import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveCloudClientInterceptor;
 
 /**
- * LoadBalancerExchangeFilterFunctionDefinition
- *
- * <p>
- * When <code>spring.cloud.loadbalancer.ribbon.enabled=false</code> is configured in the application, ReactorLoadBalancerExchangeFilterFunction is automatically injected;
- * otherwise, LoadBalancerExchangeFilterFunction is injected. Note that they have an either-or relationship.
- * </p>
- *
- * @author yuanjinzhong
- * @see org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction
+ * ReactiveCloudClientDefinition
  */
 @Injectable
-@Extension(value = "LoadBalancerExchangeFilterFunction_v2.2")
+@Extension(value = "ReactiveCloudClientDefinition_v2.2")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
+@ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER)
 public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction";
+
+    protected static final String TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction";
 
     private static final String METHOD_INTERCEPT = "filter";
 
@@ -57,7 +51,7 @@ public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public ReactiveCloudClientDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_EXCHANGE_FILTER);
+        this.matcher = () -> MatcherBuilder.in(TYPE_LOADBALANCER_EXCHANGE_FILTER, TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).

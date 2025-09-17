@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
@@ -24,31 +25,38 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.BlockingCloudClu
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.BlockingClusterResponse;
 import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * BlockingClusterInterceptor
+ * BlockingCloudClientInterceptor
  *
  * @since 1.0.0
  */
-public class BlockingCloudClientInterceptor extends AbstractCloudClusterInterceptor<HttpRequest> {
+public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
 
-    private final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
+    private final InvocationContext context;
 
     public BlockingCloudClientInterceptor(InvocationContext context) {
-        super(context);
+        this.context = context;
     }
 
+    /**
+     * Enhanced logic before method execution
+     *
+     * @param ctx The execution context of the method being intercepted.
+     * @see org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor#intercept(HttpRequest, byte[], ClientHttpRequestExecution)
+     */
     @Override
-    protected void request(ExecutableContext ctx) {
+    public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        HttpRequest request = ctx.getArgument(0);
-        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
-        BlockingCloudClusterRequest clusterRequest = new BlockingCloudClusterRequest(request, ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
-        HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
+        BlockingCloudCluster cluster = Accessor.clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
+        BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(ctx.getArgument(0),
+                ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
+        HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
@@ -58,8 +66,7 @@ public class BlockingCloudClientInterceptor extends AbstractCloudClusterIntercep
         }
     }
 
-    @Override
-    protected String getServiceName(HttpRequest request) {
-        return request.getURI().getHost();
+    private static class Accessor {
+        private static final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }

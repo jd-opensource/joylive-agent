@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
@@ -25,31 +25,32 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.FeignCloudCluste
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.FeignClusterResponse;
 import feign.Client;
-import feign.Request;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * FeignClusterInterceptor
+ * FeignCloudClientInterceptor
  *
  * @since 1.0.0
  */
-public class FeignCloudClientInterceptor extends AbstractCloudClusterInterceptor<Request> {
+public class FeignCloudClientInterceptor extends InterceptorAdaptor {
 
-    private final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
+    private final InvocationContext context;
 
     public FeignCloudClientInterceptor(InvocationContext context) {
-        super(context);
+        this.context = context;
     }
 
     @Override
-    protected void request(ExecutableContext ctx) {
+    public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        Request request = ctx.getArgument(0);
-        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
-        FeignCloudClusterRequest clusterRequest = new FeignCloudClusterRequest(request, ctx.getArgument(1), cluster.getContext());
-        HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, context);
+        FeignCloudCluster cluster = Accessor.clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudClusterRequest request = new FeignCloudClusterRequest(
+                ctx.getArgument(0),
+                ctx.getArgument(1),
+                cluster.getContext());
+        HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         FeignClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
@@ -59,8 +60,7 @@ public class FeignCloudClientInterceptor extends AbstractCloudClusterInterceptor
         }
     }
 
-    @Override
-    protected String getServiceName(Request request) {
-        return URI.parseHost(request.url());
+    private static class Accessor {
+        private static final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }
