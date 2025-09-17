@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.HttpClientClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.httpclient.HttpClientThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.request.HttpClientClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.request.RibbonCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.RibbonClusterResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient;
@@ -40,7 +40,7 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.RibbonCl
  * @see AbstractCloudCluster
  */
 public class RibbonCloudCluster extends AbstractCloudCluster<
-        HttpClientClusterRequest,
+        RibbonCloudClusterRequest,
         RibbonClusterResponse,
         HttpClientClusterContext,
         IOException> {
@@ -50,7 +50,7 @@ public class RibbonCloudCluster extends AbstractCloudCluster<
     }
 
     @Override
-    public CompletionStage<RibbonClusterResponse> invoke(HttpClientClusterRequest request, ServiceEndpoint endpoint) {
+    public CompletionStage<RibbonClusterResponse> invoke(RibbonCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
             CloseableHttpResponse response = request.execute(endpoint);
             return CompletableFuture.completedFuture(new RibbonClusterResponse(response));
@@ -60,7 +60,7 @@ public class RibbonCloudCluster extends AbstractCloudCluster<
     }
 
     @Override
-    protected RibbonClusterResponse createResponse(HttpClientClusterRequest request, DegradeConfig degradeConfig) {
+    protected RibbonClusterResponse createResponse(RibbonCloudClusterRequest request, DegradeConfig degradeConfig) {
         return new RibbonClusterResponse(create(request.getRequest(), degradeConfig));
     }
 

@@ -23,7 +23,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.RibbonCloudCluster;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.request.HttpClientClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.request.RibbonCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.RibbonClusterResponse;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -83,8 +83,8 @@ public class RibbonCloudClientInterceptor extends InterceptorAdaptor {
 
         @Override
         protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException {
-            HttpClientClusterRequest clusterRequest = new HttpClientClusterRequest(request, context, delegate, cluster.getContext());
-            HttpOutboundInvocation<HttpClientClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, this.context);
+            RibbonCloudClusterRequest clusterRequest = new RibbonCloudClusterRequest(request, context, delegate, cluster.getContext());
+            HttpOutboundInvocation<RibbonCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, this.context);
             RibbonClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();
             if (error != null && !error.isServerError()) {

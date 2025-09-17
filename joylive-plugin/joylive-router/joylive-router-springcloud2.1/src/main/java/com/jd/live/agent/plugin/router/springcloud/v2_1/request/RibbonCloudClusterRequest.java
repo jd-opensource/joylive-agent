@@ -41,16 +41,16 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.new
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractCloudClusterRequest}
  * to handle specifics of Feign requests such as options and cookie parsing.
  */
-public class HttpClientClusterRequest extends AbstractCloudClusterRequest<HttpRequest, HttpClientClusterContext> {
+public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpRequest, HttpClientClusterContext> {
 
     private final CloseableHttpClient client;
 
     private final HttpContext httpContext;
 
-    public HttpClientClusterRequest(HttpRequest request,
-                                    HttpContext httpContext,
-                                    CloseableHttpClient client,
-                                    HttpClientClusterContext clusterContext) {
+    public RibbonCloudClusterRequest(HttpRequest request,
+                                     HttpContext httpContext,
+                                     CloseableHttpClient client,
+                                     HttpClientClusterContext clusterContext) {
         super(request, URI.create(request.getRequestLine().getUri()), clusterContext);
         this.client = client;
         this.httpContext = httpContext;
