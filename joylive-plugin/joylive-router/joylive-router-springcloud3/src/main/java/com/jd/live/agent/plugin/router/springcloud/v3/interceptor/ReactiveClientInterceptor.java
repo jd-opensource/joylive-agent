@@ -24,7 +24,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveWebCluster;
+import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.reactive.WebClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientClusterRequest;
@@ -134,7 +134,7 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
         }
         ReactiveClientClusterRequest rr = new ReactiveClientClusterRequest(req, service, registry, n);
         HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(rr, context);
-        CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
+        CompletionStage<ReactiveClusterResponse> stage = ReactiveClientCluster.INSTANCE.invoke(invocation);
         return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
     }
 

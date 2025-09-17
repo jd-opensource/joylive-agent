@@ -44,6 +44,7 @@ import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceList
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
 import java.util.HashSet;
@@ -126,7 +127,12 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
                     return toList(endpoints, EndpointInstance::convert);
                 }).onErrorMap(e -> {
                     logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
-                    return (NestedRuntimeException) Accessor.thrower.createException(e, invocation.getRequest());
+                    Throwable error = Accessor.thrower.createException(e, invocation.getRequest());
+                    if (error instanceof RuntimeException) {
+                        return error;
+                    } else {
+                        return Accessor.thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, error.getMessage(), error);
+                    }
                 }));
             }
         }

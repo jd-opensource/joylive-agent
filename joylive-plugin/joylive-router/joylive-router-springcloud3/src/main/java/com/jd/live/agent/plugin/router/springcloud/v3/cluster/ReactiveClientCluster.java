@@ -39,7 +39,7 @@ import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse.create;
 
-public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveClientClusterRequest, ReactiveClusterResponse, ServiceEndpoint> {
+public class ReactiveClientCluster extends AbstractLiveCluster<ReactiveClientClusterRequest, ReactiveClusterResponse, ServiceEndpoint> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -50,9 +50,9 @@ public class ReactiveWebCluster extends AbstractLiveCluster<ReactiveClientCluste
 
     private final SpringOutboundThrower<WebClientException, ReactiveClientClusterRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
 
-    public static final ReactiveWebCluster INSTANCE = new ReactiveWebCluster();
+    public static final ReactiveClientCluster INSTANCE = new ReactiveClientCluster();
 
-    public ReactiveWebCluster() {
+    public ReactiveClientCluster() {
     }
 
     @Override
