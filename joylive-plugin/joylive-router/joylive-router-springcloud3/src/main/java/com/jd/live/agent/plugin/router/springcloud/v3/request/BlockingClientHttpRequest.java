@@ -101,7 +101,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         try {
             if (service != null) {
                 // Convert regular spring web requests to microservice calls
-                return request();
+                return invoke();
             } else {
                 // Handle multi-active and lane domains
                 return forward();
@@ -137,6 +137,14 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         return outputStream;
     }
 
+    /**
+     * Forwards the request to the transformed domain and executes it.
+     * This method performs domain transformation and then forwards the request
+     * to the target URI.
+     *
+     * @return the HTTP response from the forwarded request
+     * @throws IOException if an I/O error occurs during request execution
+     */
     private ClientHttpResponse forward() throws IOException {
         HttpForwardContext ctx = new HttpForwardContext(context);
         BlockingClientForwardRequest req = new BlockingClientForwardRequest(this);
@@ -166,7 +174,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @return the HTTP response from microservice or fallback domain request
      * @throws Throwable if service call fails or client error occurs
      */
-    private ClientHttpResponse request() throws Throwable {
+    private ClientHttpResponse invoke() throws Throwable {
         List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
         if (endpoints == null || endpoints.isEmpty()) {
             // Failed to convert microservice, fallback to domain reques

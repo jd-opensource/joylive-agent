@@ -36,6 +36,7 @@ import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -58,6 +59,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
@@ -141,12 +143,33 @@ public interface InvocationContext {
     }
 
     /**
-     * Checks if domain sensitivity is enabled.
+     * Checks if subdomain is enabled for lane or live routing.
      *
      * @return true if lane or live mode is enabled, false otherwise
      */
-    default boolean isDomainSensitive() {
+    default boolean isSubdomainEnabled() {
         return isLaneEnabled() || isLiveEnabled();
+    }
+
+    /**
+     * Checks if subdomain is enabled for the given host.
+     *
+     * @param host the host to check
+     * @return true if subdomain routing is enabled, false otherwise
+     */
+    default boolean isSubdomainEnabled(String host) {
+        if (!isSubdomainEnabled() || !Ipv4.isHost(host)) {
+            return false;
+        }
+        // lower case host
+        host = host.toLowerCase();
+        // domain in live policy
+        GovernancePolicy policy = getPolicySupplier().getPolicy();
+        if (policy != null && policy.isSubdomainEnabled(host)) {
+            return true;
+        }
+        // domain in config
+        return getGovernanceConfig().isSubdomainEnabled(host);
     }
 
     /**
@@ -824,8 +847,13 @@ public interface InvocationContext {
         }
 
         @Override
-        public boolean isDomainSensitive() {
-            return delegate.isDomainSensitive();
+        public boolean isSubdomainEnabled() {
+            return delegate.isSubdomainEnabled();
+        }
+
+        @Override
+        public boolean isSubdomainEnabled(String host) {
+            return delegate.isSubdomainEnabled(host);
         }
 
         @Override
@@ -1044,6 +1072,18 @@ public interface InvocationContext {
             super(delegate);
         }
 
+        /**
+         * Routes the request with domain transformation and URL rewriting.
+         *
+         * @param <R>     the request type extending HttpOutboundRequest
+         * @param request the outbound HTTP request to route
+         * @return the rewritten URI after domain transformation
+         */
+        public <R extends HttpOutboundRequest> URI route(final R request) {
+            route(new HttpForwardInvocation<>(request, this));
+            return request.getURI();
+        }
+
         @Override
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(final OutboundInvocation<R> invocation,
@@ -1065,6 +1105,16 @@ public interface InvocationContext {
                 invocation.onReject(e);
                 throw e;
             }
+        }
+
+        /**
+         * Creates a new HttpForwardContext from the given invocation context.
+         *
+         * @param delegate the invocation context to wrap
+         * @return a new HttpForwardContext instance
+         */
+        public static HttpForwardContext of(InvocationContext delegate) {
+            return new HttpForwardContext(delegate);
         }
 
         /**

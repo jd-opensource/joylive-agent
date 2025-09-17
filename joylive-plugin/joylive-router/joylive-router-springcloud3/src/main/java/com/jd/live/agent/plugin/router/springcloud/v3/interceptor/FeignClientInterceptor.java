@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
-import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
@@ -71,9 +70,13 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         try {
             if (Accessor.isCloudEnabled()) {
                 // with spring cloud
-                if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST) && context.isDomainSensitive()) {
-                    // Handle multi-active and lane domains
-                    forward(request, URI.create(request.url()), mc);
+                if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST)) {
+                    // none microservice request
+                    URI uri = URI.create(request.url());
+                    if (context.isSubdomainEnabled(uri.getHost())) {
+                        // Handle multi-active and lane domains
+                        forward(request, uri, mc);
+                    }
                 }
             } else {
                 // only spring boot
@@ -82,8 +85,8 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                 String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
                 if (service != null && !service.isEmpty()) {
                     // Convert regular spring web requests to microservice calls
-                    request(request, service, uri, mc);
-                } else if (context.isDomainSensitive()) {
+                    invoke(request, service, uri, mc);
+                } else if (context.isSubdomainEnabled(uri.getHost())) {
                     // Handle multi-active and lane domains
                     forward(request, uri, mc);
                 }
@@ -101,10 +104,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
      * @param mc      the executable context to update
      */
     private void forward(Request request, URI uri, MethodContext mc) {
-        HttpForwardContext fc = new HttpForwardContext(context);
-        FeignClientForwardRequest ffr = new FeignClientForwardRequest(request, uri);
-        fc.route(new HttpForwardInvocation<>(ffr, fc));
-        URI newUri = ffr.getURI();
+        URI newUri = HttpForwardContext.of(context).route(new FeignClientForwardRequest(request, uri));
         if (newUri != uri) {
             mc.setArgument(0, createRequest(newUri, request));
         }
@@ -118,7 +118,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
      * @param uri       the request URI
      * @param mc        the method context for handling results and exceptions
      */
-    private void request(Request request, String service, URI uri, MethodContext mc) throws Throwable {
+    private void invoke(Request request, String service, URI uri, MethodContext mc) throws Throwable {
         // subscribe service endpoint and governance policy.
         List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
                 new InternalServerError(message, request, request.body(), request.headers()));

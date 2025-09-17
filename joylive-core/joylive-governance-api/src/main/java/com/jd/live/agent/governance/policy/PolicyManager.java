@@ -138,7 +138,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private boolean governEnabled;
 
     @Getter
-    private boolean domainSensitive;
+    private boolean subdomainEnabled;
 
     @Getter
     private boolean registryEnabled;
@@ -440,7 +440,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         governEnabled = flowControlEnabled || laneEnabled || liveEnabled;
         registryEnabled = governanceConfig.getRegistryConfig().isEnabled();
         microserviceTransformEnabled = registryEnabled && flowControlEnabled;
-        domainSensitive = laneEnabled || liveEnabled;
+        subdomainEnabled = laneEnabled || liveEnabled;
         docRegistry = new LiveDocumentRegistry();
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof UnitLiveFilter ? filter : null);

@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
-import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
@@ -57,30 +56,21 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        ExchangeFunction exchanger = ctx.getArgument(0);
         WebClient.Builder builder = ctx.getArgument(5);
         if (Accessor.isCloudEnabled()) {
             // with spring cloud
-            if (!Accessor.isCloudClient(builder) && context.isDomainSensitive()) {
+            if (!Accessor.isCloudClient(builder) && context.isSubdomainEnabled()) {
                 // Handle multi-active and lane domains
-                addDomainFilter(ctx.getArgument(0), ctx);
+                ctx.setArgument(0, exchanger.filter(this::forward));
             }
         } else if (context.isMicroserviceTransformEnabled()) {
             // Convert regular spring web requests to microservice calls
-            addFlowControlFilter(ctx.getArgument(0), ctx);
-        } else if (context.isDomainSensitive()) {
+            ctx.setArgument(0, exchanger.filter(this::invoke));
+        } else if (context.isSubdomainEnabled()) {
             // Handle multi-active and lane domains
-            addDomainFilter(ctx.getArgument(0), ctx);
+            ctx.setArgument(0, exchanger.filter(this::forward));
         }
-    }
-
-    /**
-     * Adds domain filter to handle request routing and URI transformation.
-     *
-     * @param exchanger the exchange function to filter
-     * @param ctx       the executable context to update
-     */
-    private void addDomainFilter(ExchangeFunction exchanger, ExecutableContext ctx) {
-        ctx.setArgument(0, exchanger.filter(this::forward));
     }
 
     /**
@@ -91,44 +81,42 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
      * @return the response mono
      */
     private Mono<ClientResponse> forward(ClientRequest request, ExchangeFunction next) {
-        HttpForwardContext fc = new HttpForwardContext(context);
-        ReactiveClientForwardRequest ffr = new ReactiveClientForwardRequest(request);
-        fc.route(new HttpForwardInvocation<>(ffr, fc));
-        URI newUri = ffr.getURI();
-        if (newUri != request.url()) {
-            return next.exchange(ClientRequest.from(request).url(newUri).build());
-        } else {
-            return next.exchange(request);
+        if (context.isSubdomainEnabled(request.url().getHost())) {
+            URI newUri = HttpForwardContext.of(context).route(new ReactiveClientForwardRequest(request));
+            if (newUri != request.url()) {
+                return next.exchange(ClientRequest.from(request).url(newUri).build());
+            }
         }
+        return next.exchange(request);
     }
 
     /**
-     * Adds flow control filter to convert web requests to microservice calls.
+     * Converts domain-based request to microservice invocation.
+     * If service discovery fails, falls back to domain forwarding.
      *
-     * @param exchanger the exchange function to filter
-     * @param ctx       the executable context to update
+     * @param request the client request
+     * @param next the exchange function for fallback
+     * @return Mono containing the client response
      */
-    private void addFlowControlFilter(ExchangeFunction exchanger, ExecutableContext ctx) {
-        ctx.setArgument(0, exchanger.filter((request, next) -> {
-            String service = context.getService(request.url());
-            if (service == null || service.isEmpty()) {
-                // Handle multi-active and lane domains
-                return forward(request, next);
+    private Mono<ClientResponse> invoke(ClientRequest request, ExchangeFunction next) {
+        String service = context.getService(request.url());
+        if (service == null || service.isEmpty()) {
+            // Handle multi-active and lane domains
+            return forward(request, next);
+        }
+        try {
+            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
+            if (endpoints == null || endpoints.isEmpty()) {
+                // Failed to convert microservice, fallback to domain request
+                return next.exchange(request);
             }
-            try {
-                List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
-                if (endpoints == null || endpoints.isEmpty()) {
-                    // Failed to convert microservice, fallback to domain request
-                    return next.exchange(request);
-                }
-            } catch (Throwable e) {
-                return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
-            }
-            ReactiveClientClusterRequest req = new ReactiveClientClusterRequest(request, service, registry, next);
-            HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(req, context);
-            CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
-            return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
-        }));
+        } catch (Throwable e) {
+            return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
+        }
+        ReactiveClientClusterRequest req = new ReactiveClientClusterRequest(request, service, registry, next);
+        HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(req, context);
+        CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
+        return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
     }
 
     /**
