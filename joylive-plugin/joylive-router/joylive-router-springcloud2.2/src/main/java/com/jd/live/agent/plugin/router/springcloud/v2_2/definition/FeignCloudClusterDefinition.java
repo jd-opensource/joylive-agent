@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudClientInterceptor;
 
 /**
  * FeignClusterDefinition
@@ -48,7 +48,7 @@ public class FeignCloudClusterDefinition extends PluginDefinitionAdapter {
     public FeignCloudClusterDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClusterInterceptor(context))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClientInterceptor(context))
         };
     }
 }

@@ -28,8 +28,8 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnS
 import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignClientInterceptor;
 
 import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignCloudClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
-import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
-import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRibbonCloudClusterDefinition.TYPE_LOADBALANCER_FEIGN_CLIENT;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRetryableCloudClientDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRibbonCloudClientDefinition.TYPE_LOADBALANCER_FEIGN_CLIENT;
 
 /**
  * FeignClientDefinition

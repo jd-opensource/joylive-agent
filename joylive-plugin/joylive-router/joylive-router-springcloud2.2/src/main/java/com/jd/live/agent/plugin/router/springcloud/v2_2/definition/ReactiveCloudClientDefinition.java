@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveCloudClientInterceptor;
 
 /**
  * LoadBalancerExchangeFilterFunctionDefinition
@@ -41,8 +41,8 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveClou
 @Injectable
 @Extension(value = "LoadBalancerExchangeFilterFunction_v2.2")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(ReactiveCloudClusterDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
-public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
+public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction";
 
@@ -56,13 +56,13 @@ public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public ReactiveCloudClusterDefinition() {
+    public ReactiveCloudClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_EXCHANGE_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
                                 and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new ReactiveCloudClusterInterceptor(context)
+                        () -> new ReactiveCloudClientInterceptor(context)
                 )
         };
     }

@@ -23,43 +23,46 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveCloudClientInterceptor;
 
 /**
- * BlockingRetryClusterDefinition
+ * ReactorLoadBalancerExchangeFilterFunctionDefinition
  *
- * @since 1.5.0
+ * <p>
+ * When <code>spring.cloud.loadbalancer.ribbon.enabled=false </code> is configured in the application, ReactorLoadBalancerExchangeFilterFunction is automatically injected;
+ * otherwise, LoadBalancerExchangeFilterFunction is injected. Note that they have an either-or relationship.
+ * </p>
+ *
+ * @author yuanjinzhong
+ * @see org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
  */
 @Injectable
-@Extension(value = "BlockingRetryClusterDefinition_v2.2")
+@Extension(value = "ReactorExchangeFilterFunctionDefinition_v2.2")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnSpringRetry
-@ConditionalOnClass(BlockingRetryableCloudClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
-public class BlockingRetryableCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ReactorCloudClientDefinition.TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER)
+public class ReactorCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RETRY_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor";
+    protected static final String TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction";
 
-    private static final String METHOD_INTERCEPT = "intercept";
+    private static final String METHOD_INTERCEPT = "filter";
 
     private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.http.HttpRequest",
-            "byte[]",
-            "org.springframework.http.client.ClientHttpRequestExecution"
+            "org.springframework.web.reactive.function.client.ClientRequest",
+            "org.springframework.web.reactive.function.client.ExchangeFunction"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingRetryableCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_RETRY_LOADBALANCER_INTERCEPTOR);
+    public ReactorCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
                                 and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor(context)
+                        () -> new ReactiveCloudClientInterceptor(context)
                 )
         };
     }

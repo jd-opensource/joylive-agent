@@ -35,11 +35,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.0.0
  */
-public class FeignCloudClusterInterceptor extends AbstractCloudClusterInterceptor<Request> {
+public class FeignCloudClientInterceptor extends AbstractCloudClusterInterceptor<Request> {
 
     private final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    public FeignCloudClusterInterceptor(InvocationContext context) {
+    public FeignCloudClientInterceptor(InvocationContext context) {
         super(context);
     }
 

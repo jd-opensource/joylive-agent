@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudClientInterceptor;
 
 /**
  * FeignRibbonClusterDefinition
@@ -35,8 +35,8 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudCl
 @Injectable
 @Extension(value = "FeignRibbonClusterDefinition_v2.2")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(FeignRibbonCloudClusterDefinition.TYPE_LOADBALANCER_FEIGN_CLIENT)
-public class FeignRibbonCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(FeignRibbonCloudClientDefinition.TYPE_LOADBALANCER_FEIGN_CLIENT)
+public class FeignRibbonCloudClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_LOADBALANCER_FEIGN_CLIENT = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
 
@@ -45,10 +45,10 @@ public class FeignRibbonCloudClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FeignRibbonCloudClusterDefinition() {
+    public FeignRibbonCloudClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_FEIGN_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClusterInterceptor(context))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClientInterceptor(context))
         };
     }
 }

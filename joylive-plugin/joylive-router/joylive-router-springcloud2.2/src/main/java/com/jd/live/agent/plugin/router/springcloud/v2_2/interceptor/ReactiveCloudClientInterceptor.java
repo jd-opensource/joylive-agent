@@ -37,11 +37,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.0.0
  */
-public class ReactiveCloudClusterInterceptor extends AbstractCloudClusterInterceptor<ClientRequest> {
+public class ReactiveCloudClientInterceptor extends AbstractCloudClusterInterceptor<ClientRequest> {
 
     private final Map<ExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    public ReactiveCloudClusterInterceptor(InvocationContext context) {
+    public ReactiveCloudClientInterceptor(InvocationContext context) {
         super(context);
     }
 

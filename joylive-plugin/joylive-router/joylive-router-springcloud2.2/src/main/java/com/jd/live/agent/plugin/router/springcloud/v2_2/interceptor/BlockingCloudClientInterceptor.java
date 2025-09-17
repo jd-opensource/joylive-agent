@@ -34,11 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @since 1.0.0
  */
-public class BlockingCloudClusterInterceptor extends AbstractCloudClusterInterceptor<HttpRequest> {
+public class BlockingCloudClientInterceptor extends AbstractCloudClusterInterceptor<HttpRequest> {
 
     private final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    public BlockingCloudClusterInterceptor(InvocationContext context) {
+    public BlockingCloudClientInterceptor(InvocationContext context) {
         super(context);
     }
 
