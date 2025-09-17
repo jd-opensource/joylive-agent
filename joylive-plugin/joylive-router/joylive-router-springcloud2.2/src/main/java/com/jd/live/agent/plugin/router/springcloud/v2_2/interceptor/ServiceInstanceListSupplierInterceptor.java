@@ -49,9 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.router.springcloud.v2_2.instance.EndpointInstance.convert;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -68,8 +66,6 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     private final InvocationContext context;
 
     private final Set<String> disableDiscovery;
-
-    private final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
@@ -107,7 +103,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings("unchecked")
     @Override
     public void onSuccess(ExecutableContext ctx) {
         if (!context.isFlowControlEnabled() && ctx.isLocked()) {
@@ -116,35 +112,20 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             Flux<List<ServiceInstance>> flux = (Flux<List<ServiceInstance>>) result;
             OutboundInvocation<HttpOutboundRequest> invocation = buildInvocation();
             if (invocation != null) {
-                mc.setResult(flux.map(instances -> route(invocation, instances)));
-            }
-        }
-    }
-
-    /**
-     * Routes the given outbound invocation to a service instance.
-     *
-     * @param invocation The outbound invocation to route.
-     * @param system     The system service instances to choose from.
-     * @return A list containing the selected service instance.
-     */
-    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> system) {
-        try {
-            String service = invocation.getRequest().getService();
-            if (context.isFlowControlEnabled()) {
-                ServiceEndpoint endpoint = context.route(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
-                return singletonList(convert(endpoint));
-            } else {
-                List<ServiceEndpoint> endpoints = context.routes(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
-                return toList(endpoints, EndpointInstance::convert);
-            }
-        } catch (Throwable e) {
-            logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
-            Throwable throwable = thrower.createException(e, invocation.getRequest());
-            if (throwable instanceof RuntimeException) {
-                throw (RuntimeException) throwable;
-            } else {
-                throw thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+                mc.setResult(flux.map(instances -> {
+                    String service = invocation.getRequest().getService();
+                    SimpleServiceRegistry system = new SimpleServiceRegistry(service, () -> toList(instances, SpringEndpoint::new));
+                    List<ServiceEndpoint> endpoints = context.routes(invocation, system);
+                    return toList(endpoints, EndpointInstance::convert);
+                }).onErrorMap(e -> {
+                    logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
+                    Throwable error = Accessor.thrower.createException(e, invocation.getRequest());
+                    if (error instanceof RuntimeException) {
+                        return error;
+                    } else {
+                        return Accessor.thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, error.getMessage(), error);
+                    }
+                }));
             }
         }
     }
@@ -179,4 +160,7 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
                 new HttpOutboundInvocation<>(request, context);
     }
 
+    private static class Accessor {
+        public static final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
+    }
 }

@@ -25,10 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-/**
- * RestTemplateOutboundRequest
- */
-public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<BlockingWebHttpRequest> {
+public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> {
 
     private final String service;
 
@@ -36,7 +33,7 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
 
     private final HttpHeaders writeableHeaders;
 
-    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, Registry registry) {
+    public BlockingClientClusterRequest(BlockingClientHttpRequest request, String service, Registry registry) {
         super(request);
         this.service = service;
         this.registry = registry;
@@ -56,7 +53,7 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+        return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
     }
 
     @Override

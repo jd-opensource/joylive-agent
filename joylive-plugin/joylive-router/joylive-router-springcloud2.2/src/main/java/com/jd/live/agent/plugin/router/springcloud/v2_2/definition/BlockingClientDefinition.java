@@ -24,18 +24,17 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.BlockingWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringWeb5GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.BlockingClientInterceptor;
 
 /**
- * RestTemplateClusterDefinition
+ * BlockingClientDefinition
  */
-@Extension(value = "RestTemplateDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
-@ConditionalOnClass(BlockingWebClusterDefinition.TYPE)
+@Extension(value = "BlockingClientDefinition_v5")
+@ConditionalOnSpringWeb5GovernanceEnabled
+@ConditionalOnClass(BlockingClientDefinition.TYPE)
 @Injectable
-public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
+public class BlockingClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
 
@@ -44,14 +43,11 @@ public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public BlockingWebClusterDefinition() {
+    public BlockingClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new BlockingWebClusterInterceptor(context, registry))
+                        () -> new BlockingClientInterceptor(context))
         };
     }
 }

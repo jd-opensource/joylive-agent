@@ -25,34 +25,30 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringWeb5GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.ReactiveClientInterceptor;
 
 /**
- * WebClientClusterDefinition
+ * ReactiveClientDefinition
  */
 @Injectable
-@Extension(value = "WebClientClusterDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
+@Extension(value = "ReactiveClientDefinition_v5")
+@ConditionalOnSpringWeb5GovernanceEnabled
 @ConditionalOnReactive
-@ConditionalOnClass(ReactiveWebClusterDefinition.TYPE_DEFAULT_WEB_CLIENT)
-public class ReactiveWebClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ReactiveClientDefinition.TYPE_DEFAULT_WEB_CLIENT)
+public class ReactiveClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DEFAULT_WEB_CLIENT = "org.springframework.web.reactive.function.client.DefaultWebClient";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public ReactiveWebClusterDefinition() {
+    public ReactiveClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_WEB_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(),
-                        () -> new ReactiveWebClusterInterceptor(context, registry))
+                        () -> new ReactiveClientInterceptor(context))
         };
     }
 }

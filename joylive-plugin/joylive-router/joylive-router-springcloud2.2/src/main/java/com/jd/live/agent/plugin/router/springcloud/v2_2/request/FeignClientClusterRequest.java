@@ -38,7 +38,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 /**
  * FeignClientClusterRequest
  */
-public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request> implements FeignOutboundRequest {
+public class FeignClientClusterRequest extends AbstractHttpOutboundRequest<Request> implements FeignOutboundRequest {
 
     private final String service;
 
@@ -48,11 +48,11 @@ public class FeignWebClusterRequest extends AbstractHttpOutboundRequest<Request>
 
     private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
 
-    public FeignWebClusterRequest(Request request,
-                                  String service,
-                                  URI uri,
-                                  Registry registry,
-                                  FeignExecution execution) {
+    public FeignClientClusterRequest(Request request,
+                                     String service,
+                                     URI uri,
+                                     Registry registry,
+                                     FeignExecution execution) {
         super(request);
         this.service = service;
         this.uri = uri;

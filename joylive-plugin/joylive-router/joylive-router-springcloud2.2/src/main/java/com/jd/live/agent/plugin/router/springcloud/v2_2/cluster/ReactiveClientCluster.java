@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster;
 
 import com.jd.live.agent.core.util.Futures;
-import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ErrorPredicate.DefaultErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -25,19 +24,22 @@ import com.jd.live.agent.governance.invoke.cluster.AbstractLiveCluster;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.feign.FeignThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.request.FeignWebClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.response.FeignClusterResponse;
-import feign.FeignException;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.reactive.WebClientThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.request.ReactiveClientClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.response.ReactiveClusterResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClientException;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest, FeignClusterResponse, ServiceEndpoint> {
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.response.ReactiveClusterResponse.create;
+
+public class ReactiveClientCluster extends AbstractLiveCluster<ReactiveClientClusterRequest, ReactiveClusterResponse, ServiceEndpoint> {
 
     private static final Set<String> RETRY_EXCEPTIONS = new HashSet<>(Arrays.asList(
             "java.io.IOException",
@@ -46,11 +48,11 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
 
     private static final ErrorPredicate RETRY_PREDICATE = new DefaultErrorPredicate(null, RETRY_EXCEPTIONS);
 
-    private final SpringOutboundThrower<FeignException, FeignWebClusterRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
+    private final SpringOutboundThrower<WebClientException, ReactiveClientClusterRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
 
-    public static final FeignWebCluster INSTANCE = new FeignWebCluster();
+    public static final ReactiveClientCluster INSTANCE = new ReactiveClientCluster();
 
-    public FeignWebCluster() {
+    public ReactiveClientCluster() {
     }
 
     @Override
@@ -59,47 +61,46 @@ public class FeignWebCluster extends AbstractLiveCluster<FeignWebClusterRequest,
     }
 
     @Override
-    public CompletionStage<FeignClusterResponse> invoke(FeignWebClusterRequest request, ServiceEndpoint endpoint) {
+    public CompletionStage<ReactiveClusterResponse> invoke(ReactiveClientClusterRequest request, ServiceEndpoint endpoint) {
         try {
-            feign.Response response = request.execute(endpoint);
-            return CompletableFuture.completedFuture(new FeignClusterResponse(response));
+            return request.exchange(endpoint).toFuture().thenApply(ReactiveClusterResponse::new);
         } catch (Throwable e) {
             return Futures.future(e);
         }
     }
 
     @Override
-    protected FeignClusterResponse createResponse(FeignWebClusterRequest request) {
+    protected ReactiveClusterResponse createResponse(ReactiveClientClusterRequest request) {
         return createResponse(request, DegradeConfig.builder().responseCode(HttpStatus.OK.value()).responseBody("").build());
     }
 
     @Override
-    public CompletionStage<List<ServiceEndpoint>> route(FeignWebClusterRequest request) {
+    public CompletionStage<List<ServiceEndpoint>> route(ReactiveClientClusterRequest request) {
         return request.getInstances();
     }
 
     @Override
-    protected FeignClusterResponse createResponse(FeignWebClusterRequest request, DegradeConfig degradeConfig) {
-        return FeignClusterResponse.create(request.getRequest(), degradeConfig);
+    protected ReactiveClusterResponse createResponse(ReactiveClientClusterRequest request, DegradeConfig degradeConfig) {
+        return create(request.getRequest(), degradeConfig, ExchangeStrategies.withDefaults());
     }
 
     @Override
-    protected FeignClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
-        return new FeignClusterResponse(error, predicate);
+    protected ReactiveClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new ReactiveClusterResponse(error, predicate);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, FeignWebClusterRequest request) {
+    public Throwable createException(Throwable throwable, ReactiveClientClusterRequest request) {
         return thrower.createException(throwable, request);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, FeignWebClusterRequest request, ServiceEndpoint endpoint) {
+    public Throwable createException(Throwable throwable, ReactiveClientClusterRequest request, ServiceEndpoint endpoint) {
         return thrower.createException(throwable, request, endpoint);
     }
 
     @Override
-    public Throwable createException(Throwable throwable, OutboundInvocation<FeignWebClusterRequest> invocation) {
+    public Throwable createException(Throwable throwable, OutboundInvocation<ReactiveClientClusterRequest> invocation) {
         return thrower.createException(throwable, invocation);
     }
 

@@ -18,10 +18,12 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 import com.jd.live.agent.core.util.io.UnsafeByteArrayOutputStream;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.BlockingWebCluster;
+import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.BlockingClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
@@ -43,7 +45,7 @@ import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
  * HTTP request implementation with integrated service discovery and governance policy enforcement.
  * Handles endpoint resolution through registry and executes requests via configured cluster strategy.
  */
-public class BlockingWebHttpRequest implements ClientHttpRequest {
+public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private final URI uri;
 
@@ -53,6 +55,8 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
 
     private final HttpAccessor accessor;
 
+    private final HostTransformer hostTransformer;
+
     private final InvocationContext context;
 
     private final Registry registry;
@@ -61,31 +65,51 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
 
     private UnsafeByteArrayOutputStream outputStream;
 
-    public BlockingWebHttpRequest(URI uri,
-                                  HttpMethod method,
-                                  String service,
-                                  HttpAccessor accessor,
-                                  InvocationContext context,
-                                  Registry registry) {
+    public BlockingClientHttpRequest(URI uri,
+                                     HttpMethod method,
+                                     String service,
+                                     HttpAccessor accessor,
+                                     HostTransformer hostTransformer,
+                                     InvocationContext context) {
         this.uri = uri;
         this.method = method;
         this.service = service;
         this.accessor = accessor;
+        this.hostTransformer = hostTransformer;
         this.context = context;
-        this.registry = registry;
+        this.registry = context.getRegistry();
         accessor.getClientHttpRequestInitializers().forEach(initializer -> initializer.initialize(this));
+    }
+
+    @Override
+    @NonNull
+    public URI getURI() {
+        return uri;
+    }
+
+    @Override
+    @NonNull
+    public String getMethodValue() {
+        return method.name();
+    }
+
+    @Override
+    @NonNull
+    public HttpHeaders getHeaders() {
+        return headers;
     }
 
     @Override
     @NonNull
     public ClientHttpResponse execute() throws IOException {
         try {
-            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
-            if (endpoints == null || endpoints.isEmpty()) {
-                // Failed to convert microservice, fallback to domain reques
-                return execute(uri);
+            if (service != null) {
+                // Convert regular spring web requests to microservice calls
+                return invoke();
+            } else {
+                // Handle multi-active and lane domains
+                return forward();
             }
-            return context.isFlowControlEnabled() ? request() : route();
         } catch (IOException | NestedRuntimeException e) {
             throw e;
         } catch (ExecutionException e) {
@@ -117,22 +141,17 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
         return outputStream;
     }
 
-    @Override
-    @NonNull
-    public String getMethodValue() {
-        return method.name();
-    }
-
-    @Override
-    @NonNull
-    public URI getURI() {
-        return uri;
-    }
-
-    @Override
-    @NonNull
-    public HttpHeaders getHeaders() {
-        return headers;
+    /**
+     * Forwards the request to the transformed domain and executes it.
+     * This method performs domain transformation and then forwards the request
+     * to the target URI.
+     *
+     * @return the HTTP response from the forwarded request
+     * @throws IOException if an I/O error occurs during request execution
+     */
+    private ClientHttpResponse forward() throws IOException {
+        URI newUri = HttpForwardContext.of(context).route(new BlockingClientForwardRequest(this, uri, hostTransformer));
+        return execute(newUri);
     }
 
     /**
@@ -152,16 +171,18 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     }
 
     /**
-     * Executes request through cluster strategy with error handling conversion.
+     * Executes microservice call with service discovery and load balancing.
      *
-     * @return Successful response from cluster-routed request
-     * @throws Throwable Service-defined client errors or underlying exceptions
-     * @see BlockingWebCluster  Cluster implementation handling load balancing/failover
+     * @return the HTTP response from microservice or fallback domain request
+     * @throws Throwable if service call fails or client error occurs
      */
-    private ClientHttpResponse request() throws Throwable {
-        BlockingWebCluster cluster = BlockingWebCluster.INSTANCE;
-        BlockingWebClusterRequest request = new BlockingWebClusterRequest(this, service, registry);
-        HttpOutboundInvocation<BlockingWebClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
+    private ClientHttpResponse invoke() throws Throwable {
+        if (!subscribe()) {
+            return execute(uri);
+        }
+        BlockingClientCluster cluster = BlockingClientCluster.INSTANCE;
+        BlockingClientClusterRequest request = new BlockingClientClusterRequest(this, service, registry);
+        HttpOutboundInvocation<BlockingClientClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
@@ -172,16 +193,21 @@ public class BlockingWebHttpRequest implements ClientHttpRequest {
     }
 
     /**
-     * Directly routes request to context-selected endpoint.
+     * Subscribes to service endpoints.
      *
-     * @return Response from directly executed endpoint request
-     * @throws Throwable Routing failures or execution errors
-     * @see InvocationContext#route  Custom routing logic implementation
+     * @return true if subscription succeeded and endpoints are available, false otherwise
+     * @throws Throwable if subscription fails
      */
-    private ClientHttpResponse route() throws Throwable {
-        BlockingCloudOutboundRequest request = new BlockingCloudOutboundRequest(this, service);
-        HttpOutboundInvocation<BlockingCloudOutboundRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        ServiceEndpoint endpoint = context.route(invocation);
-        return execute(endpoint);
+    private boolean subscribe() throws Throwable {
+        try {
+            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
+            if (endpoints == null || endpoints.isEmpty()) {
+                // Failed to convert microservice, fallback to domain reques
+                return false;
+            }
+            return true;
+        } catch (Throwable e) {
+            return false;
+        }
     }
 }

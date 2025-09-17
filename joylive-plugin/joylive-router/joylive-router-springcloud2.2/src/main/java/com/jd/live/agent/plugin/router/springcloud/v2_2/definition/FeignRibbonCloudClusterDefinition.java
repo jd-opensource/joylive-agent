@@ -35,10 +35,10 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignCloudCl
 @Injectable
 @Extension(value = "FeignRibbonClusterDefinition_v2.2")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(FeignRibbonCloudClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
+@ConditionalOnClass(FeignRibbonCloudClusterDefinition.TYPE_LOADBALANCER_FEIGN_CLIENT)
 public class FeignRibbonCloudClusterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
+    protected static final String TYPE_LOADBALANCER_FEIGN_CLIENT = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
 
     private static final String METHOD_EXECUTE = "execute";
 
@@ -46,7 +46,7 @@ public class FeignRibbonCloudClusterDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public FeignRibbonCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
+        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_FEIGN_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClusterInterceptor(context))
         };

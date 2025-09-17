@@ -17,20 +17,15 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnRegistryEnabled
-@ConditionalOnGovernanceEnabled
-@ConditionalOnSpringCloudDisabled
 @ConditionalOnSpringWeb5Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb5RegistryEnabled {
-
+public @interface ConditionalOnSpringWeb5GovernanceEnabled {
 
 }

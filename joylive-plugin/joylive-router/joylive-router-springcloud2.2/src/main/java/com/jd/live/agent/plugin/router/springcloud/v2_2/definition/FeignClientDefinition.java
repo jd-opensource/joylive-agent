@@ -24,18 +24,21 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringWeb5RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringWeb5GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.interceptor.FeignClientInterceptor;
+
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignCloudClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT;
+import static com.jd.live.agent.plugin.router.springcloud.v2_2.definition.FeignRibbonCloudClusterDefinition.TYPE_LOADBALANCER_FEIGN_CLIENT;
 
 /**
- * FeignWebClusterDefinition
+ * FeignClientDefinition
  */
-@Extension(value = "FeignClientClusterDefinition_v5")
-@ConditionalOnSpringWeb5RegistryEnabled
-@ConditionalOnClass(FeignWebClusterDefinition.TYPE)
+@Extension(value = "FeignClientDefinition_v5")
+@ConditionalOnSpringWeb5GovernanceEnabled
+@ConditionalOnClass(FeignClientDefinition.TYPE)
 @Injectable
-public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
+public class FeignClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "feign.Client";
 
@@ -49,14 +52,14 @@ public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public FeignWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
+    public FeignClientDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE).and(MatcherBuilder.not(MatcherBuilder.in(
+                TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT,
+                TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT,
+                TYPE_LOADBALANCER_FEIGN_CLIENT)));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new FeignWebClusterInterceptor(context, registry))
+                        () -> new FeignClientInterceptor(context))
         };
     }
 }
