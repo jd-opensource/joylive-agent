@@ -15,10 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
-import com.jd.live.agent.governance.request.AbstractHttpRequest;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.governance.request.HttpRequest;
 import org.springframework.http.HttpHeaders;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -27,13 +29,12 @@ import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 /**
  * BlockingForwardRequest
  */
-public class BlockingClientForwardRequest extends AbstractHttpRequest.AbstractHttpOutboundRequest<BlockingClientHttpRequest> implements HttpRequest.HttpForwardRequest {
+public class BlockingClientForwardRequest extends AbstractHttpForwardRequest<BlockingClientHttpRequest> implements HttpRequest.HttpForwardRequest {
 
     private final HttpHeaders writeableHeaders;
 
-    BlockingClientForwardRequest(BlockingClientHttpRequest request) {
-        super(request);
-        this.uri = request.getURI();
+    public BlockingClientForwardRequest(BlockingClientHttpRequest request, URI uri, HostTransformer hostTransformer) {
+        super(request, uri, hostTransformer);
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 

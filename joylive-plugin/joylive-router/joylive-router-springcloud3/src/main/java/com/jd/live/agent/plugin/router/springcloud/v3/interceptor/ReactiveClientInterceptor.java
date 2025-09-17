@@ -22,13 +22,16 @@ import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveWebCluster;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.reactive.WebClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
@@ -80,14 +83,25 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
      * @param next    the next exchange function in the chain
      * @return the response mono
      */
-    private Mono<ClientResponse> forward(ClientRequest request, ExchangeFunction next) {
-        if (context.isSubdomainEnabled(request.url().getHost())) {
-            URI newUri = HttpForwardContext.of(context).route(new ReactiveClientForwardRequest(request));
-            if (newUri != request.url()) {
-                return next.exchange(ClientRequest.from(request).url(newUri).build());
+    private Mono<ClientResponse> forward(Object request, Object next) {
+        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
+        // Parameter next cannot be declared as ExchangeFunction, as it will cause class loading exceptions.
+        ClientRequest req = (ClientRequest) request;
+        ExchangeFunction n = (ExchangeFunction) next;
+        URI uri = req.url();
+        HostTransformer transformer = context.getHostTransformer(uri.getHost());
+        if (transformer != null) {
+            ReactiveClientForwardRequest rr = new ReactiveClientForwardRequest(req, uri, transformer);
+            try {
+                URI newUri = HttpForwardContext.of(context).route(rr);
+                if (newUri != uri) {
+                    return n.exchange(ClientRequest.from(req).url(newUri).build());
+                }
+            } catch (Throwable e) {
+                return Mono.error(Accessor.thrower.createException(e, rr));
             }
         }
-        return next.exchange(request);
+        return n.exchange(req);
     }
 
     /**
@@ -98,8 +112,12 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
      * @param next the exchange function for fallback
      * @return Mono containing the client response
      */
-    private Mono<ClientResponse> invoke(ClientRequest request, ExchangeFunction next) {
-        String service = context.getService(request.url());
+    private Mono<ClientResponse> invoke(Object request, Object next) {
+        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
+        // Parameter next cannot be declared as ExchangeFunction, as it will cause class loading exceptions.
+        ClientRequest req = (ClientRequest) request;
+        ExchangeFunction n = (ExchangeFunction) next;
+        String service = context.getService(req.url());
         if (service == null || service.isEmpty()) {
             // Handle multi-active and lane domains
             return forward(request, next);
@@ -108,13 +126,14 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
             List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
             if (endpoints == null || endpoints.isEmpty()) {
                 // Failed to convert microservice, fallback to domain request
-                return next.exchange(request);
+                return n.exchange(req);
             }
         } catch (Throwable e) {
-            return Mono.just(ClientResponse.create(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()).build());
+            // Failed to convert microservice, fallback to domain request
+            return n.exchange(req);
         }
-        ReactiveClientClusterRequest req = new ReactiveClientClusterRequest(request, service, registry, next);
-        HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(req, context);
+        ReactiveClientClusterRequest rr = new ReactiveClientClusterRequest(req, service, registry, n);
+        HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(rr, context);
         CompletionStage<ReactiveClusterResponse> stage = ReactiveWebCluster.INSTANCE.invoke(invocation);
         return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
     }
@@ -126,6 +145,8 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
 
         // spring cloud 3+
         private static final Class<?> lbType = loadClass(TYPE_HINT_REQUEST_CONTEXT, HttpAccessor.class.getClassLoader());
+
+        private static final SpringOutboundThrower<WebClientException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
 
         /**
          * Checks if Spring Cloud is available in the classpath.

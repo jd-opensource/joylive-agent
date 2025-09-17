@@ -85,6 +85,11 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
         super(request);
     }
 
+    public AbstractHttpRequest(T request, URI uri) {
+        super(request);
+        this.uri = uri;
+    }
+
     @Override
     public URI getURI() {
         return uri;
@@ -335,6 +340,10 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
             super(request);
         }
 
+        public AbstractHttpOutboundRequest(T request, URI uri) {
+            super(request, uri);
+        }
+
         @Override
         public void addErrorPolicy(ErrorPolicy policy) {
             if (policy != null && policy.isBodyRequired()) {
@@ -356,8 +365,12 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     public abstract static class AbstractHttpForwardRequest<T> extends AbstractHttpOutboundRequest<T>
             implements HttpForwardRequest {
 
-        public AbstractHttpForwardRequest(T request) {
-            super(request);
+        @Getter
+        protected HostTransformer hostTransformer;
+
+        public AbstractHttpForwardRequest(T request, URI uri, HostTransformer hostTransformer) {
+            super(request, uri);
+            this.hostTransformer = hostTransformer;
         }
 
     }

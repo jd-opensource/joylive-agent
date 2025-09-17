@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.FeignClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.feign.FeignThrowerFactory;
@@ -56,8 +57,6 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
 
     private final Registry registry;
 
-    private final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
-
     public FeignClientInterceptor(InvocationContext context) {
         this.context = context;
         this.registry = context.getRegistry();
@@ -67,32 +66,24 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Request request = ctx.getArgument(0);
-        try {
-            if (Accessor.isCloudEnabled()) {
-                // with spring cloud
-                if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST)) {
-                    // none microservice request
-                    URI uri = URI.create(request.url());
-                    if (context.isSubdomainEnabled(uri.getHost())) {
-                        // Handle multi-active and lane domains
-                        forward(request, uri, mc);
-                    }
-                }
-            } else {
-                // only spring boot
-                URI uri = URI.create(request.url());
-                // determine whether is a microservice request
-                String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
-                if (service != null && !service.isEmpty()) {
-                    // Convert regular spring web requests to microservice calls
-                    invoke(request, service, uri, mc);
-                } else if (context.isSubdomainEnabled(uri.getHost())) {
-                    // Handle multi-active and lane domains
-                    forward(request, uri, mc);
-                }
+        if (Accessor.isCloudEnabled()) {
+            // with spring cloud
+            if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST)) {
+                // Handle multi-active and lane domains
+                forward(request, URI.create(request.url()), mc);
             }
-        } catch (Throwable e) {
-            mc.skipWithThrowable(e);
+        } else {
+            // only spring boot
+            URI uri = URI.create(request.url());
+            // determine whether is a microservice request
+            String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
+            if (service != null && !service.isEmpty()) {
+                // Convert regular spring web requests to microservice calls
+                invoke(request, service, uri, mc);
+            } else {
+                // Handle multi-active and lane domains
+                forward(request, uri, mc);
+            }
         }
     }
 
@@ -103,10 +94,20 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
      * @param uri     the target URI
      * @param mc      the executable context to update
      */
-    private void forward(Request request, URI uri, MethodContext mc) {
-        URI newUri = HttpForwardContext.of(context).route(new FeignClientForwardRequest(request, uri));
-        if (newUri != uri) {
-            mc.setArgument(0, createRequest(newUri, request));
+    private void forward(Object request, URI uri, MethodContext mc) {
+        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
+        HostTransformer transformer = context.getHostTransformer(uri.getHost());
+        if (transformer != null) {
+            Request req = (Request) request;
+            FeignClientForwardRequest fr = new FeignClientForwardRequest(req, uri, transformer);
+            try {
+                URI newUri = HttpForwardContext.of(context).route(fr);
+                if (newUri != uri) {
+                    mc.setArgument(0, createRequest(newUri, req));
+                }
+            } catch (Throwable e) {
+                mc.skipWithThrowable(Accessor.thrower.createException(e, fr));
+            }
         }
     }
 
@@ -118,17 +119,16 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
      * @param uri       the request URI
      * @param mc        the method context for handling results and exceptions
      */
-    private void invoke(Request request, String service, URI uri, MethodContext mc) throws Throwable {
-        // subscribe service endpoint and governance policy.
-        List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
-                new InternalServerError(message, request, request.body(), request.headers()));
-        if (endpoints == null || endpoints.isEmpty()) {
-            // Failed to convert microservice, fallback to domain reques
+    private void invoke(Object request, String service, URI uri, MethodContext mc) {
+        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
+        if (!subscribe(request, service)) {
             return;
         }
-        FeignClientClusterRequest fr = new FeignClientClusterRequest(request, service, uri, registry, endpoint -> {
+        Request req = (Request) request;
+        // invoke
+        FeignClientClusterRequest fr = new FeignClientClusterRequest(req, service, uri, registry, endpoint -> {
             // invoke a endpoint
-            mc.setArgument(0, createRequest(uri, request, endpoint));
+            mc.setArgument(0, createRequest(uri, req, endpoint));
             try {
                 return (Response) mc.invokeOrigin();
             } catch (IOException e) {
@@ -137,13 +137,40 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                 throw new IOException(e.getMessage(), e);
             }
         });
-        HttpOutboundInvocation<FeignClientClusterRequest> invocation = new HttpOutboundInvocation<>(fr, context);
-        FeignClusterResponse response = FeignClientCluster.INSTANCE.request(invocation);
-        ServiceError error = response.getError();
-        if (error != null && !error.isServerError()) {
-            mc.skipWithThrowable(error.getThrowable());
-        } else {
-            mc.skipWithResult(response.getResponse());
+        try {
+            FeignClusterResponse response = FeignClientCluster.INSTANCE.request(new HttpOutboundInvocation<>(fr, context));
+            ServiceError error = response.getError();
+            if (error != null && !error.isServerError()) {
+                mc.skipWithThrowable(error.getThrowable());
+            } else {
+                mc.skipWithResult(response.getResponse());
+            }
+        } catch (Throwable e) {
+            mc.skipWithThrowable(Accessor.thrower.createException(e, fr));
+        }
+    }
+
+    /**
+     * Subscribes to service endpoints for the specified service.
+     *
+     * @param request the HTTP request
+     * @param service the service name to subscribe
+     * @return true if subscription succeeded and endpoints are available, false otherwise
+     */
+    private boolean subscribe(Object request, String service) {
+        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
+        // subscribe service endpoint and governance policy.
+        Request req = (Request) request;
+        try {
+            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
+                    new InternalServerError(message, req, req.body(), req.headers()));
+            if (endpoints == null || endpoints.isEmpty()) {
+                // Failed to convert microservice, fallback to domain reques
+                return false;
+            }
+            return true;
+        } catch (Throwable e) {
+            return false;
         }
     }
 
@@ -154,6 +181,8 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
 
         // spring cloud 3+
         private static final Class<?> lbType = loadClass(TYPE_HINT_REQUEST_CONTEXT, HttpAccessor.class.getClassLoader());
+
+        private static final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
 
         /**
          * Checks if Spring Cloud is available in the classpath.

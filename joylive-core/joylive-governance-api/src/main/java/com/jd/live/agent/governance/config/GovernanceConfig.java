@@ -184,6 +184,10 @@ public class GovernanceConfig {
         return shutdownWaitTime <= 0 ? GracefullyShutdown.DEFAULT_SHUTDOWN_WAIT_TIME : shutdownWaitTime;
     }
 
+    public boolean isSubdomainEnabled() {
+        return liveConfig.isHostEnabled() || laneConfig.isHostEnabled();
+    }
+
     public boolean isSubdomainEnabled(String host) {
         return liveConfig.isEnabled(host) || laneConfig.isEnabled(host);
     }

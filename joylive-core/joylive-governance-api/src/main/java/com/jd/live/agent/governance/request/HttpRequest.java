@@ -178,6 +178,13 @@ public interface HttpRequest extends ServiceRequest, Portable {
     interface HttpForwardRequest extends HttpOutboundRequest {
 
         /**
+         * Gets the host transformer.
+         *
+         * @return the host transformer
+         */
+        HostTransformer getHostTransformer();
+
+        /**
          * Forwards this request to the specified host.
          *
          * @param host The target host to which the request should be forwarded.

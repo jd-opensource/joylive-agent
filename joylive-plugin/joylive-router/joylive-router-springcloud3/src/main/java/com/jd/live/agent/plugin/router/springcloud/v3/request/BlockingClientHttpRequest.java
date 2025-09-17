@@ -19,10 +19,10 @@ import com.jd.live.agent.core.util.io.UnsafeByteArrayOutputStream;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
-import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.BlockingClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
@@ -55,6 +55,8 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private final HttpAccessor accessor;
 
+    private final HostTransformer hostTransformer;
+
     private final InvocationContext context;
 
     private final Registry registry;
@@ -67,11 +69,13 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
                                      HttpMethod method,
                                      String service,
                                      HttpAccessor accessor,
+                                     HostTransformer hostTransformer,
                                      InvocationContext context) {
         this.uri = uri;
         this.method = method;
         this.service = service;
         this.accessor = accessor;
+        this.hostTransformer = hostTransformer;
         this.context = context;
         this.registry = context.getRegistry();
         accessor.getClientHttpRequestInitializers().forEach(initializer -> initializer.initialize(this));
@@ -146,10 +150,8 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws IOException if an I/O error occurs during request execution
      */
     private ClientHttpResponse forward() throws IOException {
-        HttpForwardContext ctx = new HttpForwardContext(context);
-        BlockingClientForwardRequest req = new BlockingClientForwardRequest(this);
-        ctx.route(new HttpForwardInvocation<>(req, ctx));
-        return execute(req.getURI());
+        URI newUri = HttpForwardContext.of(context).route(new BlockingClientForwardRequest(this, uri, hostTransformer));
+        return execute(newUri);
     }
 
     /**
@@ -175,9 +177,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws Throwable if service call fails or client error occurs
      */
     private ClientHttpResponse invoke() throws Throwable {
-        List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
-        if (endpoints == null || endpoints.isEmpty()) {
-            // Failed to convert microservice, fallback to domain reques
+        if (!subscribe()) {
             return execute(uri);
         }
         BlockingClientCluster cluster = BlockingClientCluster.INSTANCE;
@@ -189,6 +189,25 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
             throw error.getThrowable();
         } else {
             return response.getResponse();
+        }
+    }
+
+    /**
+     * Subscribes to service endpoints.
+     *
+     * @return true if subscription succeeded and endpoints are available, false otherwise
+     * @throws Throwable if subscription fails
+     */
+    private boolean subscribe() throws Throwable {
+        try {
+            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
+            if (endpoints == null || endpoints.isEmpty()) {
+                // Failed to convert microservice, fallback to domain reques
+                return false;
+            }
+            return true;
+        } catch (Throwable e) {
+            return false;
         }
     }
 }

@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v2_2.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
 import lombok.Getter;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
@@ -42,9 +43,8 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     private final HttpHeaders writeableHeaders;
 
-    public GatewayForwardRequest(ServerWebExchange exchange, URI uri) {
-        super(exchange.getRequest());
-        this.uri = uri;
+    public GatewayForwardRequest(ServerWebExchange exchange, URI uri, HostTransformer hostTransformer) {
+        super(exchange.getRequest(), uri, hostTransformer);
         this.exchange = exchange;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }

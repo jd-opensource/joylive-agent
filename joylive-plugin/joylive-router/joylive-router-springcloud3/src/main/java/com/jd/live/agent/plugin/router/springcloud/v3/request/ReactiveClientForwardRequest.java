@@ -16,10 +16,11 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
 import org.springframework.web.reactive.function.client.ClientRequest;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -28,11 +29,10 @@ import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 /**
  * ReactiveClientForwardRequest
  */
-public class ReactiveClientForwardRequest extends AbstractHttpOutboundRequest<ClientRequest> implements HttpForwardRequest {
+public class ReactiveClientForwardRequest extends AbstractHttpForwardRequest<ClientRequest> {
 
-    public ReactiveClientForwardRequest(ClientRequest request) {
-        super(request);
-        this.uri = request.url();
+    public ReactiveClientForwardRequest(ClientRequest request, URI uri, HostTransformer hostTransformer) {
+        super(request, uri, hostTransformer);
     }
 
     @Override

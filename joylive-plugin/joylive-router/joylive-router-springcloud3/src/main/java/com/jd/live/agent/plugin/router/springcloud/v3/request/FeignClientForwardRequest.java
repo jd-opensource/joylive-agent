@@ -17,8 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
 import feign.Request;
 
 import java.net.URI;
@@ -32,11 +32,10 @@ import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 /**
  * FeignForwardRequest
  */
-public class FeignClientForwardRequest extends AbstractHttpOutboundRequest<Request> implements HttpForwardRequest {
+public class FeignClientForwardRequest extends AbstractHttpForwardRequest<Request> implements FeignOutboundRequest {
 
-    public FeignClientForwardRequest(Request request, URI uri) {
-        super(request);
-        this.uri = uri;
+    public FeignClientForwardRequest(Request request, URI uri, HostTransformer hostTransformer) {
+        super(request, uri, hostTransformer);
     }
 
     @Override

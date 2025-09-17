@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
+import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.cluster.GatewayCluster;
@@ -150,9 +151,10 @@ public class LiveGatewayFilter implements GatewayFilter {
      */
     private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
         URI uri = getURI(exchange);
-        if (context.isSubdomainEnabled(uri.getHost())) {
+        HostTransformer transformer = context.getHostTransformer(uri.getHost());
+        if (transformer != null) {
             // Handle multi-active and lane domains
-            GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri);
+            GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri, transformer);
             try {
                 URI newUri = HttpForwardContext.of(context).route(request);
                 if (newUri != uri) {

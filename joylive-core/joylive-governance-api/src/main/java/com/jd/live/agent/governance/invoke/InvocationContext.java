@@ -46,8 +46,8 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.lane.Lane;
+import com.jd.live.agent.governance.policy.live.LiveDomain;
 import com.jd.live.agent.governance.policy.live.Unit;
-import com.jd.live.agent.governance.policy.live.UnitDomain;
 import com.jd.live.agent.governance.policy.live.UnitRoute;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
@@ -58,6 +58,8 @@ import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
+import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.request.HostTransformer.FirstTransformer;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
@@ -66,6 +68,7 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -77,8 +80,9 @@ import java.util.function.Supplier;
 import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
 import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.template.Template.context;
 import static com.jd.live.agent.core.util.template.Template.evaluate;
+import static com.jd.live.agent.governance.request.HostTransformer.KEY_LANE;
+import static com.jd.live.agent.governance.request.HostTransformer.KEY_UNIT;
 
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
@@ -147,29 +151,58 @@ public interface InvocationContext {
      *
      * @return true if lane or live mode is enabled, false otherwise
      */
-    default boolean isSubdomainEnabled() {
-        return isLaneEnabled() || isLiveEnabled();
-    }
+    boolean isSubdomainEnabled();
 
     /**
-     * Checks if subdomain is enabled for the given host.
+     * Gets the host transformer for the specified host.
      *
-     * @param host the host to check
-     * @return true if subdomain routing is enabled, false otherwise
+     * @param host the host name
+     * @return the host transformer
      */
-    default boolean isSubdomainEnabled(String host) {
-        if (!isSubdomainEnabled() || !Ipv4.isHost(host)) {
-            return false;
+    default HostTransformer getHostTransformer(String host) {
+        GovernanceConfig governanceConfig = getGovernanceConfig();
+        LiveConfig liveConfig = governanceConfig.getLiveConfig();
+        LaneConfig laneConfig = governanceConfig.getLaneConfig();
+        boolean liveEnabled = isLiveEnabled();
+        boolean laneEnabled = isLaneEnabled() && laneConfig.isEnabled(host);
+        if (!liveEnabled && !laneEnabled || !Ipv4.isHost(host)) {
+            return null;
         }
         // lower case host
         host = host.toLowerCase();
-        // domain in live policy
-        GovernancePolicy policy = getPolicySupplier().getPolicy();
-        if (policy != null && policy.isSubdomainEnabled(host)) {
-            return true;
+        // add prefix or suffix to domain
+        HostTransformer transformer = null;
+        if (liveEnabled) {
+            boolean unitHost = false;
+            // domain in live policy
+            GovernancePolicy policy = getPolicySupplier().getPolicy();
+            if (policy != null) {
+                Domain domain = policy.getDomain(host);
+                if (domain != null) {
+                    DomainPolicy domainPolicy = domain.getPolicy();
+                    if (domainPolicy != null) {
+                        if (domainPolicy.isUnit()) {
+                            unitHost = true;
+                        } else {
+                            LiveDomain liveDomain = domainPolicy.getLiveDomain();
+                            if (liveDomain != null && liveDomain.isUnitDomainEnabled()) {
+                                transformer = (h, ctx) -> liveDomain.getFirstDomain((String) ctx.get(KEY_UNIT));
+                            }
+                        }
+                    }
+                }
+            }
+            if (!unitHost && transformer == null && liveConfig.isEnabled(host)) {
+                transformer = (h, ctx) -> evaluate(liveConfig.getHostExpression(), h, ctx);
+            }
         }
-        // domain in config
-        return getGovernanceConfig().isSubdomainEnabled(host);
+        if (laneEnabled) {
+            transformer = transformer == null
+                    ? (h, ctx) -> evaluate(laneConfig.getHostExpression(), h, ctx)
+                    : transformer.then((h, ctx) -> evaluate(laneConfig.getHostExpression(), h, ctx));
+
+        }
+        return transformer != null ? new FirstTransformer(transformer) : null;
     }
 
     /**
@@ -852,11 +885,6 @@ public interface InvocationContext {
         }
 
         @Override
-        public boolean isSubdomainEnabled(String host) {
-            return delegate.isSubdomainEnabled(host);
-        }
-
-        @Override
         public boolean isLiveEnabled() {
             return delegate.isLiveEnabled();
         }
@@ -1064,10 +1092,6 @@ public interface InvocationContext {
      */
     class HttpForwardContext extends DelegateContext {
 
-        private static final String KEY_UNIT = "unit";
-        private static final String KEY_LANE = "lane";
-        private static final String KEY_HOST = "host";
-
         public HttpForwardContext(InvocationContext delegate) {
             super(delegate);
         }
@@ -1135,64 +1159,16 @@ public interface InvocationContext {
                 // No need to modify the domain name
                 return;
             }
-            // TODO optimize, executed 2 checks
-            String host = request.getHost().toLowerCase();
-            GovernanceConfig governanceConfig = invocation.getContext().getGovernanceConfig();
-            LiveConfig liveConfig = governanceConfig.getLiveConfig();
-            LaneConfig laneConfig = governanceConfig.getLaneConfig();
-            boolean liveEnabled = unit != null && liveConfig.isEnabled(host);
-            boolean laneEnabled = lane != null && laneConfig.isEnabled(host);
-            if (!liveEnabled && !laneEnabled) {
-                // No need to modify the domain name
-                return;
+            String host = request.getHost();
+            Map<String, Object> context = new HashMap<>(4);
+            if (unit != null) {
+                context.put(KEY_UNIT, unit.decorator());
             }
-
-            // add prefix or suffix to domain
-            int pos = host.indexOf('.');
-            String first = pos < 0 ? host : host.substring(0, pos);
-            String other = pos < 0 ? "" : host.substring(pos);
-            if (liveEnabled) {
-                // specific unit host
-                String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
-                if (unitHost != null && !unitHost.isEmpty()) {
-                    if (!laneEnabled) {
-                        request.forward(unitHost);
-                        return;
-                    }
-                    pos = unitHost.indexOf('.');
-                    first = pos < 0 ? unitHost : unitHost.substring(0, pos);
-                } else {
-                    first = evaluate(liveConfig.getHostExpression(), first, context(KEY_UNIT, unit.decorator(), KEY_HOST, first));
-                }
+            if (lane != null) {
+                context.put(KEY_LANE, lane.decorator());
             }
-            if (laneEnabled) {
-                first = evaluate(laneConfig.getHostExpression(), first, context(KEY_LANE, lane.decorator(), KEY_HOST, first));
-            }
-            request.forward(first + other);
-        }
-
-        /**
-         * Resolves the host for a given unit based on the incoming request's host, the governance policy,
-         * and the unit's information. This method supports dynamic host resolution based on governance policies
-         * and is intended for internal use within the routing logic.
-         *
-         * @param host             The host of the incoming request.
-         * @param governancePolicy The governance policy under which the request is being processed.
-         * @param unit             The unit associated with the request, if any.
-         * @return The resolved host for the unit, or {@code null} if it cannot be resolved.
-         */
-        private String getUnitHost(final String host, final GovernancePolicy governancePolicy, final Unit unit) {
-            Domain domain = governancePolicy == null ? null : governancePolicy.getDomain(host);
-            DomainPolicy domainPolicy = domain == null ? null : domain.getPolicy();
-            if (domainPolicy != null) {
-                if (domainPolicy.isUnit()) {
-                    return domainPolicy.getUnitDomain().getHost();
-                } else {
-                    UnitDomain unitDomain = domainPolicy.getLiveDomain().getUnitDomain(unit.getCode());
-                    return unitDomain == null ? null : unitDomain.getHost();
-                }
-            }
-            return null;
+            host = request.getHostTransformer().transform(host, context);
+            request.forward(host);
         }
     }
 

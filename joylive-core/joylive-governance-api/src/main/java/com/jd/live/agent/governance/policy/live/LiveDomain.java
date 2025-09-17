@@ -85,6 +85,21 @@ public class LiveDomain extends PolicyId {
         return unitDomainCache.get(unit);
     }
 
+    public String getUnitHost(String unit) {
+        UnitDomain unitDomain = getUnitDomain(unit);
+        return unitDomain == null ? null : unitDomain.getHost();
+    }
+
+    public String getFirstDomain(String unit) {
+        UnitDomain unitDomain = getUnitDomain(unit);
+        if (unitDomain == null) {
+            return null;
+        }
+        String host = unitDomain.getHost();
+        int pos = host.indexOf(':');
+        return pos == -1 ? host : host.substring(0, pos);
+    }
+
     public LivePath getPath(String path) {
         return pathTrie.match(path, PathMatchType.PREFIX);
     }
