@@ -41,8 +41,6 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<LoadBalancedExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
-
     public ReactiveCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
@@ -52,7 +50,7 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
         LoadBalancedExchangeFilterFunction filter = (LoadBalancedExchangeFilterFunction) ctx.getTarget();
-        ReactiveCloudCluster cluster = clusters.computeIfAbsent(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
+        ReactiveCloudCluster cluster = Accessor.clusters.computeIfAbsent(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
         ReactiveCloudClusterRequest request = new ReactiveCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),
@@ -62,5 +60,9 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
         Mono<ClientResponse> mono = Mono.fromFuture(future);
         mc.skipWithResult(mono);
+    }
+
+    private static class Accessor {
+        private static final Map<LoadBalancedExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }

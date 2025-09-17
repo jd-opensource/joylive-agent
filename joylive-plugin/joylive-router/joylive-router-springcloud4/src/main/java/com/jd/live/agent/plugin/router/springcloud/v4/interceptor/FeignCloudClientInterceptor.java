@@ -38,8 +38,6 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
-
     public FeignCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
@@ -47,7 +45,7 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudCluster cluster = Accessor.clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest request = new FeignCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),
@@ -60,5 +58,9 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
         } else {
             mc.skipWithResult(response.getResponse());
         }
+    }
+
+    private static class Accessor {
+        private static final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }

@@ -40,8 +40,6 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
-
     public BlockingCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
@@ -55,7 +53,7 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
+        BlockingCloudCluster cluster = Accessor.clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
         BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(ctx.getArgument(0),
                 ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
         HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
@@ -66,5 +64,9 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
         } else {
             mc.skipWithResult(response.getResponse());
         }
+    }
+
+    private static class Accessor {
+        private static final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }
