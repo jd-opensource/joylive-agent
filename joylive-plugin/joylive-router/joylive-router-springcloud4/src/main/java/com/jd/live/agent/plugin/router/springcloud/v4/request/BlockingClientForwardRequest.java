@@ -15,49 +15,42 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
-import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.request.HttpRequest;
 import org.springframework.http.HttpHeaders;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
- * RestTemplateOutboundRequest
+ * BlockingClientForwardRequest
  */
-public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<BlockingWebHttpRequest> {
-
-    private final String service;
-
-    private final Registry registry;
+public class BlockingClientForwardRequest extends AbstractHttpForwardRequest<BlockingClientHttpRequest> implements HttpRequest.HttpForwardRequest {
 
     private final HttpHeaders writeableHeaders;
 
-    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, Registry registry) {
-        super(request);
-        this.service = service;
-        this.registry = registry;
-        this.uri = request.getURI();
+    public BlockingClientForwardRequest(BlockingClientHttpRequest request, URI uri, HostTransformer hostTransformer) {
+        super(request, uri, hostTransformer);
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
     public String getService() {
-        return service == null || service.isEmpty() ? super.getService() : service;
+        return null;
     }
 
     @Override
-    public HttpMethod getHttpMethod() {
-        org.springframework.http.HttpMethod method = request.getMethod();
-        return method == null ? null : HttpMethod.ofNullable(method.name());
+    public com.jd.live.agent.core.util.http.HttpMethod getHttpMethod() {
+        return com.jd.live.agent.core.util.http.HttpMethod.ofNullable(request.getMethod().name());
     }
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+        return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
     }
 
     @Override
@@ -68,11 +61,13 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
     }
 
     @Override
+    public void forward(String host) {
+        uri = newURI(uri, host);
+    }
+
+    @Override
     protected Map<String, List<String>> parseHeaders() {
         return writeableHeaders;
     }
 
-    public CompletionStage<List<ServiceEndpoint>> getInstances() {
-        return registry.getEndpoints(service);
-    }
 }

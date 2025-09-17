@@ -28,12 +28,12 @@ import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpr
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignCloudClusterInterceptor;
 
 /**
- * FeignClusterDefinition
+ * FeignCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FeignClusterDefinition_v4")
+@Extension(value = "FeignCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnClass(FeignCloudClusterDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
 public class FeignCloudClusterDefinition extends PluginDefinitionAdapter {

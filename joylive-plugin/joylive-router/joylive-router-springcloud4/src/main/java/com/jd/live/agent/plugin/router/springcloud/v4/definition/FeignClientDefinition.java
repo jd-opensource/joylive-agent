@@ -23,36 +23,36 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ReactiveWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignClientInterceptor;
 
 /**
- * WebClientClusterDefinition
+ * FeignClientDefinition
  */
+@Extension(value = "FeignClientDefinition_v6")
+@ConditionalOnSpringWeb6GovernanceEnabled
+@ConditionalOnClass(FeignClientDefinition.TYPE)
 @Injectable
-@Extension(value = "WebClientClusterDefinition_v6")
-@ConditionalOnSpringWeb6RegistryEnabled
-@ConditionalOnReactive
-@ConditionalOnClass(ReactiveWebClusterDefinition.TYPE_DEFAULT_WEB_CLIENT)
-public class ReactiveWebClusterDefinition extends PluginDefinitionAdapter {
+public class FeignClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DEFAULT_WEB_CLIENT = "org.springframework.web.reactive.function.client.DefaultWebClient";
+    protected static final String TYPE = "feign.Client";
+
+    private static final String METHOD = "execute";
+
+    private static final String[] ARGUMENT = new String[]{
+            "feign.Request",
+            "feign.Request$Options"
+    };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public ReactiveWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DEFAULT_WEB_CLIENT);
+    public FeignClientDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new ReactiveWebClusterInterceptor(context, registry))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
+                        () -> new FeignClientInterceptor(context))
         };
     }
 }

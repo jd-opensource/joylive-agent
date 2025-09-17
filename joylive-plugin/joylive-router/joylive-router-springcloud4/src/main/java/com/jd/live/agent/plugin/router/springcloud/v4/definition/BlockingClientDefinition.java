@@ -24,18 +24,17 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingClientInterceptor;
 
 /**
- * RestTemplateClusterDefinition
+ * BlockingClientDefinition
  */
-@Extension(value = "RestTemplateDefinition_v6")
-@ConditionalOnSpringWeb6RegistryEnabled
-@ConditionalOnClass(BlockingWebClusterDefinition.TYPE)
+@Extension(value = "BlockingClientDefinition_v6")
+@ConditionalOnSpringWeb6GovernanceEnabled
+@ConditionalOnClass(BlockingClientDefinition.TYPE)
 @Injectable
-public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
+public class BlockingClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
 
@@ -44,14 +43,10 @@ public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public BlockingWebClusterDefinition() {
+    public BlockingClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new BlockingWebClusterInterceptor(context, registry))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingClientInterceptor(context))
         };
     }
 }

@@ -17,22 +17,15 @@ package com.jd.live.agent.plugin.router.springcloud.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudDisabled;
 
 import java.lang.annotation.*;
 
-/**
- * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
- */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnRegistryEnabled
-@ConditionalOnGovernanceEnabled
-@ConditionalOnSpringCloudDisabled
 @ConditionalOnSpringWeb6Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb6RegistryEnabled {
+public @interface ConditionalOnSpringWeb6GovernanceEnabled {
 
 }

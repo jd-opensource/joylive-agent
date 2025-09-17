@@ -28,12 +28,12 @@ import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpr
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingCloudClusterInterceptor;
 
 /**
- * BlockingClusterDefinition
+ * BlockingCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "BlockingClusterDefinition_v4")
+@Extension(value = "BlockingCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnClass(BlockingCloudClusterDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
 public class BlockingCloudClusterDefinition extends PluginDefinitionAdapter {

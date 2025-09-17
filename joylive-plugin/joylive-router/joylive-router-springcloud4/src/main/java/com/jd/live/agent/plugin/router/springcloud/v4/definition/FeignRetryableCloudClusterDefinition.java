@@ -29,12 +29,12 @@ import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpr
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignCloudClusterInterceptor;
 
 /**
- * RetryableFeignClusterDefinition
+ * FeignRetryableCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FeignRetryableClientDefinition_v4")
+@Extension(value = "FeignRetryableCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnSpringRetry
 @ConditionalOnClass(FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)

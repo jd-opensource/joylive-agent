@@ -15,39 +15,39 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
-import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.reactive.function.client.ClientRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
-/**
- * ReactiveOutboundRequest
- */
-public class ReactiveCloudOutboundRequest extends AbstractHttpOutboundRequest<ClientRequest> {
+public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> {
 
-    private final String serviceId;
+    private final String service;
+
+    private final Registry registry;
 
     private final HttpHeaders writeableHeaders;
 
-    public ReactiveCloudOutboundRequest(ClientRequest request, String serviceId) {
+    public BlockingClientClusterRequest(BlockingClientHttpRequest request, String service, Registry registry) {
         super(request);
-        this.serviceId = serviceId;
-        this.uri = request.url();
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
+        this.service = service;
+        this.registry = registry;
+        this.uri = request.getURI();
+        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
     public String getService() {
-        return serviceId;
+        return service == null || service.isEmpty() ? super.getService() : service;
     }
 
     @Override
-    public HttpMethod getHttpMethod() {
-        org.springframework.http.HttpMethod method = request.method();
-        return method == null ? null : HttpMethod.ofNullable(method.name());
+    public com.jd.live.agent.core.util.http.HttpMethod getHttpMethod() {
+        return com.jd.live.agent.core.util.http.HttpMethod.ofNullable(request.getMethod().name());
     }
 
     @Override
@@ -63,17 +63,11 @@ public class ReactiveCloudOutboundRequest extends AbstractHttpOutboundRequest<Cl
     }
 
     @Override
-    public String getCookie(String key) {
-        return request.cookies().getFirst(key);
-    }
-
-    @Override
     protected Map<String, List<String>> parseHeaders() {
         return writeableHeaders;
     }
 
-    @Override
-    protected Map<String, List<String>> parseCookies() {
-        return request.cookies();
+    public CompletionStage<List<ServiceEndpoint>> getInstances() {
+        return registry.getEndpoints(service);
     }
 }

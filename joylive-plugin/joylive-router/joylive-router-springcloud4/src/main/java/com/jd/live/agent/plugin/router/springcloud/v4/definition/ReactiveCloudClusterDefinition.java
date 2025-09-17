@@ -29,12 +29,12 @@ import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpr
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ReactiveCloudClusterInterceptor;
 
 /**
- * ReactiveClusterDefinition
+ * ReactiveCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ClientClusterDefinition_v4")
+@Extension(value = "ReactiveCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(ReactiveCloudClusterDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION)

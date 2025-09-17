@@ -36,7 +36,7 @@ import java.util.concurrent.CompletionStage;
  * This class extends {@link AbstractHttpOutboundRequest} and provides methods for interacting with service instances,
  * managing headers, cookies, and executing HTTP requests.
  */
-public class ReactiveWebClusterRequest extends AbstractHttpOutboundRequest<ClientRequest> {
+public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<ClientRequest> {
 
     private final String service;
 
@@ -46,7 +46,7 @@ public class ReactiveWebClusterRequest extends AbstractHttpOutboundRequest<Clien
 
     private final HttpHeaders writeableHeaders;
 
-    public ReactiveWebClusterRequest(ClientRequest request, String service, Registry registry, ExchangeFunction next) {
+    public ReactiveClientClusterRequest(ClientRequest request, String service, Registry registry, ExchangeFunction next) {
         super(request);
         this.service = service;
         this.registry = registry;

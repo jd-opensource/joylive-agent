@@ -29,12 +29,12 @@ import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpr
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingCloudClusterInterceptor;
 
 /**
- * BlockingRetryClusterDefinition
+ * BlockingRetryableCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "BlockingRetryClusterDefinition_v4")
+@Extension(value = "BlockingRetryableCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
 @ConditionalOnSpringRetry
 @ConditionalOnClass(BlockingRetryableCloudClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
