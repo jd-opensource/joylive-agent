@@ -385,7 +385,7 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
         public Boolean call() throws Exception {
             if (registers.get(key) == instance) {
                 client.registerInstance(key.getService(), key.group, instance);
-                logger.debug("Registered instance {}:{} to {}", instance.getIp(), instance.getPort(), name);
+                logger.info("Registered instance {}:{} to {}", instance.getIp(), instance.getPort(), name);
             }
             return true;
         }
