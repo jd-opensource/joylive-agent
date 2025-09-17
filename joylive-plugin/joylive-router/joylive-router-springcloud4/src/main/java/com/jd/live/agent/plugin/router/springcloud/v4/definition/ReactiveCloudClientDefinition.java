@@ -23,42 +23,42 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
+import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ReactiveCloudClientInterceptor;
 
 /**
- * FeignRetryableCloudClusterDefinition
+ * ReactiveCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "FeignRetryableCloudClusterDefinition_v4")
+@Extension(value = "ReactiveCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
-@ConditionalOnSpringRetry
-@ConditionalOnClass(FeignRetryableCloudClusterDefinition.TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
-public class FeignRetryableCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnReactive
+@ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION)
+public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.RetryableFeignBlockingLoadBalancerClient";
+    protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction";
 
-    private static final String METHOD_EXECUTE = "execute";
+    private static final String METHOD_FILTER = "filter";
 
     private static final String[] ARGUMENT_FILTER = new String[]{
-            "feign.Request",
-            "feign.Request$Options"
+            "org.springframework.web.reactive.function.client.ClientRequest",
+            "org.springframework.web.reactive.function.client.ExchangeFunction"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public FeignRetryableCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_RETRYABLE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
+    public ReactiveCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_EXECUTE).
+                        MatcherBuilder.named(METHOD_FILTER).
                                 and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
-                        () -> new FeignCloudClusterInterceptor(context)
+                        () -> new ReactiveCloudClientInterceptor(context)
                 )
         };
     }

@@ -23,44 +23,32 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.FeignCloudClientInterceptor;
 
 /**
- * BlockingRetryableCloudClusterDefinition
+ * FeignCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "BlockingRetryableCloudClusterDefinition_v4")
+@Extension(value = "FeignCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
-@ConditionalOnSpringRetry
-@ConditionalOnClass(BlockingRetryableCloudClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
-public class BlockingRetryableCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(FeignCloudClientDefinition.TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT)
+public class FeignCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RETRY_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor";
+    protected static final String TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT = "org.springframework.cloud.openfeign.loadbalancer.FeignBlockingLoadBalancerClient";
 
-    private static final String METHOD_INTERCEPT = "intercept";
-
-    private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.http.HttpRequest",
-            "byte[]",
-            "org.springframework.http.client.ClientHttpRequestExecution"
-    };
+    private static final String METHOD_EXECUTE = "execute";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingRetryableCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_RETRY_LOADBALANCER_INTERCEPTOR);
+    public FeignCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_FEIGN_BLOCKING_LOADBALANCER_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INTERCEPT).
-                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_EXECUTE), () -> new FeignCloudClientInterceptor(context))
         };
     }
 }

@@ -21,45 +21,39 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.plugin.router.springcloud.v4.cluster.BlockingCloudCluster;
-import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingCloudClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.cluster.FeignCloudCluster;
+import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignCloudClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
+import feign.Client;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * BlockingClusterInterceptor
+ * FeignClusterInterceptor
  *
  * @since 1.0.0
  */
-public class BlockingCloudClusterInterceptor extends InterceptorAdaptor {
+public class FeignCloudClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
+    private final Map<Client, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
 
-    public BlockingCloudClusterInterceptor(InvocationContext context) {
+    public FeignCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
 
-    /**
-     * Enhanced logic before method execution
-     *
-     * @param ctx The execution context of the method being intercepted.
-     * @see org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor#intercept(HttpRequest, byte[], ClientHttpRequestExecution)
-     */
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        BlockingCloudCluster cluster = clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
-        BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(ctx.getArgument(0),
-                ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
-        HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        BlockingClusterResponse response = cluster.request(invocation);
+        FeignCloudCluster cluster = clusters.computeIfAbsent((Client) ctx.getTarget(), i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudClusterRequest request = new FeignCloudClusterRequest(
+                ctx.getArgument(0),
+                ctx.getArgument(1),
+                cluster.getContext());
+        HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
+        FeignClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
         if (error != null && !error.isServerError()) {
             mc.skipWithThrowable(error.getThrowable());

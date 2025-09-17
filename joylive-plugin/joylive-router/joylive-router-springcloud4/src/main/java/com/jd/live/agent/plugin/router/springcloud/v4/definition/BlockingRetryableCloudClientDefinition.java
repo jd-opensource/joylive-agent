@@ -23,42 +23,43 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ReactiveCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingCloudClientInterceptor;
 
 /**
- * ReactiveCloudClusterDefinition
+ * BlockingRetryableCloudClusterDefinition
  *
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ReactiveCloudClusterDefinition_v4")
+@Extension(value = "BlockingRetryableCloudClusterDefinition_v4")
 @ConditionalOnSpringCloud4FlowControlEnabled
-@ConditionalOnReactive
-@ConditionalOnClass(ReactiveCloudClusterDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION)
-public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnSpringRetry
+@ConditionalOnClass(BlockingRetryableCloudClientDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
+public class BlockingRetryableCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction";
+    protected static final String TYPE_RETRY_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor";
 
-    private static final String METHOD_FILTER = "filter";
+    private static final String METHOD_INTERCEPT = "intercept";
 
-    private static final String[] ARGUMENT_FILTER = new String[]{
-            "org.springframework.web.reactive.function.client.ClientRequest",
-            "org.springframework.web.reactive.function.client.ExchangeFunction"
+    private static final String[] ARGUMENT_INTERCEPT = new String[]{
+            "org.springframework.http.HttpRequest",
+            "byte[]",
+            "org.springframework.http.client.ClientHttpRequestExecution"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public ReactiveCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION);
+    public BlockingRetryableCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE_RETRY_LOADBALANCER_INTERCEPTOR);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_FILTER).
-                                and(MatcherBuilder.arguments(ARGUMENT_FILTER)),
-                        () -> new ReactiveCloudClusterInterceptor(context)
+                        MatcherBuilder.named(METHOD_INTERCEPT).
+                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
+                        () -> new BlockingCloudClientInterceptor(context)
                 )
         };
     }
