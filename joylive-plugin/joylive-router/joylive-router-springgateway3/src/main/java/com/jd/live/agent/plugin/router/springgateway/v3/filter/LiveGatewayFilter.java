@@ -19,7 +19,6 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.status.StatusThrowerFactory;
@@ -36,9 +35,12 @@ import org.springframework.core.NestedRuntimeException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayForwardRequest.getURI;
+import static com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayForwardRequest.setURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
@@ -102,7 +104,7 @@ public class LiveGatewayFilter implements GatewayFilter {
             return chain.filter(exchange);
         } else if (chain instanceof LiveGatewayFilterChain && ((LiveGatewayFilterChain) chain).isLoadbalancer()) {
             // lb://
-            return request(exchange, chain);
+            return invoke(exchange, chain);
         }
         return forward(exchange, chain);
     }
@@ -114,7 +116,7 @@ public class LiveGatewayFilter implements GatewayFilter {
      * @param chain    the {@link GatewayFilterChain} to proceed with the filter chain
      * @return a {@link Mono} that completes when the request processing is finished, or exceptionally if an error occurs
      */
-    private Mono<Void> request(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private Mono<Void> invoke(ServerWebExchange exchange, GatewayFilterChain chain) {
         GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, cluster.getContext(), chain, gatewayConfig, retryConfig, index);
         OutboundInvocation<GatewayCloudClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, context);
         CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
@@ -142,13 +144,19 @@ public class LiveGatewayFilter implements GatewayFilter {
      * @return a {@link Mono} that completes when the request is forwarded, or emits an error if an exception occurs
      */
     private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
-        GatewayForwardRequest request = new GatewayForwardRequest(exchange);
-        HttpForwardContext ctx = new HttpForwardContext(context);
-        try {
-            ctx.route(new GatewayHttpForwardInvocation<>(request, ctx));
-            return chain.filter(exchange);
-        } catch (Exception e) {
-            return Mono.error(thrower.createException(e, request));
+        URI uri = getURI(exchange);
+        if (context.isSubdomainEnabled(uri.getHost())) {
+            // Handle multi-active and lane domains
+            GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri);
+            try {
+                URI newUri = HttpForwardContext.of(context).route(request);
+                if (newUri != uri) {
+                    setURI(exchange, newUri);
+                }
+            } catch (Throwable e) {
+                return Mono.error(thrower.createException(e, request));
+            }
         }
+        return chain.filter(exchange);
     }
 }

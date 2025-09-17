@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
 
 /**
@@ -42,9 +43,9 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     private final HttpHeaders writeableHeaders;
 
-    public GatewayForwardRequest(ServerWebExchange exchange) {
+    public GatewayForwardRequest(ServerWebExchange exchange, URI uri) {
         super(exchange.getRequest());
-        this.uri = getURI(exchange);
+        this.uri = uri;
         this.exchange = exchange;
         this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
@@ -80,7 +81,7 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     @Override
     public void forward(String host) {
-        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, HttpUtils.newURI(uri, host));
+        uri = newURI(uri, host);
     }
 
     @Override
@@ -98,8 +99,24 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
         return writeableHeaders;
     }
 
-    private static URI getURI(ServerWebExchange exchange) {
+    /**
+     * Gets the request URI from exchange attributes or falls back to original URI.
+     *
+     * @param exchange the server web exchange
+     * @return the request URI
+     */
+    public static URI getURI(ServerWebExchange exchange) {
         return exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
+    }
+
+    /**
+     * Sets the request URI in exchange attributes.
+     *
+     * @param exchange the server web exchange
+     * @param uri      the URI to set
+     */
+    public static void setURI(ServerWebExchange exchange, URI uri) {
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
     }
 
 }
