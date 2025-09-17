@@ -1135,12 +1135,8 @@ public interface InvocationContext {
                 // No need to modify the domain name
                 return;
             }
-            String host = request.getHost();
-            if (!Ipv4.isHost(host)) {
-                return;
-            }
-            // lower case host
-            host = host.toLowerCase();
+            // TODO optimize, executed 2 checks
+            String host = request.getHost().toLowerCase();
             GovernanceConfig governanceConfig = invocation.getContext().getGovernanceConfig();
             LiveConfig liveConfig = governanceConfig.getLiveConfig();
             LaneConfig laneConfig = governanceConfig.getLaneConfig();
