@@ -32,6 +32,7 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientForw
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
+import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
@@ -167,7 +168,9 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
             final boolean[] result = new boolean[]{false};
             builder.filters(filters -> {
                 for (ExchangeFilterFunction filter : filters) {
-                    if (filter instanceof LoadBalancedExchangeFilterFunction || filter instanceof DeferringLoadBalancerExchangeFilterFunction) {
+                    if (filter instanceof LoadBalancedExchangeFilterFunction
+                            || filter instanceof DeferringLoadBalancerExchangeFilterFunction
+                            || filter instanceof RetryableLoadBalancerExchangeFilterFunction) {
                         result[0] = true;
                         break;
                     }
