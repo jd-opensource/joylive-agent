@@ -22,9 +22,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.HttpClientCloudCluster;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.RibbonCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.HttpClientClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.response.HttpClientClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.response.RibbonClusterResponse;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.ClientProtocolException;
@@ -41,11 +41,11 @@ import java.io.IOException;
 /**
  * RibbonCloudClientClusterInterceptor
  */
-public class RibbonCloudClientClusterInterceptor extends InterceptorAdaptor {
+public class RibbonCloudClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public RibbonCloudClientClusterInterceptor(InvocationContext context) {
+    public RibbonCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
 
@@ -72,20 +72,20 @@ public class RibbonCloudClientClusterInterceptor extends InterceptorAdaptor {
 
         private final InvocationContext context;
 
-        private final HttpClientCloudCluster cluster;
+        private final RibbonCloudCluster cluster;
 
         LiveHttpClient(RibbonLoadBalancingHttpClient client, CloseableHttpClient delegate, InvocationContext context) {
             this.client = client;
             this.delegate = delegate;
             this.context = context;
-            this.cluster = new HttpClientCloudCluster(context.getRegistry(), client);
+            this.cluster = new RibbonCloudCluster(context.getRegistry(), client);
         }
 
         @Override
         protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException {
             HttpClientClusterRequest clusterRequest = new HttpClientClusterRequest(request, context, delegate, cluster.getContext());
             HttpOutboundInvocation<HttpClientClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, this.context);
-            HttpClientClusterResponse response = cluster.request(invocation);
+            RibbonClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();
             if (error != null && !error.isServerError()) {
                 if (error.getThrowable() instanceof IOException) {

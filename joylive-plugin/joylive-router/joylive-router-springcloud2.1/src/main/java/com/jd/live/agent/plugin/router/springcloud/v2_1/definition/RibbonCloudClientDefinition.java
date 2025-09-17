@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.RibbonCloudClientClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.RibbonCloudClientInterceptor;
 
 /**
  * HttpClientCloudClusterDefinition
@@ -49,7 +49,7 @@ public class RibbonCloudClientDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.in(TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT, TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
-                        () -> new RibbonCloudClientClusterInterceptor(context))
+                        () -> new RibbonCloudClientInterceptor(context))
         };
     }
 }
