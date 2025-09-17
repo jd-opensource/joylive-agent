@@ -1,11 +1,11 @@
-com.jd.live.agent.plugin.router.springcloud.v2_1.definition.BlockingCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.BlockingCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.BlockingRetryableCloudClusterDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.BlockingClientDefinition
-com.jd.live.agent.plugin.router.springcloud.v2_1.definition.FeignCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.FeignCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.FeignRetryerDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.FeignClientDefinition
-com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactiveCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactiveCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ReactiveClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.ServiceInstanceSupplierDefinition
-com.jd.live.agent.plugin.router.springcloud.v2_1.definition.HttpClientCloudClusterDefinition
+com.jd.live.agent.plugin.router.springcloud.v2_1.definition.RibbonCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v2_1.definition.LoadbalancerClientDefinition

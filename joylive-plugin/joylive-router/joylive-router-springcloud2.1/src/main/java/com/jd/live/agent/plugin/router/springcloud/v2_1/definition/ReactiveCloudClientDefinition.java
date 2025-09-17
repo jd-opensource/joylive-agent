@@ -25,39 +25,35 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.ReactiveCloudClientInterceptor;
 
-/**
- * BlockingClusterDefinition
- *
- * @since 1.7.0
- */
 @Injectable
-@Extension(value = "BlockingClusterDefinition_v2.1")
+@Extension(value = "ReactiveCloudClientDefinition_v2.1")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(BlockingCloudClusterDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
-public class BlockingCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
+public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor";
+    protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction";
 
-    private static final String METHOD_INTERCEPT = "intercept";
+    protected static final String TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction";
+
+    private static final String METHOD_INTERCEPT = "filter";
 
     private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.http.HttpRequest",
-            "byte[]",
-            "org.springframework.http.client.ClientHttpRequestExecution"
+            "org.springframework.web.reactive.function.client.ClientRequest",
+            "org.springframework.web.reactive.function.client.ExchangeFunction"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_INTERCEPTOR);
+    public ReactiveCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.in(TYPE_LOADBALANCER_EXCHANGE_FILTER, TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
                                 and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor.LoadBalancerClusterInterceptor(context)
+                        () -> new ReactiveCloudClientInterceptor(context)
                 )
         };
     }

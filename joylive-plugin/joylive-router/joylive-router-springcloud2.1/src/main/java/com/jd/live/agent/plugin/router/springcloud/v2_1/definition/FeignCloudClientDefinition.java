@@ -25,31 +25,30 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.HttpClientCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.FeignCloudClientInterceptor;
 
 /**
- * HttpClientCloudClusterDefinition
+ * FeignCloudClientDefinition
  *
  * @since 1.7.0
  */
 @Injectable
-@Extension(value = "HttpClientCloudClusterDefinition_v2.1")
+@Extension(value = "FeignCloudClientDefinition_v2.1")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(HttpClientCloudClusterDefinition.TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT)
-public class HttpClientCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(FeignCloudClientDefinition.TYPE)
+public class FeignCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient";
+    protected static final String TYPE = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
 
-    protected static final String TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RetryableRibbonLoadBalancingHttpClient";
+    private static final String METHOD = "execute";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public HttpClientCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.in(TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT, TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT);
+    public FeignCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
-                        () -> new HttpClientCloudClusterInterceptor(context))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new FeignCloudClientInterceptor(context))
         };
     }
 }

@@ -39,19 +39,21 @@ import org.springframework.cloud.netflix.ribbon.support.AbstractLoadBalancingCli
 import java.io.IOException;
 
 /**
- * HttpClientClusterInterceptor
+ * RibbonCloudClientClusterInterceptor
  */
-public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
+public class RibbonCloudClientClusterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public HttpClientCloudClusterInterceptor(InvocationContext context) {
+    public RibbonCloudClientClusterInterceptor(InvocationContext context) {
         this.context = context;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // in constructor method
         RibbonLoadBalancingHttpClient target = (RibbonLoadBalancingHttpClient) ctx.getTarget();
+        // recreate delegate client
         LiveHttpClient client = new LiveHttpClient(target, target.getDelegate(), context);
         client.update();
     }

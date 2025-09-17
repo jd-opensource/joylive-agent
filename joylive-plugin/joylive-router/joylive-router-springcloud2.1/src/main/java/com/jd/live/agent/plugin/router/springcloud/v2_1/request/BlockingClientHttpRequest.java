@@ -23,10 +23,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.BlockingClientCluster;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.request.BlockingClientClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.request.BlockingClientForwardRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2_2.response.BlockingClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.BlockingClientCluster;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -80,7 +78,6 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         this.hostTransformer = hostTransformer;
         this.context = context;
         this.registry = context.getRegistry();
-        accessor.getClientHttpRequestInitializers().forEach(initializer -> initializer.initialize(this));
     }
 
     @Override

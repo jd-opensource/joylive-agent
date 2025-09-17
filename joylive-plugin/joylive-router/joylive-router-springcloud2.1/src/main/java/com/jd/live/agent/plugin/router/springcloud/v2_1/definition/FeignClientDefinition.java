@@ -50,7 +50,7 @@ public class FeignClientDefinition extends PluginDefinitionAdapter {
 
     public FeignClientDefinition() {
         this.matcher = () -> MatcherBuilder.isImplement(TYPE).and(MatcherBuilder.not(MatcherBuilder.in(
-                FeignCloudClusterDefinition.TYPE)));
+                FeignCloudClientDefinition.TYPE)));
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
                         () -> new FeignClientInterceptor(context))

@@ -46,7 +46,6 @@ import java.util.List;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 import static com.jd.live.agent.governance.request.Request.KEY_CLOUD_REQUEST;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2Enabled.TYPE_ENABLE_DISCOVERY_CLIENT;
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2Enabled.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignOutboundRequest.createRequest;
 
 /**

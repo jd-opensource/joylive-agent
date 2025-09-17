@@ -25,36 +25,31 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.ReactiveCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.RibbonCloudClientClusterInterceptor;
 
+/**
+ * HttpClientCloudClusterDefinition
+ *
+ * @since 1.7.0
+ */
 @Injectable
-@Extension(value = "ReactiveCloudClusterDefinition_v2.1")
+@Extension(value = "RibbonCloudClientDefinition_v2.1")
 @ConditionalOnSpringCloud2FlowControlEnabled
-@ConditionalOnClass(ReactiveCloudClusterDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER)
-public class ReactiveCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(RibbonCloudClientDefinition.TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT)
+public class RibbonCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction";
+    protected static final String TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient";
 
-    protected static final String TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER = "org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction";
-
-    private static final String METHOD_INTERCEPT = "filter";
-
-    private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.web.reactive.function.client.ClientRequest",
-            "org.springframework.web.reactive.function.client.ExchangeFunction"
-    };
+    protected static final String TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RetryableRibbonLoadBalancingHttpClient";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public ReactiveCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.in(TYPE_LOADBALANCER_EXCHANGE_FILTER, TYPE_REACTOR_LOADBALANCER_EXCHANGE_FILTER);
+    public RibbonCloudClientDefinition() {
+        this.matcher = () -> MatcherBuilder.in(TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT, TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INTERCEPT).
-                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new ReactiveCloudClusterInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
+                        () -> new RibbonCloudClientClusterInterceptor(context))
         };
     }
 }
