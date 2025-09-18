@@ -35,6 +35,8 @@ public class GatewayConfig {
 
     private Set<String> pathFilters = new HashSet<>();
 
+    private Set<String> webSchemes = new HashSet<>();
+
     /**
      * Checks if the given name is a path filter.
      *
@@ -45,11 +47,20 @@ public class GatewayConfig {
         return pathFilters != null && filter != null && pathFilters.contains(filter);
     }
 
+    public boolean isWebScheme(String scheme) {
+        return webSchemes != null && scheme != null && webSchemes.contains(scheme.toLowerCase());
+    }
+
     public void initialize() {
         pathFilters.add(TYPE_REWRITE_PATH_FILTER);
         pathFilters.add(TYPE_STRIP_PREFIX);
         pathFilters.add(TYPE_PREFIX_PATH);
         pathFilters.add(TYPE_SET_PATH);
+        webSchemes.add("http");
+        webSchemes.add("https");
+        webSchemes.add("http3");
+        webSchemes.add("ws");
+        webSchemes.add("wss");
     }
 
 }

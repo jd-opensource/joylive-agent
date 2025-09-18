@@ -46,7 +46,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.core.Constants.PREDICATE_FORWARD;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayForwardRequest.getURI;
 import static com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayForwardRequest.setURI;
@@ -152,7 +151,7 @@ public class LiveGatewayFilter implements GatewayFilter {
      */
     private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
         URI uri = getURI(exchange);
-        if (!PREDICATE_FORWARD.equals(uri.getScheme())) {
+        if (gatewayConfig.isWebScheme(uri.getScheme())) {
             // not gateway forward scheme, web requests
             HostTransformer transformer = context.getHostTransformer(uri.getHost());
             if (transformer != null) {
