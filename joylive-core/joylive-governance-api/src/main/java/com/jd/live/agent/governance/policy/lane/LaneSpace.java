@@ -25,10 +25,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toMap;
 
 @ToString
 public class LaneSpace {
@@ -67,7 +71,23 @@ public class LaneSpace {
 
     private final transient Cache<String, Lane> laneCache = new MapCache<>(new ListBuilder<>(() -> lanes, Lane::getCode));
 
-    private final transient Cache<String, LaneDomain> domainCache = new MapCache<>(new ListBuilder<>(() -> domains, LaneDomain::getHost));
+    private final transient Cache<String, LaneDomain> domainCache = new MapCache<>(() -> {
+        if (domains != null && !domains.isEmpty()) {
+            return toMap(domains, LaneDomain::getHost, e -> e);
+        } else if (rules != null && !rules.isEmpty()) {
+            Map<String, LaneDomain> map = new HashMap<>();
+            for (LaneRule rule : rules) {
+                String host = rule.getHost();
+                if (host != null && !host.isEmpty()) {
+                    LaneDomain domain = map.computeIfAbsent(host, k -> new LaneDomain());
+                    domain.addRule(rule.getId());
+                    domain.cache();
+                }
+            }
+            return map;
+        }
+        return null;
+    });
 
     private final transient Cache<String, LaneRule> ruleCache = new MapCache<>(new ListBuilder<>(() -> rules, LaneRule::getId));
 

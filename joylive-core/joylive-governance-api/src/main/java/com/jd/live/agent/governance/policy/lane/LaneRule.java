@@ -27,6 +27,8 @@ public class LaneRule extends TagGroup {
 
     private String laneCode;
 
+    private String host;
+
     private Double ratio;
 
     public double ratio() {

@@ -21,6 +21,7 @@ import com.jd.live.agent.core.util.trie.PathTrie;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LaneDomain {
@@ -39,16 +40,13 @@ public class LaneDomain {
 
     private final transient PathTrie<LanePath> pathTrie = new PathMatcherTrie<>(() -> paths);
 
-    public LanePath getPath(String path) {
-        return pathTrie.match(path, PathMatchType.PREFIX);
-    }
-
-    public int getPathSize() {
-        return paths == null ? 0 : paths.size();
-    }
-
-    public void cache() {
-        getPath("");
+    protected void addRule(String rule) {
+        if (rule != null && !rule.isEmpty()) {
+            if (rules == null) {
+                rules = new ArrayList<>();
+            }
+            rules.add(rule);
+        }
     }
 
     /**
@@ -72,5 +70,18 @@ public class LaneDomain {
             }
         }
     }
+
+    public LanePath getPath(String path) {
+        return pathTrie.match(path, PathMatchType.PREFIX);
+    }
+
+    public int getPathSize() {
+        return paths == null ? 0 : paths.size();
+    }
+
+    protected void cache() {
+        getPath("");
+    }
+
 
 }
