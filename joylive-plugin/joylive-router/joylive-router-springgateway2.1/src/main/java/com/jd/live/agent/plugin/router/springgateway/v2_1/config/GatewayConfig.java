@@ -29,6 +29,10 @@ public class GatewayConfig {
 
     public static final String TYPE_STRIP_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$1";
 
+    public static final String TYPE_PREFIX_PATH = "org.springframework.cloud.gateway.filter.factory.PrefixPathGatewayFilterFactory$1";
+
+    public static final String TYPE_SET_PATH = "org.springframework.cloud.gateway.filter.factory.SetPathGatewayFilterFactory$1";
+
     private Set<String> pathFilters = new HashSet<>();
 
     /**
@@ -44,6 +48,8 @@ public class GatewayConfig {
     public void initialize() {
         pathFilters.add(TYPE_REWRITE_PATH_FILTER);
         pathFilters.add(TYPE_STRIP_PREFIX);
+        pathFilters.add(TYPE_PREFIX_PATH);
+        pathFilters.add(TYPE_SET_PATH);
     }
 
 }
