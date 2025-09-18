@@ -75,7 +75,7 @@ public abstract class AbstractAttributes implements Attributes {
 
     @Override
     public boolean hasAttribute(String key) {
-        return key != null && attributes.containsKey(key);
+        return key != null && attributes != null && attributes.containsKey(key);
     }
 
     @Override
