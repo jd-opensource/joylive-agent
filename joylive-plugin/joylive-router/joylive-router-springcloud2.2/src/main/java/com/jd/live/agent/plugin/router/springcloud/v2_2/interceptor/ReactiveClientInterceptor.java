@@ -31,7 +31,6 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.request.ReactiveClientCl
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.ReactiveClientForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.response.ReactiveClusterResponse;
 import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
-import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.web.reactive.function.client.*;
 import reactor.core.publisher.Mono;
@@ -143,8 +142,10 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
      */
     private static class Accessor {
 
-        // spring cloud 3+
+        // spring cloud 2.2+
         private static final Class<?> lbType = loadClass(TYPE_SERVICE_INSTANCE_LIST_SUPPLIER, HttpAccessor.class.getClassLoader());
+        // spring cloud 2.2.7+
+        private static final Class<?> retryLbType = loadClass("org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction", HttpAccessor.class.getClassLoader());
 
         private static final SpringOutboundThrower<WebClientException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
 
@@ -158,16 +159,17 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
         }
 
         /**
-         * Checks if the WebClient builder is configured for cloud load balancing.
+         * Checks if the WebClient client is configured for cloud load balancing.
          *
-         * @param builder the WebClient builder to check
-         * @return true if the builder contains load balancing filters, false otherwise
+         * @param client the WebClient client to check
+         * @return true if the client contains load balancing filters, false otherwise
          */
-        public static boolean isCloudClient(WebClient.Builder builder) {
+        public static boolean isCloudClient(Object client) {
+            WebClient.Builder builder = (WebClient.Builder) client;
             final boolean[] result = new boolean[]{false};
             builder.filters(filters -> {
                 for (ExchangeFilterFunction filter : filters) {
-                    if (filter instanceof RetryableLoadBalancerExchangeFilterFunction || filter instanceof DeferringLoadBalancerExchangeFilterFunction) {
+                    if (filter instanceof DeferringLoadBalancerExchangeFilterFunction || retryLbType != null && retryLbType.isInstance(filter)) {
                         result[0] = true;
                         break;
                     }

@@ -161,10 +161,11 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
         /**
          * Checks if the WebClient builder is configured for cloud load balancing.
          *
-         * @param builder the WebClient builder to check
+         * @param client the WebClient builder to check
          * @return true if the builder contains load balancing filters, false otherwise
          */
-        public static boolean isCloudClient(WebClient.Builder builder) {
+        public static boolean isCloudClient(Object client) {
+            WebClient.Builder builder = (WebClient.Builder) client;
             final boolean[] result = new boolean[]{false};
             builder.filters(filters -> {
                 for (ExchangeFilterFunction filter : filters) {
