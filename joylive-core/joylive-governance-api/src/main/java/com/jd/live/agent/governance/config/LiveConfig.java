@@ -51,7 +51,7 @@ public class LiveConfig {
     });
 
     public boolean isEnabled(String host) {
-        if (hostEnabled && host != null && !host.isEmpty()) {
+        if (hostEnabled && hostExpression != null && !hostExpression.isEmpty() && host != null && !host.isEmpty()) {
             Set<String> cache = hostCache.get();
             return cache.isEmpty() || cache.contains(host);
         }
