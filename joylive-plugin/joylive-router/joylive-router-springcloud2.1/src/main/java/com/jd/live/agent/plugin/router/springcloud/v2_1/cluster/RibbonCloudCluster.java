@@ -21,7 +21,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.HttpClientClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.RibbonClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.httpclient.HttpClientThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.RibbonCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.RibbonClusterResponse;
@@ -42,11 +42,11 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.response.RibbonCl
 public class RibbonCloudCluster extends AbstractCloudCluster<
         RibbonCloudClusterRequest,
         RibbonClusterResponse,
-        HttpClientClusterContext,
+        RibbonClusterContext,
         IOException> {
 
     public RibbonCloudCluster(Registry registry, RibbonLoadBalancingHttpClient client) {
-        super(new HttpClientClusterContext(registry, client), new HttpClientThrowerFactory<>());
+        super(new RibbonClusterContext(registry, client), new HttpClientThrowerFactory<>());
     }
 
     @Override

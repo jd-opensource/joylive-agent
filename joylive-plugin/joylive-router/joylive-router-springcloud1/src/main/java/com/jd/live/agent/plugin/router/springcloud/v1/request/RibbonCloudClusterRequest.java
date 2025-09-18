@@ -19,7 +19,7 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.HttpClientClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.RibbonClusterContext;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -40,16 +40,16 @@ import static com.jd.live.agent.plugin.router.springcloud.v1.util.UriUtils.newUR
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractCloudClusterRequest}
  * to handle specifics of Feign requests such as options and cookie parsing.
  */
-public class HttpClientClusterRequest extends AbstractCloudClusterRequest<HttpRequest, HttpClientClusterContext> {
+public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpRequest, RibbonClusterContext> {
 
     private final HttpClient client;
 
     private final HttpContext httpContext;
 
-    public HttpClientClusterRequest(final HttpRequest request,
-                                    final HttpContext httpContext,
-                                    final HttpClient client,
-                                    final HttpClientClusterContext clusterContext) {
+    public RibbonCloudClusterRequest(final HttpRequest request,
+                                     final HttpContext httpContext,
+                                     final HttpClient client,
+                                     final RibbonClusterContext clusterContext) {
         super(request, URI.create(request.getRequestLine().getUri()), clusterContext);
         this.client = client;
         this.httpContext = httpContext;

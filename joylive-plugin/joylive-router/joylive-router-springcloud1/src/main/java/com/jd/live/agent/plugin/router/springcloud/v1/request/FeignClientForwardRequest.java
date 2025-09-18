@@ -16,53 +16,45 @@
 package com.jd.live.agent.plugin.router.springcloud.v1.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.http.HttpRequest;
+import com.jd.live.agent.core.util.map.MultiLinkedMap;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
+import feign.Request;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
+import static com.jd.live.agent.core.util.CollectionUtils.set;
+
 /**
- * HttpClientOutboundRequest
- *
- * @since 1.9.0
+ * Feign client forward request implementation for multi-active or lane-based domain conversion.
  */
-public class HttpClientOutboundRequest extends AbstractHttpOutboundRequest<HttpRequest> {
+public class FeignClientForwardRequest extends AbstractHttpForwardRequest<Request> implements FeignOutboundRequest {
 
-    private final String serviceId;
-
-    public HttpClientOutboundRequest(HttpRequest request, String serviceId) {
-        super(request);
-        this.serviceId = serviceId;
-        this.uri = request.getURI();
-    }
-
-    @Override
-    public String getService() {
-        return serviceId;
+    public FeignClientForwardRequest(Request request, URI uri, HostTransformer hostTransformer) {
+        super(request, uri, hostTransformer);
     }
 
     @Override
     public HttpMethod getHttpMethod() {
-        org.springframework.http.HttpMethod method = request.getMethod();
-        return method == null ? null : HttpMethod.ofNullable(method.name());
+        return HttpMethod.ofNullable(request.method());
     }
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
+        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
     }
 
     @Override
     public void setHeader(String key, String value) {
-        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            request.getHeaders().set(key, value);
-        }
+        set(request.headers(), key, value);
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return request.getHeaders();
+        return MultiLinkedMap.caseInsensitive(request.headers(), true);
     }
 
 }

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.http.HttpHeader.HOST;
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
  * Provides an abstract base class for HTTP requests, implementing the {@link HttpRequest} interface.
@@ -373,5 +374,14 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
             this.hostTransformer = hostTransformer;
         }
 
+        @Override
+        public String getService() {
+            return null;
+        }
+
+        @Override
+        public void forward(String host) {
+            uri = newURI(uri, host);
+        }
     }
 }

@@ -36,6 +36,7 @@ public class AbstractLoadBalancerAwareClientDefinition extends PluginDefinitionA
 
     protected static final String TYPE = "com.netflix.client.AbstractLoadBalancerAwareClient";
 
+    // with 2 arguments in matcher builder
     private static final String METHOD = "executeWithLoadBalancer";
 
     public AbstractLoadBalancerAwareClientDefinition() {

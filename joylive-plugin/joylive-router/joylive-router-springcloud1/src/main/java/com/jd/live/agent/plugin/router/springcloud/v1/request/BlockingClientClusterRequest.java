@@ -13,67 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
+package com.jd.live.agent.plugin.router.springcloud.v1.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.reactive.function.client.ClientRequest;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
- * ReactiveOutboundRequest
+ * RestTemplateOutboundRequest
  */
-public class ReactiveCloudOutboundRequest extends AbstractHttpOutboundRequest<ClientRequest> {
+public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> {
 
-    private final String serviceId;
+    private final String service;
 
-    private final HttpHeaders writeableHeaders;
+    private final Registry registry;
 
-    public ReactiveCloudOutboundRequest(ClientRequest request, String serviceId) {
+    public BlockingClientClusterRequest(BlockingClientHttpRequest request, String service, Registry registry) {
         super(request);
-        this.serviceId = serviceId;
-        this.uri = request.url();
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
+        this.service = service;
+        this.registry = registry;
+        this.uri = request.getURI();
     }
 
     @Override
     public String getService() {
-        return serviceId;
+        return service == null || service.isEmpty() ? super.getService() : service;
     }
 
     @Override
     public HttpMethod getHttpMethod() {
-        org.springframework.http.HttpMethod method = request.method();
+        org.springframework.http.HttpMethod method = request.getMethod();
         return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            try {
+                request.getHeaders().set(key, value);
+            } catch (UnsupportedOperationException ignored) {
+                // readonly for commited message
+            }
         }
     }
 
     @Override
-    public String getCookie(String key) {
-        return request.cookies().getFirst(key);
-    }
-
-    @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
-    @Override
-    protected Map<String, List<String>> parseCookies() {
-        return request.cookies();
+    public CompletionStage<List<ServiceEndpoint>> getInstances() {
+        return registry.getEndpoints(service);
     }
 }

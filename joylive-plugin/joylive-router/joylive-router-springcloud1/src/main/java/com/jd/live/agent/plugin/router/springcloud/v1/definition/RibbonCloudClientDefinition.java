@@ -25,18 +25,18 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.HttpClientCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.RibbonCloudClientInterceptor;
 
 /**
- * HttpClientCloudClusterDefinition
+ * RibbonCloudClientDefinition
  *
  * @since 1.9.0
  */
 @Injectable
-@Extension(value = "HttpClientCloudClusterDefinition_v1")
+@Extension(value = "RibbonCloudClientDefinition_v1")
 @ConditionalOnSpringCloud1FlowControlEnabled
-@ConditionalOnClass(HttpClientCloudClusterDefinition.TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT)
-public class HttpClientCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(RibbonCloudClientDefinition.TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT)
+public class RibbonCloudClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT = "org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient";
 
@@ -45,11 +45,11 @@ public class HttpClientCloudClusterDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public HttpClientCloudClusterDefinition() {
+    public RibbonCloudClientDefinition() {
         this.matcher = () -> MatcherBuilder.in(TYPE_RETRYABLE_RIBBON_LOAD_BALANCING_HTTP_CLIENT, TYPE_RIBBON_LOAD_BALANCING_HTTP_CLIENT);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.isConstructor(),
-                        () -> new HttpClientCloudClusterInterceptor(context))
+                        () -> new RibbonCloudClientInterceptor(context))
         };
     }
 }

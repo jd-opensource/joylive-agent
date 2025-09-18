@@ -24,9 +24,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.plugin.router.springcloud.v1.cluster.HttpClientCloudCluster;
-import com.jd.live.agent.plugin.router.springcloud.v1.request.HttpClientClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v1.response.HttpClientClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v1.cluster.RibbonCloudCluster;
+import com.jd.live.agent.plugin.router.springcloud.v1.request.RibbonCloudClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v1.response.RibbonClusterResponse;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -50,19 +50,21 @@ import java.net.URI;
 /**
  * HttpClientClusterInterceptor
  */
-public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
+public class RibbonCloudClientInterceptor extends InterceptorAdaptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(HttpClientCloudClusterInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(RibbonCloudClientInterceptor.class);
 
     private final InvocationContext context;
 
-    public HttpClientCloudClusterInterceptor(InvocationContext context) {
+    public RibbonCloudClientInterceptor(InvocationContext context) {
         this.context = context;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
+        // in constructor method
         RibbonLoadBalancingHttpClient target = (RibbonLoadBalancingHttpClient) ctx.getTarget();
+        // recreate delegate client
         LiveHttpClient client = new LiveHttpClient(target, target.getDelegate(), context);
         client.update();
     }
@@ -81,13 +83,13 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
 
         private final InvocationContext context;
 
-        private final HttpClientCloudCluster cluster;
+        private final RibbonCloudCluster cluster;
 
         LiveHttpClient(RibbonLoadBalancingHttpClient client, HttpClient delegate, InvocationContext context) {
             this.client = client;
             this.delegate = delegate;
             this.context = context;
-            this.cluster = new HttpClientCloudCluster(context.getRegistry(), client);
+            this.cluster = new RibbonCloudCluster(context.getRegistry(), client);
         }
 
         @Deprecated
@@ -163,9 +165,9 @@ public class HttpClientCloudClusterInterceptor extends InterceptorAdaptor {
         }
 
         private HttpResponse doExecute(HttpHost httpHost, HttpRequest request, HttpContext context) throws IOException {
-            HttpClientClusterRequest clusterRequest = new HttpClientClusterRequest(request, context, delegate, cluster.getContext());
-            OutboundInvocation.HttpOutboundInvocation<HttpClientClusterRequest> invocation = new OutboundInvocation.HttpOutboundInvocation<>(clusterRequest, this.context);
-            HttpClientClusterResponse response = cluster.request(invocation);
+            RibbonCloudClusterRequest clusterRequest = new RibbonCloudClusterRequest(request, context, delegate, cluster.getContext());
+            OutboundInvocation.HttpOutboundInvocation<RibbonCloudClusterRequest> invocation = new OutboundInvocation.HttpOutboundInvocation<>(clusterRequest, this.context);
+            RibbonClusterResponse response = cluster.request(invocation);
             ServiceError error = response.getError();
             if (error != null && !error.isServerError()) {
                 if (error.getThrowable() instanceof IOException) {

@@ -30,7 +30,7 @@ import java.util.Map;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
- * FeignForwardRequest
+ * Feign client forward request implementation for multi-active or lane-based domain conversion.
  */
 public class FeignClientForwardRequest extends AbstractHttpForwardRequest<Request> implements FeignOutboundRequest {
 

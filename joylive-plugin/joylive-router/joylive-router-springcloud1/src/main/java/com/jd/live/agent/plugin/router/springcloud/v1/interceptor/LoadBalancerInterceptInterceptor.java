@@ -25,7 +25,7 @@ import static com.jd.live.agent.plugin.router.springcloud.v1.instance.RibbonEndp
 /**
  * InterceptInterceptor for live and lane route
  */
-public class InterceptInterceptor extends InterceptorAdaptor {
+public class LoadBalancerInterceptInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {

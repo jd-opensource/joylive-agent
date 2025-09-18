@@ -24,39 +24,30 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringWeb4RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.FeignWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringWeb4GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.BlockingClientInterceptor;
 
 /**
- * FeignWebClusterDefinition
+ * BlockingClientDefinition
  */
-@Extension(value = "FeignClientClusterDefinition_v5")
-@ConditionalOnSpringWeb4RegistryEnabled
-@ConditionalOnClass(FeignWebClusterDefinition.TYPE)
+@Extension(value = "BlockingClientDefinition_v4")
+@ConditionalOnSpringWeb4GovernanceEnabled
+@ConditionalOnClass(BlockingClientDefinition.TYPE)
 @Injectable
-public class FeignWebClusterDefinition extends PluginDefinitionAdapter {
+public class BlockingClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "feign.Client";
+    protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
 
-    private static final String METHOD = "execute";
-
-    private static final String[] ARGUMENT = new String[]{
-            "feign.Request",
-            "feign.Request$Options"
-    };
+    private static final String METHOD = "createRequest";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public FeignWebClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
+    public BlockingClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new FeignWebClusterInterceptor(context, registry))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
+                        () -> new BlockingClientInterceptor(context))
         };
     }
 }

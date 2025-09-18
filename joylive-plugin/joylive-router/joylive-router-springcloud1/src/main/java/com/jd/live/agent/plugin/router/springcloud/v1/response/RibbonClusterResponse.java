@@ -40,17 +40,17 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 /**
  * HttpClientClusterResponse
  */
-public class HttpClientClusterResponse extends AbstractHttpOutboundResponse<HttpResponse> implements SpringClusterResponse {
+public class RibbonClusterResponse extends AbstractHttpOutboundResponse<HttpResponse> implements SpringClusterResponse {
 
-    private static final Logger logger = LoggerFactory.getLogger(HttpClientClusterResponse.class);
+    private static final Logger logger = LoggerFactory.getLogger(RibbonClusterResponse.class);
 
     private byte[] body;
 
-    public HttpClientClusterResponse(HttpResponse response) {
+    public RibbonClusterResponse(HttpResponse response) {
         super(response);
     }
 
-    public HttpClientClusterResponse(ServiceError error, ErrorPredicate predicate) {
+    public RibbonClusterResponse(ServiceError error, ErrorPredicate predicate) {
         super(error, predicate);
     }
 

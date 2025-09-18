@@ -16,37 +16,21 @@
 package com.jd.live.agent.plugin.router.springcloud.v1.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.http.HttpHeaders;
+import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 
 /**
- * RestTemplateOutboundRequest
+ * Blocking client forward request implementation for multi-active or lane-based domain conversion.
  */
-public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<BlockingWebHttpRequest> {
+public class BlockingClientForwardRequest extends AbstractHttpForwardRequest<BlockingClientHttpRequest> implements HttpForwardRequest {
 
-    private final String service;
-
-    private final Registry registry;
-
-    private final HttpHeaders headers;
-
-    public BlockingWebClusterRequest(BlockingWebHttpRequest request, String service, Registry registry) {
-        super(request);
-        this.service = service;
-        this.registry = registry;
-        this.uri = request.getURI();
-        this.headers = request.getHeaders();
-    }
-
-    @Override
-    public String getService() {
-        return service == null || service.isEmpty() ? super.getService() : service;
+    public BlockingClientForwardRequest(BlockingClientHttpRequest request, URI uri, HostTransformer hostTransformer) {
+        super(request, uri, hostTransformer);
     }
 
     @Override
@@ -63,20 +47,13 @@ public class BlockingWebClusterRequest extends AbstractHttpOutboundRequest<Block
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            try {
-                headers.set(key, value);
-            } catch (UnsupportedOperationException ignored) {
-                // readonly for commited message
-            }
+            request.getHeaders().set(key, value);
         }
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return headers;
+        return request.getHeaders();
     }
 
-    public CompletionStage<List<ServiceEndpoint>> getInstances() {
-        return registry.getEndpoints(service);
-    }
 }

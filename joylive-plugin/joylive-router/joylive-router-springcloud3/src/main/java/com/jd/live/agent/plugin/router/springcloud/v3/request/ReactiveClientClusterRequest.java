@@ -16,12 +16,10 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
@@ -30,6 +28,9 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * A specialized HTTP outbound request class for handling cluster requests.
@@ -44,15 +45,12 @@ public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<Cl
 
     private final ExchangeFunction next;
 
-    private final HttpHeaders writeableHeaders;
-
     public ReactiveClientClusterRequest(ClientRequest request, String service, Registry registry, ExchangeFunction next) {
         super(request);
         this.service = service;
         this.registry = registry;
         this.next = next;
         this.uri = request.url();
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
     }
 
     @Override
@@ -79,13 +77,13 @@ public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<Cl
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.headers()).set(key, value);
         }
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.headers();
     }
 
     @Override
@@ -130,6 +128,6 @@ public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<Cl
      * @return a new {@link ClientRequest}
      */
     public static ClientRequest create(ClientRequest request, Endpoint endpoint) {
-        return ClientRequest.from(request).url(HttpUtils.newURI(request.url(), endpoint.getHost(), endpoint.getPort())).build();
+        return ClientRequest.from(request).url(newURI(request.url(), endpoint.getHost(), endpoint.getPort())).build();
     }
 }

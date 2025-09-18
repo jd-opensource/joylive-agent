@@ -21,10 +21,10 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.HttpClientClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.RibbonClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v1.exception.httpclient.HttpClientThrowerFactory;
-import com.jd.live.agent.plugin.router.springcloud.v1.request.HttpClientClusterRequest;
-import com.jd.live.agent.plugin.router.springcloud.v1.response.HttpClientClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v1.request.RibbonCloudClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v1.response.RibbonClusterResponse;
 import org.apache.http.HttpResponse;
 import org.springframework.cloud.netflix.ribbon.apache.RibbonLoadBalancingHttpClient;
 
@@ -32,40 +32,40 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.plugin.router.springcloud.v1.response.HttpClientClusterResponse.create;
+import static com.jd.live.agent.plugin.router.springcloud.v1.response.RibbonClusterResponse.create;
 
 /**
  * A cluster implementation for Feign clients that manages a group of servers and provides load balancing and failover capabilities.
  *
  * @see AbstractCloudCluster
  */
-public class HttpClientCloudCluster extends AbstractCloudCluster<
-        HttpClientClusterRequest,
-        HttpClientClusterResponse,
-        HttpClientClusterContext,
+public class RibbonCloudCluster extends AbstractCloudCluster<
+        RibbonCloudClusterRequest,
+        RibbonClusterResponse,
+        RibbonClusterContext,
         IOException> {
 
-    public HttpClientCloudCluster(Registry registry, RibbonLoadBalancingHttpClient client) {
-        super(new HttpClientClusterContext(registry, client), new HttpClientThrowerFactory<>());
+    public RibbonCloudCluster(Registry registry, RibbonLoadBalancingHttpClient client) {
+        super(new RibbonClusterContext(registry, client), new HttpClientThrowerFactory<>());
     }
 
     @Override
-    public CompletionStage<HttpClientClusterResponse> invoke(HttpClientClusterRequest request, ServiceEndpoint endpoint) {
+    public CompletionStage<RibbonClusterResponse> invoke(RibbonCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
             HttpResponse response = request.execute(endpoint);
-            return CompletableFuture.completedFuture(new HttpClientClusterResponse(response));
+            return CompletableFuture.completedFuture(new RibbonClusterResponse(response));
         } catch (Throwable e) {
             return Futures.future(e);
         }
     }
 
     @Override
-    protected HttpClientClusterResponse createResponse(HttpClientClusterRequest request, DegradeConfig degradeConfig) {
-        return new HttpClientClusterResponse(create(request.getRequest(), degradeConfig));
+    protected RibbonClusterResponse createResponse(RibbonCloudClusterRequest request, DegradeConfig degradeConfig) {
+        return new RibbonClusterResponse(create(request.getRequest(), degradeConfig));
     }
 
     @Override
-    protected HttpClientClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
-        return new HttpClientClusterResponse(error, predicate);
+    protected RibbonClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new RibbonClusterResponse(error, predicate);
     }
 }

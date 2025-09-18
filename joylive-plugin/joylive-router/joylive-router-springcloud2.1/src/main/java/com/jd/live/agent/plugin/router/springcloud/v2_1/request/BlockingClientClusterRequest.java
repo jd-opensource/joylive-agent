@@ -19,11 +19,12 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
-import org.springframework.http.HttpHeaders;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<BlockingClientHttpRequest> {
 
@@ -31,14 +32,11 @@ public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<Bl
 
     private final Registry registry;
 
-    private final HttpHeaders writeableHeaders;
-
     public BlockingClientClusterRequest(BlockingClientHttpRequest request, String service, Registry registry) {
         super(request);
         this.service = service;
         this.registry = registry;
         this.uri = request.getURI();
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -53,19 +51,19 @@ public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<Bl
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.getHeaders()).set(key, value);
         }
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
     public CompletionStage<List<ServiceEndpoint>> getInstances() {

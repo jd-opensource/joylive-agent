@@ -184,6 +184,11 @@ public interface HttpRequest extends ServiceRequest, Portable {
          */
         HostTransformer getHostTransformer();
 
+        @Override
+        default String getService() {
+            return null;
+        }
+
         /**
          * Forwards this request to the specified host.
          *

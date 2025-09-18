@@ -22,15 +22,15 @@ import com.jd.live.agent.governance.request.HostTransformer;
 import feign.Request;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
+import static com.jd.live.agent.core.util.CollectionUtils.set;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
- * FeignForwardRequest
+ * Feign client forward request implementation for multi-active or lane-based domain conversion.
  */
 public class FeignClientForwardRequest extends AbstractHttpForwardRequest<Request> implements FeignOutboundRequest {
 
@@ -50,25 +50,12 @@ public class FeignClientForwardRequest extends AbstractHttpForwardRequest<Reques
 
     @Override
     public String getHeader(String key) {
-        if (key == null || key.isEmpty()) {
-            return null;
-        }
-        Collection<String> values = request.headers().get(key);
-        if (values == null || values.isEmpty()) {
-            return null;
-        } else if (values instanceof List) {
-            return ((List<String>) values).get(0);
-        }
-        return values.iterator().next();
+        return getFirst(request.headers(), key);
     }
 
     @Override
     public void setHeader(String key, String value) {
-        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            List<String> values = new ArrayList<>();
-            values.add(value);
-            request.headers().put(key, values);
-        }
+        set(request.headers(), key, value);
     }
 
     @Override

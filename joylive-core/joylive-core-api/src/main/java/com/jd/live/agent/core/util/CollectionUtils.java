@@ -675,6 +675,32 @@ public class CollectionUtils {
     }
 
     /**
+     * Gets the first value associated with the specified key.
+     *
+     * @param map the source map
+     * @param key the key to lookup
+     * @return the first value if exists, null otherwise
+     */
+    public static String getFirst(Map<String, Collection<String>> map, String key) {
+        return key == null || key.isEmpty() ? null : getFirst(map.get(key));
+    }
+
+    /**
+     * Sets a single value for the specified key in the map.
+     *
+     * @param map   the target map
+     * @param key   the key to set
+     * @param value the value to set
+     */
+    public static void set(Map<String, Collection<String>> map, String key, String value) {
+        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
+            List<String> values = new ArrayList<>();
+            values.add(value);
+            map.put(key, values);
+        }
+    }
+
+    /**
      * Adds all elements from the source collection to the target collection that satisfy the given predicate.
      * If the predicate is null, all elements from the source collection are added to the target collection.
      * If either the source or target collection is null, this method does nothing.
@@ -738,49 +764,6 @@ public class CollectionUtils {
         }
         if (sources.getClass() == UNMODIFIED_MAP_CLASS && Accessor.MAP_FIELD != null) {
             sources = (Map<K, V>) Accessor.MAP_FIELD.get(sources);
-        }
-        return sources;
-    }
-
-    /**
-     * Returns a modified version of the given map, if necessary.
-     *
-     * @param sources the original map
-     * @return the modified map, or the original map if no modification is needed
-     */
-    @SuppressWarnings("unchecked")
-    public static <V> List<V> modifiedList(List<V> sources) {
-        if (sources == null) {
-            return null;
-        }
-        if (sources.getClass() == UNMODIFIED_LIST_CLASS && Accessor.LIST_FIELD != null) {
-            sources = (List<V>) Accessor.LIST_FIELD.get(sources);
-        }
-        return sources;
-    }
-
-    /**
-     * Returns a modified version of the given headers, if necessary.
-     *
-     * @param sources the original map
-     * @return the modified headers, or the original headers if no modification is needed
-     */
-    @SuppressWarnings("unchecked")
-    public static Map<String, List<String>> modifiedHeaders(Map<String, List<String>> sources) {
-        if (sources == null) {
-            return null;
-        }
-        if (sources.getClass() == UNMODIFIED_MAP_CLASS && Accessor.MAP_FIELD != null) {
-            sources = (Map<String, List<String>>) Accessor.MAP_FIELD.get(sources);
-            if (sources != null) {
-                for (Map.Entry<String, List<String>> entry : sources.entrySet()) {
-                    List<String> values = entry.getValue();
-                    if (values.getClass() == UNMODIFIED_LIST_CLASS && Accessor.LIST_FIELD != null) {
-                        values = (List<String>) Accessor.LIST_FIELD.get(sources);
-                        entry.setValue(values);
-                    }
-                }
-            }
         }
         return sources;
     }

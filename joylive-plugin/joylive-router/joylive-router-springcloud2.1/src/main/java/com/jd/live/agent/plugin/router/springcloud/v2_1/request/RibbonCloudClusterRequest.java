@@ -19,7 +19,7 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.HttpClientClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.RibbonClusterContext;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -41,7 +41,7 @@ import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.new
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractCloudClusterRequest}
  * to handle specifics of Feign requests such as options and cookie parsing.
  */
-public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpRequest, HttpClientClusterContext> {
+public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpRequest, RibbonClusterContext> {
 
     private final CloseableHttpClient client;
 
@@ -50,7 +50,7 @@ public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpR
     public RibbonCloudClusterRequest(HttpRequest request,
                                      HttpContext httpContext,
                                      CloseableHttpClient client,
-                                     HttpClientClusterContext clusterContext) {
+                                     RibbonClusterContext clusterContext) {
         super(request, URI.create(request.getRequestLine().getUri()), clusterContext);
         this.client = client;
         this.httpContext = httpContext;
@@ -64,7 +64,7 @@ public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpR
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            request.addHeader(key, value);
+            request.setHeader(key, value);
         }
     }
 

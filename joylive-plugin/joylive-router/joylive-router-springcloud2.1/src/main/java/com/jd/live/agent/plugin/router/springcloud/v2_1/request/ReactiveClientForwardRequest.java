@@ -24,20 +24,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
-
 /**
- * ReactiveClientForwardRequest
+ * Reactive client forward request implementation for multi-active or lane-based domain conversion.
  */
 public class ReactiveClientForwardRequest extends AbstractHttpForwardRequest<ClientRequest> {
 
     public ReactiveClientForwardRequest(ClientRequest request, URI uri, HostTransformer hostTransformer) {
         super(request, uri, hostTransformer);
-    }
-
-    @Override
-    public String getService() {
-        return null;
     }
 
     @Override
@@ -53,11 +46,6 @@ public class ReactiveClientForwardRequest extends AbstractHttpForwardRequest<Cli
     @Override
     public void setHeader(String key, String value) {
         request.headers().set(key, value);
-    }
-
-    @Override
-    public void forward(String host) {
-        uri = newURI(uri, host);
     }
 
     @Override

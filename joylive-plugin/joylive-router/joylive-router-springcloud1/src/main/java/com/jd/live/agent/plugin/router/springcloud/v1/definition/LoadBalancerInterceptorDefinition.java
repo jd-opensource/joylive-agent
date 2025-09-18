@@ -22,7 +22,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1OnlyRouteEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.InterceptInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.LoadBalancerInterceptInterceptor;
 
 /**
  * LoadBalancerInterceptorDefinition
@@ -44,7 +44,7 @@ public class LoadBalancerInterceptorDefinition extends PluginDefinitionAdapter {
     public LoadBalancerInterceptorDefinition() {
         this.matcher = () -> MatcherBuilder.in(TYPE_RETRY_LOAD_BALANCER_INTERCEPTOR, TYPE_LOAD_BALANCER_INTERCEPTOR);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new InterceptInterceptor()),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new LoadBalancerInterceptInterceptor()),
         };
     }
 }

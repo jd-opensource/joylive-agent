@@ -21,7 +21,6 @@ import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForw
 import com.jd.live.agent.governance.request.HostTransformer;
 import lombok.Getter;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -29,8 +28,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * GatewayForwardRequest
@@ -42,12 +41,9 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     private final ServerWebExchange exchange;
 
-    private final HttpHeaders writeableHeaders;
-
     public GatewayForwardRequest(ServerWebExchange exchange, URI uri, HostTransformer hostTransformer) {
         super(exchange.getRequest(), uri, hostTransformer);
         this.exchange = exchange;
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -70,18 +66,13 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.getHeaders()).set(key, value);
         }
     }
 
     @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
-    }
-
-    @Override
-    public void forward(String host) {
-        uri = newURI(uri, host);
     }
 
     @Override
@@ -96,7 +87,7 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
     /**

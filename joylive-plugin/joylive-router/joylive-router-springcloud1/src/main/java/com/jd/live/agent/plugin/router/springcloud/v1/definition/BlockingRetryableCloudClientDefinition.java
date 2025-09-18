@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.BlockingCloudClientInterceptor;
 
 /**
  * BlockingRetryClusterDefinition
@@ -37,8 +37,8 @@ import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.BlockingCloudC
 @Extension(value = "BlockingRetryClusterDefinition_v1")
 @ConditionalOnSpringCloud1FlowControlEnabled
 @ConditionalOnSpringRetry
-@ConditionalOnClass(BlockingRetryableCloudClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
-public class BlockingRetryableCloudClusterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(BlockingRetryableCloudClientDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
+public class BlockingRetryableCloudClientDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_RETRY_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor";
 
@@ -53,13 +53,12 @@ public class BlockingRetryableCloudClusterDefinition extends PluginDefinitionAda
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingRetryableCloudClusterDefinition() {
+    public BlockingRetryableCloudClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_RETRY_LOADBALANCER_INTERCEPTOR);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INTERCEPT).
-                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor.RetryLoadBalancerClusterInterceptor(context)
+                        MatcherBuilder.named(METHOD_INTERCEPT).and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
+                        () -> new BlockingCloudClientInterceptor(context)
                 )
         };
     }

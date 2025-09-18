@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.router.springcloud.v1.exception.status.StatusThr
 import com.jd.live.agent.plugin.router.springcloud.v1.instance.EndpointServer;
 import com.jd.live.agent.plugin.router.springcloud.v1.instance.RibbonEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.FeignCloudOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v1.request.HttpClientOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v1.request.RibbonOutboundRequest;
 import com.netflix.client.ClientRequest;
 import com.netflix.loadbalancer.BaseLoadBalancer;
 import com.netflix.loadbalancer.Server;
@@ -105,7 +105,7 @@ public class GetServersInterceptor extends InterceptorAdaptor {
 
         public static HttpOutboundRequest build(Object request, String service) {
             if (request instanceof HttpRequest) {
-                return new HttpClientOutboundRequest((HttpRequest) request, service);
+                return new RibbonOutboundRequest((HttpRequest) request, service);
             } else if (ribbonRequestType != null && ribbonRequestType.isInstance(request)) {
                 Request feignRequest = (Request) ribbonRequestAccessor.get(request);
                 return new FeignCloudOutboundRequest(feignRequest, service);

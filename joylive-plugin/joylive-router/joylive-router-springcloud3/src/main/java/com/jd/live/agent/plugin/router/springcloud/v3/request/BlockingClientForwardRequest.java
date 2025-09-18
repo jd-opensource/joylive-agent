@@ -15,59 +15,44 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
+import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
 import com.jd.live.agent.governance.request.HostTransformer;
-import com.jd.live.agent.governance.request.HttpRequest;
-import org.springframework.http.HttpHeaders;
+import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
-
 /**
- * BlockingForwardRequest
+ * Blocking client forward request implementation for multi-active or lane-based domain conversion.
  */
-public class BlockingClientForwardRequest extends AbstractHttpForwardRequest<BlockingClientHttpRequest> implements HttpRequest.HttpForwardRequest {
-
-    private final HttpHeaders writeableHeaders;
+public class BlockingClientForwardRequest extends AbstractHttpForwardRequest<BlockingClientHttpRequest> implements HttpForwardRequest {
 
     public BlockingClientForwardRequest(BlockingClientHttpRequest request, URI uri, HostTransformer hostTransformer) {
         super(request, uri, hostTransformer);
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
-    public String getService() {
-        return null;
-    }
-
-    @Override
-    public com.jd.live.agent.core.util.http.HttpMethod getHttpMethod() {
-        return com.jd.live.agent.core.util.http.HttpMethod.ofNullable(request.getMethodValue());
+    public HttpMethod getHttpMethod() {
+        return HttpMethod.ofNullable(request.getMethodValue());
     }
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : writeableHeaders.getFirst(key);
+        return key == null || key.isEmpty() ? null : request.getHeaders().getFirst(key);
     }
 
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            request.getHeaders().set(key, value);
         }
     }
 
     @Override
-    public void forward(String host) {
-        uri = newURI(uri, host);
-    }
-
-    @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
 }

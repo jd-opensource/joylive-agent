@@ -30,11 +30,11 @@ import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAcce
  * extending {@link AbstractCloudClusterContext}.
  */
 @Getter
-public class HttpClientClusterContext extends AbstractCloudClusterContext {
+public class RibbonClusterContext extends AbstractCloudClusterContext {
 
     private final RibbonLoadBalancingHttpClient client;
 
-    public HttpClientClusterContext(Registry registry, RibbonLoadBalancingHttpClient client) {
+    public RibbonClusterContext(Registry registry, RibbonLoadBalancingHttpClient client) {
         super(registry);
         this.client = client;
         this.retryFactory = client instanceof RetryableRibbonLoadBalancingHttpClient

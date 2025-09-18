@@ -24,34 +24,31 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringWeb4RegistryEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.BlockingWebClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.FeignCloudClientInterceptor;
 
 /**
- * RestTemplateClusterDefinition
+ * FeignCloudClientDefinition
+ *
+ * @since 1.9.0
  */
-@Extension(value = "RestTemplateDefinition_v5")
-@ConditionalOnSpringWeb4RegistryEnabled
-@ConditionalOnClass(BlockingWebClusterDefinition.TYPE)
 @Injectable
-public class BlockingWebClusterDefinition extends PluginDefinitionAdapter {
+@Extension(value = "FeignCloudClientDefinition_v1")
+@ConditionalOnSpringCloud1FlowControlEnabled
+@ConditionalOnClass(FeignCloudClientDefinition.TYPE)
+public class FeignCloudClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
+    protected static final String TYPE = "org.springframework.cloud.netflix.feign.ribbon.LoadBalancerFeignClient";
 
-    private static final String METHOD = "createRequest";
+    private static final String METHOD = "execute";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Inject(Registry.COMPONENT_REGISTRY)
-    private Registry registry;
-
-    public BlockingWebClusterDefinition() {
+    public FeignCloudClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new BlockingWebClusterInterceptor(context, registry))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new FeignCloudClientInterceptor(context))
         };
     }
 }

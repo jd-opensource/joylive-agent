@@ -24,41 +24,35 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringWeb4GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.FeignClientInterceptor;
 
 /**
- * BlockingClusterDefinition
- *
- * @since 1.9.0
+ * FeignClientDefinition
  */
+@Extension(value = "FeignClientDefinition_v4")
+@ConditionalOnSpringWeb4GovernanceEnabled
+@ConditionalOnClass(FeignClientDefinition.TYPE)
 @Injectable
-@Extension(value = "BlockingClusterDefinition_v1")
-@ConditionalOnSpringCloud1FlowControlEnabled
-@ConditionalOnClass(BlockingCloudClusterDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
-public class BlockingCloudClusterDefinition extends PluginDefinitionAdapter {
+public class FeignClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor";
+    protected static final String TYPE = "feign.Client";
 
-    private static final String METHOD_INTERCEPT = "intercept";
+    private static final String METHOD = "execute";
 
-    private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.http.HttpRequest",
-            "byte[]",
-            "org.springframework.http.client.ClientHttpRequestExecution"
+    private static final String[] ARGUMENT = new String[]{
+            "feign.Request",
+            "feign.Request$Options"
     };
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingCloudClusterDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_INTERCEPTOR);
+    public FeignClientDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INTERCEPT).
-                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor.LoadBalancerClusterInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
+                        () -> new FeignClientInterceptor(context))
         };
     }
 }
