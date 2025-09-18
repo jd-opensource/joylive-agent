@@ -18,12 +18,10 @@ package com.jd.live.agent.governance.rule;
 import com.jd.live.agent.core.parser.json.JsonAlias;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * The OpType enum represents different types of operations that can be performed
@@ -43,15 +41,17 @@ public enum OpType {
     @JsonAlias("eq")
     EQUAL("eq", "equal") {
         @Override
-        public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+        public boolean match(List<String> sources, List<String> targets) {
+            int srcSize = sources == null ? 0 : sources.size();
+            int targetSize = targets == null ? 0 : targets.size();
+            if (srcSize == 0 || srcSize != targetSize) {
                 return false;
+            } else if (srcSize == 1) {
+                // improve performance
+                return sources.get(0).equals(targets.get(0));
             }
-            if (values.size() != args.size()) {
-                return false;
-            }
-            for (String arg : args) {
-                if (!values.contains(arg)) {
+            for (String target : targets) {
+                if (!sources.contains(target)) {
                     return false;
                 }
             }
@@ -65,15 +65,19 @@ public enum OpType {
     @JsonAlias("ne")
     NOT_EQUAL("ne", "not equal") {
         @Override
-        public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty()) {
-                return args != null && !args.isEmpty();
-            }
-            if (args == null || values.size() != args.size()) {
+        public boolean match(List<String> sources, List<String> targets) {
+            int srcSize = sources == null ? 0 : sources.size();
+            int targetSize = targets == null ? 0 : targets.size();
+            if (srcSize != targetSize) {
                 return true;
+            } else if (srcSize == 0) {
+                return false;
+            } else if (srcSize == 1) {
+                // improve performance
+                return !sources.get(0).equals(targets.get(0));
             }
-            for (String arg : args) {
-                if (!values.contains(arg)) {
+            for (String target : targets) {
+                if (!sources.contains(target)) {
                     return true;
                 }
             }
@@ -87,12 +91,17 @@ public enum OpType {
     @JsonAlias("nin")
     NOT_IN("nin", "not in") {
         @Override
-        public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+        public boolean match(List<String> sources, List<String> targets) {
+            int srcSize = sources == null ? 0 : sources.size();
+            int targetSize = targets == null ? 0 : targets.size();
+            if (srcSize == 0 || targetSize == 0) {
                 return true;
+            } else if (srcSize == 1 && targetSize == 1) {
+                // improve performance
+                return !sources.get(0).equals(targets.get(0));
             }
-            for (String value : values) {
-                if (args.contains(value)) {
+            for (String source : sources) {
+                if (targets.contains(source)) {
                     return false;
                 }
             }
@@ -106,12 +115,17 @@ public enum OpType {
     @JsonAlias("in")
     IN("in", "in") {
         @Override
-        public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+        public boolean match(List<String> sources, List<String> targets) {
+            int srcSize = sources == null ? 0 : sources.size();
+            int targetSize = targets == null ? 0 : targets.size();
+            if (srcSize == 0 || targetSize == 0) {
                 return false;
+            } else if (srcSize == 1 && targetSize == 1) {
+                // improve performance
+                return sources.get(0).equals(targets.get(0));
             }
-            for (String value : values) {
-                if (args.contains(value)) {
+            for (String source : sources) {
+                if (targets.contains(source)) {
                     return true;
                 }
             }
@@ -125,24 +139,32 @@ public enum OpType {
     @JsonAlias("regular")
     REGULAR("regular", "regular") {
         @Override
-        public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+        public boolean match(List<String> sources, List<String> targets) {
+            int srcSize = sources == null ? 0 : sources.size();
+            int targetSize = targets == null ? 0 : targets.size();
+            if (srcSize == 0 || targetSize == 0) {
                 return false;
+            } else if (srcSize == 1 && targetSize == 1) {
+                // improve performance
+                return PATTERNS.computeIfAbsent(sources.get(0), Pattern::compile).matcher(targets.get(0)).matches();
             }
-            for (String arg : args) {
-                boolean matchFound = false;
-                for (String value : values) {
-                    Pattern pattern = PATTERNS.computeIfAbsent(value, Pattern::compile);
-                    if (pattern.matcher(arg).matches()) {
-                        matchFound = true;
-                        break;
-                    }
-                }
-                if (!matchFound) {
+            // match any source
+            for (String target : targets) {
+                if (!match(sources, target)) {
                     return false;
                 }
             }
             return true;
+        }
+
+        private boolean match(List<String> sources, String target) {
+            // match any source
+            for (String source : sources) {
+                if (PATTERNS.computeIfAbsent(source, Pattern::compile).matcher(target).matches()) {
+                    return true;
+                }
+            }
+            return false;
         }
     },
 
@@ -152,27 +174,34 @@ public enum OpType {
     @JsonAlias("prefix")
     PREFIX("prefix", "prefix") {
         @Override
-        public boolean isMatch(List<String> values, List<String> args) {
-            if (values == null || values.isEmpty() || args == null || args.isEmpty()) {
+        public boolean match(List<String> sources, List<String> targets) {
+            int srcSize = sources == null ? 0 : sources.size();
+            int targetSize = targets == null ? 0 : targets.size();
+            if (srcSize == 0 || targetSize == 0) {
                 return false;
+            } else if (srcSize == 1 && targetSize == 1) {
+                // improve performance
+                return targets.get(0).startsWith(sources.get(0));
             }
-            for (String arg : args) {
-                boolean matchFound = false;
-                for (String value : values) {
-                    if (arg.startsWith(value)) {
-                        matchFound = true;
-                        break;
-                    }
-                }
-                if (!matchFound) {
+            // prefix with any source
+            for (String target : targets) {
+                if (!match(sources, target)) {
                     return false;
                 }
             }
             return true;
         }
-    };
 
-    private static final Map<String, OpType> TYPES = Arrays.stream(values()).collect(Collectors.toMap(OpType::getCode, o -> o));
+        private boolean match(List<String> sources, String target) {
+            // prefix with any source
+            for (String source : sources) {
+                if (target.startsWith(source)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
 
     private static final Map<String, Pattern> PATTERNS = new ConcurrentHashMap<>();
 
@@ -205,18 +234,9 @@ public enum OpType {
      * @param args   the list of arguments to test for a match
      * @return true if the argument matches the criteria, false otherwise
      */
-    public boolean isMatch(List<String> values, List<String> args) {
+    public boolean match(List<String> values, List<String> args) {
         return false;
     }
 
-    /**
-     * Returns the OpType associated with the given code.
-     *
-     * @param code the code to lookup
-     * @return the corresponding OpType, or null if not found
-     */
-    public static OpType codeOf(String code) {
-        return code == null ? null : TYPES.get(code);
-    }
 }
 
