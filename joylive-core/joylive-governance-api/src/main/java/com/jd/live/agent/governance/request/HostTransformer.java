@@ -50,13 +50,13 @@ public interface HostTransformer {
     }
 
     /**
-     * Transforms only the first part of a host name (before the first dot).
+     * Transforms only the last domain a host name (before the first dot).
      */
-    class FirstTransformer implements HostTransformer {
+    class LastDomainTransformer implements HostTransformer {
 
         private HostTransformer delegate;
 
-        public FirstTransformer(HostTransformer delegate) {
+        public LastDomainTransformer(HostTransformer delegate) {
             this.delegate = delegate;
         }
 

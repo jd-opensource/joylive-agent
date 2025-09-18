@@ -16,11 +16,15 @@
 package com.jd.live.agent.governance.config;
 
 import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.governance.request.HostTransformer;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.jd.live.agent.core.util.template.Template.evaluate;
+import static com.jd.live.agent.governance.request.HostTransformer.KEY_LANE;
 
 /**
  * LaneConfig is a configuration class that holds the keys for identifying specific lanes within a system.
@@ -47,11 +51,15 @@ public class LaneConfig {
     });
 
     public boolean isEnabled(String host) {
-        if (hostEnabled && host != null && !host.isEmpty()) {
+        if (hostEnabled && hostExpression != null && !hostExpression.isEmpty() && host != null && !host.isEmpty()) {
             Set<String> cache = hostCache.get();
             return cache.isEmpty() || cache.contains(host);
         }
         return false;
+    }
+
+    public HostTransformer getHostTransformer(String host) {
+        return !isEnabled(host) ? null : (h, ctx) -> evaluate(hostExpression, ctx, h, c -> c.containsKey(KEY_LANE));
     }
 
 }

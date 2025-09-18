@@ -26,11 +26,14 @@ import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import com.jd.live.agent.core.util.trie.PathTrie;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.converter.LiveTypeDeserializer;
+import com.jd.live.agent.governance.request.HostTransformer;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
 import java.util.Set;
+
+import static com.jd.live.agent.governance.request.HostTransformer.KEY_UNIT;
 
 public class LiveDomain extends PolicyId {
 
@@ -90,14 +93,8 @@ public class LiveDomain extends PolicyId {
         return unitDomain == null ? null : unitDomain.getHost();
     }
 
-    public String getFirstDomain(String unit) {
-        UnitDomain unitDomain = getUnitDomain(unit);
-        if (unitDomain == null) {
-            return null;
-        }
-        String host = unitDomain.getHost();
-        int pos = host.indexOf(':');
-        return pos == -1 ? host : host.substring(0, pos);
+    public HostTransformer getHostTransformer() {
+        return !unitDomainEnabled ? null : (h, ctx) -> getLastDomain((String) ctx.get(KEY_UNIT), h);
     }
 
     public LivePath getPath(String path) {
@@ -114,6 +111,16 @@ public class LiveDomain extends PolicyId {
                 livePath.supplementVariable();
             }
         }
+    }
+
+    protected String getLastDomain(String unit, String defaultValue) {
+        UnitDomain unitDomain = getUnitDomain(unit);
+        if (unitDomain == null) {
+            return defaultValue;
+        }
+        String host = unitDomain.getHost();
+        int pos = host.indexOf('.');
+        return pos == -1 ? host : host.substring(0, pos);
     }
 
     public void cache() {

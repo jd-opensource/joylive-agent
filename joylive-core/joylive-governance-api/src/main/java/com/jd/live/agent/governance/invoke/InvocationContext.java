@@ -59,7 +59,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.request.HostTransformer;
-import com.jd.live.agent.governance.request.HostTransformer.FirstTransformer;
+import com.jd.live.agent.governance.request.HostTransformer.LastDomainTransformer;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
@@ -80,7 +80,6 @@ import java.util.function.Supplier;
 import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
 import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.template.Template.evaluate;
 import static com.jd.live.agent.governance.request.HostTransformer.KEY_LANE;
 import static com.jd.live.agent.governance.request.HostTransformer.KEY_UNIT;
 
@@ -164,7 +163,7 @@ public interface InvocationContext {
         LiveConfig liveConfig = governanceConfig.getLiveConfig();
         LaneConfig laneConfig = governanceConfig.getLaneConfig();
         boolean liveEnabled = isLiveEnabled();
-        boolean laneEnabled = isLaneEnabled() && laneConfig.isEnabled(host);
+        boolean laneEnabled = isLaneEnabled();
         if (!liveEnabled && !laneEnabled || !Ipv4.isHost(host)) {
             return null;
         }
@@ -185,24 +184,22 @@ public interface InvocationContext {
                             unitHost = true;
                         } else {
                             LiveDomain liveDomain = domainPolicy.getLiveDomain();
-                            if (liveDomain != null && liveDomain.isUnitDomainEnabled()) {
-                                transformer = (h, ctx) -> liveDomain.getFirstDomain((String) ctx.get(KEY_UNIT));
+                            if (liveDomain != null) {
+                                transformer = liveDomain.getHostTransformer();
                             }
                         }
                     }
                 }
             }
-            if (!unitHost && transformer == null && liveConfig.isEnabled(host)) {
-                transformer = (h, ctx) -> evaluate(liveConfig.getHostExpression(), h, ctx);
+            if (!unitHost && transformer == null) {
+                transformer = liveConfig.getHostTransformer(host);
             }
         }
         if (laneEnabled) {
-            transformer = transformer == null
-                    ? (h, ctx) -> evaluate(laneConfig.getHostExpression(), h, ctx)
-                    : transformer.then((h, ctx) -> evaluate(laneConfig.getHostExpression(), h, ctx));
+            transformer = transformer == null ? laneConfig.getHostTransformer(host) : transformer.then(laneConfig.getHostTransformer(host));
 
         }
-        return transformer != null ? new FirstTransformer(transformer) : null;
+        return transformer != null ? new LastDomainTransformer(transformer) : null;
     }
 
     /**
