@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.core.Constants.PREDICATE_FORWARD;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.plugin.router.springgateway.v2_2.request.GatewayForwardRequest.getURI;
 import static com.jd.live.agent.plugin.router.springgateway.v2_2.request.GatewayForwardRequest.setURI;
@@ -154,17 +155,20 @@ public class LiveGatewayFilter implements GatewayFilter {
      */
     private Mono<Void> forward(ServerWebExchange exchange, GatewayFilterChain chain) {
         URI uri = getURI(exchange);
-        HostTransformer transformer = context.getHostTransformer(uri.getHost());
-        if (transformer != null) {
-            // Handle multi-active and lane domains
-            GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri, transformer);
-            try {
-                URI newUri = HttpForwardContext.of(context).route(request);
-                if (newUri != uri) {
-                    setURI(exchange, newUri);
+        if (!PREDICATE_FORWARD.equals(uri.getScheme())) {
+            // not gateway forward scheme, web requests
+            HostTransformer transformer = context.getHostTransformer(uri.getHost());
+            if (transformer != null) {
+                // Handle multi-active and lane domains
+                GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri, transformer);
+                try {
+                    URI newUri = HttpForwardContext.of(context).route(request);
+                    if (newUri != uri) {
+                        setURI(exchange, newUri);
+                    }
+                } catch (Throwable e) {
+                    return Mono.error(thrower.createException(e, request));
                 }
-            } catch (Throwable e) {
-                return Mono.error(thrower.createException(e, request));
             }
         }
         return chain.filter(exchange);

@@ -201,6 +201,16 @@ public interface Constants {
      */
     Predicate<String> PREDICATE_LB = SCHEME_LB::equalsIgnoreCase;
 
+    /**
+     * Scheme constant for gateway local routing ("forward").
+     */
+    String SCHEME_FORWARD = "forward";
+
+    /**
+     * Predicate that tests if a string equals {@link #SCHEME_FORWARD} (case-insensitive).
+     */
+    Predicate<String> PREDICATE_FORWARD = SCHEME_FORWARD::equalsIgnoreCase;
+
     String K8S_SERVICE_SUFFIX = ".svc.cluster.local";
 
     /**
