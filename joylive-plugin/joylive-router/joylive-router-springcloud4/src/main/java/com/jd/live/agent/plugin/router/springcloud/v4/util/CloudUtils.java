@@ -32,15 +32,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
-import static com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4Enabled.TYPE_SPRING_CLOUD_APPLICATION;
+import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled.TYPE_LOAD_BALANCED;
 
 /**
  * Utility class for detecting Spring Cloud environment and load balancer configuration.
  */
 public class CloudUtils {
 
-    // spring cloud 4+
-    private static final Class<?> lbType = loadClass(TYPE_SPRING_CLOUD_APPLICATION, HttpAccessor.class.getClassLoader());
+    // spring cloud
+    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
     private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
 

@@ -30,15 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
-import static com.jd.live.agent.plugin.router.springcloud.v2_2.condition.ConditionalOnSpringCloud2Enabled.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER;
+import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled.TYPE_LOAD_BALANCED;
 
 /**
  * Utility class for detecting Spring Cloud environment and load balancer configuration.
  */
 public class CloudUtils {
 
-    // spring cloud 2.2
-    private static final Class<?> lbType = loadClass(TYPE_SERVICE_INSTANCE_LIST_SUPPLIER, HttpAccessor.class.getClassLoader());
+    // spring cloud
+    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
     private static final String TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION = "org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction";
     // spring cloud 2.2.7+

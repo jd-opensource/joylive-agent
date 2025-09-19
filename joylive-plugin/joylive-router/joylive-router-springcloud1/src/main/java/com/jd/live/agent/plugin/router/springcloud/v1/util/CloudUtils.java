@@ -33,15 +33,15 @@ import java.util.function.Function;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
-import static com.jd.live.agent.plugin.router.springcloud.v1.condition.ConditionalOnSpringCloud1Enabled.TYPE_DISCOVERY_LIFECYCLE;
+import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled.TYPE_LOAD_BALANCED;
 
 /**
  * Utility class for detecting Spring Cloud environment and load balancer configuration.
  */
 public class CloudUtils {
 
-    // spring cloud 1
-    private static final Class<?> lbType = loadClass(TYPE_DISCOVERY_LIFECYCLE, HttpAccessor.class.getClassLoader());
+    // spring cloud
+    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
     private static final String TYPE_RIBBON_REQUEST = "org.springframework.cloud.netflix.feign.ribbon.FeignLoadBalancer$RibbonRequest";
 
