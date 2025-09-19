@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.nacos.v1_4.interceptor;
+package com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
@@ -29,7 +29,7 @@ import static com.jd.live.agent.governance.instance.Endpoint.*;
 /**
  * NacosServiceDiscoveryInterceptor
  */
-public class NacosServiceDiscoveryInterceptor extends InterceptorAdaptor {
+public class NacosDiscoveryInstanceInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onSuccess(ExecutableContext ctx) {

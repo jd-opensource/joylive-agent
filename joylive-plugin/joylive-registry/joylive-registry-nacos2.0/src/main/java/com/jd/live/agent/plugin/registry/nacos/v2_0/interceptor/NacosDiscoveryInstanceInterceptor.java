@@ -29,7 +29,7 @@ import static com.jd.live.agent.governance.instance.Endpoint.*;
 /**
  * NacosServiceDiscoveryInterceptor
  */
-public class NacosServiceDiscoveryInterceptor extends InterceptorAdaptor {
+public class NacosDiscoveryInstanceInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onSuccess(ExecutableContext ctx) {

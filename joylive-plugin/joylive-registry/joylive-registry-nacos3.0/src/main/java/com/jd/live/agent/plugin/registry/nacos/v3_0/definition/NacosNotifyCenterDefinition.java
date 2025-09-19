@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.registry.nacos.v3_0.interceptor.NacosNotifyCente
  * NotifyCenterDefinition
  */
 @Injectable
-@Extension(value = "NotifyCenterDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NotifyCenterDefinition_v3.0", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos3GovernanceEnabled
 @ConditionalOnClass(NacosNotifyCenterDefinition.TYPE)
 public class NacosNotifyCenterDefinition extends PluginDefinitionAdapter {
