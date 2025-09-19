@@ -15,8 +15,9 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
@@ -26,10 +27,14 @@ import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
-import org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient;
 import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
+
+import java.lang.reflect.Method;
+
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * A concrete implementation of cluster context that provides blocking behavior
@@ -37,8 +42,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
  */
 public class BlockingClusterContext extends AbstractCloudClusterContext {
 
-    private static final String TYPE_BLOCKING_LOAD_BALANCER_CLIENT = "org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient";
-    private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
+    private static final Logger logger = LoggerFactory.getLogger(BlockingClusterContext.class);
 
     private final LoadBalancerRetryProperties retryProperties;
 
@@ -106,13 +110,11 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
         if (client == null) {
             return null;
         }
-        String name = client.getClass().getName();
-        if (name.equals(TYPE_BLOCKING_LOAD_BALANCER_CLIENT)) {
+        Class<?> type = client.getClass();
+        if (type == BlockingLoadBalancerClientAccessor.clientType) {
             // BlockingLoadBalancerClient.loadBalancerClientFactory
-            // LoadBalancerClientFactory
-            ReactiveLoadBalancer.Factory<ServiceInstance> factory = (ReactiveLoadBalancer.Factory<ServiceInstance>) BlockingLoadBalancerClientAccessor.clientFactory.get(client);
-            return service -> new SpringServiceRegistry(service, factory);
-        } else if (name.equals(TYPE_RIBBON_LOAD_BALANCER_CLIENT)) {
+            return service -> new SpringServiceRegistry(service, BlockingLoadBalancerClientAccessor.getLoadBalancer(client, service));
+        } else if (type == RibbonLoadBalancerClientAccessor.clientType) {
             // RibbonLoadBalancerClient.clientFactory
             // SpringClientFactory
             return service -> new RibbonServiceRegistry(service, (SpringClientFactory) RibbonLoadBalancerClientAccessor.clientFactory.get(client));
@@ -122,33 +124,61 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
 
     private static class LoadBalancerInterceptorAccessor {
 
-        private static final FieldAccessor requestFactory = FieldAccessorFactory.getAccessor(LoadBalancerInterceptor.class, "requestFactory");
+        private static final FieldAccessor requestFactory = getAccessor(LoadBalancerInterceptor.class, "requestFactory");
 
-        private static final FieldAccessor loadBalancer = FieldAccessorFactory.getAccessor(LoadBalancerInterceptor.class, "loadBalancer");
+        private static final FieldAccessor loadBalancer = getAccessor(LoadBalancerInterceptor.class, "loadBalancer");
 
     }
 
     private static class RetryLoadBalancerInterceptorAccessor {
 
-        private static final FieldAccessor requestFactory = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "requestFactory");
+        private static final FieldAccessor requestFactory = getAccessor(RetryLoadBalancerInterceptor.class, "requestFactory");
 
-        private static final FieldAccessor loadBalancer = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "loadBalancer");
+        private static final FieldAccessor loadBalancer = getAccessor(RetryLoadBalancerInterceptor.class, "loadBalancer");
 
-        private static final FieldAccessor lbProperties = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "lbProperties");
+        private static final FieldAccessor lbProperties = getAccessor(RetryLoadBalancerInterceptor.class, "lbProperties");
 
-        private static final FieldAccessor lbRetryFactory = FieldAccessorFactory.getAccessor(RetryLoadBalancerInterceptor.class, "lbRetryFactory");
+        private static final FieldAccessor lbRetryFactory = getAccessor(RetryLoadBalancerInterceptor.class, "lbRetryFactory");
 
     }
 
     private static class RibbonLoadBalancerClientAccessor {
 
-        private static final FieldAccessor clientFactory = FieldAccessorFactory.getAccessor(RibbonLoadBalancerClient.class, "clientFactory");
+        private static final String TYPE_RIBBON_LOAD_BALANCER_CLIENT = "org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient";
+
+        private static final Class<?> clientType = loadClass(TYPE_RIBBON_LOAD_BALANCER_CLIENT, LoadBalancerClient.class.getClassLoader());
+
+        private static final FieldAccessor clientFactory = getAccessor(clientType, "clientFactory");
 
     }
 
-    private static class BlockingLoadBalancerClientAccessor {
+    // spring cloud 2.1.3+
+    public static class BlockingLoadBalancerClientAccessor {
 
-        private static final FieldAccessor clientFactory = FieldAccessorFactory.getAccessor(BlockingLoadBalancerClient.class, "loadBalancerClientFactory");
+        protected static final String TYPE_BLOCKING_LOAD_BALANCER_CLIENT = "org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient";
+
+        protected static final String TYPE_REACTIVE_LOAD_BALANCER_FACTORY = "org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer$Factory";
+
+        protected static final Class<?> clientType = loadClass(TYPE_BLOCKING_LOAD_BALANCER_CLIENT, LoadBalancerClient.class.getClassLoader());
+
+        protected static final Class<?> factoryType = loadClass(TYPE_REACTIVE_LOAD_BALANCER_FACTORY, LoadBalancerClient.class.getClassLoader());
+
+        protected static final FieldAccessor clientFactory = getAccessor(clientType, "loadBalancerClientFactory");
+
+        protected static final Method getInstanceMethod = getDeclaredMethod(factoryType, "getInstance", new Class<?>[]{String.class});
+
+        public static ReactiveLoadBalancer<ServiceInstance> getLoadBalancer(LoadBalancerClient client, String serviceId) {
+            return createLoadbalancer(clientFactory.get(client), serviceId);
+        }
+
+        public static ReactiveLoadBalancer<ServiceInstance> createLoadbalancer(Object loadBalancerFactory, String serviceId) {
+            try {
+                return (ReactiveLoadBalancer<ServiceInstance>) getInstanceMethod.invoke(loadBalancerFactory, serviceId);
+            } catch (Throwable e) {
+                logger.error(e.getMessage(), e);
+                return null;
+            }
+        }
 
     }
 }

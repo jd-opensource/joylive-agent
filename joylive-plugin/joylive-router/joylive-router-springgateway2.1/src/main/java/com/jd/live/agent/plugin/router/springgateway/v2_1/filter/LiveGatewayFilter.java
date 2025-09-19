@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v2_1.filter;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
@@ -31,7 +32,6 @@ import com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayForward
 import com.jd.live.agent.plugin.router.springgateway.v2_1.response.GatewayClusterResponse;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.NestedRuntimeException;
@@ -41,12 +41,15 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 import static com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayForwardRequest.getURI;
 import static com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayForwardRequest.setURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
@@ -182,16 +185,35 @@ public class LiveGatewayFilter implements GatewayFilter {
                     }
                 }
             }
-            RetryGatewayFilterFactory.BackoffConfig backoff = retryConfig.getBackoff();
+
             RetryPolicy retryPolicy = new RetryPolicy();
             retryPolicy.setRetry(retryConfig.getRetries());
-            retryPolicy.setInterval(backoff != null ? backoff.getFirstBackoff().toMillis() : null);
+            retryPolicy.setInterval(Accessor.getInterval(retryConfig));
             retryPolicy.setMethods(new HashSet<>(toList(retryConfig.getMethods(), HttpMethod::name)));
             retryPolicy.setErrorCodes(statuses);
             retryPolicy.setExceptions(new HashSet<>(toList(retryConfig.getExceptions(), Class::getName)));
             return retryPolicy;
         }
         return null;
+    }
+
+    private static class Accessor {
+
+        // spring cloud 2.1.3+
+        private static final String TYPE_BACK_OFF_CONFIG = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$BackoffConfig";
+
+        private static Class<?> backoffConfig = loadClass(TYPE_BACK_OFF_CONFIG, RetryConfig.class.getClassLoader());
+
+        private static FieldAccessor backOffField = getAccessor(RetryConfig.class, "backoff");
+
+        private static FieldAccessor firstBackoffField = getAccessor(backoffConfig, "firstBackoff");
+
+        public static Long getInterval(RetryConfig retryConfig) {
+            Object backoff = backOffField.get(retryConfig);
+            Duration firstBackoff = (Duration) firstBackoffField.get(backoff);
+            return firstBackoff == null ? null : firstBackoff.toMillis();
+        }
+
     }
 
 }

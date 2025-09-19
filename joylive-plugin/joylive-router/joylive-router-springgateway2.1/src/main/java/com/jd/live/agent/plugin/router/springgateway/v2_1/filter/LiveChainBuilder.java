@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.gateway.GatewayRoute;
 import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.BlockingClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.SpringServiceRegistry;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.config.GatewayConfig;
@@ -28,7 +29,6 @@ import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
@@ -51,6 +51,7 @@ public class LiveChainBuilder {
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
     private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";
+    private static final String TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
@@ -181,6 +182,7 @@ public class LiveChainBuilder {
         FilterDescriptor result = new FilterDescriptor(filters.size());
         GatewayFilter delegate;
         GlobalFilter globalFilter;
+        String name;
         // filter
         for (GatewayFilter filter : filters) {
             delegate = filter;
@@ -189,9 +191,9 @@ public class LiveChainBuilder {
             }
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
                 globalFilter = getQuietly(delegate, FIELD_DELEGATE);
-                if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    LoadBalancerClientFactory clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
-                    result.setSystem(service -> new SpringServiceRegistry(service, clientFactory));
+                if (globalFilter != null && globalFilter.getClass().getName().equals(TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER)) {
+                    Object clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                    result.setSystem(service -> new SpringServiceRegistry(service, BlockingClusterContext.BlockingLoadBalancerClientAccessor.createLoadbalancer(clientFactory, service)));
                 } else if (globalFilter instanceof LoadBalancerClientFilter) {
                     LoadBalancerClient client = getQuietly(globalFilter, FIELD_LOAD_BALANCER);
                     result.setSystem(createFactory(client));
