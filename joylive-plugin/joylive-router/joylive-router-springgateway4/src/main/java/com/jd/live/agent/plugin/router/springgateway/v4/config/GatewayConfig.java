@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v4.config;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,7 +36,11 @@ public class GatewayConfig {
 
     private Set<String> pathFilters = new HashSet<>();
 
+    private Set<String> pathFilterPrefixes = new HashSet<>();
+
     private Set<String> webSchemes = new HashSet<>();
+
+    private transient Inclusion inclusion;
 
     /**
      * Checks if the given name is a path filter.
@@ -44,7 +49,7 @@ public class GatewayConfig {
      * @return true if the filter is a path filter, false otherwise.
      */
     public boolean isPathFilter(String filter) {
-        return pathFilters != null && filter != null && pathFilters.contains(filter);
+        return inclusion != null && inclusion.test(filter);
     }
 
     public boolean isWebScheme(String scheme) {
@@ -61,6 +66,7 @@ public class GatewayConfig {
         webSchemes.add("http3");
         webSchemes.add("ws");
         webSchemes.add("wss");
+        inclusion = new Inclusion(pathFilters, pathFilterPrefixes);
     }
 
 }
