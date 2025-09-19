@@ -23,26 +23,21 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
-import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.ReactiveClientCluster;
-import com.jd.live.agent.plugin.router.springcloud.v3.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v3.exception.reactive.WebClientThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v3.exception.reactive.WebClientThrower;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.ReactiveClientForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.ReactiveClusterResponse;
-import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
-import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
-import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
-import org.springframework.http.client.support.HttpAccessor;
-import org.springframework.web.reactive.function.client.*;
+import com.jd.live.agent.plugin.router.springcloud.v3.util.CloudUtils;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-
-import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
-import static com.jd.live.agent.plugin.router.springcloud.v3.condition.ConditionalOnSpringCloud3Enabled.TYPE_HINT_REQUEST_CONTEXT;
 
 /**
  * ReactiveClientInterceptor
@@ -62,9 +57,10 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         ExchangeFunction exchanger = ctx.getArgument(0);
         WebClient.Builder builder = ctx.getArgument(5);
-        if (Accessor.isCloudEnabled()) {
+        // do not static import CloudUtils to avoid class loading issue.
+        if (CloudUtils.isCloudEnabled()) {
             // with spring cloud
-            if (!Accessor.isCloudClient(builder) && context.isSubdomainEnabled()) {
+            if (!CloudUtils.isReactiveCloudClient(builder) && context.isSubdomainEnabled()) {
                 // Handle multi-active and lane domains
                 ctx.setArgument(0, exchanger.filter(this::forward));
             }
@@ -99,7 +95,7 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
                     return n.exchange(ClientRequest.from(req).url(newUri).build());
                 }
             } catch (Throwable e) {
-                return Mono.error(Accessor.thrower.createException(e, rr));
+                return Mono.error(WebClientThrower.INSTANCE.createException(e, rr));
             }
         }
         return n.exchange(req);
@@ -139,45 +135,4 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
         return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
     }
 
-    /**
-     * Utility class for detecting Spring Cloud environment and load balancer configuration.
-     */
-    private static class Accessor {
-
-        // spring cloud 3+
-        private static final Class<?> lbType = loadClass(TYPE_HINT_REQUEST_CONTEXT, HttpAccessor.class.getClassLoader());
-
-        private static final SpringOutboundThrower<WebClientException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new WebClientThrowerFactory<>());
-
-        /**
-         * Checks if Spring Cloud is available in the classpath.
-         *
-         * @return true if Spring Cloud is present, false otherwise
-         */
-        public static boolean isCloudEnabled() {
-            return lbType != null;
-        }
-
-        /**
-         * Checks if the WebClient builder is configured for cloud load balancing.
-         *
-         * @param client the WebClient builder to check
-         * @return true if the builder contains load balancing filters, false otherwise
-         */
-        public static boolean isCloudClient(Object client) {
-            WebClient.Builder builder = (WebClient.Builder) client;
-            final boolean[] result = new boolean[]{false};
-            builder.filters(filters -> {
-                for (ExchangeFilterFunction filter : filters) {
-                    if (filter instanceof LoadBalancedExchangeFilterFunction
-                            || filter instanceof DeferringLoadBalancerExchangeFilterFunction
-                            || filter instanceof RetryableLoadBalancerExchangeFilterFunction) {
-                        result[0] = true;
-                        break;
-                    }
-                }
-            });
-            return result[0];
-        }
-    }
 }

@@ -27,24 +27,19 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.FeignClientCluster;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.feign.FeignThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.feign.FeignThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignClientClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignClientForwardRequest;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClusterResponse;
-import feign.FeignException;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.util.CloudUtils;
 import feign.Request;
 import feign.Response;
-import org.springframework.http.client.support.HttpAccessor;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 import static com.jd.live.agent.governance.request.Request.KEY_CLOUD_REQUEST;
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2Enabled.TYPE_ENABLE_DISCOVERY_CLIENT;
 import static com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignOutboundRequest.createRequest;
 
 /**
@@ -65,7 +60,8 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Request request = ctx.getArgument(0);
-        if (Accessor.isCloudEnabled()) {
+        // do not static import CloudUtils to avoid class loading issue.
+        if (CloudUtils.isCloudEnabled()) {
             // with spring cloud
             if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST)) {
                 // Handle multi-active and lane domains
@@ -105,7 +101,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                     mc.setArgument(0, createRequest(newUri, req));
                 }
             } catch (Throwable e) {
-                mc.skipWithThrowable(Accessor.thrower.createException(e, fr));
+                mc.skipWithThrowable(FeignThrower.INSTANCE.createException(e, fr));
             }
         }
     }
@@ -145,7 +141,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                 mc.skipWithResult(response.getResponse());
             }
         } catch (Throwable e) {
-            mc.skipWithThrowable(Accessor.thrower.createException(e, fr));
+            mc.skipWithThrowable(FeignThrower.INSTANCE.createException(e, fr));
         }
     }
 
@@ -161,7 +157,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         // subscribe service endpoint and governance policy.
         try {
             List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
-                    Accessor.throwerFactory.createException((Request) request, 500, message, e));
+                    FeignThrower.FACTORY.createException((Request) request, 500, message, e));
             if (endpoints == null || endpoints.isEmpty()) {
                 // Failed to convert microservice, fallback to domain reques
                 return false;
@@ -169,28 +165,6 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
             return true;
         } catch (Throwable e) {
             return false;
-        }
-    }
-
-    /**
-     * Utility class for detecting Spring Cloud environment and load balancer configuration.
-     */
-    private static class Accessor {
-
-        // spring cloud 2.2+
-        private static final Class<?> lbType = loadClass(TYPE_ENABLE_DISCOVERY_CLIENT, HttpAccessor.class.getClassLoader());
-
-        private static final FeignThrowerFactory<FeignOutboundRequest> throwerFactory = new FeignThrowerFactory<>();
-
-        private static final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(throwerFactory);
-
-        /**
-         * Checks if Spring Cloud is available in the classpath.
-         *
-         * @return true if Spring Cloud is present, false otherwise
-         */
-        public static boolean isCloudEnabled() {
-            return lbType != null;
         }
     }
 

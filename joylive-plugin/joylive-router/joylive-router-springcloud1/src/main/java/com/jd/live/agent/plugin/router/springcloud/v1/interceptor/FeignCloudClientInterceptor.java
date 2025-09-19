@@ -24,10 +24,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.FeignCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v1.response.FeignClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v1.util.CloudUtils;
 import org.springframework.cloud.netflix.feign.ribbon.LoadBalancerFeignClient;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * FeignCloudClientInterceptor
@@ -46,7 +44,7 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         LoadBalancerFeignClient client = (LoadBalancerFeignClient) ctx.getTarget();
-        FeignCloudCluster cluster = Accessor.clusters.computeIfAbsent(client, i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudCluster cluster = CloudUtils.getOrCreateCluster(client, i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest request = new FeignCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),
@@ -59,9 +57,5 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
         } else {
             mc.skipWithResult(response.getResponse());
         }
-    }
-
-    private static class Accessor {
-        private static final Map<LoadBalancerFeignClient, FeignCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }

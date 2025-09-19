@@ -23,14 +23,13 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.ReactiveCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.ReactiveCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.ReactiveClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v4.util.CloudUtils;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ReactiveClusterInterceptor
@@ -50,7 +49,8 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
         LoadBalancedExchangeFilterFunction filter = (LoadBalancedExchangeFilterFunction) ctx.getTarget();
-        ReactiveCloudCluster cluster = Accessor.clusters.computeIfAbsent(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
+        // do not static import CloudUtils to avoid class loading issue.
+        ReactiveCloudCluster cluster = CloudUtils.getOrCreateCluster(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
         ReactiveCloudClusterRequest request = new ReactiveCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),
@@ -60,9 +60,5 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
         Mono<ClientResponse> mono = Mono.fromFuture(future);
         mc.skipWithResult(mono);
-    }
-
-    private static class Accessor {
-        private static final Map<LoadBalancedExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }

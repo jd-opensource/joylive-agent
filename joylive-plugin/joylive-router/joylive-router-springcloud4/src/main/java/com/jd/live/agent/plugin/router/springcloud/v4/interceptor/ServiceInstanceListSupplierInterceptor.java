@@ -30,8 +30,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.SimpleServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.status.StatusThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.status.StatusThrower;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.EndpointInstance;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingCloudOutboundRequest;
@@ -42,7 +41,6 @@ import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
 import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
-import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
@@ -126,11 +124,11 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
                     List<ServiceEndpoint> endpoints = context.routes(invocation, system);
                     return toList(endpoints, EndpointInstance::convert);
                 }).onErrorMap(e -> {
-                    Throwable error = Accessor.thrower.createException(e, invocation.getRequest());
+                    Throwable error = StatusThrower.INSTANCE.createException(e, invocation.getRequest());
                     if (error instanceof RuntimeException) {
                         return error;
                     } else {
-                        return Accessor.thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, error.getMessage(), error);
+                        return StatusThrower.INSTANCE.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, error.getMessage(), error);
                     }
                 }));
             }
@@ -175,9 +173,5 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         gateway = gateway == null ? context.getApplication().getService().isGateway() : gateway;
         return gateway ? new GatewayHttpOutboundInvocation<>(request, context) :
                 new HttpOutboundInvocation<>(request, context);
-    }
-
-    private static class Accessor {
-        public static final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
     }
 }

@@ -24,10 +24,8 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.BlockingClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.util.CloudUtils;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * BlockingCloudClientInterceptor
@@ -45,9 +43,13 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        BlockingCloudCluster cluster = Accessor.clusters.computeIfAbsent((ClientHttpRequestInterceptor) ctx.getTarget(), i -> new BlockingCloudCluster(context.getRegistry(), i));
-        BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(ctx.getArgument(0),
-                ctx.getArgument(1), ctx.getArgument(2), cluster.getContext());
+        ClientHttpRequestInterceptor interceptor = (ClientHttpRequestInterceptor) ctx.getTarget();
+        BlockingCloudCluster cluster = CloudUtils.getOrCreateCluster(interceptor, i -> new BlockingCloudCluster(context.getRegistry(), i));
+        BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(
+                ctx.getArgument(0),
+                ctx.getArgument(1),
+                ctx.getArgument(2),
+                cluster.getContext());
         HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
         ServiceError error = response.getError();
@@ -58,7 +60,4 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
         }
     }
 
-    private static class Accessor {
-        private static final Map<ClientHttpRequestInterceptor, BlockingCloudCluster> clusters = new ConcurrentHashMap<>();
-    }
 }

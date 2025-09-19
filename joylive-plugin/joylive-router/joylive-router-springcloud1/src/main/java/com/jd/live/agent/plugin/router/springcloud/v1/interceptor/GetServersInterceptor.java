@@ -19,10 +19,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -34,14 +31,10 @@ import com.jd.live.agent.plugin.router.springcloud.v1.exception.SpringOutboundTh
 import com.jd.live.agent.plugin.router.springcloud.v1.exception.status.StatusThrowerFactory;
 import com.jd.live.agent.plugin.router.springcloud.v1.instance.EndpointServer;
 import com.jd.live.agent.plugin.router.springcloud.v1.instance.RibbonEndpoint;
-import com.jd.live.agent.plugin.router.springcloud.v1.request.FeignCloudOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v1.request.RibbonOutboundRequest;
-import com.netflix.client.ClientRequest;
+import com.jd.live.agent.plugin.router.springcloud.v1.util.CloudUtils;
 import com.netflix.loadbalancer.BaseLoadBalancer;
 import com.netflix.loadbalancer.Server;
-import feign.Request;
 import org.springframework.core.NestedRuntimeException;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
@@ -74,7 +67,8 @@ public class GetServersInterceptor extends InterceptorAdaptor {
         BaseLoadBalancer balancer = (BaseLoadBalancer) mc.getTarget();
         String service = balancer.getName();
         Object clientRequest = RequestContext.getAttribute(ATTRIBUTE_CLIENT_REQUEST);
-        HttpOutboundRequest request = Accessor.build(clientRequest, service);
+        // do not static import CloudUtils to avoid class loading issue.
+        HttpOutboundRequest request = CloudUtils.build(clientRequest, service);
         if (request == null) {
             return;
         }
@@ -95,23 +89,5 @@ public class GetServersInterceptor extends InterceptorAdaptor {
 
     private Server getServer(ServiceEndpoint endpoint) {
         return endpoint instanceof RibbonEndpoint ? ((RibbonEndpoint) endpoint).getServer() : new EndpointServer(endpoint);
-    }
-
-    private static final class Accessor {
-
-        private static final Class<?> ribbonRequestType = ClassUtils.loadClass("org.springframework.cloud.netflix.feign.ribbon.FeignLoadBalancer$RibbonRequest", ClientRequest.class.getClassLoader());
-
-        private static final FieldAccessor ribbonRequestAccessor = FieldAccessorFactory.getAccessor(ribbonRequestType, "request");
-
-        public static HttpOutboundRequest build(Object request, String service) {
-            if (request instanceof HttpRequest) {
-                return new RibbonOutboundRequest((HttpRequest) request, service);
-            } else if (ribbonRequestType != null && ribbonRequestType.isInstance(request)) {
-                Request feignRequest = (Request) ribbonRequestAccessor.get(request);
-                return new FeignCloudOutboundRequest(feignRequest, service);
-            }
-            return null;
-        }
-
     }
 }

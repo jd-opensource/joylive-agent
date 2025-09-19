@@ -23,14 +23,13 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.ReactiveCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.ReactiveCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.util.CloudUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ReactiveCloudClientInterceptor
@@ -50,7 +49,7 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
         ExchangeFilterFunction filter = (ExchangeFilterFunction) ctx.getTarget();
-        ReactiveCloudCluster cluster = Accessor.clusters.computeIfAbsent(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
+        ReactiveCloudCluster cluster = CloudUtils.getOrCreateCluster(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
         ReactiveCloudClusterRequest request = new ReactiveCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),
@@ -60,9 +59,5 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
         Mono<ClientResponse> mono = Mono.fromFuture(future);
         mc.skipWithResult(mono);
-    }
-
-    private static class Accessor {
-        private static final Map<ExchangeFilterFunction, ReactiveCloudCluster> clusters = new ConcurrentHashMap<>();
     }
 }
