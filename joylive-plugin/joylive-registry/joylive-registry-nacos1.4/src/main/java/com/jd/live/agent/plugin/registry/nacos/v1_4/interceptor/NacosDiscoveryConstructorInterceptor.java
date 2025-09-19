@@ -46,7 +46,7 @@ public class NacosDiscoveryConstructorInterceptor extends InterceptorAdaptor {
                 try {
                     serviceIds.forEach(serviceId -> {
                         try {
-                            logger.error("Starting warmup service instances for {}.", serviceId.getService());
+                            logger.info("Starting warmup service instances for {}.", serviceId.getService());
                             discovery.getInstances(serviceId.getService());
                         } catch (NacosException e) {
                             logger.error("Error occurs while warmup service instances {}.", serviceId.getService(), e);
