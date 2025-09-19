@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * A template engine that processes a template string with variable placeholders.
@@ -140,22 +141,28 @@ public class Template implements Evaluator {
     }
 
     /**
-     * Evaluates the expression with given values.
+     * Evaluates the expression with given context and predicate.
      *
      * @param expression   the expression to evaluate
-     * @param defaultValue default value when no variables found
      * @param context      the context object to evaluate
+     * @param defaultValue default value when evaluation fails
+     * @param predicate    condition to test before evaluation
      * @return the evaluated result or default value
      */
-    public static String evaluate(String expression, String defaultValue, Map<String, Object> context) {
+    public static String evaluate(String expression,
+                                  Map<String, Object> context,
+                                  String defaultValue,
+                                  Predicate<Map<String, Object>> predicate) {
         if (expression == null || expression.isEmpty()) {
             return defaultValue;
+        } else if (predicate == null || predicate.test(context)) {
+            Template template = cache(expression);
+            if (template.getVariables() <= 0) {
+                return defaultValue;
+            }
+            return template.render(context);
         }
-        Template template = cache(expression);
-        if (template.getVariables() <= 0) {
-            return defaultValue;
-        }
-        return template.render(context);
+        return defaultValue;
     }
 
     /**

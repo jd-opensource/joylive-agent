@@ -26,15 +26,15 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.condition.ConditionalOnSpringCloud2FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.BlockingCloudClusterInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.interceptor.BlockingCloudClientInterceptor;
 
 /**
- * BlockingRetryClusterDefinition
+ * BlockingRetryableCloudClusterDefinition
  *
  * @since 1.7.0
  */
 @Injectable
-@Extension(value = "BlockingRetryClusterDefinition_v2.1")
+@Extension(value = "BlockingRetryableCloudClusterDefinition_v2.1")
 @ConditionalOnSpringCloud2FlowControlEnabled
 @ConditionalOnSpringRetry
 @ConditionalOnClass(BlockingRetryableCloudClusterDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
@@ -59,7 +59,7 @@ public class BlockingRetryableCloudClusterDefinition extends PluginDefinitionAda
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_INTERCEPT).
                                 and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClusterInterceptor.RetryLoadBalancerClusterInterceptor(context)
+                        () -> new BlockingCloudClientInterceptor(context)
                 )
         };
     }

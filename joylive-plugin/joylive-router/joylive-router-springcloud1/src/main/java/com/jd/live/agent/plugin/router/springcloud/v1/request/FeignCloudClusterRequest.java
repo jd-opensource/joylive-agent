@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v1.request;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.FeignClusterContext;
@@ -26,13 +25,10 @@ import org.springframework.cloud.client.ServiceInstance;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.CollectionUtils.getFirst;
-import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
 import static com.jd.live.agent.plugin.router.springcloud.v1.util.UriUtils.newURI;
 
@@ -46,8 +42,6 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
 
     private final Request.Options options;
 
-    private final LazyObject<Map<String, Collection<String>>> cache = new LazyObject<>(() -> modifiedMap(request.headers()));
-
     public FeignCloudClusterRequest(Request request, Request.Options options, FeignClusterContext context) {
         super(request, URI.create(request.url()), context);
         this.options = options;
@@ -60,14 +54,13 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
 
     @Override
     public String getHeader(String key) {
-        return key == null || key.isEmpty() ? null : getFirst(request.headers().get(key));
+        return getFirst(request.headers(), key);
     }
 
     @Override
     public void setHeader(String key, String value) {
-        if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            cache.get().computeIfAbsent(key, k -> new ArrayList<>()).add(value);
-        }
+        // get modified map from cache
+        set(modifiedMap(request.headers()), key, value);
     }
 
     @Override

@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.registry.nacos.v3_0.interceptor.NacosNamingServi
  * NacosNamingServiceDefinition
  */
 @Injectable
-@Extension(value = "NacosNamingServiceDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosNamingServiceDefinition_v3.0", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos3GovernanceEnabled
 @ConditionalOnClass(NacosNamingServiceDefinition.TYPE)
 public class NacosNamingServiceDefinition extends PluginDefinitionAdapter {

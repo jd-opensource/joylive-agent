@@ -18,12 +18,16 @@ package com.jd.live.agent.plugin.registry.nacos.v2_3.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.nacos.v2_3.condition.ConditionalOnNacos23GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosServiceDiscoveryInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosDiscoveryConstructorInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosDiscoveryInstanceInterceptor;
 
 /**
  * NacosServiceDiscoveryDefinition
@@ -31,17 +35,23 @@ import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosServiceDisc
 @Extension(value = "NacosServiceDiscoveryDefinition_v2.3", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos23GovernanceEnabled
 @ConditionalOnClass(NacosServiceDiscoveryDefinition.TYPE_NACOS_SERVICE_DISCOVERY)
+@Injectable
 public class NacosServiceDiscoveryDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_NACOS_SERVICE_DISCOVERY = "com.alibaba.cloud.nacos.discovery.NacosServiceDiscovery";
 
     private static final String METHOD_HOST_TO_SERVICE_INSTANCE = "hostToServiceInstance";
 
+    @Inject(Registry.COMPONENT_REGISTRY)
+    private Registry registry;
+
     public NacosServiceDiscoveryDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_NACOS_SERVICE_DISCOVERY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_HOST_TO_SERVICE_INSTANCE), () -> new NacosServiceDiscoveryInterceptor()),
+                        MatcherBuilder.named(METHOD_HOST_TO_SERVICE_INSTANCE), () -> new NacosDiscoveryInstanceInterceptor()),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.isConstructor(), () -> new NacosDiscoveryConstructorInterceptor(registry)),
         };
     }
 }

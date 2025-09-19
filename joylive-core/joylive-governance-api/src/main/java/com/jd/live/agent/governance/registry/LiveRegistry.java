@@ -101,6 +101,9 @@ public class LiveRegistry extends AbstractService
     // fix for eureka
     private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
+    // add listener to warmup for spring cloud
+    private final Set<Consumer<List<ServiceId>>> listeners = new CopyOnWriteArraySet<>();
+
     private final AtomicBoolean ready = new AtomicBoolean(false);
 
     @Override
@@ -346,6 +349,13 @@ public class LiveRegistry extends AbstractService
     }
 
     @Override
+    public void addListener(Consumer<List<ServiceId>> consumer) {
+        if (consumer != null) {
+            listeners.add(consumer);
+        }
+    }
+
+    @Override
     public void apply(InjectSource source) {
         source.add(Registry.COMPONENT_REGISTRY, this);
     }
@@ -425,6 +435,10 @@ public class LiveRegistry extends AbstractService
      */
     private void onApplicationReady() {
         ready.set(true);
+        // warmup
+        List<ServiceId> services = new ArrayList<>(subscriptions.size());
+        subscriptions.forEach((serviceId, subscription) -> services.add(subscription.getServiceId()));
+        listeners.forEach(listener -> listener.accept(services));
         for (Registration registration : registrations.values()) {
             registration.register();
         }

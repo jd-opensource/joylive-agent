@@ -30,8 +30,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.SimpleServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.SpringOutboundThrower;
-import com.jd.live.agent.plugin.router.springcloud.v4.exception.status.StatusThrowerFactory;
+import com.jd.live.agent.plugin.router.springcloud.v4.exception.status.StatusThrower;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.EndpointInstance;
 import com.jd.live.agent.plugin.router.springcloud.v4.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingCloudOutboundRequest;
@@ -42,7 +41,6 @@ import org.springframework.cloud.client.loadbalancer.RequestDataContext;
 import org.springframework.cloud.client.loadbalancer.RetryableRequestContext;
 import org.springframework.cloud.loadbalancer.core.DelegatingServiceInstanceListSupplier;
 import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
-import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
@@ -51,9 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.plugin.router.springcloud.v4.instance.EndpointInstance.convert;
 
 /**
  * ServiceInstanceListSupplierInterceptor
@@ -70,8 +66,6 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
     private final InvocationContext context;
 
     private final Set<String> disableDiscovery;
-
-    private final SpringOutboundThrower<NestedRuntimeException, HttpOutboundRequest> thrower = new SpringOutboundThrower<>(new StatusThrowerFactory<>());
 
     public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
         this.context = context;
@@ -122,37 +116,21 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
             Object[] arguments = ctx.getArguments();
             Object result = mc.getResult();
             Flux<List<ServiceInstance>> flux = (Flux<List<ServiceInstance>>) result;
-            OutboundInvocation<HttpOutboundRequest> invocation = buildInvocation((Request<?>) arguments[0]);
+            OutboundInvocation<HttpOutboundRequest> invocation = buildInvocation(arguments[0]);
             if (invocation != null) {
-                mc.setResult(flux.map(instances -> route(invocation, instances)));
-            }
-        }
-    }
-
-    /**
-     * Routes the given outbound invocation to a service instance.
-     *
-     * @param invocation The outbound invocation to route.
-     * @param system     The list of service instances to choose from.
-     * @return A list containing the selected service instance.
-     */
-    private List<ServiceInstance> route(OutboundInvocation<HttpOutboundRequest> invocation, List<ServiceInstance> system) {
-        try {
-            String service = invocation.getRequest().getService();
-            if (context.isFlowControlEnabled()) {
-                ServiceEndpoint endpoint = context.route(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
-                return singletonList(convert(endpoint));
-            } else {
-                List<ServiceEndpoint> endpoints = context.routes(invocation, new SimpleServiceRegistry(service, () -> toList(system, SpringEndpoint::new)));
-                return toList(endpoints, EndpointInstance::convert);
-            }
-        } catch (Throwable e) {
-            logger.error("Exception occurred when routing, caused by " + e.getMessage(), e);
-            Throwable throwable = thrower.createException(e, invocation.getRequest());
-            if (throwable instanceof RuntimeException) {
-                throw (RuntimeException) throwable;
-            } else {
-                throw thrower.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, throwable.getMessage(), throwable);
+                mc.setResult(flux.map(instances -> {
+                    String service = invocation.getRequest().getService();
+                    SimpleServiceRegistry system = new SimpleServiceRegistry(service, () -> toList(instances, SpringEndpoint::new));
+                    List<ServiceEndpoint> endpoints = context.routes(invocation, system);
+                    return toList(endpoints, EndpointInstance::convert);
+                }).onErrorMap(e -> {
+                    Throwable error = StatusThrower.INSTANCE.createException(e, invocation.getRequest());
+                    if (error instanceof RuntimeException) {
+                        return error;
+                    } else {
+                        return StatusThrower.INSTANCE.createException(invocation.getRequest(), HttpStatus.SERVICE_UNAVAILABLE, error.getMessage(), error);
+                    }
+                }));
             }
         }
     }
@@ -164,12 +142,22 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
      * @return An instance of {@code OutboundInvocation} specific to the type of the request, or {@code null}
      * if the request type is not supported.
      */
-    private OutboundInvocation<HttpOutboundRequest> buildInvocation(Request<?> request) {
-        Object context = request.getContext();
+    private OutboundInvocation<HttpOutboundRequest> buildInvocation(Object request) {
+        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
+        Request<?> req = (Request<?>) request;
+        Object context = req.getContext();
         if (context instanceof RequestDataContext) {
-            return createOutlet(createOutboundRequest((RequestDataContext) context));
-        } else if (request instanceof HttpRequest) {
-            return createOutlet(new BlockingCloudOutboundRequest((HttpRequest) request, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
+            RequestDataOutboundRequest result = new RequestDataOutboundRequest(((RequestDataContext) context).getClientRequest(),
+                    RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID));
+            if (context instanceof RetryableRequestContext) {
+                ServiceInstance previousServiceInstance = ((RetryableRequestContext) context).getPreviousServiceInstance();
+                if (previousServiceInstance != null) {
+                    result.addAttempt(previousServiceInstance.getInstanceId());
+                }
+            }
+            return createOutlet(result);
+        } else if (req instanceof HttpRequest) {
+            return createOutlet(new BlockingCloudOutboundRequest((HttpRequest) req, RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID)));
         }
         return null;
     }
@@ -185,24 +173,5 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
         gateway = gateway == null ? context.getApplication().getService().isGateway() : gateway;
         return gateway ? new GatewayHttpOutboundInvocation<>(request, context) :
                 new HttpOutboundInvocation<>(request, context);
-    }
-
-    /**
-     * Creates a {@link RequestDataContext} from a given {@link RequestDataContext}.
-     *
-     * @param context The request data context containing information needed to create the outbound request.
-     * @return A newly created {@code RequestDataLbRequest} with context and potentially retry information.
-     */
-    private RequestDataOutboundRequest createOutboundRequest(RequestDataContext context) {
-        RequestDataOutboundRequest result = new RequestDataOutboundRequest(context.getClientRequest(),
-                RequestContext.getAttribute(Carrier.ATTRIBUTE_SERVICE_ID));
-
-        if (context instanceof RetryableRequestContext) {
-            ServiceInstance previousServiceInstance = ((RetryableRequestContext) context).getPreviousServiceInstance();
-            if (previousServiceInstance != null) {
-                result.addAttempt(previousServiceInstance.getInstanceId());
-            }
-        }
-        return result;
     }
 }

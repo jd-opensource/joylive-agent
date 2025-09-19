@@ -25,6 +25,7 @@ import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerClient;
 import org.springframework.cloud.netflix.ribbon.SpringClientFactory;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 
 /**
  * A concrete implementation of cluster context that provides blocking behavior
@@ -59,6 +60,20 @@ public class BlockingClusterContext extends AbstractCloudClusterContext {
         this.retryProperties = (LoadBalancerRetryProperties) RetryLoadBalancerInterceptorAccessor.lbProperties.get(interceptor);
         // RetryLoadBalancerInterceptor.lbRetryFactory
         this.retryFactory = (LoadBalancedRetryPolicyFactory) RetryLoadBalancerInterceptorAccessor.lbRetryPolicyFactory.get(interceptor);
+    }
+
+    /**
+     * Creates a BlockingClusterContext instance based on the interceptor type.
+     *
+     * @param registry    the service registry
+     * @param interceptor the HTTP request interceptor
+     * @return BlockingClusterContext instance if interceptor is supported, null otherwise
+     */
+    public static BlockingClusterContext of(Registry registry, ClientHttpRequestInterceptor interceptor) {
+        if (interceptor instanceof RetryLoadBalancerInterceptor) {
+            return new BlockingClusterContext(registry, (RetryLoadBalancerInterceptor) interceptor);
+        }
+        return new BlockingClusterContext(registry, (LoadBalancerInterceptor) interceptor);
     }
 
     @Override

@@ -67,13 +67,18 @@ public class ServiceMetadata implements Cloneable {
 
     private URI uri;
 
+    public boolean isService() {
+        return serviceName != null && !serviceName.isEmpty();
+    }
+
     /**
      * Retrieves the default unit policy. If no specific policy is defined, {@link UnitPolicy#NONE} is returned.
      *
      * @return The unit policy, defaulting to {@link UnitPolicy#NONE} if not explicitly set.
      */
     public UnitPolicy getUnitPolicy() {
-        return getUnitPolicy(UnitPolicy.NONE);
+        // fix for web request
+        return isService() ? getUnitPolicy(UnitPolicy.NONE) : UnitPolicy.UNIT;
     }
 
     /**

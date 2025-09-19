@@ -20,7 +20,6 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
-import org.springframework.cloud.loadbalancer.core.ReactorLoadBalancer;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,24 +35,15 @@ public class ReactorLoadBalancerInterceptor extends InterceptorAdaptor {
 
     private static final String FIELD_SERVICE_ID = "serviceId";
 
-    private final Map<ReactorLoadBalancer<?>, LazyObject<String>> loadBalancers = new ConcurrentHashMap<>();
+    private final Map<Object, LazyObject<String>> loadBalancers = new ConcurrentHashMap<>();
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        String serviceId = loadBalancers.computeIfAbsent((ReactorLoadBalancer<?>) ctx.getTarget(), this::getServiceId).get();
+        // Retrieves the service ID associated with the given ReactorLoadBalancer instance.
+        String serviceId = loadBalancers.computeIfAbsent(ctx.getTarget(), v -> LazyObject.of((String) getQuietly(v, FIELD_SERVICE_ID))).get();
         if (serviceId != null) {
+            // it's used by service instance list supplier interceptor
             RequestContext.setAttribute(Carrier.ATTRIBUTE_SERVICE_ID, serviceId);
         }
-    }
-
-    /**
-     * Retrieves the service ID associated with the given {@link ReactorLoadBalancer} instance as a {@link LazyObject}.
-     *
-     * @param loadBalancer The {@link ReactorLoadBalancer} instance from which to retrieve the service ID.
-     * @return A {@link LazyObject} encapsulating the service ID. If the service ID cannot be retrieved,
-     * an "empty" {@code LazyObject<String>} is returned.
-     */
-    private LazyObject<String> getServiceId(ReactorLoadBalancer<?> loadBalancer) {
-        return LazyObject.of((String) getQuietly(loadBalancer, FIELD_SERVICE_ID));
     }
 }

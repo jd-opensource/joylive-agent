@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.context.BlockingClusterContext;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
@@ -48,8 +47,6 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
      */
     private final ClientHttpRequestExecution execution;
 
-    private final HttpHeaders headers;
-
     public BlockingCloudClusterRequest(HttpRequest request,
                                        byte[] body,
                                        ClientHttpRequestExecution execution,
@@ -57,7 +54,6 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
         super(request, request.getURI(), context);
         this.body = body;
         this.execution = execution;
-        this.headers = request.getHeaders();
     }
 
     @Override
@@ -75,7 +71,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
             try {
-                headers.set(key, value);
+                request.getHeaders().set(key, value);
             } catch (UnsupportedOperationException ignored) {
                 // readonly for commited message
             }
@@ -84,7 +80,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return headers;
+        return request.getHeaders();
     }
 
     /**

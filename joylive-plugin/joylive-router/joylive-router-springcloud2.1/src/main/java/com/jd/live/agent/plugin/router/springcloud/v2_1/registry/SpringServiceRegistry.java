@@ -45,9 +45,9 @@ public class SpringServiceRegistry implements ServiceRegistry {
 
     private final ServiceInstanceSupplier supplier;
 
-    public SpringServiceRegistry(String service, ReactiveLoadBalancer.Factory<ServiceInstance> factory) {
+    public SpringServiceRegistry(String service, ReactiveLoadBalancer<ServiceInstance> balancer) {
         this.service = service;
-        this.balancer = service == null ? null : factory.getInstance(service);
+        this.balancer = service == null ? null : balancer;
         this.supplier = getSupplier(balancer);
     }
 

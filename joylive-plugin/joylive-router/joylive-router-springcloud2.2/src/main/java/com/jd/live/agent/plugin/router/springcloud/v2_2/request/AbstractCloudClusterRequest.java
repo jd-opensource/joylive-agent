@@ -15,10 +15,8 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.CloudClusterContext;
-import org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
@@ -34,12 +32,6 @@ import java.net.URI;
 public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterContext> extends AbstractHttpOutboundRequest<T> implements SpringClusterRequest {
 
     protected final C context;
-
-    /**
-     * A lazy-initialized {@code ServiceInstanceListSupplier} object, responsible for providing
-     * a list of available service instances for load balancing.
-     */
-    protected CacheObject<ServiceInstanceListSupplier> instanceSupplier;
 
     public AbstractCloudClusterRequest(T request, URI uri, C context) {
         super(request);

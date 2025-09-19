@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.BlockingClusterContext;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
 import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.plugin.router.springcloud.v4.instance.EndpointInstance.convert;
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractCloudClusterRequest}
@@ -48,8 +48,6 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
      */
     private final ClientHttpRequestExecution execution;
 
-    private final HttpHeaders writeableHeaders;
-
     public BlockingCloudClusterRequest(HttpRequest request,
                                        byte[] body,
                                        ClientHttpRequestExecution execution,
@@ -57,7 +55,6 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
         super(request, request.getURI(), context);
         this.body = body;
         this.execution = execution;
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -74,7 +71,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.getHeaders()).set(key, value);
         }
     }
 
@@ -88,7 +85,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
     /**

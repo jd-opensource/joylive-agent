@@ -18,9 +18,9 @@ package com.jd.live.agent.plugin.router.springgateway.v2_1.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
+import com.jd.live.agent.governance.request.HostTransformer;
 import lombok.Getter;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * GatewayForwardRequest
@@ -40,23 +41,15 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     private final ServerWebExchange exchange;
 
-    private final HttpHeaders writeableHeaders;
-
-    public GatewayForwardRequest(ServerWebExchange exchange) {
-        super(exchange.getRequest());
-        this.uri = getURI(exchange);
+    public GatewayForwardRequest(ServerWebExchange exchange, URI uri, HostTransformer hostTransformer) {
+        super(exchange.getRequest(), uri, hostTransformer);
         this.exchange = exchange;
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
     public HttpMethod getHttpMethod() {
         org.springframework.http.HttpMethod method = request.getMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
@@ -73,18 +66,13 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.getHeaders()).set(key, value);
         }
     }
 
     @Override
     public String getQuery(String key) {
         return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
-    }
-
-    @Override
-    public void forward(String host) {
-        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, HttpUtils.newURI(uri, host));
     }
 
     @Override
@@ -99,11 +87,27 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
-    private static URI getURI(ServerWebExchange exchange) {
+    /**
+     * Gets the request URI from exchange attributes or falls back to original URI.
+     *
+     * @param exchange the server web exchange
+     * @return the request URI
+     */
+    public static URI getURI(ServerWebExchange exchange) {
         return exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
+    }
+
+    /**
+     * Sets the request URI in exchange attributes.
+     *
+     * @param exchange the server web exchange
+     * @param uri      the URI to set
+     */
+    public static void setURI(ServerWebExchange exchange, URI uri) {
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, uri);
     }
 
 }

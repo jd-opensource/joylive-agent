@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.AbstractCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
@@ -24,7 +23,6 @@ import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import lombok.Getter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -32,7 +30,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * GatewayOutboundRequest
@@ -52,8 +52,6 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     private final int index;
 
-    private final HttpHeaders writeableHeaders;
-
     public GatewayCloudClusterRequest(ServerWebExchange exchange,
                                       GatewayClusterContext context,
                                       GatewayFilterChain chain,
@@ -67,17 +65,12 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
         this.gatewayConfig = gatewayConfig;
         this.index = index;
         this.uri = exchange.getAttributeOrDefault(GATEWAY_REQUEST_URL_ATTR, exchange.getRequest().getURI());
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
     public HttpMethod getHttpMethod() {
         org.springframework.http.HttpMethod method = request.getMethod();
-        try {
-            return method == null ? null : HttpMethod.valueOf(method.name());
-        } catch (IllegalArgumentException ignore) {
-            return null;
-        }
+        return method == null ? null : HttpMethod.ofNullable(method.name());
     }
 
     @Override
@@ -94,7 +87,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.getHeaders()).set(key, value);
         }
     }
 
@@ -110,12 +103,12 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
 
     @Override
     protected Map<String, List<String>> parseCookies() {
-        return HttpUtils.parseCookie(request.getCookies(), HttpCookie::getValue);
+        return parseCookie(request.getCookies(), HttpCookie::getValue);
     }
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 
     public RetryPolicy getDefaultRetryPolicy() {

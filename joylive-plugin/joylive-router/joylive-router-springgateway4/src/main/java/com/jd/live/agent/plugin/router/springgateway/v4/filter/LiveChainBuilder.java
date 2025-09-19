@@ -175,29 +175,7 @@ public class LiveChainBuilder {
      */
     private FilterDescriptor getGlobalFilters(Object target) {
         // this is sorted by order
-        List<GatewayFilter> filters = getQuietly(target, FIELD_GLOBAL_FILTERS);
-        FilterDescriptor result = new FilterDescriptor(filters.size());
-        GatewayFilter delegate;
-        GlobalFilter globalFilter;
-        // filter
-        for (GatewayFilter filter : filters) {
-            delegate = filter;
-            if (filter instanceof OrderedGatewayFilter) {
-                delegate = ((OrderedGatewayFilter) filter).getDelegate();
-            }
-            if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
-                globalFilter = getQuietly(delegate, FIELD_DELEGATE);
-                if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    result.setClientFactory(getQuietly(globalFilter, FIELD_CLIENT_FACTORY));
-                } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
-                    // the filter is implemented by parseURI
-                    result.add(filter);
-                }
-            } else {
-                result.add(filter);
-            }
-        }
-        return result;
+        return new FilterDescriptor(getQuietly(target, FIELD_GLOBAL_FILTERS));
     }
 
     private static class FilterDescriptor {
@@ -207,12 +185,32 @@ public class LiveChainBuilder {
         @Setter
         private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
-        FilterDescriptor(int size) {
-            this.filters = new ArrayList<>(size);
+        FilterDescriptor(List<GatewayFilter> filters) {
+            this.filters = new ArrayList<>(filters == null ? 0 : filters.size());
+            if (filters != null) {
+                for (GatewayFilter filter : filters) {
+                    parse(filter);
+                }
+            }
         }
 
-        public void add(GatewayFilter filter) {
-            filters.add(filter);
+        @SuppressWarnings("deprecation")
+        protected void parse(GatewayFilter filter) {
+            GatewayFilter delegate = filter;
+            if (filter instanceof OrderedGatewayFilter) {
+                delegate = ((OrderedGatewayFilter) filter).getDelegate();
+            }
+            if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
+                GlobalFilter globalFilter = getQuietly(delegate, FIELD_DELEGATE);
+                if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
+                    clientFactory = (getQuietly(globalFilter, FIELD_CLIENT_FACTORY));
+                } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
+                    // the filter is implemented by parseURI
+                    filters.add(filter);
+                }
+            } else {
+                filters.add(filter);
+            }
         }
     }
 }

@@ -18,10 +18,11 @@ package com.jd.live.agent.plugin.router.springcloud.v4.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
 import org.springframework.cloud.client.loadbalancer.RequestData;
-import org.springframework.http.HttpHeaders;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * RequestDataOutboundRequest
@@ -33,13 +34,10 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
 
     private final String serviceId;
 
-    private final HttpHeaders writeableHeaders;
-
     public RequestDataOutboundRequest(RequestData request, String serviceId) {
         super(request);
         this.serviceId = serviceId;
         this.uri = request.getUrl();
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.getHeaders());
     }
 
     @Override
@@ -66,7 +64,7 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.getHeaders()).set(key, value);
         }
     }
 
@@ -77,6 +75,6 @@ public class RequestDataOutboundRequest extends AbstractHttpOutboundRequest<Requ
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.getHeaders();
     }
 }

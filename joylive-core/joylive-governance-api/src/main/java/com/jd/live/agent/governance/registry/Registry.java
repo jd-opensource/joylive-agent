@@ -446,5 +446,12 @@ public interface Registry extends ServiceRegistryFactory {
      */
     ServiceRegistry getServiceRegistry(ServiceId serviceId);
 
+    /**
+     * Adds a listener to receive service ID list updates.
+     *
+     * @param consumer the listener to handle service ID list changes
+     */
+    void addListener(Consumer<List<ServiceId>> consumer);
+
 }
 
