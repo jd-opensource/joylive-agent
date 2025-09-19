@@ -34,7 +34,6 @@ import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignClientForwa
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.FeignOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.FeignClusterResponse;
 import feign.FeignException;
-import feign.FeignException.InternalServerError;
 import feign.Request;
 import feign.Response;
 import org.springframework.http.client.support.HttpAccessor;
@@ -160,10 +159,9 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
     private boolean subscribe(Object request, String service) {
         // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
         // subscribe service endpoint and governance policy.
-        Request req = (Request) request;
         try {
             List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
-                    new InternalServerError(message, req, req.body()));
+                    Accessor.throwerFactory.createException((Request) request, 500, message, e));
             if (endpoints == null || endpoints.isEmpty()) {
                 // Failed to convert microservice, fallback to domain reques
                 return false;
@@ -182,7 +180,9 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         // spring cloud 2.2+
         private static final Class<?> lbType = loadClass(TYPE_ENABLE_DISCOVERY_CLIENT, HttpAccessor.class.getClassLoader());
 
-        private static final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(new FeignThrowerFactory<>());
+        private static final FeignThrowerFactory<FeignOutboundRequest> throwerFactory = new FeignThrowerFactory<>();
+
+        private static final SpringOutboundThrower<FeignException, FeignOutboundRequest> thrower = new SpringOutboundThrower<>(throwerFactory);
 
         /**
          * Checks if Spring Cloud is available in the classpath.

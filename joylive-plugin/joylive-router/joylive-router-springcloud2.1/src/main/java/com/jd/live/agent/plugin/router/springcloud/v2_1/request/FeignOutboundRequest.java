@@ -62,8 +62,8 @@ public interface FeignOutboundRequest extends HttpOutboundRequest {
                 request.httpMethod(),
                 uri.toString(),
                 request.headers(),
-                Request.Body.create(request.body()),
-                request.requestTemplate());
+                request.body(),
+                request.charset());
     }
 
 }
