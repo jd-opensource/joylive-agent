@@ -42,6 +42,9 @@ public class NacosDiscoveryConstructorInterceptor extends InterceptorAdaptor {
         NacosServiceDiscovery discovery = (NacosServiceDiscovery) ctx.getTarget();
         // trigger on application ready event
         registry.addListener(serviceIds -> {
+            if (serviceIds.isEmpty()) {
+                return;
+            }
             Thread thread = new Thread(() -> {
                 try {
                     serviceIds.forEach(serviceId -> {
