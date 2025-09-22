@@ -29,15 +29,15 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnTransmissionEnabled
+@ConditionalOnClass(ConditionalOnSpringWeb5TransmissionEnabled.TYPE_URI_BUILDER)
 @ConditionalOnMissingClass(ConditionalOnSpringWeb5TransmissionEnabled.TYPE_ERROR_RESPONSE)
-@ConditionalOnClass(ConditionalOnSpringWeb5TransmissionEnabled.TYPE_NESTED_SERVLET_EXCEPTION)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb5TransmissionEnabled {
 
     // spring web 6+
     String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
-    // spring web 5/6
-    String TYPE_NESTED_SERVLET_EXCEPTION = "org.springframework.web.util.NestedServletException";
+    // spring web 5+
+    String TYPE_URI_BUILDER = "org.springframework.web.util.UriBuilder";
 
 }

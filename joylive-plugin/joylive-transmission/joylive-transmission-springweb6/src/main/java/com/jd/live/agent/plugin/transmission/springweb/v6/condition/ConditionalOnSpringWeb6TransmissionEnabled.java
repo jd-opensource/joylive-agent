@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.transmission.springweb.v6.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 
 import java.lang.annotation.*;
@@ -29,14 +30,14 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(ConditionalOnSpringWeb6TransmissionEnabled.TYPE_ERROR_RESPONSE)
-@ConditionalOnClass(ConditionalOnSpringWeb6TransmissionEnabled.TYPE_NESTED_SERVLET_EXCEPTION)
+@ConditionalOnMissingClass(ConditionalOnSpringWeb6TransmissionEnabled.TYPE_HTTP_SERVICE_GROUP)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb6TransmissionEnabled {
 
     // spring web 6+
     String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
-    // spring web 5/6
-    String TYPE_NESTED_SERVLET_EXCEPTION = "org.springframework.web.util.NestedServletException";
+    // spring web 7+
+    String TYPE_HTTP_SERVICE_GROUP = "org.springframework.web.service.registry.HttpServiceGroup";
 
 }
