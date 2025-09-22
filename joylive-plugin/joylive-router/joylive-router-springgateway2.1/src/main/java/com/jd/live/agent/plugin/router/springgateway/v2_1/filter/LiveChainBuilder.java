@@ -19,16 +19,15 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.gateway.GatewayRoute;
 import com.jd.live.agent.governance.invoke.gateway.GatewayRoutes;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.BlockingClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.registry.SpringServiceRegistry;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.config.GatewayConfig;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.gateway.filter.*;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
@@ -51,6 +50,7 @@ public class LiveChainBuilder {
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
     private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";
+    private static final String TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
@@ -177,33 +177,7 @@ public class LiveChainBuilder {
      */
     private FilterDescriptor getGlobalFilters(Object target) {
         // this is sorted by order
-        List<GatewayFilter> filters = getQuietly(target, FIELD_GLOBAL_FILTERS);
-        FilterDescriptor result = new FilterDescriptor(filters.size());
-        GatewayFilter delegate;
-        GlobalFilter globalFilter;
-        // filter
-        for (GatewayFilter filter : filters) {
-            delegate = filter;
-            if (filter instanceof OrderedGatewayFilter) {
-                delegate = ((OrderedGatewayFilter) filter).getDelegate();
-            }
-            if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
-                globalFilter = getQuietly(delegate, FIELD_DELEGATE);
-                if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    LoadBalancerClientFactory clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
-                    result.setSystem(service -> new SpringServiceRegistry(service, clientFactory));
-                } else if (globalFilter instanceof LoadBalancerClientFilter) {
-                    LoadBalancerClient client = getQuietly(globalFilter, FIELD_LOAD_BALANCER);
-                    result.setSystem(createFactory(client));
-                } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
-                    // the filter is implemented by parseURI
-                    result.add(filter);
-                }
-            } else {
-                result.add(filter);
-            }
-        }
-        return result;
+        return new FilterDescriptor(getQuietly(target, FIELD_GLOBAL_FILTERS));
     }
 
     private static class FilterDescriptor {
@@ -213,12 +187,35 @@ public class LiveChainBuilder {
         @Setter
         private ServiceRegistryFactory system;
 
-        FilterDescriptor(int size) {
-            this.filters = new ArrayList<>(size);
+        FilterDescriptor(List<GatewayFilter> filters) {
+            this.filters = new ArrayList<>(filters == null ? 0 : filters.size());
+            if (filters != null) {
+                for (GatewayFilter filter : filters) {
+                    parse(filter);
+                }
+            }
         }
 
-        public void add(GatewayFilter filter) {
-            filters.add(filter);
+        @SuppressWarnings("deprecation")
+        protected void parse(GatewayFilter filter) {
+            GatewayFilter delegate = filter;
+            if (filter instanceof OrderedGatewayFilter) {
+                delegate = ((OrderedGatewayFilter) filter).getDelegate();
+            }
+            if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
+                GlobalFilter globalFilter = getQuietly(delegate, FIELD_DELEGATE);
+                if (globalFilter != null && globalFilter.getClass().getName().equals(TYPE_REACTIVE_LOAD_BALANCER_CLIENT_FILTER)) {
+                    final Object clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                    system = (service -> new SpringServiceRegistry(service, BlockingClusterContext.BlockingLoadBalancerClientAccessor.createLoadbalancer(clientFactory, service)));
+                } else if (globalFilter instanceof LoadBalancerClientFilter) {
+                    system = (createFactory(getQuietly(globalFilter, FIELD_LOAD_BALANCER)));
+                } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
+                    // the filter is implemented by parseURI
+                    filters.add(filter);
+                }
+            } else {
+                filters.add(filter);
+            }
         }
     }
 

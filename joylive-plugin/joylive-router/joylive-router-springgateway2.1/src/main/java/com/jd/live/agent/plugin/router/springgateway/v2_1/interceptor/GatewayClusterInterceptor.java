@@ -53,6 +53,7 @@ public class GatewayClusterInterceptor extends InterceptorAdaptor {
 
         Object target = ctx.getTarget();
         ServerWebExchange exchange = ctx.getArgument(0);
+        Object b = new LiveChainBuilder(context, config, target);
 
         LiveChainBuilder builder = filterConfigs.computeIfAbsent(target, t -> new LiveChainBuilder(context, config, t));
         GatewayFilterChain chain = builder.chain(exchange);

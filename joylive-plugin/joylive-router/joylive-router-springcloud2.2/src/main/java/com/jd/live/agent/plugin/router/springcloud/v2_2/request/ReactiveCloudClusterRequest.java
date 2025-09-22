@@ -20,7 +20,6 @@ import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.Reactive
 import com.jd.live.agent.plugin.router.springcloud.v2_2.util.UriUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClientRequestTransformer;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
@@ -29,6 +28,8 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+
+import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -41,12 +42,9 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
 
     private final ExchangeFunction next;
 
-    private final HttpHeaders writeableHeaders;
-
     public ReactiveCloudClusterRequest(ClientRequest request, ExchangeFunction next, ReactiveClusterContext context) {
         super(request, request.url(), context);
         this.next = next;
-        this.writeableHeaders = HttpHeaders.writableHttpHeaders(request.headers());
     }
 
     @Override
@@ -68,7 +66,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writeableHeaders.set(key, value);
+            writableHttpHeaders(request.headers()).set(key, value);
         }
     }
 
@@ -78,7 +76,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return writeableHeaders;
+        return request.headers();
     }
 
     @Override

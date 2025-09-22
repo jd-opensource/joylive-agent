@@ -187,6 +187,26 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
     }
 
     /**
+     * Checks if subdomain is enabled for the given host.
+     *
+     * @param host the host to check
+     * @return true if unit domain is enabled in live domain policy, false otherwise
+     */
+    public boolean isSubdomainEnabled(String host) {
+        Domain domain = getDomain(host);
+        if (domain != null) {
+            DomainPolicy domainPolicy = domain.getPolicy();
+            if (domainPolicy != null) {
+                LiveDomain liveDomain = domainPolicy.getLiveDomain();
+                if (liveDomain != null && liveDomain.isUnitDomainEnabled()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Retrieves a {@link Service} by its name.
      *
      * @param name The name of the service to retrieve.

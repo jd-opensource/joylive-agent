@@ -36,6 +36,7 @@ import com.jd.live.agent.governance.db.DbUrlParser;
 import com.jd.live.agent.governance.event.DatabaseEvent;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.*;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
@@ -45,8 +46,8 @@ import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.lane.Lane;
+import com.jd.live.agent.governance.policy.live.LiveDomain;
 import com.jd.live.agent.governance.policy.live.Unit;
-import com.jd.live.agent.governance.policy.live.UnitDomain;
 import com.jd.live.agent.governance.policy.live.UnitRoute;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
@@ -57,13 +58,17 @@ import com.jd.live.agent.governance.policy.variable.VariableParser;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistry;
+import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.request.HostTransformer.LastDomainTransformer;
 import com.jd.live.agent.governance.request.HttpRequest.HttpForwardRequest;
+import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -75,8 +80,8 @@ import java.util.function.Supplier;
 import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
 import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
-import static com.jd.live.agent.core.util.template.Template.context;
-import static com.jd.live.agent.core.util.template.Template.evaluate;
+import static com.jd.live.agent.governance.request.HostTransformer.KEY_LANE;
+import static com.jd.live.agent.governance.request.HostTransformer.KEY_UNIT;
 
 /**
  * The {@code InvocationContext} interface defines a contract for an invocation context in a component-based application.
@@ -111,6 +116,90 @@ public interface InvocationContext {
 
     default GatewayRole getGatewayRole() {
         return getApplication().getService().getGateway();
+    }
+
+    /**
+     * Checks if the governance feature is enabled.
+     *
+     * @return {@code true} if the live feature is enabled, {@code false} otherwise
+     */
+    default boolean isGovernEnabled() {
+        return isFlowControlEnabled() || isLaneEnabled() || isLiveEnabled();
+    }
+
+    /**
+     * Checks if the registry is enabled in governance configuration.
+     *
+     * @return true if registry is enabled, false otherwise
+     */
+    default boolean isRegistryEnabled() {
+        return getGovernanceConfig().getRegistryConfig().isEnabled();
+    }
+
+    /**
+     * Checks if microservice transformation is enabled.
+     *
+     * @return true if both registry and flow control are enabled, false otherwise
+     */
+    default boolean isMicroserviceTransformEnabled() {
+        return isRegistryEnabled() && isFlowControlEnabled();
+    }
+
+    /**
+     * Checks if subdomain is enabled for lane or live routing.
+     *
+     * @return true if lane or live mode is enabled, false otherwise
+     */
+    boolean isSubdomainEnabled();
+
+    /**
+     * Gets the host transformer for the specified host.
+     *
+     * @param host the host name
+     * @return the host transformer
+     */
+    default HostTransformer getHostTransformer(String host) {
+        GovernanceConfig governanceConfig = getGovernanceConfig();
+        LiveConfig liveConfig = governanceConfig.getLiveConfig();
+        LaneConfig laneConfig = governanceConfig.getLaneConfig();
+        boolean liveEnabled = isLiveEnabled();
+        boolean laneEnabled = isLaneEnabled();
+        if (!liveEnabled && !laneEnabled || !Ipv4.isHost(host)) {
+            return null;
+        }
+        // lower case host
+        host = host.toLowerCase();
+        // add prefix or suffix to domain
+        HostTransformer transformer = null;
+        if (liveEnabled) {
+            boolean unitHost = false;
+            // domain in live policy
+            GovernancePolicy policy = getPolicySupplier().getPolicy();
+            if (policy != null) {
+                Domain domain = policy.getDomain(host);
+                if (domain != null) {
+                    DomainPolicy domainPolicy = domain.getPolicy();
+                    if (domainPolicy != null) {
+                        if (domainPolicy.isUnit()) {
+                            unitHost = true;
+                        } else {
+                            LiveDomain liveDomain = domainPolicy.getLiveDomain();
+                            if (liveDomain != null) {
+                                transformer = liveDomain.getHostTransformer();
+                            }
+                        }
+                    }
+                }
+            }
+            if (!unitHost && transformer == null) {
+                transformer = liveConfig.getHostTransformer(host);
+            }
+        }
+        if (laneEnabled) {
+            transformer = transformer == null ? laneConfig.getHostTransformer(host) : transformer.then(laneConfig.getHostTransformer(host));
+
+        }
+        return transformer != null ? new LastDomainTransformer(transformer) : null;
     }
 
     /**
@@ -773,6 +862,26 @@ public interface InvocationContext {
         }
 
         @Override
+        public boolean isGovernEnabled() {
+            return delegate.isGovernEnabled();
+        }
+
+        @Override
+        public boolean isRegistryEnabled() {
+            return delegate.isRegistryEnabled();
+        }
+
+        @Override
+        public boolean isMicroserviceTransformEnabled() {
+            return delegate.isMicroserviceTransformEnabled();
+        }
+
+        @Override
+        public boolean isSubdomainEnabled() {
+            return delegate.isSubdomainEnabled();
+        }
+
+        @Override
         public boolean isLiveEnabled() {
             return delegate.isLiveEnabled();
         }
@@ -980,12 +1089,20 @@ public interface InvocationContext {
      */
     class HttpForwardContext extends DelegateContext {
 
-        private static final String KEY_UNIT = "unit";
-        private static final String KEY_LANE = "lane";
-        private static final String KEY_HOST = "host";
-
         public HttpForwardContext(InvocationContext delegate) {
             super(delegate);
+        }
+
+        /**
+         * Routes the request with domain transformation and URL rewriting.
+         *
+         * @param <R>     the request type extending HttpOutboundRequest
+         * @param request the outbound HTTP request to route
+         * @return the rewritten URI after domain transformation
+         */
+        public <R extends HttpOutboundRequest> URI route(final R request) {
+            route(new HttpForwardInvocation<>(request, this));
+            return request.getURI();
         }
 
         @Override
@@ -1012,6 +1129,16 @@ public interface InvocationContext {
         }
 
         /**
+         * Creates a new HttpForwardContext from the given invocation context.
+         *
+         * @param delegate the invocation context to wrap
+         * @return a new HttpForwardContext instance
+         */
+        public static HttpForwardContext of(InvocationContext delegate) {
+            return new HttpForwardContext(delegate);
+        }
+
+        /**
          * Forwards an outbound request by determining the appropriate failover host based on the route target,
          * unit, and cell information. If a valid failover host is found, the request is forwarded to that host;
          * otherwise, the request is rejected with an appropriate fault.
@@ -1030,67 +1157,15 @@ public interface InvocationContext {
                 return;
             }
             String host = request.getHost();
-            if (!Ipv4.isHost(host)) {
-                return;
+            Map<String, Object> context = new HashMap<>(4);
+            if (unit != null) {
+                context.put(KEY_UNIT, unit.decorator());
             }
-            // lower case host
-            host = host.toLowerCase();
-            GovernanceConfig governanceConfig = invocation.getContext().getGovernanceConfig();
-            LiveConfig liveConfig = governanceConfig.getLiveConfig();
-            LaneConfig laneConfig = governanceConfig.getLaneConfig();
-            boolean liveEnabled = unit != null && liveConfig.isEnabled(host);
-            boolean laneEnabled = lane != null && laneConfig.isEnabled(host);
-            if (!liveEnabled && !laneEnabled) {
-                // No need to modify the domain name
-                return;
+            if (lane != null) {
+                context.put(KEY_LANE, lane.decorator());
             }
-
-            // add prefix or suffix to domain
-            int pos = host.indexOf('.');
-            String first = pos < 0 ? host : host.substring(0, pos);
-            String other = pos < 0 ? "" : host.substring(pos);
-            if (liveEnabled) {
-                // specific unit host
-                String unitHost = getUnitHost(host, invocation.getGovernancePolicy(), unit);
-                if (unitHost != null && !unitHost.isEmpty()) {
-                    if (!laneEnabled) {
-                        request.forward(unitHost);
-                        return;
-                    }
-                    pos = unitHost.indexOf('.');
-                    first = pos < 0 ? unitHost : unitHost.substring(0, pos);
-                } else {
-                    first = evaluate(liveConfig.getHostExpression(), first, context(KEY_UNIT, unit.decorator(), KEY_HOST, first));
-                }
-            }
-            if (laneEnabled) {
-                first = evaluate(laneConfig.getHostExpression(), first, context(KEY_LANE, lane.decorator(), KEY_HOST, first));
-            }
-            request.forward(first + other);
-        }
-
-        /**
-         * Resolves the host for a given unit based on the incoming request's host, the governance policy,
-         * and the unit's information. This method supports dynamic host resolution based on governance policies
-         * and is intended for internal use within the routing logic.
-         *
-         * @param host             The host of the incoming request.
-         * @param governancePolicy The governance policy under which the request is being processed.
-         * @param unit             The unit associated with the request, if any.
-         * @return The resolved host for the unit, or {@code null} if it cannot be resolved.
-         */
-        private String getUnitHost(final String host, final GovernancePolicy governancePolicy, final Unit unit) {
-            Domain domain = governancePolicy == null ? null : governancePolicy.getDomain(host);
-            DomainPolicy domainPolicy = domain == null ? null : domain.getPolicy();
-            if (domainPolicy != null) {
-                if (domainPolicy.isUnit()) {
-                    return domainPolicy.getUnitDomain().getHost();
-                } else {
-                    UnitDomain unitDomain = domainPolicy.getLiveDomain().getUnitDomain(unit.getCode());
-                    return unitDomain == null ? null : unitDomain.getHost();
-                }
-            }
-            return null;
+            host = request.getHostTransformer().transform(host, context);
+            request.forward(host);
         }
     }
 

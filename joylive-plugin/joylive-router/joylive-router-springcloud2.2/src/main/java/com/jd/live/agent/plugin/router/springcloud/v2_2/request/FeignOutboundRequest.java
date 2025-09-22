@@ -15,12 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v2_2.request;
 
-import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import feign.Request;
 
 import java.net.URI;
+
+import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
  * An interface representing an outbound HTTP request in the context of Feign.
@@ -46,10 +47,20 @@ public interface FeignOutboundRequest extends HttpOutboundRequest {
      * @return a new {@link Request} object with the updated URI and the same properties as the original request
      */
     static Request createRequest(URI uri, Request request, Endpoint endpoint) {
-        URI newUri = HttpUtils.newURI(uri, endpoint.getHost(), endpoint.getPort());
+        return createRequest(newURI(uri, endpoint.getHost(), endpoint.getPort()), request);
+    }
+
+    /**
+     * Creates a new request with the specified URI while preserving other request properties.
+     *
+     * @param uri     the new URI for the request
+     * @param request the original request to copy from
+     * @return a new request with the updated URI
+     */
+    static Request createRequest(URI uri, Request request) {
         return Request.create(
                 request.httpMethod(),
-                newUri.toString(),
+                uri.toString(),
                 request.headers(),
                 Request.Body.create(request.body()),
                 request.requestTemplate());

@@ -18,13 +18,11 @@ package com.jd.live.agent.plugin.registry.springcloud.v1.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
-import org.springframework.context.ApplicationContextAware;
+import com.jd.live.agent.plugin.registry.springcloud.v1.util.CloudUtils;
 
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
-import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * FeignClientFactoryBeanInterceptor
@@ -42,22 +40,12 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         // FeignClientFactoryBean is package-private.
-        String name = Accessor.getName(ctx.getTarget());
-        if (name != null) {
+        String name = CloudUtils.getFeignName(ctx.getTarget());
+        String url = CloudUtils.getFeignUrl(ctx.getTarget());
+        if (isEmpty(url) && !isEmpty(name) && !registry.isSubscribed(name)) {
+            // microservice name
             registry.subscribe(name);
             logger.info("Found feign client consumer, service: {}", name);
-        }
-    }
-
-    private static class Accessor {
-
-        private static final Class<?> type = loadClass("org.springframework.cloud.netflix.feign.FeignClientFactoryBean",
-                ApplicationContextAware.class.getClassLoader());
-
-        private static final FieldAccessor name = getAccessor(type, "name");
-
-        public static String getName(Object bean) {
-            return name.get(bean, String.class);
         }
     }
 }

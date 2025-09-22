@@ -22,6 +22,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 import org.springframework.cloud.openfeign.FeignClientFactoryBean;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+
 /**
  * FeignClientFactoryBeanInterceptor
  */
@@ -38,8 +40,13 @@ public class FeignClientFactoryBeanInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         FeignClientFactoryBean factoryBean = (FeignClientFactoryBean) ctx.getTarget();
-        String name = factoryBean.getName();
-        registry.subscribe(name);
-        logger.info("Found feign client consumer, service: {}", name);
+        if (isEmpty(factoryBean.getUrl())) {
+            // microservice name
+            String name = factoryBean.getName();
+            if (!isEmpty(name) && !registry.isSubscribed(name)) {
+                registry.subscribe(name);
+                logger.info("Found feign client consumer, service: {}", name);
+            }
+        }
     }
 }

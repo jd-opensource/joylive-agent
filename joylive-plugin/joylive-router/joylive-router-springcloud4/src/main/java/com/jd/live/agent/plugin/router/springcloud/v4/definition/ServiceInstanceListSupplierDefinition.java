@@ -32,13 +32,13 @@ import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ServiceInstanc
 import java.util.Set;
 
 /**
- * ServiceInstanceListSupplierPluginDefinition
+ * ServiceInstanceListSupplierDefinition
  *
  * @author Zhiguo.Chen
  * @since 1.0.0
  */
 @Injectable
-@Extension(value = "ServiceInstanceListSupplierPluginDefinition_v4")
+@Extension(value = "ServiceInstanceListSupplierDefinition_v4")
 @ConditionalOnSpringCloud4GovernanceEnabled
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
 public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {

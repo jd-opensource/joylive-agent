@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.registry.nacos.v3_0.interceptor.NacosInstancesCh
  * NacosInstanceChangeDefinition
  */
 @Injectable
-@Extension(value = "NacosInstanceChangeDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosInstanceChangeDefinition_v3.0", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos3GovernanceEnabled
 @ConditionalOnClass(NacosInstancesChangeNotifierDefinition.TYPE_INSTANCES_CHANGE_NOTIFIER)
 public class NacosInstancesChangeNotifierDefinition extends PluginDefinitionAdapter {

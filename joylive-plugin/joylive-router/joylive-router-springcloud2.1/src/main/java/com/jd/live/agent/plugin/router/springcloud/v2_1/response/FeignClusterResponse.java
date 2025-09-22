@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.util.*;
 
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.FeignUtils.withRequestTemplate;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 /**
@@ -135,9 +134,7 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
         headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
 
-        Response response = withRequestTemplate()
-                ? Response.builder().status(degradeConfig.getResponseCode()).body(data).headers(headers).request(request).requestTemplate(request.requestTemplate()).build()
-                : Response.builder().status(degradeConfig.getResponseCode()).body(data).headers(headers).request(request).build();
+        Response response = Response.builder().status(degradeConfig.getResponseCode()).body(data).headers(headers).request(request).build();
         return new FeignClusterResponse(response);
     }
 

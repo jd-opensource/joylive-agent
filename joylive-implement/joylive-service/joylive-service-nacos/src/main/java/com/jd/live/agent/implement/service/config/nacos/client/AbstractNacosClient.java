@@ -85,6 +85,7 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
         // keep url parameter to get grpc.port
         this.servers = splitList(getAddress(config), CHAR_SEMICOLON);
         this.server = servers.isEmpty() ? null : servers.get(0);
+        // it's positive integer
         this.initializationTimeout = getInitializationTimeout(option);
         this.addressList = new SimpleAddressList(servers);
         this.properties = convert(config);
@@ -97,14 +98,19 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
      */
     protected void doStart() throws NacosException {
         if (started.compareAndSet(false, true)) {
-            logger.info("Try detecting healthy nacos {}", join(servers));
+            String svrs = join(servers);
+            logger.info("Try detecting healthy nacos {}", svrs);
             try {
-                // wait for connected
+                // add connect task
                 addDetectTask(0, false);
-                if (initializationTimeout > 0 && !connectLatch.await(initializationTimeout, TimeUnit.MILLISECONDS)) {
-                    logger.error("It's timeout to connect to nacos. {}", join(servers));
-                    // cancel task.
-                    throw new NacosException(NacosException.CLIENT_DISCONNECT, "It's timeout to connect to nacos.");
+                // wait for connected
+                if (!connectLatch.await(initializationTimeout, TimeUnit.MILLISECONDS)) {
+                    logger.error("It's timeout to connect to nacos. {}", svrs);
+                    throw new NacosException(NacosException.CLIENT_DISCONNECT, "It's timeout to connect to nacos " + svrs);
+                } else if (!connected.get()) {
+                    // failed to connect to nacos after retry
+                    logger.info("Failed to connect to nacos {}", svrs);
+                    throw new NacosException(NacosException.CLIENT_DISCONNECT, "Failed to connect to nacos " + svrs);
                 }
             } catch (NacosException e) {
                 started.set(false);

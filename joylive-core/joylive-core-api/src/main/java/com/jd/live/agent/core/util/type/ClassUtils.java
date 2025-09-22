@@ -217,6 +217,9 @@ public class ClassUtils {
      * @return the method if found, null otherwise
      */
     public static Method getDeclaredMethod(Class<?> type, Predicate<Method> predicate) {
+        if (type == null) {
+            return null;
+        }
         Method[] methods = type.getDeclaredMethods();
         for (Method method : methods) {
             if (predicate.test(method)) {

@@ -255,6 +255,7 @@ agent:
           disables: ${CONFIG_SPRING_DISCOVERY_DISABLES}
         gateway:
           pathFilters: ${CONFIG_SPRING_GATEWAY_PATH_FILTERS}
+          pathFilterPrefixes: ${CONFIG_SPRING_GATEWAY_PATH_FILTER_PREFIXES}
     transmission:
       type: ${CONFIG_TRANSMISSION_TYPE:live}
       autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:NONE}

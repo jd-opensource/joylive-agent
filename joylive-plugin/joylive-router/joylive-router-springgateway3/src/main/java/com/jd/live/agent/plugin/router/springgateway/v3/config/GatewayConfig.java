@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v3.config;
 
+import com.jd.live.agent.bootstrap.util.Inclusion;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,7 +30,17 @@ public class GatewayConfig {
 
     public static final String TYPE_STRIP_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$1";
 
+    public static final String TYPE_PREFIX_PATH = "org.springframework.cloud.gateway.filter.factory.PrefixPathGatewayFilterFactory$1";
+
+    public static final String TYPE_SET_PATH = "org.springframework.cloud.gateway.filter.factory.SetPathGatewayFilterFactory$1";
+
     private Set<String> pathFilters = new HashSet<>();
+
+    private Set<String> pathFilterPrefixes = new HashSet<>();
+
+    private Set<String> webSchemes = new HashSet<>();
+
+    private transient Inclusion inclusion;
 
     /**
      * Checks if the given name is a path filter.
@@ -38,12 +49,24 @@ public class GatewayConfig {
      * @return true if the filter is a path filter, false otherwise.
      */
     public boolean isPathFilter(String filter) {
-        return pathFilters != null && filter != null && pathFilters.contains(filter);
+        return inclusion != null && inclusion.test(filter);
+    }
+
+    public boolean isWebScheme(String scheme) {
+        return webSchemes != null && scheme != null && webSchemes.contains(scheme.toLowerCase());
     }
 
     public void initialize() {
         pathFilters.add(TYPE_REWRITE_PATH_FILTER);
         pathFilters.add(TYPE_STRIP_PREFIX);
+        pathFilters.add(TYPE_PREFIX_PATH);
+        pathFilters.add(TYPE_SET_PATH);
+        webSchemes.add("http");
+        webSchemes.add("https");
+        webSchemes.add("http3");
+        webSchemes.add("ws");
+        webSchemes.add("wss");
+        inclusion = new Inclusion(pathFilters, pathFilterPrefixes);
     }
 
 }

@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v1.interceptor.LoadbalancerCl
 @ConditionalOnClass(LoadbalancerClientDefinition.TYPE)
 public class LoadbalancerClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "com.netflix.loadbalancer.AbstractLoadBalancer";
+    protected static final String TYPE = "com.netflix.client.AbstractLoadBalancerAwareClient";
 
     private static final String METHOD = "executeWithLoadBalancer";
 
