@@ -19,8 +19,8 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.plugin.router.springweb.v7.util.HeaderUtils;
-import org.springframework.util.MultiValueMap;
+import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -49,7 +49,7 @@ public class HandleResultInterceptor extends InterceptorAdaptor {
                 Mono<Void> mono = mc.getResult();
                 mono = mono.onErrorResume(ex -> {
                     exchange.getAttributes().put(KEY_LIVE_EXCEPTION_HANDLED, Boolean.TRUE);
-                    MultiValueMap<String, String> headers = HeaderUtils.writeableHeaders(exchange.getResponse().getHeaders());
+                    HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                     labelHeaders(ex, headers::set);
                     return Mono.error(ex);
                 });
