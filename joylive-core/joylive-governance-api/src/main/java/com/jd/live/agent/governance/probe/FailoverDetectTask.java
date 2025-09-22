@@ -28,7 +28,11 @@ public class FailoverDetectTask extends AbstractDetectTask {
                               int successThreshold,
                               boolean connected,
                               DetectTaskListener listener) {
-        super(probe, connected ? successThreshold : 1, connected ? 0 : addressList.size(), connected, listener);
+        super(probe,
+                connected ? successThreshold : 1,
+                connected ? 0 : Math.max(addressList.size(), 3),
+                connected,
+                listener);
         this.addressList = addressList;
     }
 
