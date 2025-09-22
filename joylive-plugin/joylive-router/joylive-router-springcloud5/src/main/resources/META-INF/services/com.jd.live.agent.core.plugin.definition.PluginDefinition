@@ -1,0 +1,11 @@
+com.jd.live.agent.plugin.router.springcloud.v5.definition.BlockingClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.BlockingCloudClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.BlockingRetryableCloudClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.FeignClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.FeignCloudClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.FeignRetryableCloudClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.FeignRetryerDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.ReactiveClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.ReactiveCloudClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.ReactorLoadBalancerDefinition
+com.jd.live.agent.plugin.router.springcloud.v5.definition.ServiceInstanceListSupplierDefinition

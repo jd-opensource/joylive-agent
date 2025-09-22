@@ -13,24 +13,26 @@
     <name>joylive-router-springcloud4</name>
 
     <properties>
-        <spring.cloud.version>4.1.4</spring.cloud.version>
-        <spring-cloud-loadbalancer.version>4.1.4</spring-cloud-loadbalancer.version>
-        <spring-cloud-openfeign.version>4.1.3</spring-cloud-openfeign.version>
-        <spring-web.version>6.1.12</spring-web.version>
-        <openfeign.version>13.3</openfeign.version>
+        <spring-cloud.version>2024.0.2</spring-cloud.version>
+        <spring-web.version>6.2.11</spring-web.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-commons</artifactId>
-            <version>${spring.cloud.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-loadbalancer</artifactId>
-            <version>${spring-cloud-loadbalancer.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.glassfish</groupId>
@@ -48,13 +50,6 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-openfeign-core</artifactId>
-            <version>${spring-cloud-openfeign.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.openfeign</groupId>
-            <artifactId>feign-core</artifactId>
-            <version>${openfeign.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
