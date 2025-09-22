@@ -15,18 +15,23 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v7.util;
 
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
+import com.jd.live.agent.core.util.type.ClassUtils;
 import org.springframework.http.HttpHeaders;
-import org.springframework.util.MultiValueMap;
 
-public class HeaderUtils {
+/**
+ * Utility class for detecting Spring Cloud environment and load balancer configuration.
+ */
+public class CloudUtils {
 
-    private static final FieldAccessor headersAccessor = FieldAccessorFactory.getAccessor(HttpHeaders.class, "headers");
+    private static final Class<?> readonlyType = ClassUtils.loadClass("org.springframework.http.ReadOnlyHttpHeaders", HttpHeaders.class.getClassLoader());
 
-    @SuppressWarnings("unchecked")
-    public static MultiValueMap<String, String> writeableHeaders(HttpHeaders headers) {
-        return headersAccessor.get(headers, MultiValueMap.class);
+    /**
+     * Creates writable copy of HTTP headers.
+     *
+     * @param headers source headers
+     * @return writable headers instance
+     */
+    public static HttpHeaders writable(HttpHeaders headers) {
+        return readonlyType.isInstance(headers) ? new HttpHeaders(headers) : headers;
     }
-
 }

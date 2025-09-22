@@ -24,8 +24,8 @@ import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvoc
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ReactiveInboundRequest;
-import com.jd.live.agent.plugin.router.springweb.v7.util.HeaderUtils;
-import org.springframework.util.MultiValueMap;
+import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -63,7 +63,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                 mono = mono.doOnError(ex -> {
                     Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
                     if (handled == null || !handled) {
-                        MultiValueMap<String, String> headers = HeaderUtils.writeableHeaders(exchange.getResponse().getHeaders());
+                        HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                         labelHeaders(ex, headers::set);
                     }
                 });
