@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.router.springweb.v6.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
@@ -28,17 +26,9 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@ConditionalOnSpringWeb6Enabled
 @ConditionalOnFlowControlEnabled
-@ConditionalOnSpringEnabled
-@ConditionalOnClass(ConditionalOnSpringWeb6FlowControlEnabled.TYPE_ERROR_RESPONSE)
-@ConditionalOnClass(ConditionalOnSpringWeb6FlowControlEnabled.TYPE_NESTED_SERVLET_EXCEPTION)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb6FlowControlEnabled {
-
-    // spring web 6+
-    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
-
-    // spring web 5/6
-    String TYPE_NESTED_SERVLET_EXCEPTION = "org.springframework.web.util.NestedServletException";
 
 }

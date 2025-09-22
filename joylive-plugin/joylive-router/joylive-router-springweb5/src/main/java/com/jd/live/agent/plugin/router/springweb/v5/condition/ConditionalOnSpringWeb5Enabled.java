@@ -13,22 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springweb.v7.condition;
+package com.jd.live.agent.plugin.router.springweb.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
 /**
- * An annotation used to mark a type as requiring specific conditions related to Spring Web to be met.
+ * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringWeb7Enabled
-@ConditionalOnGovernanceEnabled
+@ConditionalOnSpringEnabled
+@ConditionalOnClass(ConditionalOnSpringWeb5Enabled.TYPE_URI_BUILDER)
+@ConditionalOnMissingClass(ConditionalOnSpringWeb5Enabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb7GovernanceEnabled {
+public @interface ConditionalOnSpringWeb5Enabled {
+
+    // spring web 6
+    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
+
+    // spring web 5+
+    String TYPE_URI_BUILDER = "org.springframework.web.util.UriBuilder";
 
 }

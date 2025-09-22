@@ -18,12 +18,14 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.condition;
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@ConditionalOnSpringEnabled
 @ConditionalOnClass(ConditionalOnSpringWeb5Enabled.TYPE_PATH_PATTERN_ROUTE_MATCHER)
 @ConditionalOnMissingClass(ConditionalOnSpringWeb5Enabled.TYPE_SERVLET_REQUEST_PATH_UTILS)
 @ConditionalComposite
