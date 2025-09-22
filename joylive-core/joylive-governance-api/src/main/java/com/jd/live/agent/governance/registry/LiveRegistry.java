@@ -1069,11 +1069,11 @@ public class LiveRegistry extends AbstractService
                         cluster.register(serviceId, instance);
                     }
                     setDone(true);
-                    logger.info("Success registering instance {} to {} at {}",
+                    logger.info("Success invoking registering instance {} to {} at {}",
                             instance.getSchemeAddress(), name, cluster.getName());
                     return true;
                 } catch (Throwable e) {
-                    logger.error("Failed to register instance {} to {} at {}, caused by {}",
+                    logger.error("Failed to invoke registering instance {} to {} at {}, caused by {}",
                             instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
                 return false;
@@ -1089,10 +1089,10 @@ public class LiveRegistry extends AbstractService
                 try {
                     cluster.unregister(serviceId, instance);
                     setDone(false);
-                    logger.info("Success unregistering instance {} to {} at {}",
+                    logger.info("Success invoking unregistering instance {} to {} at {}",
                             instance.getSchemeAddress(), name, cluster.getName());
                 } catch (Exception e) {
-                    logger.error("Failed to unregister instance {} to {} at {}, caused by {}",
+                    logger.error("Failed to invoke unregistering instance {} to {} at {}, caused by {}",
                             instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
             }
@@ -1121,10 +1121,10 @@ public class LiveRegistry extends AbstractService
             try {
                 cluster.subscribe(serviceId, consumer);
                 setDone(true);
-                logger.info("Success subscribing {} at {}", name, cluster.getName());
+                logger.info("Success invoking subscribing {} at {}", name, cluster.getName());
                 return true;
             } catch (Exception e) {
-                logger.error("Failed to subscribe {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
+                logger.error("Failed to invoke subscribing {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
             }
             return false;
         }
@@ -1137,9 +1137,9 @@ public class LiveRegistry extends AbstractService
             try {
                 cluster.unsubscribe(serviceId);
                 setDone(false);
-                logger.info("Success unsubscribing {} at {}", name, getClusterName());
+                logger.info("Success invoking unsubscribing {} at {}", name, getClusterName());
             } catch (Exception e) {
-                logger.error("Failed to unsubscribe {} at {}, caused by {}", name, getClusterName(), e.getMessage(), e);
+                logger.error("Failed to invoke unsubscribing {} at {}, caused by {}", name, getClusterName(), e.getMessage(), e);
             }
         }
     }
