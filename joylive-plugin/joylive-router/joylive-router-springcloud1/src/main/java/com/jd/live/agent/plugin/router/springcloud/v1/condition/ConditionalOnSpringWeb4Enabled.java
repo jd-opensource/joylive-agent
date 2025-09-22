@@ -17,12 +17,14 @@ package com.jd.live.agent.plugin.router.springcloud.v1.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@ConditionalOnSpringEnabled
 @ConditionalOnClass(ConditionalOnSpringWeb4Enabled.TYPE_HANDLER_METHOD_SELECTOR)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb4Enabled {

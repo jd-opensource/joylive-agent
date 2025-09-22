@@ -16,19 +16,23 @@
 package com.jd.live.agent.plugin.router.springweb.v7.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
 /**
- * An annotation used to mark a type as requiring specific conditions related to Spring Web to be met.
+ * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringWeb7Enabled
-@ConditionalOnGovernanceEnabled
+@ConditionalOnSpringEnabled
+@ConditionalOnClass(ConditionalOnSpringWeb7Enabled.TYPE_HTTP_SERVICE_GROUP)
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb7GovernanceEnabled {
+public @interface ConditionalOnSpringWeb7Enabled {
+
+    // spring web 7
+    String TYPE_HTTP_SERVICE_GROUP = "org.springframework.web.service.registry.HttpServiceGroup";
 
 }

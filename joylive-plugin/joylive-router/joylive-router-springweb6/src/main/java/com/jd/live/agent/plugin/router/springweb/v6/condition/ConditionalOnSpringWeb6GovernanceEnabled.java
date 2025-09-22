@@ -16,9 +16,7 @@
 package com.jd.live.agent.plugin.router.springweb.v6.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
@@ -28,13 +26,9 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@ConditionalOnSpringWeb6Enabled
 @ConditionalOnGovernanceEnabled
-@ConditionalOnSpringEnabled
-@ConditionalOnClass(ConditionalOnSpringWeb6GovernanceEnabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb6GovernanceEnabled {
-
-    // spring web 6+
-    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
 }

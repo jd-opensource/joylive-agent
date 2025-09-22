@@ -18,18 +18,20 @@ package com.jd.live.agent.plugin.router.springcloud.v3.condition;
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
+@ConditionalOnSpringEnabled
 @ConditionalOnClass(ConditionalOnSpringWeb5Enabled.TYPE_SERVLET_REQUEST_PATH_UTILS)
 @ConditionalOnMissingClass(ConditionalOnSpringWeb5Enabled.TYPE_ERROR_RESPONSE)
 @ConditionalComposite
 public @interface ConditionalOnSpringWeb5Enabled {
 
-    // spring web 6
+    // spring web 6+
     String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
 
     // spring web 5.3+
