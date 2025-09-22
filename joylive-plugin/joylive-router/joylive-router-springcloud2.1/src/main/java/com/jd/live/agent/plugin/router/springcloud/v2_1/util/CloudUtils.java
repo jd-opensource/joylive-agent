@@ -41,10 +41,6 @@ public class CloudUtils {
     // spring cloud
     private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
-    private static final String TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION = "org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction";
-    // spring cloud 2.2.7+
-    private static final Class<?> retryLbType = loadClass(TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION, HttpAccessor.class.getClassLoader());
-
     private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
 
     /**
