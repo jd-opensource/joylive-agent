@@ -36,6 +36,8 @@ import org.springframework.lang.NonNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
@@ -61,6 +63,9 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
     private final Registry registry;
 
     private final HttpHeaders headers = new HttpHeaders();
+
+    // fix for spring-web 6.2
+    private Map<String, Object> attributes;
 
     private UnsafeByteArrayOutputStream outputStream;
 
@@ -95,6 +100,14 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
     @NonNull
     public HttpHeaders getHeaders() {
         return headers;
+    }
+
+    public Map<String, Object> getAttributes() {
+        // fix for spring-web 6.2
+        if (attributes == null) {
+            attributes = new LinkedHashMap<>();
+        }
+        return attributes;
     }
 
     @Override

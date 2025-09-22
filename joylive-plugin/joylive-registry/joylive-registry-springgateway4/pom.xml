@@ -13,14 +13,25 @@
     <name>joylive-registry-springgateway4</name>
 
     <properties>
-        <spring-cloud-gateway.version>4.1.5</spring-cloud-gateway.version>
+        <spring-cloud.version>2024.0.2</spring-cloud.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-gateway-server</artifactId>
-            <version>${spring-cloud-gateway.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
