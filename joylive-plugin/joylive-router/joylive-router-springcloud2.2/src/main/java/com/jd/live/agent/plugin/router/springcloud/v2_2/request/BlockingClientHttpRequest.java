@@ -36,7 +36,6 @@ import org.springframework.lang.NonNull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
@@ -177,7 +176,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws Throwable if service call fails or client error occurs
      */
     private ClientHttpResponse invoke() throws Throwable {
-        if (!subscribe()) {
+        if (!registry.prepare(service)) {
             return execute(uri);
         }
         BlockingClientCluster cluster = BlockingClientCluster.INSTANCE;
@@ -189,25 +188,6 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
             throw error.getThrowable();
         } else {
             return response.getResponse();
-        }
-    }
-
-    /**
-     * Subscribes to service endpoints.
-     *
-     * @return true if subscription succeeded and endpoints are available, false otherwise
-     * @throws Throwable if subscription fails
-     */
-    private boolean subscribe() throws Throwable {
-        try {
-            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> new IOException(message, e));
-            if (endpoints == null || endpoints.isEmpty()) {
-                // Failed to convert microservice, fallback to domain reques
-                return false;
-            }
-            return true;
-        } catch (Throwable e) {
-            return false;
         }
     }
 }

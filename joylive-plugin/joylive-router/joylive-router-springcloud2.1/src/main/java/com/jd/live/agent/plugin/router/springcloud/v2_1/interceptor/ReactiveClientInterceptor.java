@@ -20,8 +20,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.registry.Preparation;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.ReactiveClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.exception.reactive.WebClientThrower;
@@ -36,7 +36,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -119,19 +118,19 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
             // Handle multi-active and lane domains
             return forward(request, next);
         }
-        try {
-            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) -> e);
-            if (endpoints == null || endpoints.isEmpty()) {
-                // Failed to convert microservice, fallback to domain request
+        return registry.prepare(service, new Preparation<Mono<ClientResponse>>() {
+            @Override
+            public Mono<ClientResponse> onSuccess() {
+                ReactiveClientClusterRequest rr = new ReactiveClientClusterRequest(req, service, registry, n);
+                HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(rr, context);
+                CompletionStage<ReactiveClusterResponse> stage = ReactiveClientCluster.INSTANCE.invoke(invocation);
+                return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
+            }
+
+            @Override
+            public Mono<ClientResponse> onFailure() {
                 return n.exchange(req);
             }
-        } catch (Throwable e) {
-            // Failed to convert microservice, fallback to domain request
-            return n.exchange(req);
-        }
-        ReactiveClientClusterRequest rr = new ReactiveClientClusterRequest(req, service, registry, n);
-        HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(rr, context);
-        CompletionStage<ReactiveClusterResponse> stage = ReactiveClientCluster.INSTANCE.invoke(invocation);
-        return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
+        });
     }
 }

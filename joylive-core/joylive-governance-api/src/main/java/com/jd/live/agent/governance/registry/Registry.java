@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.registry;
 
 import com.jd.live.agent.core.util.Futures;
+import com.jd.live.agent.governance.registry.Preparation.BooleanPreparation;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +36,7 @@ public interface Registry extends ServiceRegistryFactory {
      * The name of the registry component.
      */
     String COMPONENT_REGISTRY = "Registry";
+    long SUBSCRIBE_TIMEOUT = 5000;
 
     /**
      * Associates an alias with the specified service name.
@@ -189,7 +191,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(String service, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(new ServiceId(service), 5000, TimeUnit.MILLISECONDS, errorFunction);
+        return subscribe(new ServiceId(service), SUBSCRIBE_TIMEOUT, TimeUnit.MILLISECONDS, errorFunction);
     }
 
     /**
@@ -202,7 +204,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(ServiceId serviceId, BiFunction<String, Throwable, T> errorFunction) {
-        return subscribe(serviceId, 5000, TimeUnit.MILLISECONDS, errorFunction);
+        return subscribe(serviceId, SUBSCRIBE_TIMEOUT, TimeUnit.MILLISECONDS, errorFunction);
     }
 
     /**
@@ -231,7 +233,7 @@ public interface Registry extends ServiceRegistryFactory {
      * @return {@code null} if the subscription and policy retrieval are successful; otherwise, the result of the error function
      */
     default <T> T subscribe(String service, String group, BiFunction<String, Throwable, T> transformer) {
-        return subscribe(new ServiceId(service, group), 5000, TimeUnit.MILLISECONDS, transformer);
+        return subscribe(new ServiceId(service, group), SUBSCRIBE_TIMEOUT, TimeUnit.MILLISECONDS, transformer);
     }
 
     /**
@@ -355,28 +357,72 @@ public interface Registry extends ServiceRegistryFactory {
     boolean isReady(ServiceId serviceId);
 
     /**
-     * Subscribes to a service and synchronously retrieves its endpoints with custom timeout.
+     * Prepares service by subscribing and checking endpoint availability.
      *
-     * @param service     the service name to subscribe to
-     * @param timeoutMs   the timeout in milliseconds for both subscription and retrieval
-     * @param transformer function to handle and transform errors
-     * @return list of available service endpoints
-     * @throws Throwable if subscription fails or timeout occurs
+     * @param service the service name to subscribe to
+     * @return the result from either success or failback supplier
      */
-    default List<ServiceEndpoint> subscribeAndGet(final String service,
-                                                  final long timeoutMs,
-                                                  final BiFunction<String, Throwable, Throwable> transformer) throws Throwable {
-        if (service == null || service.isEmpty()) {
-            return null;
-        }
+    default boolean prepare(final String service) {
+        return prepare(service, SUBSCRIBE_TIMEOUT, BooleanPreparation.INSTANCE);
+    }
+
+    /**
+     * Prepares service by subscribing and checking endpoint availability.
+     *
+     * @param service   the service name to subscribe to
+     * @param timeoutMs the timeout in milliseconds
+     * @return the result from either success or failback supplier
+     */
+    default boolean prepare(final String service, final long timeoutMs) {
+        return prepare(service, timeoutMs, BooleanPreparation.INSTANCE);
+    }
+
+    /**
+     * Prepares service by subscribing and checking endpoint availability.
+     *
+     * @param <T>     return type
+     * @param service service name
+     * @param checker callback for handling results
+     * @return result from checker based on preparation status
+     */
+    default <T> T prepare(final String service, Preparation<T> checker) {
+        return prepare(service, SUBSCRIBE_TIMEOUT, checker);
+    }
+
+    /**
+     * Prepares service by subscribing and checking endpoint availability.
+     *
+     * @param <T>       return type
+     * @param service   service name
+     * @param timeoutMs timeout in milliseconds
+     * @param checker   callback for handling results
+     * @return result from checker based on preparation status
+     */
+    default <T> T prepare(final String service, final long timeoutMs, Preparation<T> checker) {
+        long timeout = timeoutMs <= 0 ? SUBSCRIBE_TIMEOUT : timeoutMs;
         long time = System.currentTimeMillis();
-        Throwable throwable = subscribe(service, timeoutMs, TimeUnit.MILLISECONDS, transformer);
+        BiFunction<String, Throwable, Throwable> transformer = (message, e) -> e;
+        Throwable throwable = subscribe(service, timeout, TimeUnit.MILLISECONDS, transformer);
         if (throwable != null) {
-            throw throwable;
+            // failed to subscribe
+            return checker.onFailure();
         }
-        time = timeoutMs + time - System.currentTimeMillis();
+        time = timeout + time - System.currentTimeMillis();
+        if (time <= 0) {
+            // it's timeout
+            return checker.onFailure();
+        }
         String action = "get service instances for " + service;
-        return Futures.get(getEndpoints(service), time, TimeUnit.MILLISECONDS, action, transformer);
+        try {
+            List<ServiceEndpoint> endpoints = Futures.get(getEndpoints(service), time, TimeUnit.MILLISECONDS, action, transformer);
+            if (endpoints == null || endpoints.isEmpty()) {
+                // no endpoints
+                return checker.onFailure();
+            }
+            return checker.onSuccess();
+        } catch (Throwable e) {
+            return checker.onFailure();
+        }
     }
 
     /**

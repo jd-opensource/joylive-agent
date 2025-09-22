@@ -24,7 +24,6 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.FeignClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.exception.feign.FeignThrower;
@@ -32,13 +31,11 @@ import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClientCluster
 import com.jd.live.agent.plugin.router.springcloud.v3.request.FeignClientForwardRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.FeignClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.util.CloudUtils;
-import feign.FeignException.InternalServerError;
 import feign.Request;
 import feign.Response;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 
 import static com.jd.live.agent.governance.request.Request.KEY_CLOUD_REQUEST;
 import static com.jd.live.agent.plugin.router.springcloud.v3.request.FeignOutboundRequest.createRequest;
@@ -117,7 +114,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
      */
     private void invoke(Object request, String service, URI uri, MethodContext mc) {
         // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
-        if (!subscribe(request, service)) {
+        if (!registry.prepare(service)) {
             return;
         }
         Request req = (Request) request;
@@ -143,30 +140,6 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
             }
         } catch (Throwable e) {
             mc.skipWithThrowable(FeignThrower.INSTANCE.createException(e, fr));
-        }
-    }
-
-    /**
-     * Subscribes to service endpoints for the specified service.
-     *
-     * @param request the HTTP request
-     * @param service the service name to subscribe
-     * @return true if subscription succeeded and endpoints are available, false otherwise
-     */
-    private boolean subscribe(Object request, String service) {
-        // Parameter request cannot be declared as Request, as it will cause class loading exceptions.
-        // subscribe service endpoint and governance policy.
-        Request req = (Request) request;
-        try {
-            List<ServiceEndpoint> endpoints = registry.subscribeAndGet(service, 5000, (message, e) ->
-                    new InternalServerError(message, req, req.body(), req.headers()));
-            if (endpoints == null || endpoints.isEmpty()) {
-                // Failed to convert microservice, fallback to domain reques
-                return false;
-            }
-            return true;
-        } catch (Throwable e) {
-            return false;
         }
     }
 }
