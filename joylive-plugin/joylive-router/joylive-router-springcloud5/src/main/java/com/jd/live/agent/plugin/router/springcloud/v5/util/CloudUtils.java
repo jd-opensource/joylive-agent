@@ -21,6 +21,7 @@ import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerIntercepto
 import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.web.client.RestTemplate;
@@ -38,6 +39,8 @@ import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEn
  * Utility class for detecting Spring Cloud environment and load balancer configuration.
  */
 public class CloudUtils {
+
+    private static final Class<?> readonlyType = loadClass("org.springframework.http.ReadOnlyHttpHeaders", HttpHeaders.class.getClassLoader());
 
     // spring cloud
     private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
@@ -101,6 +104,16 @@ public class CloudUtils {
 
     public static <K, V extends LiveCluster> V getOrCreateCluster(K client, Function<K, V> function) {
         return (V) clusters.computeIfAbsent(client, o -> function.apply(client));
+    }
+
+    /**
+     * Creates writable copy of HTTP headers.
+     *
+     * @param headers source headers
+     * @return writable headers instance
+     */
+    public static HttpHeaders writable(HttpHeaders headers) {
+        return readonlyType.isInstance(headers) ? new HttpHeaders(headers) : headers;
     }
 
 }

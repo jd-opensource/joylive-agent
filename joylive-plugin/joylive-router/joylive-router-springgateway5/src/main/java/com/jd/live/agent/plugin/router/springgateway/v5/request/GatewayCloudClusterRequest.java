@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v5.request.AbstractCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v5.response.SpringClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import com.jd.live.agent.plugin.router.springgateway.v5.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v5.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v5.response.GatewayClusterResponse;
@@ -99,8 +100,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            // todo writeable
-            request.getHeaders().set(key, value);
+            CloudUtils.writable(request.getHeaders()).set(key, value);
         }
     }
 

@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v5.response;
 import com.jd.live.agent.governance.exception.ErrorPolicy;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.request.Request;
+import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -56,8 +57,7 @@ public class ErrorResponseDecorator extends ServerHttpResponseDecorator {
     @NonNull
     @Override
     public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-        // todo writeable
-        final HttpHeaders headers = exchange.getResponse().getHeaders();
+        final HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
         ServiceError error = ServiceError.build(key -> {
             List<String> values = headers.remove(key);
             return values == null || values.isEmpty() ? null : values.get(0);

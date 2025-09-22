@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpForwardRequest;
 import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import lombok.Getter;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -65,8 +66,7 @@ public class GatewayForwardRequest extends AbstractHttpForwardRequest<ServerHttp
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            // todo writeable
-            request.getHeaders().set(key, value);
+            CloudUtils.writable(request.getHeaders()).set(key, value);
         }
     }
 

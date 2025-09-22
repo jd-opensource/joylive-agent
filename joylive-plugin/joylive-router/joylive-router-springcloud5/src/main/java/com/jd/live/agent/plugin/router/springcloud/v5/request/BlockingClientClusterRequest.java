@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -56,8 +57,7 @@ public class BlockingClientClusterRequest extends AbstractHttpOutboundRequest<Bl
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            // todo writeable
-            request.getHeaders().set(key, value);
+            CloudUtils.writable(request.getHeaders()).set(key, value);
         }
     }
 

@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v5.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.plugin.router.springcloud.v5.cluster.context.ReactiveClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
@@ -69,8 +70,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            // todo writeable
-            request.headers().set(key, value);
+            CloudUtils.writable(request.headers()).set(key, value);
         }
     }
 
