@@ -24,6 +24,7 @@ import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvoc
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v5.request.ReactiveInboundRequest;
+import com.jd.live.agent.plugin.router.springweb.v5.util.CloudUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
@@ -63,13 +64,13 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
             if (config.isResponseException()) {
                 mono = mono.doOnError(ex -> {
-                    HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
+                    HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                     labelHeaders(ex, headers::set);
                 }).doOnSuccess(result -> {
                     if (result != null) {
                         Function<Throwable, Mono<HandlerResult>> exceptionHandler = getQuietly(result, FIELD_EXCEPTION_HANDLER);
                         result.setExceptionHandler(ex -> {
-                            HttpHeaders headers = HttpHeaders.writableHttpHeaders(exchange.getResponse().getHeaders());
+                            HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                             labelHeaders(ex, headers::set);
                             return exceptionHandler != null ? exceptionHandler.apply(ex) : Mono.error(ex);
                         });

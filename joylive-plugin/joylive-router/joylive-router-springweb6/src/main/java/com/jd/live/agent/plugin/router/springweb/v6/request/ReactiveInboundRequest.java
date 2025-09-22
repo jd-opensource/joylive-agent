@@ -18,8 +18,8 @@ package com.jd.live.agent.plugin.router.springweb.v6.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
+import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ServerWebExchange;
@@ -159,7 +159,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     protected Map<String, List<String>> parseHeaders() {
-        return HttpHeaders.writableHttpHeaders(request.getHeaders());
+        return CloudUtils.writable(request.getHeaders());
     }
 
     @Override

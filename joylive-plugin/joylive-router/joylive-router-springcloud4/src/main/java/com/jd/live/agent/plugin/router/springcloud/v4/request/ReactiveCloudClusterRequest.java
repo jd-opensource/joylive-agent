@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.ReactiveClusterContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.util.CloudUtils;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerProperties;
 import org.springframework.cloud.client.loadbalancer.RequestData;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.plugin.router.springcloud.v4.util.UriUtils.newURI;
-import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -70,7 +70,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writableHttpHeaders(request.headers()).set(key, value);
+            CloudUtils.writable(request.headers()).set(key, value);
         }
     }
 

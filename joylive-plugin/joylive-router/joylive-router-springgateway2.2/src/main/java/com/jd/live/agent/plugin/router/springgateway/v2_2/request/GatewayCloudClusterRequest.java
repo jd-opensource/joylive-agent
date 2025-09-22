@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v2_2.request;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.request.AbstractCloudClusterRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.util.CloudUtils;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.cluster.context.GatewayClusterContext;
 import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
 import lombok.Getter;
@@ -32,7 +33,6 @@ import java.util.Map;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR;
-import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * GatewayOutboundRequest
@@ -87,7 +87,7 @@ public class GatewayCloudClusterRequest extends AbstractCloudClusterRequest<Serv
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writableHttpHeaders(request.getHeaders()).set(key, value);
+            CloudUtils.writable(request.getHeaders()).set(key, value);
         }
     }
 

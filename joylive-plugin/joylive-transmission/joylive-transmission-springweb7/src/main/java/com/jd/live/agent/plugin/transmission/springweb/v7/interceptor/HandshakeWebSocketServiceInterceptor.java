@@ -20,8 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.HeaderWriter.MultiValueMapWriter;
-import com.jd.live.agent.plugin.transmission.springweb.v7.util.HeaderUtils;
-import org.springframework.util.MultiValueMap;
+import com.jd.live.agent.plugin.transmission.springweb.v7.util.CloudUtils;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -39,8 +38,7 @@ public class HandshakeWebSocketServiceInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         // for outbound traffic
         ServerWebExchange exchange = (ServerWebExchange) ctx.getArguments()[0];
-        MultiValueMap<String, String> headers = HeaderUtils.writeableHeaders(exchange.getRequest().getHeaders());
-        propagation.write(RequestContext.get(), new MultiValueMapWriter(headers));
+        propagation.write(RequestContext.get(), new MultiValueMapWriter(CloudUtils.writable(exchange.getRequest().getHeaders()).asMultiValueMap()));
     }
 
 }
