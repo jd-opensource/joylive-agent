@@ -16,16 +16,16 @@
 package com.jd.live.agent.plugin.router.springcloud.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringCloud4Enabled
-@ConditionalOnFlowControlEnabled
+@ConditionalOnSpringCloud5Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud4FlowControlEnabled {
+public @interface ConditionalOnSpringCloud5GovernanceEnabled {
 
 }

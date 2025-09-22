@@ -22,7 +22,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway4FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway5FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayRouteConstructorInterceptor;
 
 /**
@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayRoute
  *
  */
 @Extension(value = "GatewayRouteDefinition_v5")
-@ConditionalOnSpringGateway4FlowControlEnabled
+@ConditionalOnSpringGateway5FlowControlEnabled
 @ConditionalOnClass(GatewayRouteDefinition.TYPE_ROUTE)
 @Injectable
 public class GatewayRouteDefinition extends PluginDefinitionAdapter {

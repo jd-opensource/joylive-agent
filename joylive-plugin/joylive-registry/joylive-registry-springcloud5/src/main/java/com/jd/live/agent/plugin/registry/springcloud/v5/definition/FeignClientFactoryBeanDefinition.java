@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.springcloud.v5.condition.ConditionalOnSpringCloud4GovernanceEnabled;
+import com.jd.live.agent.plugin.registry.springcloud.v5.condition.ConditionalOnSpringCloud5GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.springcloud.v5.interceptor.FeignClientFactoryBeanInterceptor;
 
 /**
@@ -33,7 +33,7 @@ import com.jd.live.agent.plugin.registry.springcloud.v5.interceptor.FeignClientF
  */
 @Injectable
 @Extension(value = "FeignClientFactoryBeanDefinition_v5", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnSpringCloud4GovernanceEnabled
+@ConditionalOnSpringCloud5GovernanceEnabled
 @ConditionalOnClass(FeignClientFactoryBeanDefinition.TYPE_FEIGN_CLIENT_FACTORY_BEAN)
 public class FeignClientFactoryBeanDefinition extends PluginDefinitionAdapter {
 

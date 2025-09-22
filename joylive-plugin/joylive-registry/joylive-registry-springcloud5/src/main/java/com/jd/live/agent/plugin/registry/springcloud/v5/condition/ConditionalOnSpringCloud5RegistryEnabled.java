@@ -16,19 +16,16 @@
 package com.jd.live.agent.plugin.registry.springcloud.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringCloudEnabled
-@ConditionalOnMissingClass(ConditionalOnSpringCloud4Enabled.TYPE_SPRING_CLOUD_APPLICATION)
+@ConditionalOnSpringCloud5GovernanceEnabled
+@ConditionalOnRegistryEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud4Enabled {
+public @interface ConditionalOnSpringCloud5RegistryEnabled {
 
-    // spring cloud 2/3
-    String TYPE_SPRING_CLOUD_APPLICATION = "org.springframework.cloud.client.SpringCloudApplication";
 }

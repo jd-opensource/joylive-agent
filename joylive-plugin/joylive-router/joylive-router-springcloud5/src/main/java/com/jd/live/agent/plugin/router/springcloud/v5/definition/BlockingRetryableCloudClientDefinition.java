@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringRetry;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud4FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud5FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingCloudClientInterceptor;
 
 /**
@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingCloudC
  */
 @Injectable
 @Extension(value = "BlockingRetryableCloudClusterDefinition_v5")
-@ConditionalOnSpringCloud4FlowControlEnabled
+@ConditionalOnSpringCloud5FlowControlEnabled
 @ConditionalOnSpringRetry
 @ConditionalOnClass(BlockingRetryableCloudClientDefinition.TYPE_RETRY_LOADBALANCER_INTERCEPTOR)
 public class BlockingRetryableCloudClientDefinition extends PluginDefinitionAdapter {

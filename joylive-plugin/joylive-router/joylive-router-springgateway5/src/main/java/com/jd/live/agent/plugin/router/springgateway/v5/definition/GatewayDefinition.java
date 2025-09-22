@@ -21,7 +21,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway4OnlyRouteEnabled;
+import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway5OnlyRouteEnabled;
 import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayInterceptor;
 
 /**
@@ -30,7 +30,7 @@ import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayInter
  * @since 1.0.0
  */
 @Extension(value = "GatewayDefinition_v5")
-@ConditionalOnSpringGateway4OnlyRouteEnabled
+@ConditionalOnSpringGateway5OnlyRouteEnabled
 @ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
 public class GatewayDefinition extends PluginDefinitionAdapter {
 

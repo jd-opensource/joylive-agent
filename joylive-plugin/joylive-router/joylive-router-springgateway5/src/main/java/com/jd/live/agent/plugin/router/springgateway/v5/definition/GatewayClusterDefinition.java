@@ -27,7 +27,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway4FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway5FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springgateway.v5.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayClusterInterceptor;
 
@@ -37,7 +37,7 @@ import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayClust
  * @since 1.0.0
  */
 @Extension(value = "GatewayClusterDefinition_v5")
-@ConditionalOnSpringGateway4FlowControlEnabled
+@ConditionalOnSpringGateway5FlowControlEnabled
 @ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
 @Injectable
 public class GatewayClusterDefinition extends PluginDefinitionAdapter implements ExtensionInitializer {

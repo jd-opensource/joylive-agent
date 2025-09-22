@@ -16,16 +16,19 @@
 package com.jd.live.agent.plugin.router.springcloud.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringCloud4Enabled
-@ConditionalOnGovernanceEnabled
+@ConditionalOnSpringCloudEnabled
+@ConditionalOnClass(ConditionalOnSpringCloud5Enabled.TYPE_HTTP_SERVICE_FALLBACK)
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud4GovernanceEnabled {
+public @interface ConditionalOnSpringCloud5Enabled {
 
+    // spring cloud 5+
+    String TYPE_HTTP_SERVICE_FALLBACK = "org.springframework.cloud.client.circuitbreaker.httpservice.HttpServiceFallback";
 }

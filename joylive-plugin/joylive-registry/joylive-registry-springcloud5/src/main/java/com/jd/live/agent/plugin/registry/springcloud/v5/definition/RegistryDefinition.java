@@ -20,37 +20,46 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
+import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
-import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.Registry;
-import com.jd.live.agent.plugin.registry.springcloud.v5.condition.ConditionalOnSpringCloud4RegistryEnabled;
-import com.jd.live.agent.plugin.registry.springcloud.v5.interceptor.SimpleDiscoveryClientInterceptor;
+import com.jd.live.agent.plugin.registry.springcloud.v5.condition.ConditionalOnSpringCloud5GovernanceEnabled;
+import com.jd.live.agent.plugin.registry.springcloud.v5.interceptor.RegistryInterceptor;
 
 /**
- * SimpleDiscoveryClientDefinition
+ * RegistryDefinition
+ *
+ * @author Zhiguo.Chen
+ * @since 1.0.0
  */
-@Extension(value = "SimpleDiscoveryClientDefinition_v5")
-@ConditionalOnSpringCloud4RegistryEnabled
-@ConditionalOnReactive
-@ConditionalOnClass(SimpleDiscoveryClientDefinition.TYPE_SIMPLE_DISCOVERY_CLIENT)
 @Injectable
-public class SimpleDiscoveryClientDefinition extends PluginDefinitionAdapter {
+@Extension(value = "ServiceRegistryDefinition_v5", order = PluginDefinition.ORDER_REGISTRY)
+@ConditionalOnSpringCloud5GovernanceEnabled
+@ConditionalOnClass(RegistryDefinition.TYPE_SERVICE_REGISTRY)
+public class RegistryDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_SIMPLE_DISCOVERY_CLIENT = "org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClient";
+    protected static final String TYPE_SERVICE_REGISTRY = "org.springframework.cloud.client.serviceregistry.ServiceRegistry";
+
+    private static final String METHOD_REGISTER = "register";
+
+    private static final String ARGUMENT_REGISTER = "org.springframework.cloud.client.serviceregistry.Registration";
+
+    @Inject(Application.COMPONENT_APPLICATION)
+    private Application application;
 
     @Inject(Registry.COMPONENT_REGISTRY)
-    private CompositeRegistry registry;
+    private Registry registry;
 
-    public SimpleDiscoveryClientDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_SIMPLE_DISCOVERY_CLIENT);
+    public RegistryDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_SERVICE_REGISTRY);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.isConstructor(),
-                        () -> new SimpleDiscoveryClientInterceptor(registry)
-                )
+                        MatcherBuilder.named(METHOD_REGISTER).
+                                and(MatcherBuilder.arguments(MatcherBuilder.isSubTypeOf(ARGUMENT_REGISTER))),
+                        () -> new RegistryInterceptor(application, registry))
         };
     }
 }

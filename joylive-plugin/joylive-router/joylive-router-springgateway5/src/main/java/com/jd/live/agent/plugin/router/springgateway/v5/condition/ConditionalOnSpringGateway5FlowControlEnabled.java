@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.springgateway.v5.condition;
+package com.jd.live.agent.plugin.router.springgateway.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringGatewayEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 
 import java.lang.annotation.*;
 
@@ -28,12 +26,9 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringGatewayEnabled
-@ConditionalOnReactive
-@ConditionalOnClass(ConditionalOnSpringGateway4Enabled.TYPE_HTTP_HTTP_STATUS_CODE)
+@ConditionalOnSpringGateway5Enabled
+@ConditionalOnFlowControlEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringGateway4Enabled {
-
-    String TYPE_HTTP_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
+public @interface ConditionalOnSpringGateway5FlowControlEnabled {
 
 }

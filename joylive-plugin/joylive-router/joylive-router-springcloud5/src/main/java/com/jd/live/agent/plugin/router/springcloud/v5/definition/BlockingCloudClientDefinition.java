@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud4FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud5FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingCloudClientInterceptor;
 
 /**
@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingCloudC
  */
 @Injectable
 @Extension(value = "BlockingCloudClusterDefinition_v5")
-@ConditionalOnSpringCloud4FlowControlEnabled
+@ConditionalOnSpringCloud5FlowControlEnabled
 @ConditionalOnClass(BlockingCloudClientDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
 public class BlockingCloudClientDefinition extends PluginDefinitionAdapter {
 

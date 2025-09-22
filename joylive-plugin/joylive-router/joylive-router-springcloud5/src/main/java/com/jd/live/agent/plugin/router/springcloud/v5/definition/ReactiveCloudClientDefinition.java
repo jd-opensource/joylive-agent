@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud4FlowControlEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud5FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ReactiveCloudClientInterceptor;
 
 /**
@@ -35,7 +35,7 @@ import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ReactiveCloudC
  */
 @Injectable
 @Extension(value = "ReactiveCloudClusterDefinition_v5")
-@ConditionalOnSpringCloud4FlowControlEnabled
+@ConditionalOnSpringCloud5FlowControlEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(ReactiveCloudClientDefinition.TYPE_LOADBALANCER_EXCHANGE_FILTER_FUNCTION)
 public class ReactiveCloudClientDefinition extends PluginDefinitionAdapter {

@@ -24,14 +24,14 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb6GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb7GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingClientInterceptor;
 
 /**
  * BlockingClientDefinition
  */
 @Extension(value = "BlockingClientDefinition_v6")
-@ConditionalOnSpringWeb6GovernanceEnabled
+@ConditionalOnSpringWeb7GovernanceEnabled
 @ConditionalOnClass(BlockingClientDefinition.TYPE)
 @Injectable
 public class BlockingClientDefinition extends PluginDefinitionAdapter {

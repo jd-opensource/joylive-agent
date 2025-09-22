@@ -13,22 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v5.condition;
+package com.jd.live.agent.plugin.router.springgateway.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
-import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringGatewayEnabled;
 
 import java.lang.annotation.*;
 
+/**
+ * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringCloudEnabled
-@ConditionalOnMissingClass(ConditionalOnSpringCloud4Enabled.TYPE_SPRING_CLOUD_APPLICATION)
+@ConditionalOnSpringGatewayEnabled
+@ConditionalOnClass(ConditionalOnSpringGateway5Enabled.TYPE_HTTP_SERVICE_FALLBACK)
+@ConditionalOnReactive
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud4Enabled {
+public @interface ConditionalOnSpringGateway5Enabled {
 
-    // spring cloud 2/3
-    String TYPE_SPRING_CLOUD_APPLICATION = "org.springframework.cloud.client.SpringCloudApplication";
+    // spring cloud 5+
+    String TYPE_HTTP_SERVICE_FALLBACK = "org.springframework.cloud.client.circuitbreaker.httpservice.HttpServiceFallback";
+
 }

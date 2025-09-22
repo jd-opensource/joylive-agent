@@ -25,7 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb6GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb7GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ReactiveClientInterceptor;
 
 /**
@@ -33,7 +33,7 @@ import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ReactiveClient
  */
 @Injectable
 @Extension(value = "ReactiveClientDefinition_v6")
-@ConditionalOnSpringWeb6GovernanceEnabled
+@ConditionalOnSpringWeb7GovernanceEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(ReactiveClientDefinition.TYPE_DEFAULT_WEB_CLIENT)
 public class ReactiveClientDefinition extends PluginDefinitionAdapter {

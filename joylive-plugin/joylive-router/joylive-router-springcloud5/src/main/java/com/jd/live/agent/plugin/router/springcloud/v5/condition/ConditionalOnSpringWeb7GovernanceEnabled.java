@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.springcloud.v5.condition;
+package com.jd.live.agent.plugin.router.springcloud.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnRegistryEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringCloud4GovernanceEnabled
-@ConditionalOnRegistryEnabled
+@ConditionalOnSpringWeb7Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringCloud4RegistryEnabled {
+public @interface ConditionalOnSpringWeb7GovernanceEnabled {
 
 }

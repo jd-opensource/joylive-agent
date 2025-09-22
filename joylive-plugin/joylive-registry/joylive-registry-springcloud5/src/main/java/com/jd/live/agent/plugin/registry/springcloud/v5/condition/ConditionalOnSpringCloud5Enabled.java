@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v5.condition;
+package com.jd.live.agent.plugin.registry.springcloud.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled;
 
 import java.lang.annotation.*;
 
-/**
- * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
- */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnClass(ConditionalOnSpringWeb6Enabled.TYPE_ERROR_RESPONSE)
+@ConditionalOnSpringCloudEnabled
+@ConditionalOnClass(ConditionalOnSpringCloud5Enabled.TYPE_HTTP_SERVICE_FALLBACK)
 @ConditionalComposite
-public @interface ConditionalOnSpringWeb6Enabled {
+public @interface ConditionalOnSpringCloud5Enabled {
 
-    // spring web 6
-    String TYPE_ERROR_RESPONSE = "org.springframework.web.ErrorResponse";
-
+    // spring cloud 5+
+    String TYPE_HTTP_SERVICE_FALLBACK = "org.springframework.cloud.client.circuitbreaker.httpservice.HttpServiceFallback";
 }

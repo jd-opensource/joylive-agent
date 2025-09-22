@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.router.springgateway.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnOnlyRouteEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 
 import java.lang.annotation.*;
 
@@ -26,9 +26,9 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringGateway4Enabled
-@ConditionalOnOnlyRouteEnabled
+@ConditionalOnSpringGateway5Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringGateway4OnlyRouteEnabled {
+public @interface ConditionalOnSpringGateway5GovernanceEnabled {
 
 }

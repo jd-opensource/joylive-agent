@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v5.condition;
+package com.jd.live.agent.plugin.registry.springcloud.v5.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 
 import java.lang.annotation.*;
 
-/**
- * An annotation used to mark a type as requiring specific conditions related to Spring Gateway to be met.
- */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnSpringGateway4Enabled
-@ConditionalOnFlowControlEnabled
+@ConditionalOnSpringCloud5Enabled
+@ConditionalOnGovernanceEnabled
 @ConditionalComposite
-public @interface ConditionalOnSpringGateway4FlowControlEnabled {
+public @interface ConditionalOnSpringCloud5GovernanceEnabled {
 
 }

@@ -22,14 +22,14 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb6Enabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb7Enabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.FeignRetryerInterceptor;
 
 /**
  * FeignRetryerDefinition
  */
 @Extension(value = "FeignRetryerDefinition_v6")
-@ConditionalOnSpringWeb6Enabled
+@ConditionalOnSpringWeb7Enabled
 @ConditionalOnFlowControlEnabled
 @ConditionalOnClass(FeignRetryerDefinition.TYPE)
 public class FeignRetryerDefinition extends PluginDefinitionAdapter {

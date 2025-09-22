@@ -22,7 +22,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud4GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud5GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ReactorLoadBalancerInterceptor;
 
 /**
@@ -31,7 +31,7 @@ import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ReactorLoadBal
  * @since 1.0.0
  */
 @Extension(value = "ReactorLoadBalancerDefinition_v5")
-@ConditionalOnSpringCloud4GovernanceEnabled
+@ConditionalOnSpringCloud5GovernanceEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(ReactorLoadBalancerDefinition.TYPE_REACTOR_LOAD_BALANCER)
 public class ReactorLoadBalancerDefinition extends PluginDefinitionAdapter {

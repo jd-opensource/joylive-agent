@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud4GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud5GovernanceEnabled;
 import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.ServiceInstanceListSupplierInterceptor;
 
 import java.util.Set;
@@ -39,7 +39,7 @@ import java.util.Set;
  */
 @Injectable
 @Extension(value = "ServiceInstanceListSupplierDefinition_v5")
-@ConditionalOnSpringCloud4GovernanceEnabled
+@ConditionalOnSpringCloud5GovernanceEnabled
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
 public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {
 
