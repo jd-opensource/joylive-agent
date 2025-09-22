@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v3.util.CloudUtils;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
-import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * A specialized HTTP outbound request class for handling cluster requests.
@@ -77,7 +77,7 @@ public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<Cl
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writableHttpHeaders(request.headers()).set(key, value);
+            CloudUtils.writable(request.headers()).set(key, value);
         }
     }
 

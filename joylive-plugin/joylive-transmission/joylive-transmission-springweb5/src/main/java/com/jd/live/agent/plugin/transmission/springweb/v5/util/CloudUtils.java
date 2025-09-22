@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.springweb.v7.util;
+package com.jd.live.agent.plugin.transmission.springweb.v5.util;
 
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.util.MultiValueMap;
 
-public class HeaderUtils {
-
-    private static final FieldAccessor headersAccessor = FieldAccessorFactory.getAccessor(HttpHeaders.class, "headers");
-
-    @SuppressWarnings("unchecked")
-    public static MultiValueMap<String, String> writeableHeaders(HttpHeaders headers) {
-        return headersAccessor.get(headers, MultiValueMap.class);
+/**
+ * Utility class for detecting Spring Cloud environment and load balancer configuration.
+ */
+public class CloudUtils {
+    /**
+     * Creates writable copy of HTTP headers.
+     *
+     * @param headers source headers
+     * @return writable headers instance
+     */
+    public static HttpHeaders writable(HttpHeaders headers) {
+        return HttpHeaders.writableHttpHeaders(headers);
     }
-
 }

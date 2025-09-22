@@ -64,6 +64,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private final HttpHeaders headers = new HttpHeaders();
 
+    // fix for spring-web 6.2
     private Map<String, Object> attributes;
 
     private UnsafeByteArrayOutputStream outputStream;
@@ -101,8 +102,8 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         return headers;
     }
 
-    @Override
     public Map<String, Object> getAttributes() {
+        // fix for spring-web 6.2
         if (attributes == null) {
             attributes = new LinkedHashMap<>();
         }

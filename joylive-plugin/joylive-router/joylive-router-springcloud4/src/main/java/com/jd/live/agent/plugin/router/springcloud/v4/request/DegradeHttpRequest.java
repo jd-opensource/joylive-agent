@@ -17,6 +17,7 @@ public class DegradeHttpRequest implements HttpRequest {
 
     private final ClientRequest request;
 
+    // fix for spring-web 6.2
     private Map<String, Object> attributes;
 
     public DegradeHttpRequest(ClientRequest request) {
@@ -41,8 +42,8 @@ public class DegradeHttpRequest implements HttpRequest {
         return request.headers();
     }
 
-    @Override
     public Map<String, Object> getAttributes() {
+        // fix for spring-web 6.2
         if (attributes == null) {
             attributes = new LinkedHashMap<>();
         }

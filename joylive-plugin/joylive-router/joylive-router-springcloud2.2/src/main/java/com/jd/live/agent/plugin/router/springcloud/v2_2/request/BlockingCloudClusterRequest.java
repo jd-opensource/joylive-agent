@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context.BlockingClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.EndpointInstance;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.util.CloudUtils;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRequest;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
@@ -26,8 +27,6 @@ import org.springframework.http.client.ClientHttpResponse;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * Represents a blocking request in a routing context, extending the capabilities of {@link AbstractCloudClusterRequest}
@@ -69,7 +68,7 @@ public class BlockingCloudClusterRequest extends AbstractCloudClusterRequest<Htt
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writableHttpHeaders(request.getHeaders()).set(key, value);
+            CloudUtils.writable(request.getHeaders()).set(key, value);
         }
     }
 

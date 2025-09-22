@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
 import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
 import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.web.client.RestTemplate;
@@ -100,7 +101,26 @@ public class CloudUtils {
         return false;
     }
 
+    /**
+     * Gets existing cluster or creates new one for the client.
+     *
+     * @param <K>      client type
+     * @param <V>      cluster type
+     * @param client   the client key
+     * @param function factory function to create cluster
+     * @return existing or newly created cluster
+     */
     public static <K, V extends LiveCluster> V getOrCreateCluster(K client, Function<K, V> function) {
         return (V) clusters.computeIfAbsent(client, o -> function.apply(client));
+    }
+
+    /**
+     * Creates writable copy of HTTP headers.
+     *
+     * @param headers source headers
+     * @return writable headers instance
+     */
+    public static HttpHeaders writable(HttpHeaders headers) {
+        return HttpHeaders.writableHttpHeaders(headers);
     }
 }

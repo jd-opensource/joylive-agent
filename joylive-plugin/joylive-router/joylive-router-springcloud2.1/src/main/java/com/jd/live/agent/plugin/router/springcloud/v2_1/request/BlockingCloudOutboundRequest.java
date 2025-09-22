@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2_1.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_1.util.CloudUtils;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
-import static org.springframework.http.HttpHeaders.writableHttpHeaders;
 
 /**
  * ReactiveOutboundRequest
@@ -61,7 +61,7 @@ public class BlockingCloudOutboundRequest extends AbstractHttpOutboundRequest<Ht
     @Override
     public void setHeader(String key, String value) {
         if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
-            writableHttpHeaders(request.getHeaders()).set(key, value);
+            CloudUtils.writable(request.getHeaders()).set(key, value);
         }
     }
 

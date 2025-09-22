@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.SpringClusterResponse;
+import com.jd.live.agent.plugin.router.springcloud.v3.util.CloudUtils;
 import com.jd.live.agent.plugin.router.springgateway.v3.request.GatewayCloudClusterRequest;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
@@ -115,7 +116,7 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
         ServerHttpRequest request = httpRequest.getExchange().getRequest();
 
         DataBuffer buffer = response.bufferFactory().wrap(degradeConfig.getResponseBytes());
-        HttpHeaders headers = HttpHeaders.writableHttpHeaders(response.getHeaders());
+        HttpHeaders headers = CloudUtils.writable(response.getHeaders());
         headers.putAll(request.getHeaders());
         degradeConfig.foreach(headers::add);
         response.setRawStatusCode(degradeConfig.getResponseCode());

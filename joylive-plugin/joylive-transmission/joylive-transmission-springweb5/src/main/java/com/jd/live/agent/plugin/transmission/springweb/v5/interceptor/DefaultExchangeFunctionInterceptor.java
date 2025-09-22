@@ -20,6 +20,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.HeaderWriter.MultiValueMapWriter;
+import com.jd.live.agent.plugin.transmission.springweb.v5.util.CloudUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 
@@ -38,7 +39,7 @@ public class DefaultExchangeFunctionInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         // for outbound traffic
         ClientRequest request = (ClientRequest) ctx.getArguments()[0];
-        HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.headers());
+        HttpHeaders headers = CloudUtils.writable(request.headers());
         propagation.write(RequestContext.get(), new MultiValueMapWriter(headers));
     }
 }
