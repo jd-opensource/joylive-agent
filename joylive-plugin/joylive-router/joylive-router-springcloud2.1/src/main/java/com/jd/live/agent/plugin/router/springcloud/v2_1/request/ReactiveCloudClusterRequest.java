@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_1.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.ReactiveClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.util.CloudUtils;
 import lombok.Getter;
@@ -28,8 +29,6 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.newURI;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -96,13 +95,13 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
      * Builds a new {@link ClientRequest} tailored for a specific {@link ServiceInstance}, incorporating sticky session
      * configurations and potential transformations.
      *
-     * @param serviceInstance The {@link ServiceInstance} to which the request should be directed.
+     * @param instance The {@link ServiceInstance} to which the request should be directed.
      * @return A new {@link ClientRequest} instance, modified to target the specified {@link ServiceInstance}.
      */
-    private ClientRequest createRequest(ServiceInstance serviceInstance) {
+    private ClientRequest createRequest(ServiceInstance instance) {
         URI originalUrl = request.url();
         return ClientRequest
-                .create(request.method(), newURI(serviceInstance, originalUrl))
+                .create(request.method(), UriUtils.newURI(originalUrl, instance.getScheme(), instance.isSecure(), instance.getHost(), instance.getPort()))
                 .headers(headers -> headers.addAll(request.headers()))
                 .cookies(cookies -> {
                     cookies.addAll(request.cookies());

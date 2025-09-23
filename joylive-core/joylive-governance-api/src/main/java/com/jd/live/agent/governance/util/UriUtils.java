@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springcloud.v2_2.util;
+package com.jd.live.agent.governance.util;
 
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -48,17 +47,6 @@ public class UriUtils {
         INSECURE_SCHEME_MAPPINGS = new HashMap<>();
         INSECURE_SCHEME_MAPPINGS.put(DEFAULT_SCHEME, DEFAULT_SECURE_SCHEME);
         INSECURE_SCHEME_MAPPINGS.put("ws", "wss");
-    }
-
-    /**
-     * Modifies the URI in order to redirect the request to a service instance of choice.
-     *
-     * @param instance the {@link ServiceInstance} to redirect the request to.
-     * @param uri      the {@link URI} from the uri request
-     * @return the modified {@link URI}
-     */
-    public static URI newURI(ServiceInstance instance, URI uri) {
-        return newURI(uri, instance.getScheme(), instance.isSecure(), instance.getHost(), instance.getPort());
     }
 
     /**
@@ -102,6 +90,5 @@ public class UriUtils {
         }
         return HttpUtils.newURI(uri, scheme, host, port);
     }
-
 
 }

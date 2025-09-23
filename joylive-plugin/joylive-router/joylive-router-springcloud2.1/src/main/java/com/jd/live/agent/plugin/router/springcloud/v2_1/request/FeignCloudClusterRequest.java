@@ -17,8 +17,8 @@ package com.jd.live.agent.plugin.router.springcloud.v2_1.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.FeignClusterContext;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.instance.EndpointInstance;
 import feign.Request;
 import feign.Response;
 
@@ -29,7 +29,6 @@ import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.*;
 import static com.jd.live.agent.core.util.map.MultiLinkedMap.caseInsensitive;
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.newURI;
 
 /**
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractCloudClusterRequest}
@@ -76,7 +75,7 @@ public class FeignCloudClusterRequest extends AbstractCloudClusterRequest<Reques
      */
     @SuppressWarnings("deprecation")
     public Response execute(ServiceEndpoint endpoint) throws IOException {
-        String url = newURI(EndpointInstance.convert(endpoint), uri).toString();
+        String url = UriUtils.newURI(endpoint, uri).toString();
         Request req = Request.create(request.httpMethod(), url, request.headers(), request.body(), request.charset());
         return context.getDelegate().execute(req, options);
     }
