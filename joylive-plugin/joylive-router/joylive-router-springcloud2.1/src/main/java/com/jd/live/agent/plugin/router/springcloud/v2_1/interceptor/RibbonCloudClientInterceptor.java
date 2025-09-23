@@ -19,7 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.RibbonCloudCluster;
@@ -86,15 +85,7 @@ public class RibbonCloudClientInterceptor extends InterceptorAdaptor {
             RibbonCloudClusterRequest clusterRequest = new RibbonCloudClusterRequest(request, context, delegate, cluster.getContext());
             HttpOutboundInvocation<RibbonCloudClusterRequest> invocation = new HttpOutboundInvocation<>(clusterRequest, this.context);
             RibbonClusterResponse response = cluster.request(invocation);
-            ServiceError error = response.getError();
-            if (error != null && !error.isServerError()) {
-                if (error.getThrowable() instanceof IOException) {
-                    throw (IOException) error.getThrowable();
-                }
-                throw new ClientProtocolException(error.getError(), error.getThrowable());
-            } else {
-                return response.getResponse();
-            }
+            return response.getResponseOrThrow((msg, e) -> e instanceof IOException ? (IOException) e : new ClientProtocolException(msg, e));
         }
 
         @Override

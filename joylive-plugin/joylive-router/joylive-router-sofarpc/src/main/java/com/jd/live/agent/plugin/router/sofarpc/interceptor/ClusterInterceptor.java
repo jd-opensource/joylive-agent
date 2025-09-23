@@ -21,7 +21,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
@@ -57,13 +56,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         if (!request.isSystem() && !request.isDisabled()) {
             SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
             SofaRpcOutboundResponse response = cluster.request(invocation, null);
-            ServiceError error = response.getError();
-            if (error != null && !error.isServerError()) {
-                mc.setThrowable(error.getThrowable());
-            } else {
-                mc.setResult(response.getResponse());
-            }
-            mc.setSkip(true);
+            mc.skipWith(response);
         }
     }
 }

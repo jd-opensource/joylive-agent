@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v3.request;
 
 import com.jd.live.agent.core.util.io.UnsafeByteArrayOutputStream;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
@@ -183,11 +182,6 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         BlockingClientClusterRequest request = new BlockingClientClusterRequest(this, service, registry);
         HttpOutboundInvocation<BlockingClientClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
-        ServiceError error = response.getError();
-        if (error != null && !error.isServerError()) {
-            throw error.getThrowable();
-        } else {
-            return response.getResponse();
-        }
+        return response.getResponseOrThrow();
     }
 }
