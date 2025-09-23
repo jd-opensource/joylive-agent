@@ -17,17 +17,21 @@ package com.jd.live.agent.core.util;
 
 import com.jd.live.agent.core.exception.WrappedException;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * A utility class for working with exceptions.
  */
 public class ExceptionUtils {
+
+    public static final Function<Throwable, IOException> IO_EXCEPTION_CONVERTER = e -> e instanceof IOException ? (IOException) e : new IOException(e.getMessage(), e);
 
     /**
      * Iterates over the exception chain starting from the given throwable and stops when the provided predicate returns false.

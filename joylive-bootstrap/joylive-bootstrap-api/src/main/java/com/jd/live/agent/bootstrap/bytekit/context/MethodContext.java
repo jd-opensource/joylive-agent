@@ -21,6 +21,7 @@ import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.function.Function;
 
 /**
  * A context representing the execution state of a method.
@@ -64,6 +65,11 @@ public class MethodContext extends ExecutableContext {
         this.target = target;
         this.method = method;
         this.origin = origin;
+    }
+
+    @Override
+    public MethodContext setArgument(final int index, final Object value) {
+        return (MethodContext) super.setArgument(index, value);
     }
 
     /**
@@ -115,6 +121,11 @@ public class MethodContext extends ExecutableContext {
         setThrowable(null);
     }
 
+    @Override
+    public String toString() {
+        return description;
+    }
+
     /**
      * Invokes the target method with the specified arguments.
      *
@@ -122,7 +133,20 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin() throws Exception {
-        return invokeOrigin(target, method, arguments);
+        return invokeOrigin(target, method, arguments, (Function<Throwable, Exception>) null);
+    }
+
+    /**
+     * Invokes the target method with the specified arguments and exception transformation.
+     *
+     * @param <T>     the return type of the method invocation
+     * @param <E>     the type of exception that may be thrown
+     * @param thrower function to transform exceptions, or null to use original exceptions
+     * @return the result of the method invocation cast to type T
+     * @throws E transformed or original exception if thrown during method invocation
+     */
+    public <T, E extends Exception> T invokeOrigin(Function<Throwable, E> thrower) throws E {
+        return (T) invokeOrigin(target, method, arguments, thrower);
     }
 
     /**
@@ -133,12 +157,7 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin(final Object target) throws Exception {
-        return invokeOrigin(target, method, arguments);
-    }
-
-    @Override
-    public String toString() {
-        return description;
+        return invokeOrigin(target, method, arguments, (Function<Throwable, Exception>) null);
     }
 
     /**
@@ -151,17 +170,38 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception Original exception if thrown by target method
      */
     public static Object invokeOrigin(final Object target, Method method, Object[] arguments) throws Exception {
+        return invokeOrigin(target, method, arguments, (Function<Throwable, Exception>) null);
+    }
+
+    /**
+     * Invokes the original method on target object with exception transformation support.
+     *
+     * @param <T>       the type of exception that may be thrown
+     * @param target    the target object to invoke method on
+     * @param method    the method to invoke (will be made accessible if needed)
+     * @param arguments the method arguments
+     * @param thrower   function to transform exceptions, or null to use original exceptions
+     * @return the method return value
+     * @throws T transformed or original exception if thrown by target method
+     */
+    public static <T extends Exception> Object invokeOrigin(final Object target, Method method, Object[] arguments, Function<Throwable, T> thrower) throws T {
         try {
             OriginStack.push(target, method);
             // method is always a copy object by java.lang.Class.getMethods
             // so we need to set accessible to true
             Accessible.setAccessible(method, true);
             return method.invoke(target, arguments);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() != null && e.getCause() instanceof Exception) {
-                throw (Exception) e.getCause();
+        } catch (Throwable e) {
+            Throwable cause = e instanceof InvocationTargetException && e.getCause() != null ? e.getCause() : e;
+            if (thrower != null) {
+                throw thrower.apply(cause);
+            } else if (cause instanceof Exception) {
+                throw (T) cause;
+            } else if (e != cause && e instanceof Exception) {
+                throw (T) cause;
+            } else {
+                throw new RuntimeException(cause.getMessage(), cause);
             }
-            throw e;
         } finally {
             OriginStack.tryPop(target, method);
         }

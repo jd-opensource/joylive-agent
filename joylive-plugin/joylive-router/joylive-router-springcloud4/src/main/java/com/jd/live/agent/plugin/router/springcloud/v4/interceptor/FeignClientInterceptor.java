@@ -31,11 +31,10 @@ import com.jd.live.agent.plugin.router.springcloud.v4.request.FeignClientForward
 import com.jd.live.agent.plugin.router.springcloud.v4.response.FeignClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v4.util.CloudUtils;
 import feign.Request;
-import feign.Response;
 
-import java.io.IOException;
 import java.net.URI;
 
+import static com.jd.live.agent.core.util.ExceptionUtils.IO_EXCEPTION_CONVERTER;
 import static com.jd.live.agent.governance.request.Request.KEY_CLOUD_REQUEST;
 import static com.jd.live.agent.plugin.router.springcloud.v4.request.FeignOutboundRequest.createRequest;
 
@@ -118,17 +117,8 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         }
         Request req = (Request) request;
         // invoke
-        FeignClientClusterRequest fr = new FeignClientClusterRequest(req, service, uri, registry, endpoint -> {
-            // invoke a endpoint
-            mc.setArgument(0, createRequest(uri, req, endpoint));
-            try {
-                return (Response) mc.invokeOrigin();
-            } catch (IOException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new IOException(e.getMessage(), e);
-            }
-        });
+        FeignClientClusterRequest fr = new FeignClientClusterRequest(req, service, uri, registry, endpoint ->
+                mc.setArgument(0, createRequest(uri, req, endpoint)).invokeOrigin(IO_EXCEPTION_CONVERTER));
         try {
             FeignClusterResponse response = FeignClientCluster.INSTANCE.request(new HttpOutboundInvocation<>(fr, context));
             mc.skipWith(response);

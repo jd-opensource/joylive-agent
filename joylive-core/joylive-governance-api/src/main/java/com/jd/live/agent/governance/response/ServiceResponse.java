@@ -87,7 +87,7 @@ public interface ServiceResponse extends Response, ResultProvider {
         if (error != null && !error.isServerError()) {
             consumer.accept(null, error.getThrowable());
         } else {
-            consumer.accept(getResult(), null);
+            consumer.accept(getResponse(), null);
         }
     }
 
