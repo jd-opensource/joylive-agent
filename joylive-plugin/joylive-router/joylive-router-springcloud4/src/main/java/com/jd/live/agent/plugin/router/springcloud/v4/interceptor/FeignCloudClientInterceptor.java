@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springcloud.v4.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.FeignCloudCluster;
@@ -52,11 +51,6 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
                 cluster.getContext());
         HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         FeignClusterResponse response = cluster.request(invocation);
-        ServiceError error = response.getError();
-        if (error != null && !error.isServerError()) {
-            mc.skipWithThrowable(error.getThrowable());
-        } else {
-            mc.skipWithResult(response.getResponse());
-        }
+        mc.skipWith(response);
     }
 }

@@ -15,18 +15,22 @@
  */
 package com.jd.live.agent.governance.response;
 
+import com.jd.live.agent.bootstrap.bytekit.context.ResultProvider;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * ServiceResponse
  *
  * @since 1.0.0
  */
-public interface ServiceResponse extends Response {
+public interface ServiceResponse extends Response, ResultProvider {
 
     /**
      * Retrieves the status code associated with this response. The status code
@@ -75,6 +79,59 @@ public interface ServiceResponse extends Response {
      */
     default Object getResult() {
         return null;
+    }
+
+    @Override
+    default void handle(BiConsumer<Object, Throwable> consumer) {
+        ServiceError error = getError();
+        if (error != null && !error.isServerError()) {
+            consumer.accept(null, error.getThrowable());
+        } else {
+            consumer.accept(getResult(), null);
+        }
+    }
+
+    /**
+     * Gets the response or throws an exception if there's a non-server error.
+     *
+     * @return the response object
+     * @throws Throwable if a non-server error occurred
+     */
+    default <T> T getResponseOrThrow() throws Throwable {
+        return getResponseOrThrow(null);
+    }
+
+    /**
+     * Gets the response or throws an exception if there's a non-server error.
+     * Allows custom exception transformation via the provided thrower function.
+     *
+     * @param <T>     the type of the response
+     * @param thrower function to transform the original exception, or null to use original
+     * @return the response object cast to the specified type
+     * @throws Throwable the original exception or transformed exception if a non-server error occurred
+     */
+    default <T, R extends Throwable> T getResponseOrThrow(BiFunction<String, Throwable, R> thrower) throws R {
+        ServiceError error = getError();
+        if (error != null && !error.isServerError()) {
+            throw thrower == null ? (R) error.getThrowable() : thrower.apply(error.getError(), error.getThrowable());
+        } else {
+            return (T) getResponse();
+        }
+    }
+
+    /**
+     * Completes the given CompletableFuture based on the service error status.
+     * Completes exceptionally if there's an error with a throwable, otherwise completes normally.
+     *
+     * @param future the CompletableFuture to complete
+     */
+    default void completeVoid(CompletableFuture<Void> future) {
+        ServiceError error = getError();
+        if (error != null && error.getThrowable() != null) {
+            future.completeExceptionally(error.getThrowable());
+        } else {
+            future.complete(null);
+        }
     }
 
     /**

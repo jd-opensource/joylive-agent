@@ -90,6 +90,16 @@ public class MethodContext extends ExecutableContext {
         setSkip(true);
     }
 
+    public void skipWith(final ResultProvider provider) {
+        provider.handle((result, throwable) -> {
+            if (throwable != null) {
+                skipWithThrowable(throwable);
+            } else {
+                skipWithResult(result);
+            }
+        });
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T getResult() {
         return (T) result;
