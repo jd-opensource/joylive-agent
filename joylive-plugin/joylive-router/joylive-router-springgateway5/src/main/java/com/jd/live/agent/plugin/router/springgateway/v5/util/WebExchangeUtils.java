@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springgateway.v5.util;
 
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.util.UriUtils;
 import org.springframework.web.server.ServerWebExchange;
 
 import java.net.URI;
@@ -26,7 +27,6 @@ import java.util.Set;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.governance.instance.Endpoint.SECURE_SCHEME;
 import static com.jd.live.agent.plugin.router.springcloud.v5.instance.SpringEndpoint.getResponse;
-import static com.jd.live.agent.plugin.router.springcloud.v5.util.UriUtils.newURI;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.*;
 
 /**
@@ -63,7 +63,7 @@ public class WebExchangeUtils {
 
         boolean secure = SECURE_SCHEME.test(overrideScheme) || endpoint.isSecure();
         String scheme = choose(endpoint.getScheme(), overrideScheme);
-        URI requestUrl = newURI(uri, scheme, secure, endpoint.getHost(), endpoint.getPort());
+        URI requestUrl = UriUtils.newURI(uri, scheme, secure, endpoint.getHost(), endpoint.getPort());
 
         attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
         attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, getResponse(endpoint));
