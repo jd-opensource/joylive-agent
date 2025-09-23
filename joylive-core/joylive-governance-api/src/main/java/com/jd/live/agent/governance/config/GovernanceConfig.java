@@ -119,6 +119,7 @@ public class GovernanceConfig {
 
     public static final String CONFIG_REGISTRY = CONFIG_GOVERNANCE + ".registry";
     public static final String CONFIG_REGISTRY_ENABLED = CONFIG_REGISTRY + ENABLED;
+    public static final String CONFIG_REGISTRY_CLUSTERS = CONFIG_REGISTRY + ".clusters";
 
     public static final String CONFIG_CENTER = CONFIG_GOVERNANCE + ".configCenter";
     public static final String CONFIG_CENTER_ENABLED = CONFIG_CENTER + ENABLED;

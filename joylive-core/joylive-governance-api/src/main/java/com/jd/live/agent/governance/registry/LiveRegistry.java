@@ -17,9 +17,10 @@ package com.jd.live.agent.governance.registry;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.bootstrap.AppContext;
-import com.jd.live.agent.core.bootstrap.AppListener;
-import com.jd.live.agent.core.bootstrap.AppListenerSupplier;
+import com.jd.live.agent.core.bootstrap.*;
+import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
+import com.jd.live.agent.core.event.AgentEvent;
+import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.InjectSource;
@@ -30,8 +31,10 @@ import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
+import com.jd.live.agent.core.util.option.AppEnvironmentOption;
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
@@ -71,6 +74,12 @@ public class LiveRegistry extends AbstractService
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
+
+    @Inject(Publisher.SYSTEM)
+    private Publisher<AgentEvent> publisher;
+
+    @Inject(Option.COMPONENT_OPTION)
+    private Option option;
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
@@ -120,30 +129,6 @@ public class LiveRegistry extends AbstractService
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        // start registries
-        List<RegistryClusterConfig> clusters = registryConfig.getClusters();
-        List<RegistryService> registries = new ArrayList<>();
-        try {
-            if (clusters != null && registryConfig.isEnabled()) {
-                for (RegistryClusterConfig cluster : clusters) {
-                    if (cluster.validate()) {
-                        RegistryFactory factory = factories.get(cluster.getType());
-                        if (factory == null) {
-                            throw new RegistryException("registry type " + cluster.getType() + " is not supported");
-                        }
-                        registries.add(factory.create(cluster));
-                    }
-                }
-            }
-            if (!registries.isEmpty()) {
-                for (RegistryService registry : registries) {
-                    startCluster(registry);
-                }
-            }
-        } catch (Throwable e) {
-            return Futures.future(e);
-        }
-        this.registries = registries;
         return CompletableFuture.completedFuture(null);
     }
 
@@ -188,11 +173,18 @@ public class LiveRegistry extends AbstractService
 
     @Override
     public AppListener getAppListener() {
-        return new AppListener.AppListenerAdapter() {
+        return new AppListenerAdapter() {
+
+            @Override
+            public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
+                // start custom registry service
+                onAppEnvironmentPrepared(environment);
+            }
 
             @Override
             public void onReady(AppContext context) {
-                onApplicationReady();
+                // register
+                onAppReady();
             }
         };
     }
@@ -431,9 +423,52 @@ public class LiveRegistry extends AbstractService
     }
 
     /**
+     * Handles application environment prepared event by starting registry services.
+     * Initializes and starts all configured registry clusters if registry is enabled.
+     *
+     * @param environment the prepared application environment
+     */
+    private void onAppEnvironmentPrepared(AppEnvironment environment) {
+        // start registries in environment prepared event
+        List<RegistryClusterConfig> clusters = registryConfig.getClusters();
+        List<RegistryService> registries = new ArrayList<>();
+        if (registryConfig.isEnabled() && clusters != null) {
+            try {
+                // source config
+                List<Map<String, Object>> maps = option.getObject(GovernanceConfig.CONFIG_REGISTRY_CLUSTERS);
+                AppEnvironmentOption env = new AppEnvironmentOption(environment);
+                for (int i = 0; i < clusters.size(); i++) {
+                    // reinject config by app envrionment
+                    RegistryClusterConfig cluster = clusters.get(i);
+                    cluster.supplement(new MapOption(maps.get(i)), env);
+                    // validate
+                    if (cluster.validate()) {
+                        // create registry service
+                        RegistryFactory factory = factories.get(cluster.getType());
+                        if (factory == null) {
+                            throw new RegistryException("registry type " + cluster.getType() + " is not supported");
+                        }
+                        registries.add(factory.create(cluster));
+                    }
+                }
+                if (!registries.isEmpty()) {
+                    for (RegistryService registry : registries) {
+                        startCluster(registry);
+                    }
+                } else {
+                    logger.warn("No registry cluster is configured.");
+                }
+            } catch (Throwable e) {
+                publisher.offer(AgentEvent.onAgentFailure("Failed to start registry cluster.", e));
+            }
+        }
+        this.registries = registries;
+    }
+
+    /**
      * Called when the application is ready to start. This method iterates through all registered services and calls their register method.
      */
-    private void onApplicationReady() {
+    private void onAppReady() {
         ready.set(true);
         // warmup
         List<ServiceId> services = new ArrayList<>(subscriptions.size());

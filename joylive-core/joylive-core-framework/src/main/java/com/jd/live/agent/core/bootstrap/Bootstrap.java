@@ -527,6 +527,7 @@ public class Bootstrap implements AgentLifecycle {
             if (injectable != null && injectable.enable() || configurable != null) {
                 Map<String, Object> components = new HashMap<>();
                 InjectSource ctx = new InjectSource(option, components);
+                ctx.add(Option.COMPONENT_OPTION, option);
                 ctx.add(CipherConfig.COMPONENT_CIPHER_CONFIG, cipherConfig);
                 ctx.add(CipherDetector.COMPONENT_CIPHER_DETECTOR, cipherDetector);
                 ctx.add(CipherFactory.COMPONENT_CIPHER_FACTORY, cipherFactory);
