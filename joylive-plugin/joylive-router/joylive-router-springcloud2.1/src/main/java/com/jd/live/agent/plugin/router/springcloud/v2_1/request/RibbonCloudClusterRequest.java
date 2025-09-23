@@ -19,6 +19,7 @@ import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.MultiLinkedMap;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.context.RibbonClusterContext;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
@@ -33,9 +34,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.instance.EndpointInstance.convert;
-import static com.jd.live.agent.plugin.router.springcloud.v2_1.util.UriUtils.newURI;
 
 /**
  * Represents an outbound request made using Feign, extending the capabilities of {@link AbstractCloudClusterRequest}
@@ -92,7 +90,7 @@ public class RibbonCloudClusterRequest extends AbstractCloudClusterRequest<HttpR
      * @throws IOException if an I/O error occurs during the request execution
      */
     public CloseableHttpResponse execute(ServiceEndpoint endpoint) throws IOException {
-        HttpUriRequest newRequest = RequestBuilder.copy(request).setUri(newURI(convert(endpoint), uri)).build();
+        HttpUriRequest newRequest = RequestBuilder.copy(request).setUri(UriUtils.newURI(endpoint, uri)).build();
         return client.execute(newRequest, httpContext);
     }
 }

@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.context.ReactiveClusterContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.util.CloudUtils;
 import org.springframework.cloud.client.ServiceInstance;
@@ -30,8 +31,6 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-
-import static com.jd.live.agent.plugin.router.springcloud.v4.util.UriUtils.newURI;
 
 /**
  * Represents an outbound HTTP request in a reactive microservices architecture,
@@ -108,24 +107,24 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
      * Builds a new {@link ClientRequest} tailored for a specific {@link ServiceInstance}, incorporating sticky session
      * configurations and potential transformations.
      *
-     * @param serviceInstance The {@link ServiceInstance} to which the request should be directed.
+     * @param instance The {@link ServiceInstance} to which the request should be directed.
      * @return A new {@link ClientRequest} instance, modified to target the specified {@link ServiceInstance} and
      * potentially transformed by any configured {@link LoadBalancerClientRequestTransformer}s.
      */
-    private ClientRequest createRequest(ServiceInstance serviceInstance) {
+    private ClientRequest createRequest(ServiceInstance instance) {
         LoadBalancerProperties properties = serviceContext.getLoadBalancerProperties();
         LoadBalancerProperties.StickySession stickySession = properties == null ? null : properties.getStickySession();
         String instanceIdCookieName = stickySession == null ? null : stickySession.getInstanceIdCookieName();
         boolean addServiceInstanceCookie = stickySession != null && stickySession.isAddServiceInstanceCookie();
         URI originalUrl = request.url();
         ClientRequest result = ClientRequest
-                .create(request.method(), newURI(serviceInstance, originalUrl))
+                .create(request.method(), UriUtils.newURI(originalUrl, instance.getScheme(), instance.isSecure(), instance.getHost(), instance.getPort()))
                 .headers(headers -> headers.addAll(request.headers()))
                 .cookies(cookies -> {
                     cookies.addAll(request.cookies());
                     // todo how to use this sticky session
                     if (!(instanceIdCookieName == null || instanceIdCookieName.isEmpty()) && addServiceInstanceCookie) {
-                        cookies.add(instanceIdCookieName, serviceInstance.getInstanceId());
+                        cookies.add(instanceIdCookieName, instance.getInstanceId());
                     }
                 })
                 .attributes(attributes -> attributes.putAll(request.attributes()))
@@ -134,7 +133,7 @@ public class ReactiveCloudClusterRequest extends AbstractCloudClusterRequest<Cli
         List<LoadBalancerClientRequestTransformer> transformers = context.getTransformers();
         if (transformers != null) {
             for (LoadBalancerClientRequestTransformer transformer : transformers) {
-                result = transformer.transformRequest(result, serviceInstance);
+                result = transformer.transformRequest(result, instance);
             }
         }
         return result;
