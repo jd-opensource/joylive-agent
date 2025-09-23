@@ -95,17 +95,37 @@ public abstract class ExecutableContext extends AbstractAttributes {
         return throwable == null;
     }
 
+    /**
+     * Gets the argument at the specified index.
+     *
+     * @param <T>   the type to cast the argument to
+     * @param index the argument index
+     * @return the argument cast to type T, or null if index is invalid
+     */
     @SuppressWarnings("unchecked")
     public <T> T getArgument(final int index) {
         return arguments == null || index < 0 || index >= arguments.length ? null : (T) arguments[index];
     }
 
-    public void setArgument(final int index, final Object value) {
+    /**
+     * Sets the argument at the specified index.
+     *
+     * @param index the argument index
+     * @param value the new argument value
+     * @return this context for method chaining
+     */
+    public ExecutableContext setArgument(final int index, final Object value) {
         if (index >= 0 && index < arguments.length) {
             arguments[index] = value;
         }
+        return this;
     }
 
+    /**
+     * Gets the number of arguments.
+     *
+     * @return the argument count, or 0 if no arguments
+     */
     public int getArgumentCount() {
         return arguments == null ? 0 : arguments.length;
     }
