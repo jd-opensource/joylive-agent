@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springgateway.v5.filter;
 
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -128,12 +127,7 @@ public class LiveGatewayFilter implements GatewayFilter {
             if (t != null) {
                 result.completeExceptionally(t);
             } else {
-                ServiceError error = v.getError();
-                if (error != null && error.getThrowable() != null) {
-                    result.completeExceptionally(error.getThrowable());
-                } else {
-                    result.complete(null);
-                }
+                v.completeVoid(result);
             }
         });
         return Mono.fromCompletionStage(result);
