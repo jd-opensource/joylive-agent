@@ -112,7 +112,7 @@ public interface PolyObject {
 
         @Override
         public Object getTarget() {
-            return target;
+            return target.array();
         }
     }
 }
