@@ -23,19 +23,11 @@ import lombok.Setter;
 public class NacosConfig {
 
     public static final String[] DEFAULT_PATHS = new String[]{
-            // nacos 1.x,2.x
-            "/nacos/v1/console/health/liveness",
-            // nacos 3.x
-            "/v3/console/health/readiness",
-            // r-nacos
-            "/nacos/health",
+            "nacos/v1/ns/operator/metrics?onlyStatus=true",
     };
 
     public static final String[] DEFAULT_RESPONSES = new String[]{
-            // nacos
-            "OK",
-            // r-nacos
-            "success",
+            "UP",
     };
 
     private int connectTimeout = 1000;
