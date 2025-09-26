@@ -77,7 +77,7 @@ public class NacosHealthProbe implements HealthProbe {
 
     private String[] getPaths(String lastPath) {
         String[] paths = config.getPaths();
-        if (lastPath != null) {
+        if (lastPath != null && paths.length > 1) {
             for (int i = 0; i < paths.length; i++) {
                 if (lastPath.equals(paths[i])) {
                     if (i > 0) {
