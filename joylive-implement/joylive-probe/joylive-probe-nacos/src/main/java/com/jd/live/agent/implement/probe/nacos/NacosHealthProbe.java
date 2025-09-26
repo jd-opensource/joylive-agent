@@ -40,20 +40,26 @@ public class NacosHealthProbe implements HealthProbe {
     @Config(CONFIG_PROBE_NACOS)
     private NacosConfig config = new NacosConfig();
 
+    private transient String lastPath;
+
     @Override
     public boolean test(String address) {
         List<URI> uris = toList(split(address, CHAR_COMMA), URI::parse);
         for (URI uri : uris) {
-            for (String path : config.getPaths()) {
-                uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(path).build();
+            String[] paths = getPaths();
+            for (String path : paths) {
                 try {
+                    uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(path).build();
                     HttpResponse<String> response = get(uri.toString(),
                             c -> {
                                 c.setConnectTimeout(config.getConnectTimeout());
                                 c.setReadTimeout(config.getReadTimeout());
                             }, new StringReader<>());
-                    if (response.getStatus() == HttpStatus.OK && config.match(response.getData())) {
-                        return true;
+                    if (response.getStatus() == HttpStatus.OK) {
+                        lastPath = path;
+                        if (config.match(response.getData())) {
+                            return true;
+                        }
                     }
                 } catch (IOException ignore) {
                 }
@@ -66,5 +72,22 @@ public class NacosHealthProbe implements HealthProbe {
     @Override
     public String type() {
         return HealthProbe.NACOS;
+    }
+
+    private String[] getPaths() {
+        String[] paths = config.getPaths();
+        if (lastPath != null) {
+            for (int i = 0; i < paths.length; i++) {
+                if (lastPath.equals(paths[i])) {
+                    if (i > 0) {
+                        paths = paths.clone();
+                        paths[i] = paths[0];
+                        paths[0] = lastPath;
+                    }
+                    break;
+                }
+            }
+        }
+        return paths;
     }
 }
