@@ -32,6 +32,7 @@ import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.policy.service.ServiceName;
 import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.implement.service.config.nacos.client.AbstractNacosClient;
@@ -385,7 +386,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
         public Boolean call() throws Exception {
             if (registers.get(key) == instance) {
                 client.registerInstance(key.getService(), key.group, instance);
-                logger.info("Registered instance {}:{} to {}", instance.getIp(), instance.getPort(), name);
+                String uniqueName = ServiceName.getUniqueName(config.getNamespace(), key.getService(), key.getGroup());
+                logger.info("Registered instance {}:{} to {} at {}", instance.getIp(), instance.getPort(), uniqueName, name);
             }
             return true;
         }
