@@ -74,6 +74,7 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
             context.put("${space_id}", ns);
             context.put("${application}", app);
             String newUrl = template.render(context);
+            logger.info("load env from " + newUrl);
             HttpResponse<HttpEnvResponse> response = HttpUtils.get(newUrl,
                     cnn -> Optional.ofNullable(parameters).ifPresent(p -> p.forEach(cnn::setRequestProperty)),
                     reader -> parser.read(reader, HttpEnvResponse.class));
