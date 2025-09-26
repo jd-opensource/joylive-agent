@@ -73,12 +73,12 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
             logger.info("Ignore loading env from http, caused by empty service namespace.");
             return;
         }
+        Template template = Template.parse(url);
+        Map<String, String> context = new HashMap<>();
+        context.put("space_id", ns);
+        context.put("application", app);
+        String newUrl = template.render(context, false);
         try {
-            Template template = Template.parse(url);
-            Map<String, String> context = new HashMap<>();
-            context.put("space_id", ns);
-            context.put("application", app);
-            String newUrl = template.render(context, false);
             logger.info("load env from " + newUrl);
             HttpResponse<HttpEnvResponse> response = HttpUtils.get(newUrl,
                     cnn -> Optional.ofNullable(parameters).ifPresent(p -> p.forEach(cnn::setRequestProperty)),
@@ -89,13 +89,16 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
                 if (error == null) {
                     resp.getData().forEach((k, v) -> env.putIfAbsent(k.toString(), v));
                 } else {
-                    logger.error("Failed to load env from " + url + ", code=" + error.getCode() + ", message=" + error.getMessage());
+                    logger.error("Failed to load env from " + newUrl + ", code=" + error.getCode() + ", message=" + error.getMessage());
+                    if (error.getCode() == 404) {
+                        logger.error("The namespace(" + ns + ") or application(" + app + ") are not found, please check your configuration.");
+                    }
                 }
             } else {
-                logger.error("Failed to load env from " + url + ", status=" + response.getCode() + ", message=" + response.getMessage());
+                logger.error("Failed to load env from " + newUrl + ", status=" + response.getCode() + ", message=" + response.getMessage());
             }
         } catch (Throwable e) {
-            logger.error("Failed to load env from " + url + ", caused by " + e.getMessage());
+            logger.error("Failed to load env from " + newUrl + ", caused by " + e.getMessage());
         }
     }
 }
