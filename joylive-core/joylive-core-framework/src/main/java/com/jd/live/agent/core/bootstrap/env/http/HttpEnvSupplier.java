@@ -61,11 +61,16 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     @Override
     public void process(Map<String, Object> env) {
         if (isEmpty(url)) {
+            logger.info("Ignore loading env from http, caused by empty url.");
             return;
         }
         String app = choose(application, (String) env.get(Application.KEY_APPLICATION_NAME));
         String ns = choose(namespace, (String) env.get(Application.KEY_APPLICATION_SERVICE_NAMESPACE));
-        if (isEmpty(app) || isEmpty(ns)) {
+        if (isEmpty(app)) {
+            logger.info("Ignore loading env from http, caused by empty application name.");
+            return;
+        } else if (isEmpty(ns)) {
+            logger.info("Ignore loading env from http, caused by empty service namespace.");
             return;
         }
         try {
