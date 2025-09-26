@@ -1,0 +1,5 @@
+com.jd.live.agent.plugin.registry.springcloud.v5.definition.RegistryDefinition
+com.jd.live.agent.plugin.registry.springcloud.v5.definition.FeignClientFactoryBeanDefinition
+com.jd.live.agent.plugin.registry.springcloud.v5.definition.DiscoveryInstanceSupplierDefinition
+com.jd.live.agent.plugin.registry.springcloud.v5.definition.SimpleDiscoveryClientDefinition
+com.jd.live.agent.plugin.registry.springcloud.v5.definition.SimpleReactiveDiscoveryClientDefinition

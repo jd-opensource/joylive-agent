@@ -23,10 +23,12 @@
         <module>joylive-registry-springcloud2.2</module>
         <module>joylive-registry-springcloud3</module>
         <module>joylive-registry-springcloud4</module>
+        <module>joylive-registry-springcloud5</module>
         <module>joylive-registry-springgateway2.1</module>
         <module>joylive-registry-springgateway2.2</module>
         <module>joylive-registry-springgateway3</module>
         <module>joylive-registry-springgateway4</module>
+        <module>joylive-registry-springgateway5</module>
         <module>joylive-registry-zuul</module>
         <module>joylive-registry-nacos3.0</module>
         <module>joylive-registry-nacos2.4</module>
