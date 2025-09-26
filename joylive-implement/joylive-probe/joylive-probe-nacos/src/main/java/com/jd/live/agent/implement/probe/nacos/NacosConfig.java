@@ -49,7 +49,7 @@ public class NacosConfig {
     public boolean match(String response) {
         if (response != null && !response.isEmpty()) {
             for (String r : responses) {
-                if (response.equals(r)) {
+                if (response.contains(r)) {
                     return true;
                 }
             }
