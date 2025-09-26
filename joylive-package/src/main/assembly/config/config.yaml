@@ -357,7 +357,7 @@ agent:
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_FIRST}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:${REGISTRY_NAMESPACE:public}}
-          group: ${CONFIG_REGISTRY_GROUP_FIRST:DEFAULT_GROUP}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
@@ -368,7 +368,7 @@ agent:
           password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_SECOND}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:${REGISTRY_NAMESPACE:public}}
-          group: ${CONFIG_REGISTRY_GROUP_SECOND:DEFAULT_GROUP}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
@@ -379,7 +379,7 @@ agent:
           properties: ${CONFIG_REGISTRY_PROPERTIES_THIRD}
           password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:}}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:${REGISTRY_NAMESPACE:public}}
-          group: ${CONFIG_REGISTRY_GROUP_THIRD:DEFAULT_GROUP}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
     probe:

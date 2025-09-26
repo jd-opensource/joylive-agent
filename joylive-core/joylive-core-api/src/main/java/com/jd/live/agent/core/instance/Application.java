@@ -51,6 +51,10 @@ public class Application {
      */
     public static final String KEY_APPLICATION_SERVICE_NAMESPACE = "APPLICATION_SERVICE_NAMESPACE";
 
+    public static final String KEY_APPLICATION_SERVICE_NAME = "APPLICATION_SERVICE_NAME";
+
+    public static final String KEY_APPLICATION_SERVICE_GROUP = "APPLICATION_SERVICE_GROUP";
+
     /**
      * Constant for the application service port.
      */

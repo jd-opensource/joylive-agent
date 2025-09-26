@@ -23,7 +23,6 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpStatus;
@@ -34,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.jd.live.agent.core.instance.Application.*;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
@@ -55,6 +55,12 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     @Config("app.service.namespace")
     private String namespace;
 
+    @Config("app.service.name")
+    private String service;
+
+    @Config("app.service.group")
+    private String group;
+
     @Inject(ObjectParser.JSON)
     private ObjectParser parser;
 
@@ -64,8 +70,10 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
             logger.info("Ignore loading env from http, caused by empty url.");
             return;
         }
-        String app = choose(application, (String) env.get(Application.KEY_APPLICATION_NAME));
-        String ns = choose(namespace, (String) env.get(Application.KEY_APPLICATION_SERVICE_NAMESPACE));
+        String app = choose(application, (String) env.get(KEY_APPLICATION_NAME));
+        String ns = choose(choose(namespace, (String) env.get(KEY_APPLICATION_SERVICE_NAMESPACE)), (String) env.get("CONFIG_NACOS_NAMESPACE"));
+        String svr = choose(choose(choose(service, (String) env.get(KEY_APPLICATION_SERVICE_NAME)), (String) env.get("CONFIG_NACOS_SERVICE")), app);
+        String grp = choose(group, (String) env.get(KEY_APPLICATION_SERVICE_GROUP));
         if (isEmpty(app)) {
             logger.info("Ignore loading env from http, caused by empty application name.");
             return;
@@ -75,8 +83,10 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
         }
         Template template = Template.parse(url);
         Map<String, String> context = new HashMap<>();
-        context.put("space_id", ns);
         context.put("application", app);
+        context.put("space_id", ns);
+        context.put("service", svr);
+        context.put("group", grp);
         String newUrl = template.render(context, false);
         try {
             logger.info("load env from " + newUrl);

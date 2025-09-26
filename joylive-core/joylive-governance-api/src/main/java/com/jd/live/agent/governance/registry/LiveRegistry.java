@@ -53,6 +53,7 @@ import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.Constants.SAME_GROUP_PREDICATE;
 import static com.jd.live.agent.core.util.StringUtils.choose;
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * {@code LiveRegistry} is an implementation of {@link Registry} that manages the registration and unregistration
@@ -370,6 +371,9 @@ public class LiveRegistry extends AbstractService
             instance.setGroup(serviceId.getGroup());
             instance.setUniqueName(null);
         }
+        if (!isEmpty(serviceId.getCatalog()) && !serviceId.getCatalog().equalsIgnoreCase(instance.getCatalog())) {
+            instance.setCatalog(serviceId.getCatalog());
+        }
     }
 
     /**
@@ -388,7 +392,8 @@ public class LiveRegistry extends AbstractService
         String service = choose(serviceId.getService(), appService.getName());
         final String target = choose(aliases.get(service), service);
         String group = choose(serviceId.getGroup(), () -> role == ServiceRole.CONSUMER ? serviceConfig.getGroup(target) : appService.getGroup());
-        return serviceId.of(target, group);
+        String catalog = choose(serviceId.getCatalog(), appService.getCatalog());
+        return serviceId.of(target, group, catalog);
     }
 
     /**
@@ -1052,7 +1057,7 @@ public class LiveRegistry extends AbstractService
         ClusterOperation(RegistryService cluster, T instance) {
             this.cluster = cluster;
             this.instance = instance;
-            this.serviceId = new ServiceId(instance.getService(), getClusterGroup(cluster, instance.group), instance.isInterfaceMode());
+            this.serviceId = instance.of(getCatalog(cluster, instance.getCatalog()));
             this.name = instance.getUniqueName();
         }
 
@@ -1072,9 +1077,9 @@ public class LiveRegistry extends AbstractService
             return cluster.getConfig();
         }
 
-        protected String getClusterGroup(RegistryService cluster, String defaultGroup) {
+        protected String getCatalog(RegistryService cluster, String catalog) {
             RegistryClusterConfig config = cluster.getConfig();
-            return config == null ? defaultGroup : config.getGroup(defaultGroup);
+            return config == null ? catalog : config.getGroup(catalog);
         }
 
     }
@@ -1104,11 +1109,11 @@ public class LiveRegistry extends AbstractService
                         cluster.register(serviceId, instance);
                     }
                     setDone(true);
-                    logger.info("Success invoking registering instance {} to {} at {}",
+                    logger.info("Success invoking registering instance {} of {} to {}",
                             instance.getSchemeAddress(), name, cluster.getName());
                     return true;
                 } catch (Throwable e) {
-                    logger.error("Failed to invoke registering instance {} to {} at {}, caused by {}",
+                    logger.error("Failed to invoke registering instance {} of {} to {}, caused by {}",
                             instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
                 return false;
@@ -1124,10 +1129,10 @@ public class LiveRegistry extends AbstractService
                 try {
                     cluster.unregister(serviceId, instance);
                     setDone(false);
-                    logger.info("Success invoking unregistering instance {} to {} at {}",
+                    logger.info("Success invoking unregistering instance {} of {} to {}",
                             instance.getSchemeAddress(), name, cluster.getName());
                 } catch (Exception e) {
-                    logger.error("Failed to invoke unregistering instance {} to {} at {}, caused by {}",
+                    logger.error("Failed to invoke unregistering instance {} of {} to {}, caused by {}",
                             instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
             }
@@ -1156,10 +1161,10 @@ public class LiveRegistry extends AbstractService
             try {
                 cluster.subscribe(serviceId, consumer);
                 setDone(true);
-                logger.info("Success invoking subscribing {} at {}", name, cluster.getName());
+                logger.info("Success invoking subscribing {} to {}", name, cluster.getName());
                 return true;
             } catch (Exception e) {
-                logger.error("Failed to invoke subscribing {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
+                logger.error("Failed to invoke subscribing {} to {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
             }
             return false;
         }
@@ -1172,9 +1177,9 @@ public class LiveRegistry extends AbstractService
             try {
                 cluster.unsubscribe(serviceId);
                 setDone(false);
-                logger.info("Success invoking unsubscribing {} at {}", name, getClusterName());
+                logger.info("Success invoking unsubscribing {} to {}", name, getClusterName());
             } catch (Exception e) {
-                logger.error("Failed to invoke unsubscribing {} at {}, caused by {}", name, getClusterName(), e.getMessage(), e);
+                logger.error("Failed to invoke unsubscribing {} to {}, caused by {}", name, getClusterName(), e.getMessage(), e);
             }
         }
     }

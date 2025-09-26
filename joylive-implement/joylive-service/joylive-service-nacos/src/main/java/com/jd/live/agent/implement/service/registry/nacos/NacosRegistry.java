@@ -98,7 +98,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void register(ServiceId serviceId, ServiceInstance instance) {
         String service = getService(serviceId, instance);
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         Instance target = convert(instance);
         ServiceKey key = new ServiceKey(service, group);
         Locks.write(registerLock, () -> {
@@ -111,7 +112,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
         String service = getService(serviceId, instance);
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         ServiceKey key = new ServiceKey(service, group);
         Instance target = registers.remove(key);
         if (target != null) {
@@ -122,7 +124,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) {
         String service = serviceId.getService();
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         ServiceKey key = new ServiceKey(service, group);
         InstanceListener listener = new InstanceListener(serviceId.isInterfaceMode(), consumer);
         Locks.write(subscriptionLock, () -> {
@@ -135,7 +138,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void unsubscribe(ServiceId serviceId) throws Exception {
         String service = serviceId.getService();
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         ServiceKey key = new ServiceKey(service, group);
         if (subscriptions.remove(key) != null) {
             client.unsubscribe(service, group, event -> {
