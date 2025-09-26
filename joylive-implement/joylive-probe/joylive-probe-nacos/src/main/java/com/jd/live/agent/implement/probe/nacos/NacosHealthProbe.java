@@ -26,6 +26,8 @@ import com.jd.live.agent.governance.probe.HealthProbe;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.CHAR_COMMA;
@@ -40,13 +42,14 @@ public class NacosHealthProbe implements HealthProbe {
     @Config(CONFIG_PROBE_NACOS)
     private NacosConfig config = new NacosConfig();
 
-    private transient String lastPath;
+    private transient final Map<String, String> detects = new ConcurrentHashMap<>();
 
     @Override
     public boolean test(String address) {
         List<URI> uris = toList(split(address, CHAR_COMMA), URI::parse);
+        String detect = detects.get(address);
+        String[] paths = getPaths(detect);
         for (URI uri : uris) {
-            String[] paths = getPaths();
             for (String path : paths) {
                 try {
                     uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(path).build();
@@ -56,7 +59,7 @@ public class NacosHealthProbe implements HealthProbe {
                                 c.setReadTimeout(config.getReadTimeout());
                             }, new StringReader<>());
                     if (response.getStatus() == HttpStatus.OK) {
-                        lastPath = path;
+                        detects.put(address, path);
                         return config.match(response.getData());
                     }
                 } catch (IOException ignore) {
@@ -72,7 +75,7 @@ public class NacosHealthProbe implements HealthProbe {
         return HealthProbe.NACOS;
     }
 
-    private String[] getPaths() {
+    private String[] getPaths(String lastPath) {
         String[] paths = config.getPaths();
         if (lastPath != null) {
             for (int i = 0; i < paths.length; i++) {
