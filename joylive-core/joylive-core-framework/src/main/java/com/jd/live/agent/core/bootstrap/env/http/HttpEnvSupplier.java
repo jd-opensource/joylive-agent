@@ -76,8 +76,8 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
         try {
             Template template = Template.parse(url);
             Map<String, String> context = new HashMap<>();
-            context.put("${space_id}", ns);
-            context.put("${application}", app);
+            context.put("space_id", ns);
+            context.put("application", app);
             String newUrl = template.render(context);
             logger.info("load env from " + newUrl);
             HttpResponse<HttpEnvResponse> response = HttpUtils.get(newUrl,
