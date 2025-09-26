@@ -57,9 +57,7 @@ public class NacosHealthProbe implements HealthProbe {
                             }, new StringReader<>());
                     if (response.getStatus() == HttpStatus.OK) {
                         lastPath = path;
-                        if (config.match(response.getData())) {
-                            return true;
-                        }
+                        return config.match(response.getData());
                     }
                 } catch (IOException ignore) {
                 }
