@@ -87,7 +87,7 @@ public interface Registry extends ServiceRegistryFactory {
      *
      * @param instance the service instance to be reregistered
      */
-    default void reregister(ServiceInstance instance) {
+    default void update(ServiceInstance instance) {
         if (instance != null) {
             unregister(instance);
             register(instance);

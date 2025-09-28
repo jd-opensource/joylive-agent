@@ -141,7 +141,6 @@ public class DubboServiceDiscovery extends AbstractSystemRegistryService impleme
         Locks.write(lock, () -> {
             this.serviceInstance = serviceInstance;
             if (status.get() == REGISTERED_SUCCESS) {
-                registry.reregister(convert(serviceInstance));
                 delegate.update(serviceInstance);
                 // org.apache.dubbo.registry.nacos.NacosServiceDiscovery#update
                 // super.update(serviceInstance);
