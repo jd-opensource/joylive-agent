@@ -752,6 +752,81 @@ public class CollectionUtils {
     }
 
     /**
+     * Creates a new list containing all elements from the source collection plus additional items.
+     *
+     * @param <T>    the element type
+     * @param source the source collection to copy from
+     * @param items  additional items to add (can be null or empty)
+     * @return a new list containing source elements and additional items
+     */
+    public static <T> List<T> copyAndAdd(Collection<T> source, T... items) {
+        if (items == null) {
+            return new ArrayList<>(source);
+        }
+        List<T> list = new ArrayList<>(source.size() + items.length);
+        list.addAll(source);
+        for (T item : items) {
+            if (item != null) {
+                list.add(item);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Counts the number of elements in the iterable that match the given predicate.
+     *
+     * @param <T>       the element type
+     * @param source    the iterable to count elements from
+     * @param predicate the predicate to test elements against
+     * @return the count of matching elements
+     */
+    public static <T> int count(Iterable<T> source, Predicate<T> predicate) {
+        int count = 0;
+        for (T t : source) {
+            if (predicate.test(t)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Returns true if any element in the iterable matches the given predicate.
+     *
+     * @param <T>       the element type
+     * @param iterator  the iterable to test elements from
+     * @param predicate the predicate to test elements against
+     * @return true if any element matches, false otherwise
+     */
+    public static <T> boolean anyMatch(Iterable<T> iterator, Predicate<T> predicate) {
+        for (T t : iterator) {
+            if (predicate.test(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Removes the first element from the iterator that matches the given predicate.
+     *
+     * @param <T> the element type
+     * @param iterator the iterator to remove element from
+     * @param predicate the predicate to test elements against
+     * @return true if an element was removed, false otherwise
+     */
+    public static <T> boolean removeFirst(Iterator<T> iterator, Predicate<T> predicate) {
+        while (iterator.hasNext()) {
+            if (predicate.test(iterator.next())) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns a modified version of the given map, if necessary.
      *
      * @param sources the original map

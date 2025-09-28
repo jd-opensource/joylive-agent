@@ -76,6 +76,10 @@ public class ServiceId implements Serializable {
         this.interfaceMode = interfaceMode;
     }
 
+    public boolean isService(String name) {
+        return service != null && service.equalsIgnoreCase(name);
+    }
+
     public String getUniqueName() {
         if (uniqueName == null) {
             uniqueName = ServiceName.getUniqueName(namespace, service, group);

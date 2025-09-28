@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * A utility class that provides methods to facilitate the closing of resources and threads.
@@ -105,6 +106,36 @@ public class Close {
                     }
                 }
             }
+        }
+        return this;
+    }
+
+    /**
+     * Closes all resources in the collection and clears it.
+     *
+     * @param resources The collection of resources to close and clear
+     * @return This Close instance for method chaining
+     */
+    public Close closeAndClear(Collection<? extends AutoCloseable> resources) {
+        if (resources != null) {
+            close(resources);
+            resources.clear();
+        }
+        return this;
+    }
+
+    /**
+     * Closes all resources in the collection and clears it.
+     *
+     * @param resources The collection of resources to close and clear
+     * @return This Close instance for method chaining
+     */
+    public <K, V extends AutoCloseable> Close closeAndClear(Map<K, V> resources) {
+        if (resources != null) {
+            for (Map.Entry<K, V> entry : resources.entrySet()) {
+                close(entry.getValue());
+            }
+            resources.clear();
         }
         return this;
     }
