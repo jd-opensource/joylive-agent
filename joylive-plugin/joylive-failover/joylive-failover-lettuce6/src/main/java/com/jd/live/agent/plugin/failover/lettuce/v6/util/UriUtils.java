@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.failover.lettuce.v6.util;
 import com.jd.live.agent.core.util.network.Address;
 import io.lettuce.core.RedisURI;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
@@ -34,8 +33,7 @@ public class UriUtils {
      * @return Configured RedisURI for direct node connection
      */
     public static RedisURI getUri(RedisURI uri, String address) {
-        Address addr = Address.parse(address, true, RedisURI.DEFAULT_REDIS_PORT);
-        return builder(uri).withHost(addr.getHost()).withPort(addr.getPort()).build();
+        return builder(uri, Address.parse(address, true, RedisURI.DEFAULT_REDIS_PORT)).build();
     }
 
     /**
@@ -92,12 +90,7 @@ public class UriUtils {
      * @return Configured RedisURI instances for each node
      */
     public static List<RedisURI> getClusterUris(RedisURI uri, String[] nodes) {
-        List<RedisURI> result = new ArrayList<>(nodes.length);
-        for (String node : nodes) {
-            Address addr = Address.parse(node, true, RedisURI.DEFAULT_REDIS_PORT);
-            result.add(builder(uri).withHost(addr.getHost()).withPort(addr.getPort()).build());
-        }
-        return result;
+        return toList(nodes, node -> builder(uri, Address.parse(node, true, RedisURI.DEFAULT_REDIS_PORT)).build());
     }
 
     /**
@@ -125,5 +118,16 @@ public class UriUtils {
                 .withTimeout(uri.getTimeout())
                 .withVerifyPeer(uri.isVerifyPeer())
                 .withVerifyPeer(uri.getVerifyMode());
+    }
+
+    /**
+     * Creates a new {@link RedisURI.Builder} from an existing {@link RedisURI} with updated address.
+     *
+     * @param uri     the source RedisURI to copy configuration from
+     * @param address the new address to use
+     * @return a new builder with the source URI's settings and updated address
+     */
+    public static RedisURI.Builder builder(RedisURI uri, Address address) {
+        return builder(uri).withHost(address.getHost()).withPort(address.getPort());
     }
 }

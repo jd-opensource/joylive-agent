@@ -298,6 +298,34 @@ public class CollectionUtils {
     }
 
     /**
+     * Creates a new list by filtering and transforming elements from the source collection.
+     * If predicate is null, all elements are processed.
+     *
+     * @param <T>       the source element type
+     * @param <V>       the target element type
+     * @param source    the source collection (can be null)
+     * @param predicate the filter predicate (can be null)
+     * @param function  the transformation function
+     * @return a new list containing transformed elements, or empty list if source is null
+     */
+    public static <T, V> List<V> toList(Collection<T> source, Predicate<T> predicate, Function<T, V> function) {
+        if (source == null) {
+            return new ArrayList<>();
+        }
+        List<V> result = new ArrayList<>(source.size());
+        V apply;
+        for (T t : source) {
+            if (predicate == null || predicate.test(t)) {
+                apply = function.apply(t);
+                if (apply != null) {
+                    result.add(apply);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Converts an Enumeration to an Iterator.
      *
      * @param <T>         the type of elements in the enumeration

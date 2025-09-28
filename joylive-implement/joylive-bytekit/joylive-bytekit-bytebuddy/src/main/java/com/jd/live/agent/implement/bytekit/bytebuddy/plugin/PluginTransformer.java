@@ -50,6 +50,7 @@ import java.util.function.Function;
 
 import static com.jd.live.agent.core.plugin.definition.PluginImporter.DEFINITION_PREDICATE;
 import static com.jd.live.agent.core.plugin.definition.PluginImporter.TYPE_PREDICATE;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * A transformer that modifies the bytecode of classes loaded by the JVM, based on plugins that
@@ -200,15 +201,8 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
     private List<Interceptor> getInterceptors(InDefinedShape methodDesc,
                                               ClassLoader classLoader,
                                               List<InterceptorDefinition> interceptors) {
-        List<Interceptor> result = new ArrayList<>(interceptors.size());
         BuddyMethodDesc desc = new BuddyMethodDesc(methodDesc, classLoader);
-        for (InterceptorDefinition interceptor : interceptors) {
-            if (!interceptor.getMatcher().match(desc)) {
-                continue;
-            }
-            result.add(interceptor.getInterceptor());
-        }
-        return result;
+        return toList(interceptors, v -> v.getMatcher().match(desc), InterceptorDefinition::getInterceptor);
     }
 
     /**

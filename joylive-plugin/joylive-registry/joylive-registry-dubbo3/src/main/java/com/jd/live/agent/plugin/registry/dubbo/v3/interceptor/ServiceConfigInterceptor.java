@@ -30,11 +30,9 @@ import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ServiceConfig;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE;
 import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INTERFACE;
 
@@ -72,14 +70,8 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
         logger.info("Found dubbo provider {}.", serviceId.getUniqueName());
         Class<?> clazz = config.getInterfaceClass();
         if (clazz != GenericService.class) {
-            docRegistry.register(() -> {
-                List<ServiceAnchor> anchors = new ArrayList<>(16);
-                Method[] methods = clazz.getMethods();
-                for (Method method : methods) {
-                    anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), serviceId.isInterfaceMode() ? "/" : clazz.getName(), method.getName()));
-                }
-                return anchors;
-            });
+            docRegistry.register(() -> toList(clazz.getMethods(), method ->
+                    new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), serviceId.isInterfaceMode() ? "/" : clazz.getName(), method.getName())));
         }
     }
 

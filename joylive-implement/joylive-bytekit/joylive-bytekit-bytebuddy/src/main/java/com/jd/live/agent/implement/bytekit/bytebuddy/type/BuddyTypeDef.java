@@ -19,14 +19,14 @@ import com.jd.live.agent.core.bytekit.type.MethodDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDef;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
 import com.jd.live.agent.implement.bytekit.bytebuddy.type.BuddyTypeDesc.BuddyGeneric;
-import net.bytebuddy.description.method.MethodList;
 import net.bytebuddy.description.type.TypeDefinition;
 import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.description.type.TypeList;
 import net.bytebuddy.pool.TypePool;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * BuddyTypeDef
@@ -76,10 +76,7 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
 
     @Override
     public List<MethodDesc> getDeclaredMethods() {
-        MethodList<?> methods = desc.getDeclaredMethods();
-        List<MethodDesc> result = new ArrayList<>(methods.size());
-        methods.forEach(method -> result.add(new BuddyMethodDesc(method, classLoader)));
-        return result;
+        return toList(desc.getDeclaredMethods(), method -> new BuddyMethodDesc(method, classLoader));
     }
 
     @Override
@@ -100,12 +97,7 @@ public abstract class BuddyTypeDef<T extends TypeDefinition> implements TypeDef 
     @Override
     public List<TypeDesc.Generic> getInterfaces() {
         try {
-            TypeList.Generic interfaces = desc.getInterfaces();
-            List<TypeDesc.Generic> result = new ArrayList<>(interfaces.size());
-            for (TypeDescription.Generic type : interfaces) {
-                result.add(new BuddyGeneric(type, classLoader));
-            }
-            return result;
+            return toList(desc.getInterfaces(), type -> new BuddyGeneric(type, classLoader));
         } catch (TypePool.Resolution.NoSuchTypeException e) {
             return new ArrayList<>();
         }

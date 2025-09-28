@@ -21,9 +21,8 @@ import com.jd.live.agent.governance.db.DbUrl.DbUrlBuilder;
 import com.jd.live.agent.governance.db.DbUrlParser;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.split;
 import static com.jd.live.agent.core.util.StringUtils.splitMap;
 
@@ -182,11 +181,7 @@ public abstract class AbstractUrlParser implements DbUrlParser {
         }
         String[] hosts = split(url, ',');
         if (hosts.length != 0) {
-            List<Address> nodes = new ArrayList<>(hosts.length);
-            for (String host : hosts) {
-                nodes.add(Address.parse(host));
-            }
-            builder.address(url).nodes(nodes);
+            builder.address(url).nodes(toList(hosts, Address::parse));
         }
     }
 

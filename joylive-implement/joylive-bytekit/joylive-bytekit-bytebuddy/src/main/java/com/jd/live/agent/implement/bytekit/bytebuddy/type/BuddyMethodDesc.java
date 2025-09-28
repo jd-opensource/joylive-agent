@@ -18,13 +18,14 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.MethodDesc;
 import com.jd.live.agent.core.bytekit.type.ParameterDesc;
-import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.method.ParameterDescription;
 import net.bytebuddy.description.method.ParameterList;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * BuddyMethodDesc
@@ -44,10 +45,7 @@ public class BuddyMethodDesc implements MethodDesc {
 
     @Override
     public List<AnnotationDesc> getDeclaredAnnotations() {
-        AnnotationList annotations = desc.getDeclaredAnnotations();
-        List<AnnotationDesc> result = new ArrayList<>(annotations.size());
-        annotations.forEach(annotation -> result.add(new BuddyAnnotationDesc(annotation, classLoader)));
-        return result;
+        return toList(desc.getDeclaredAnnotations(), annotation -> new BuddyAnnotationDesc(annotation, classLoader));
     }
 
     @Override

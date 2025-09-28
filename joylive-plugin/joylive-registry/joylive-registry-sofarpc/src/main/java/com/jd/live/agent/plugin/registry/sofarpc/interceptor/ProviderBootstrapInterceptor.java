@@ -27,9 +27,7 @@ import com.jd.live.agent.governance.doc.ServiceAnchor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceId;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * ProviderBootstrapInterceptor
@@ -52,14 +50,8 @@ public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<P
         logger.info("Found sofa rpc provider {}.", serviceId.getUniqueName());
         Class<?> clazz = config.getProxyClass();
         if (clazz != GenericService.class) {
-            docRegistry.register(() -> {
-                List<ServiceAnchor> anchors = new ArrayList<>(16);
-                Method[] methods = clazz.getMethods();
-                for (Method method : methods) {
-                    anchors.add(new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName()));
-                }
-                return anchors;
-            });
+            docRegistry.register(() -> toList(clazz.getMethods(), method ->
+                    new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName())));
         }
     }
 

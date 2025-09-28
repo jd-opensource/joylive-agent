@@ -22,11 +22,12 @@ import com.jd.live.agent.core.bytekit.matcher.SubTypeMatcher.SubNameMatcher;
 import com.jd.live.agent.core.bytekit.matcher.SubTypeMatcher.SubNamesMatcher;
 import com.jd.live.agent.core.bytekit.type.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Provides a set of static factory methods for creating various types of {@link ElementMatcher}s.
@@ -314,10 +315,10 @@ public class MatcherBuilder {
         if (types == null || types.length == 0) {
             return arguments(0);
         } else {
-            List<ElementMatcher<ParameterDesc>> matchers = new ArrayList<>(types.length);
-            for (String type : types) {
-                matchers.add(new ParameterTypeMatcher<>(new NameMatcher<>(new StringMatcher(type, OperationMode.EQUALS_FULLY))));
-            }
+            List<ElementMatcher<ParameterDesc>> matchers = toList(types, type ->
+                    new ParameterTypeMatcher<>(
+                            new NameMatcher<>(
+                                    new StringMatcher(type, OperationMode.EQUALS_FULLY))));
             return new ParametersMatcher<>(new CollectionOneToOneMatcher<>(matchers));
         }
     }
@@ -334,10 +335,7 @@ public class MatcherBuilder {
         if (types == null || types.length == 0) {
             return arguments(0);
         } else {
-            List<ElementMatcher<ParameterDesc>> matchers = new ArrayList<>(types.length);
-            for (ElementMatcher<? super TypeDesc> type : types) {
-                matchers.add(new ParameterTypeMatcher<>(type));
-            }
+            List<ElementMatcher<ParameterDesc>> matchers = toList(types, type -> new ParameterTypeMatcher<>(type));
             return new ParametersMatcher<>(new CollectionOneToOneMatcher<>(matchers));
         }
     }
@@ -353,10 +351,10 @@ public class MatcherBuilder {
         if (types == null || types.length == 0) {
             return arguments(0);
         } else {
-            List<ElementMatcher<ParameterDesc>> matchers = new ArrayList<>(types.length);
-            for (Class<?> type : types) {
-                matchers.add(new ParameterTypeMatcher<>(new NameMatcher<>(new StringMatcher(type.getName(), OperationMode.EQUALS_FULLY))));
-            }
+            List<ElementMatcher<ParameterDesc>> matchers = toList(types, type ->
+                    new ParameterTypeMatcher<>(
+                            new NameMatcher<>(
+                                    new StringMatcher(type.getName(), OperationMode.EQUALS_FULLY))));
             return new ParametersMatcher<>(new CollectionOneToOneMatcher<>(matchers));
         }
     }
