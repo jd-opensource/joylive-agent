@@ -24,7 +24,7 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
  * can be implemented in various ways to accommodate different event dispatching mechanisms.
  */
 @Extensible("eventBus")
-public interface EventBus {
+public interface EventBus extends AutoCloseable {
 
     /**
      * Constant identifier for the event bus component.
@@ -79,5 +79,9 @@ public interface EventBus {
      */
     void stop();
 
+    @Override
+    default void close() {
+        stop();
+    }
 }
 

@@ -41,7 +41,7 @@ import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWait
  * @since 1.0.0
  */
 @Injectable
-public class ServiceManager implements ServiceSupervisor, ShutdownHook, GracefullyShutdown {
+public class ServiceManager implements ServiceSupervisor, ShutdownHook, GracefullyShutdown, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
@@ -101,6 +101,7 @@ public class ServiceManager implements ServiceSupervisor, ShutdownHook, Graceful
     /**
      * Gracefully shuts down the service.
      */
+    @Override
     public void close() {
         try {
             stop().join();

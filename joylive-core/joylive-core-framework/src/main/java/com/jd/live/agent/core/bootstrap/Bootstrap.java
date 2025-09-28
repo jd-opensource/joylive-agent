@@ -329,12 +329,12 @@ public class Bootstrap implements AgentLifecycle {
             return;
         }
         Close.instance()
-                .closeIfExists(shutdown, Shutdown::unregister)
-                .closeIfExists(timer, TimeScheduler::close)
-                .closeIfExists(pluginManager, PluginSupervisor::uninstall)
-                .closeIfExists(serviceManager, ServiceManager::close)
-                .closeIfExists(eventBus, EventBus::stop)
-                .closeIfExists(classLoaderManager, ClassLoaderManager::close)
+                .close(shutdown)
+                .close(timer)
+                .close(pluginManager)
+                .close(serviceManager)
+                .close(eventBus)
+                .close(classLoaderManager)
                 .closeIfExists(unLoader, Runnable::run)
                 .close(subscribers)
                 .close((Runnable) LoggerFactory::reset);

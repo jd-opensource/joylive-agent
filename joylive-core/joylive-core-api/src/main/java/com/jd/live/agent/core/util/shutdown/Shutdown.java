@@ -36,7 +36,7 @@ import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWait
  * can be added.
  * </p>
  */
-public class Shutdown {
+public class Shutdown implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(Shutdown.class);
 
@@ -145,6 +145,11 @@ public class Shutdown {
         if (register.compareAndSet(true, false)) {
             Runtime.getRuntime().removeShutdownHook(shutdownTask);
         }
+    }
+
+    @Override
+    public void close() {
+        unregister();
     }
 
     /**
