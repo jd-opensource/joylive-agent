@@ -263,9 +263,14 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
      * @param delay    Initial delay before first execution (ms)
      */
     protected void addTask(ServiceKey key, InstanceListener listener, long version, long delay) {
-        SubscriptionTask subscription = new SubscriptionTask(key, listener);
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.naming.subscription", subscription, version, predicate, timer);
-        task.delay(delay);
+        RetryVersionTimerTask.builder()
+                .name("nacos.naming.subscription")
+                .task(new SubscriptionTask(key, listener))
+                .version(version)
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(delay);
     }
 
     /**
@@ -277,9 +282,14 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
      * @param delay    Delay before execution (milliseconds)
      */
     protected void addTask(ServiceKey key, Instance instance, long version, long delay) {
-        RegisterTask register = new RegisterTask(key, instance);
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.naming.register", register, version, predicate, timer);
-        task.delay(delay);
+        RetryVersionTimerTask.builder()
+                .name("nacos.naming.register")
+                .task(new RegisterTask(key, instance))
+                .version(version)
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(delay);
     }
 
     @Getter
