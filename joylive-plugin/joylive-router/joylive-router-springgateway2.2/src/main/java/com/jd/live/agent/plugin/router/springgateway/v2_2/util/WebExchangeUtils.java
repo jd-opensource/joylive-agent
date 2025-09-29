@@ -81,6 +81,21 @@ public class WebExchangeUtils {
     }
 
     /**
+     * Removes multiple attributes from the server web exchange.
+     *
+     * @param exchange the server web exchange
+     * @param keys     the attribute keys to remove
+     */
+    public static void removeAttributes(ServerWebExchange exchange, String... keys) {
+        if (keys != null) {
+            Map<String, Object> attributes = exchange.getAttributes();
+            for (String key : keys) {
+                attributes.remove(key);
+            }
+        }
+    }
+
+    /**
      * Closes the client response connection associated with the exchange.
      *
      * @param exchange the server web exchange

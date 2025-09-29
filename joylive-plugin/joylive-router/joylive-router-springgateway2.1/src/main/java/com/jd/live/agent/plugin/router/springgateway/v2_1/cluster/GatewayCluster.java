@@ -118,8 +118,7 @@ public class GatewayCluster extends AbstractCloudCluster<
     public void onRetry(GatewayCloudClusterRequest request, int retries) {
         if (retries > 0) {
             ServerWebExchange exchange = request.getExchange();
-            WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_BODY);
-            WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_WRITE);
+            WebExchangeUtils.removeAttributes(exchange, Request.KEY_RESPONSE_BODY, Request.KEY_RESPONSE_WRITE, Request.KEY_SERVER_ERROR);
             WebExchangeUtils.closeConnection(exchange);
             WebExchangeUtils.reset(exchange);
         }
@@ -131,7 +130,7 @@ public class GatewayCluster extends AbstractCloudCluster<
                                 GatewayClusterResponse response,
                                 Throwable e) {
         ServerWebExchange exchange = request.getExchange();
-        WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_BODY);
+        WebExchangeUtils.removeAttributes(exchange, Request.KEY_RESPONSE_BODY, Request.KEY_SERVER_ERROR);
         Supplier<Mono<Void>> supplier = WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_WRITE);
         if (e != null) {
             future.completeExceptionally(e);
