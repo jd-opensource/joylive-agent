@@ -19,6 +19,7 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.util.UriUtils;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.netty.Connection;
 
 import java.net.URI;
 import java.util.LinkedHashSet;
@@ -80,6 +81,18 @@ public class WebExchangeUtils {
      */
     public static <T> T removeAttribute(ServerWebExchange exchange, String key) {
         return (T) exchange.getAttributes().remove(key);
+    }
+
+    /**
+     * Closes the client response connection associated with the exchange.
+     *
+     * @param exchange the server web exchange
+     */
+    public static void closeConnection(ServerWebExchange exchange) {
+        Connection conn = removeAttribute(exchange, ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR);
+        if (conn != null) {
+            conn.dispose();
+        }
     }
 
     /**

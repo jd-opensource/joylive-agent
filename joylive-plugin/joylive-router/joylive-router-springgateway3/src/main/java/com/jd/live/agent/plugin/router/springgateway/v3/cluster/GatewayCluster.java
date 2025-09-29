@@ -34,10 +34,8 @@ import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import reactor.netty.Connection;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -95,10 +93,7 @@ public class GatewayCluster extends AbstractCloudCluster<
             ServerWebExchange exchange = request.getExchange();
             WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_BODY);
             WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_WRITE);
-            Connection conn = WebExchangeUtils.removeAttribute(exchange, ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR);
-            if (conn != null) {
-                conn.dispose();
-            }
+            WebExchangeUtils.closeConnection(exchange);
             WebExchangeUtils.reset(exchange);
         }
     }
@@ -117,7 +112,11 @@ public class GatewayCluster extends AbstractCloudCluster<
             // write data
             supplier.get()
                     .doOnSuccess(v -> future.complete(response))
-                    .doOnError(throwable -> future.completeExceptionally(throwable))
+                    .doOnCancel(() -> future.cancel(true))
+                    .doOnError(throwable -> {
+                        WebExchangeUtils.closeConnection(exchange);
+                        future.completeExceptionally(throwable);
+                    })
                     .subscribe();
         } else {
             future.complete(response);
