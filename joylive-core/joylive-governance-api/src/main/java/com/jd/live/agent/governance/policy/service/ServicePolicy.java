@@ -135,6 +135,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
         supplementUri(circuitBreakPolicies, new UriAppender<>(KEY_SERVICE_CIRCUIT_BREAK, CircuitBreakPolicy::getName));
         supplementUri(permissionPolicies, new UriAppender<>(KEY_SERVICE_AUTH, PermissionPolicy::getName));
         supplementUri(faultInjectionPolicies, new UriAppender<>(KEY_FAULT_INJECTION, FaultInjectionPolicy::getName));
+        supplementUri(authPolicy, new UriAppender<>(KEY_SERVICE_CONSUMER, AuthPolicy::getApplication));
         supplementUri(authPolicies, new UriAppender<>(KEY_SERVICE_CONSUMER, AuthPolicy::getApplication));
 
         if (source != null) {
@@ -175,7 +176,7 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     public AuthPolicy getAuthPolicy(String application) {
         // for provider auth policy.
         AuthPolicy result = authPolicyCache.get(application);
-        return result == null ? authPolicy : result;
+        return result == null && authPolicy != null && authPolicy.match(application) ? authPolicy : null;
     }
 
     public boolean authorized() {
@@ -212,27 +213,49 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     }
 
     /**
-     * Updates URIs for target policies by applying parameter transformations.
+     * Supplements policies with URI parameters.
      *
-     * @param targets Policies to modify (ignored if null/empty)
-     * @param params  URI parameters to apply (name-value mappings per policy)
+     * @param <V> the policy type that extends PolicyIdGen
+     * @param targets the policies to supplement with URI
+     * @param params the URI parameters to append
      */
     protected <V extends PolicyIdGen> void supplementUri(List<V> targets, UriAppender<V>... params) {
         if (targets != null && !targets.isEmpty() && params != null && params.length > 0) {
-            targets.forEach(r -> r.supplement(() -> {
-                URI uri = this.uri;
-                for (UriAppender<V> p : params) {
-                    uri = uri.parameter(p.name, p.valueFunc.apply(r));
-                }
-                return uri;
-            }));
+            targets.forEach(r -> supplementUri(r, params));
         }
     }
 
     /**
-     * Creates or supplements policy instances:
+     * Supplements policy with URI parameters.
      *
-     * @return New list of supplemented policies (or original targets if no-op)
+     * @param <V>    the policy type that extends PolicyIdGen
+     * @param target the policy to supplement with URI
+     * @param params the URI parameters to append
+     */
+    protected <V extends PolicyIdGen> void supplementUri(V target, UriAppender<V>... params) {
+        if (target != null && params != null) {
+            target.supplement(() -> {
+                URI uri = this.uri;
+                for (UriAppender<V> p : params) {
+                    String value = p.valueFunc.apply(target);
+                    if (value != null && !value.isEmpty()) {
+                        uri = uri.parameter(p.name, value);
+                    }
+                }
+                return uri;
+            });
+        }
+    }
+
+    /**
+     * Creates or supplements policy instances from source list.
+     *
+     * @param <T> the policy type that extends PolicyInheritWithIdGen
+     * @param sources the source policies to supplement from
+     * @param targets the target policies to supplement
+     * @param creator function to create new policy instance
+     * @param uriFunc function to extract URI from policy
+     * @return new list of supplemented policies or original targets if no operation needed
      */
     protected <T extends PolicyInheritWithIdGen<T>> List<T> supplement(List<T> sources,
                                                                        List<T> targets,
@@ -248,6 +271,29 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
             newPolicy.supplement(source);
             result.add(newPolicy);
         }
+        return result;
+    }
+
+    /**
+     * Creates or supplements policy instances.
+     *
+     * @param <T>     the policy type that extends PolicyInheritWithIdGen
+     * @param source  the source policy to supplement from
+     * @param target  the target policy to supplement
+     * @param creator function to create new policy instance
+     * @param uriFunc function to extract URI from policy
+     * @return supplemented policy instance or original target if no operation needed
+     */
+    protected <T extends PolicyInheritWithIdGen<T>> T supplement(T source,
+                                                                 T target,
+                                                                 Function<T, T> creator,
+                                                                 Function<T, URI> uriFunc) {
+        if (target != null || source == null) {
+            return target;
+        }
+        T result = creator.apply(source);
+        result.supplement(() -> uriFunc.apply(source));
+        result.supplement(source);
         return result;
     }
 
