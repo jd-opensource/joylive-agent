@@ -37,6 +37,10 @@ public interface Request extends Attributes {
      */
     String KEY_STICKY_ID = Constants.LABEL_SERVICE_PREFIX + "sticky-id";
 
+    String KEY_FAILOVER_REQUEST = "x-failover-request";
+
+    String KEY_RESPONSE_WRITE = "x-response-write";
+
     String KEY_RESPONSE_BODY = "x-response-body";
 
     String KEY_SERVER_ERROR = "x-response-error";

@@ -52,6 +52,11 @@ public abstract class AbstractAttributes implements Attributes {
         return key == null || attributes == null ? null : (T) attributes.get(key);
     }
 
+    public <T> T getAttributeOrDefault(String key, T defaultValue) {
+        T value = getAttribute(key);
+        return value == null ? defaultValue : value;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getAttributeIfAbsent(String key, Function<String, T> function) {

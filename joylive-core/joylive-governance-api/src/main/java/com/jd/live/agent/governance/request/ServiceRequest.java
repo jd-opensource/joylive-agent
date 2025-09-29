@@ -319,6 +319,15 @@ public interface ServiceRequest extends Request {
         }
 
         /**
+         * Get all error policies from the request.
+         *
+         * @return a set of the removed error policies, or null if no policies exists.
+         */
+        default Set<ErrorPolicy> getErrorPolicies() {
+            return null;
+        }
+
+        /**
          * Returns the default error name function.
          *
          * @return The default error name function.

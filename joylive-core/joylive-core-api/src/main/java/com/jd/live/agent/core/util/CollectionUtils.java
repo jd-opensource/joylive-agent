@@ -610,6 +610,22 @@ public class CollectionUtils {
     }
 
     /**
+     * Removes a header from the map and returns its first value.
+     *
+     * @param headers the headers map
+     * @param key     the header key to remove
+     * @return the first value of the removed header, or null if not found
+     */
+    public static String removeAndGetFirst(Map<String, List<String>> headers, String key) {
+        if (headers != null && key != null) {
+            List<String> values = headers.remove(key);
+            return values == null || values.isEmpty() ? null : values.get(0);
+        }
+        return null;
+    }
+
+
+    /**
      * Iterates over an iterable of elements, applying a predicate and a consumer to each element.
      * If the iterable or consumer is null, the method does nothing.
      * If the predicate is null, all elements are consumed.

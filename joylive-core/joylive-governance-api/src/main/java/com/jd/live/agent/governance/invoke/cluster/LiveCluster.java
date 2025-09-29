@@ -26,6 +26,7 @@ import com.jd.live.agent.governance.request.StickySessionFactory;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
@@ -200,6 +201,22 @@ public interface LiveCluster<R extends OutboundRequest,
      */
     default void onRetry(R request, int retries) {
 
+    }
+
+    /**
+     * Completes the future with response or exception after retry operations.
+     *
+     * @param future   the CompletableFuture to complete
+     * @param request  the original request
+     * @param response the response, may be null if exception occurred
+     * @param e        the exception, may be null if successful
+     */
+    default void onRetryComplete(CompletableFuture<O> future, R request, O response, Throwable e) {
+        if (e != null) {
+            future.completeExceptionally(e);
+        } else {
+            future.complete(response);
+        }
     }
 
     /**

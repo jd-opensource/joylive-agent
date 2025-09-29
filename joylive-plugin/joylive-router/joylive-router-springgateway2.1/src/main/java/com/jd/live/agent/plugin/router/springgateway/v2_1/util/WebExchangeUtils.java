@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.util.UriUtils;
 import org.springframework.web.server.ServerWebExchange;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +65,29 @@ public class WebExchangeUtils {
         scheme = scheme == null ? overrideScheme : scheme;
         URI requestUrl = UriUtils.newURI(uri, scheme, secure, endpoint.getHost(), endpoint.getPort());
         attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
+    }
+
+    /**
+     * Removes and returns an attribute from the server web exchange.
+     *
+     * @param <T>      the type of the attribute value
+     * @param exchange the server web exchange
+     * @param key      the attribute key
+     * @return the removed attribute value, or null if not found
+     */
+    public static <T> T removeAttribute(ServerWebExchange exchange, String key) {
+        return (T) exchange.getAttributes().remove(key);
+    }
+
+    /**
+     * Resets the server web exchange to its initial state.
+     *
+     * @param exchange the server web exchange to reset
+     */
+    public static void reset(ServerWebExchange exchange) {
+        Set<String> headers = exchange.getAttributeOrDefault(CLIENT_RESPONSE_HEADER_NAMES, Collections.emptySet());
+        headers.forEach(header -> exchange.getResponse().getHeaders().remove(header));
+        exchange.getAttributes().remove(GATEWAY_ALREADY_ROUTED_ATTR);
     }
 
 }

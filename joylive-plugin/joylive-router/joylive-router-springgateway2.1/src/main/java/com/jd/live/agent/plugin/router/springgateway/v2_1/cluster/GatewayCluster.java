@@ -38,15 +38,21 @@ import com.jd.live.agent.plugin.router.springgateway.v2_1.request.GatewayCloudCl
 import com.jd.live.agent.plugin.router.springgateway.v2_1.request.HttpHeadersParser;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.response.ErrorResponseDecorator;
 import com.jd.live.agent.plugin.router.springgateway.v2_1.response.GatewayClusterResponse;
+import com.jd.live.agent.plugin.router.springgateway.v2_1.util.WebExchangeUtils;
 import lombok.Getter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+import reactor.netty.Connection;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.jd.live.agent.plugin.router.springgateway.v2_1.util.WebExchangeUtils.forward;
 
@@ -70,19 +76,17 @@ public class GatewayCluster extends AbstractCloudCluster<
     @Override
     public CompletionStage<GatewayClusterResponse> invoke(GatewayCloudClusterRequest request, ServiceEndpoint endpoint) {
         try {
-            Set<ErrorPolicy> policies = request.removeErrorPolicies();
+            Set<ErrorPolicy> policies = request.getErrorPolicies();
             // decorate request to transmission
             Propagation propagation = context.getPropagation();
             Carrier carrier = RequestContext.get();
             Consumer<ServerHttpRequest.Builder> header = b -> b.headers(
                     headers -> propagation.write(carrier, new HttpHeadersParser(headers)));
-            ServerWebExchange.Builder builder = request.getExchange().mutate().request(header);
             // decorate response to remove exception header and get body
-            ErrorResponseDecorator decorator = new ErrorResponseDecorator(request.getExchange(), policies);
-            ServerWebExchange exchange = builder.response(decorator).build();
-            GatewayClusterResponse response = new GatewayClusterResponse(exchange.getResponse(),
-                    () -> (ServiceError) exchange.getAttributes().remove(Request.KEY_SERVER_ERROR),
-                    () -> (String) exchange.getAttributes().remove(Request.KEY_RESPONSE_BODY));
+            boolean failover = request.getAttributeOrDefault(Request.KEY_FAILOVER_REQUEST, Boolean.FALSE);
+            ErrorResponseDecorator decorator = new ErrorResponseDecorator(request.getExchange(), policies, failover);
+            ServerWebExchange exchange = request.getExchange().mutate().request(header).response(decorator).build();
+            GatewayClusterResponse response = new GatewayClusterResponse(exchange);
             GatewayFilterChain chain = request.getChain();
             if (chain instanceof LiveGatewayFilterChain) {
                 // for retry
@@ -110,6 +114,41 @@ public class GatewayCluster extends AbstractCloudCluster<
     @Override
     protected GatewayClusterResponse createResponse(ServiceError error, ErrorPredicate predicate) {
         return new GatewayClusterResponse(error, predicate);
+    }
+
+    @Override
+    public void onRetry(GatewayCloudClusterRequest request, int retries) {
+        if (retries > 0) {
+            ServerWebExchange exchange = request.getExchange();
+            WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_BODY);
+            WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_WRITE);
+            Connection conn = WebExchangeUtils.removeAttribute(exchange, ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR);
+            if (conn != null) {
+                conn.dispose();
+            }
+            WebExchangeUtils.reset(exchange);
+        }
+    }
+
+    @Override
+    public void onRetryComplete(CompletableFuture<GatewayClusterResponse> future,
+                                GatewayCloudClusterRequest request,
+                                GatewayClusterResponse response,
+                                Throwable e) {
+        ServerWebExchange exchange = request.getExchange();
+        WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_BODY);
+        Supplier<Mono<Void>> supplier = WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_WRITE);
+        if (e != null) {
+            future.completeExceptionally(e);
+        } else if (supplier != null) {
+            // write data
+            supplier.get()
+                    .doOnSuccess(v -> future.complete(response))
+                    .doOnError(throwable -> future.completeExceptionally(throwable))
+                    .subscribe();
+        } else {
+            future.complete(response);
+        }
     }
 
 }

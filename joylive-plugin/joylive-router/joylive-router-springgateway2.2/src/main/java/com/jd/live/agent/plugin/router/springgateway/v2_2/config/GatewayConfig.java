@@ -34,11 +34,26 @@ public class GatewayConfig {
 
     public static final String TYPE_SET_PATH = "org.springframework.cloud.gateway.filter.factory.SetPathGatewayFilterFactory$1";
 
+    public static final String TYPE_REACTIVE_LOAD_BALANCE_FILTER = "org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter";
+
+    public static final String TYPE_LOAD_BALANCE_FILTER = "org.springframework.cloud.gateway.filter.LoadBalancerClientFilter";
+
+    public static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
+
+    // -1=org.springframework.cloud.gateway.filter.NettyWriteResponseFilter
+    public static final int DEFAULT_LIVE_FILTER_ORDER = -2;
+
     private Set<String> pathFilters = new HashSet<>();
 
     private Set<String> pathFilterPrefixes = new HashSet<>();
 
+    private Set<String> loadBalancerFilters = new HashSet<>();
+
+    private Set<String> retryFilters = new HashSet<>();
+
     private Set<String> webSchemes = new HashSet<>();
+
+    private int liveFilterOrder = DEFAULT_LIVE_FILTER_ORDER;
 
     private transient Inclusion inclusion;
 
@@ -49,11 +64,31 @@ public class GatewayConfig {
      * @return true if the filter is a path filter, false otherwise.
      */
     public boolean isPathFilter(String filter) {
-        return inclusion != null && inclusion.test(filter);
+        return filter != null && inclusion != null && inclusion.test(filter);
+    }
+
+    /**
+     * Checks if the given filter is a load balancer filter.
+     *
+     * @param filter the filter name to check
+     * @return true if it's a load balancer filter, false otherwise
+     */
+    public boolean isLoadBalancerFilter(String filter) {
+        return filter != null && loadBalancerFilters != null && loadBalancerFilters.contains(filter);
+    }
+
+    /**
+     * Checks if the given filter is a load retry filter.
+     *
+     * @param filter the filter name to check
+     * @return true if it's a retry filter, false otherwise
+     */
+    public boolean isRetryFilter(String filter) {
+        return filter != null && retryFilters != null && retryFilters.contains(filter);
     }
 
     public boolean isWebScheme(String scheme) {
-        return webSchemes != null && scheme != null && webSchemes.contains(scheme.toLowerCase());
+        return scheme != null && webSchemes != null && webSchemes.contains(scheme.toLowerCase());
     }
 
     public void initialize() {
@@ -61,6 +96,9 @@ public class GatewayConfig {
         pathFilters.add(TYPE_STRIP_PREFIX);
         pathFilters.add(TYPE_PREFIX_PATH);
         pathFilters.add(TYPE_SET_PATH);
+        loadBalancerFilters.add(TYPE_REACTIVE_LOAD_BALANCE_FILTER);
+        loadBalancerFilters.add(TYPE_LOAD_BALANCE_FILTER);
+        retryFilters.add(TYPE_RETRY_FILTER);
         webSchemes.add("http");
         webSchemes.add("https");
         webSchemes.add("http3");

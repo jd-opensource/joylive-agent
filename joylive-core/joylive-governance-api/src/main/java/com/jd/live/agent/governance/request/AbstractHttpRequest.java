@@ -356,6 +356,11 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
         public Set<ErrorPolicy> removeErrorPolicies() {
             return removeAttribute(KEY_ERROR_POLICY);
         }
+
+        @Override
+        public Set<ErrorPolicy> getErrorPolicies() {
+            return getAttribute(KEY_ERROR_POLICY);
+        }
     }
 
     /**
