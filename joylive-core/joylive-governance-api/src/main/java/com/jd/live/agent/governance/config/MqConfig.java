@@ -29,10 +29,6 @@ import java.util.Map;
  */
 public class MqConfig {
 
-    public static final String DEFAULT_GROUP = "${group}${'_lane_'lane}";
-
-    public static final String DEFAULT_TOPIC = "${topic}${'_lane_'lane}";
-
     @Getter
     @Setter
     private MqMode liveMode = MqMode.ISOLATION_CLUSTER;
