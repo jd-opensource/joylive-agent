@@ -32,6 +32,7 @@ import com.jd.live.agent.core.util.task.RetryExecution;
 import com.jd.live.agent.core.util.task.RetryVersionTimerTask;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.RegistryClusterConfig;
+import com.jd.live.agent.governance.policy.service.ServiceName;
 import com.jd.live.agent.governance.probe.HealthProbe;
 import com.jd.live.agent.governance.registry.*;
 import com.jd.live.agent.implement.service.config.nacos.client.AbstractNacosClient;
@@ -97,7 +98,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void register(ServiceId serviceId, ServiceInstance instance) {
         String service = getService(serviceId, instance);
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         Instance target = convert(instance);
         ServiceKey key = new ServiceKey(service, group);
         Locks.write(registerLock, () -> {
@@ -110,7 +112,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void unregister(ServiceId serviceId, ServiceInstance instance) throws Exception {
         String service = getService(serviceId, instance);
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         ServiceKey key = new ServiceKey(service, group);
         Instance target = registers.remove(key);
         if (target != null) {
@@ -121,7 +124,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void subscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) {
         String service = serviceId.getService();
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         ServiceKey key = new ServiceKey(service, group);
         InstanceListener listener = new InstanceListener(serviceId.isInterfaceMode(), consumer);
         Locks.write(subscriptionLock, () -> {
@@ -134,7 +138,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
     @Override
     public void unsubscribe(ServiceId serviceId) throws Exception {
         String service = serviceId.getService();
-        String group = getGroup(serviceId.getGroup());
+        // use catalog
+        String group = getGroup(serviceId.getCatalog());
         ServiceKey key = new ServiceKey(service, group);
         if (subscriptions.remove(key) != null) {
             client.unsubscribe(service, group, event -> {
@@ -258,9 +263,14 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
      * @param delay    Initial delay before first execution (ms)
      */
     protected void addTask(ServiceKey key, InstanceListener listener, long version, long delay) {
-        SubscriptionTask subscription = new SubscriptionTask(key, listener);
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.naming.subscription", subscription, version, predicate, timer);
-        task.delay(delay);
+        RetryVersionTimerTask.builder()
+                .name("nacos.naming.subscription")
+                .task(new SubscriptionTask(key, listener))
+                .version(version)
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(delay);
     }
 
     /**
@@ -272,9 +282,14 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
      * @param delay    Delay before execution (milliseconds)
      */
     protected void addTask(ServiceKey key, Instance instance, long version, long delay) {
-        RegisterTask register = new RegisterTask(key, instance);
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.naming.register", register, version, predicate, timer);
-        task.delay(delay);
+        RetryVersionTimerTask.builder()
+                .name("nacos.naming.register")
+                .task(new RegisterTask(key, instance))
+                .version(version)
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(delay);
     }
 
     @Getter
@@ -385,7 +400,8 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
         public Boolean call() throws Exception {
             if (registers.get(key) == instance) {
                 client.registerInstance(key.getService(), key.group, instance);
-                logger.info("Registered instance {}:{} to {}", instance.getIp(), instance.getPort(), name);
+                String uniqueName = ServiceName.getUniqueName(config.getNamespace(), key.getService(), key.getGroup());
+                logger.info("Registered instance {}:{} to {} at {}", instance.getIp(), instance.getPort(), uniqueName, name);
             }
             return true;
         }

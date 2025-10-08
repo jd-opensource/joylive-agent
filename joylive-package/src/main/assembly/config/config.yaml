@@ -256,6 +256,9 @@ agent:
         gateway:
           pathFilters: ${CONFIG_SPRING_GATEWAY_PATH_FILTERS}
           pathFilterPrefixes: ${CONFIG_SPRING_GATEWAY_PATH_FILTER_PREFIXES}
+          loadBalancerFilters: ${CONFIG_SPRING_GATEWAY_LOAD_BALANCER_FILTERS}
+          retryFilters: ${CONFIG_SPRING_GATEWAY_RETRY_FILTERS}
+          liveFilterOrder: ${CONFIG_SPRING_GATEWAY_LIVE_FILTER_ORDER}
     transmission:
       type: ${CONFIG_TRANSMISSION_TYPE:live}
       autoDetect: ${CONFIG_TRANSMISSION_AUTO_DETECT:NONE}
@@ -357,7 +360,7 @@ agent:
           password: ${CONFIG_REGISTRY_PASSWORD_FIRST:${REGISTRY_PASSWORD:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_FIRST}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_FIRST:${REGISTRY_NAMESPACE:public}}
-          group: ${CONFIG_REGISTRY_GROUP_FIRST:DEFAULT_GROUP}
+          group: ${CONFIG_REGISTRY_GROUP_FIRST}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_SECOND:nacos}
@@ -368,7 +371,7 @@ agent:
           password: ${CONFIG_REGISTRY_PASSWORD_SECOND:${REGISTRY_PASSWORD:}}
           properties: ${CONFIG_REGISTRY_PROPERTIES_SECOND}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_SECOND:${REGISTRY_NAMESPACE:public}}
-          group: ${CONFIG_REGISTRY_GROUP_SECOND:DEFAULT_GROUP}
+          group: ${CONFIG_REGISTRY_GROUP_SECOND}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
         - type: ${CONFIG_REGISTRY_TYPE_THIRD:nacos}
@@ -379,7 +382,7 @@ agent:
           properties: ${CONFIG_REGISTRY_PROPERTIES_THIRD}
           password: ${CONFIG_REGISTRY_PASSWORD_THIRD:${REGISTRY_PASSWORD:}}
           namespace: ${CONFIG_REGISTRY_NAMESPACE_THIRD:${REGISTRY_NAMESPACE:public}}
-          group: ${CONFIG_REGISTRY_GROUP_THIRD:DEFAULT_GROUP}
+          group: ${CONFIG_REGISTRY_GROUP_THIRD}
           groupEnabled: ${CONFIG_REGISTRY_GROUP_ENABLED:true}
           denyEmptyEnabled: ${CONFIG_REGISTRY_DENY_EMPTY_ENABLED:false}
     probe:
@@ -387,8 +390,8 @@ agent:
         command: ${CONFIG_PROBE_ZOOKEEPER_COMMAND:srvr}
         response: ${CONFIG_PROBE_ZOOKEEPER_RESPONSE:}
       nacos:
-        path: ${CONFIG_PROBE_NACOS_PATH:/nacos/v1/console/health/liveness}
-        response: ${CONFIG_PROBE_NACOS_RESPONSE:OK}
+        paths: ${CONFIG_PROBE_NACOS_PATH:nacos/v1/ns/operator/metrics?onlyStatus=true}
+        responses: ${CONFIG_PROBE_NACOS_RESPONSE:UP}
     redis:
       command:
         manage: ${CONFIG_REDIS_MANAGE_COMMANDS:ACL,AUTH,AUTH2,HELLO,PING,QUIT,SELECT,SWAPDB,DBSIZE,FLUSHDB,FLUSHALL,TIME,CONFIG,INFO,SHUTDOWN,MONITOR,SLAVEOF,REPLICAOF,CLIENT,ASKING,READONLY,READWRITE,CLUSTER,SENTINEL,MODULE,LASTSAVE,SAVE,BGSAVE,BGREWRITEAOF,ROLE,FAILOVER,SLOWLOG,LOLWUT,COMMAND,RESET,LATENCY,WAIT,WAITAOF,MULTI,DISCARD,WATCH,UNWATCH}

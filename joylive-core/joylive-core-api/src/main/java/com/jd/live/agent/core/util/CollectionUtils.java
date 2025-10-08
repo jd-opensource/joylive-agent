@@ -298,6 +298,34 @@ public class CollectionUtils {
     }
 
     /**
+     * Creates a new list by filtering and transforming elements from the source collection.
+     * If predicate is null, all elements are processed.
+     *
+     * @param <T>       the source element type
+     * @param <V>       the target element type
+     * @param source    the source collection (can be null)
+     * @param predicate the filter predicate (can be null)
+     * @param function  the transformation function
+     * @return a new list containing transformed elements, or empty list if source is null
+     */
+    public static <T, V> List<V> toList(Collection<T> source, Predicate<T> predicate, Function<T, V> function) {
+        if (source == null) {
+            return new ArrayList<>();
+        }
+        List<V> result = new ArrayList<>(source.size());
+        V apply;
+        for (T t : source) {
+            if (predicate == null || predicate.test(t)) {
+                apply = function.apply(t);
+                if (apply != null) {
+                    result.add(apply);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Converts an Enumeration to an Iterator.
      *
      * @param <T>         the type of elements in the enumeration
@@ -582,6 +610,22 @@ public class CollectionUtils {
     }
 
     /**
+     * Removes a header from the map and returns its first value.
+     *
+     * @param headers the headers map
+     * @param key     the header key to remove
+     * @return the first value of the removed header, or null if not found
+     */
+    public static String removeAndGetFirst(Map<String, List<String>> headers, String key) {
+        if (headers != null && key != null) {
+            List<String> values = headers.remove(key);
+            return values == null || values.isEmpty() ? null : values.get(0);
+        }
+        return null;
+    }
+
+
+    /**
      * Iterates over an iterable of elements, applying a predicate and a consumer to each element.
      * If the iterable or consumer is null, the method does nothing.
      * If the predicate is null, all elements are consumed.
@@ -749,6 +793,81 @@ public class CollectionUtils {
         if (writeIndex < size) {
             objects.subList(writeIndex, size).clear();
         }
+    }
+
+    /**
+     * Creates a new list containing all elements from the source collection plus additional items.
+     *
+     * @param <T>    the element type
+     * @param source the source collection to copy from
+     * @param items  additional items to add (can be null or empty)
+     * @return a new list containing source elements and additional items
+     */
+    public static <T> List<T> copyAndAdd(Collection<T> source, T... items) {
+        if (items == null) {
+            return new ArrayList<>(source);
+        }
+        List<T> list = new ArrayList<>(source.size() + items.length);
+        list.addAll(source);
+        for (T item : items) {
+            if (item != null) {
+                list.add(item);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Counts the number of elements in the iterable that match the given predicate.
+     *
+     * @param <T>       the element type
+     * @param source    the iterable to count elements from
+     * @param predicate the predicate to test elements against
+     * @return the count of matching elements
+     */
+    public static <T> int count(Iterable<T> source, Predicate<T> predicate) {
+        int count = 0;
+        for (T t : source) {
+            if (predicate.test(t)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Returns true if any element in the iterable matches the given predicate.
+     *
+     * @param <T>       the element type
+     * @param iterator  the iterable to test elements from
+     * @param predicate the predicate to test elements against
+     * @return true if any element matches, false otherwise
+     */
+    public static <T> boolean anyMatch(Iterable<T> iterator, Predicate<T> predicate) {
+        for (T t : iterator) {
+            if (predicate.test(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Removes the first element from the iterator that matches the given predicate.
+     *
+     * @param <T> the element type
+     * @param iterator the iterator to remove element from
+     * @param predicate the predicate to test elements against
+     * @return true if an element was removed, false otherwise
+     */
+    public static <T> boolean removeFirst(Iterator<T> iterator, Predicate<T> predicate) {
+        while (iterator.hasNext()) {
+            if (predicate.test(iterator.next())) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

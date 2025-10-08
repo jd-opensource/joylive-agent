@@ -31,7 +31,15 @@ public class ServiceId implements Serializable {
 
     protected String service;
 
+    /**
+     * The group name in service control plane for logical grouping and management.
+     */
     protected String group;
+
+    /**
+     * The catalog identifier used in the service registry for service registration and discovery.
+     */
+    protected String catalog;
 
     protected boolean interfaceMode;
 
@@ -41,26 +49,35 @@ public class ServiceId implements Serializable {
     }
 
     public ServiceId(String service) {
-        this(null, service, null, false);
+        this(null, service, null, null, false);
     }
 
     public ServiceId(String service, String group) {
-        this(null, service, group, false);
+        this(null, service, group, null, false);
     }
 
     public ServiceId(String service, String group, boolean interfaceMode) {
-        this(null, service, group, interfaceMode);
+        this(null, service, group, null, interfaceMode);
     }
 
     public ServiceId(String namespace, String service, String group) {
-        this(namespace, service, group, false);
+        this(namespace, service, group, null, false);
     }
 
     public ServiceId(String namespace, String service, String group, boolean interfaceMode) {
+        this(namespace, service, group, null, interfaceMode);
+    }
+
+    public ServiceId(String namespace, String service, String group, String catalog, boolean interfaceMode) {
         this.namespace = namespace;
         this.service = service;
         this.group = group;
+        this.catalog = catalog;
         this.interfaceMode = interfaceMode;
+    }
+
+    public boolean isService(String name) {
+        return service != null && service.equalsIgnoreCase(name);
     }
 
     public String getUniqueName() {
@@ -78,7 +95,29 @@ public class ServiceId implements Serializable {
      * @return a new ServiceId instance with the specified parameters
      */
     public ServiceId of(String newService, String newGroup) {
-        return new ServiceId(namespace, newService, newGroup, interfaceMode);
+        return new ServiceId(namespace, newService, newGroup, catalog, interfaceMode);
+    }
+
+    /**
+     * Creates a new ServiceId with the specified service name and group.
+     *
+     * @param newService the new service name
+     * @param newGroup   the new group name
+     * @param newCatalog the new catalog
+     * @return a new ServiceId instance with the specified parameters
+     */
+    public ServiceId of(String newService, String newGroup, String newCatalog) {
+        return new ServiceId(namespace, newService, newGroup, newCatalog, interfaceMode);
+    }
+
+    /**
+     * Creates a new ServiceId with the specified service catalog.
+     *
+     * @param newCatalog the new catalog
+     * @return a new ServiceId instance with the specified parameters
+     */
+    public ServiceId of(String newCatalog) {
+        return new ServiceId(namespace, service, group, newCatalog, interfaceMode);
     }
 
     /**

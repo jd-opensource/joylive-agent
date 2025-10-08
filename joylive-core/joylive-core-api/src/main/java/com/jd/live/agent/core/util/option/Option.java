@@ -25,6 +25,8 @@ import java.util.Date;
  */
 public interface Option extends ValueSupplier {
 
+    String COMPONENT_OPTION = "Option";
+
     /**
      * Retrieves the string parameter value for the specified key.
      *

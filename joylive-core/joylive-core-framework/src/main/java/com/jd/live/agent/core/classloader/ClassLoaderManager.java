@@ -34,7 +34,7 @@ import static com.jd.live.agent.bootstrap.classloader.ResourcerType.PLUGIN;
  * @since 1.0.0
  */
 @Getter
-public class ClassLoaderManager {
+public class ClassLoaderManager implements AutoCloseable {
 
     /**
      * The core class loader used for loading core classes.
@@ -62,6 +62,7 @@ public class ClassLoaderManager {
                 new LiveClassLoader(urls, coreLoader, PLUGIN, pluginConfig, bootstrap, agentPath.getConfigPath(), PLUGIN.getName() + "-" + name));
     }
 
+    @Override
     public void close() {
         Close.instance().close(coreImplLoader).close(pluginLoaders);
     }

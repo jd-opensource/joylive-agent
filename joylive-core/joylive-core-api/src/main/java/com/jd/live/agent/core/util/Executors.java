@@ -32,12 +32,17 @@ public class Executors {
      * @param runnable    the Runnable to be executed (can be null)
      */
     public static void run(ClassLoader classLoader, Runnable runnable) {
-        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader old = thread.getContextClassLoader();
         try {
-            Thread.currentThread().setContextClassLoader(classLoader);
+            if (old != classLoader) {
+                thread.setContextClassLoader(classLoader);
+            }
             runnable.run();
         } finally {
-            Thread.currentThread().setContextClassLoader(old);
+            if (old != classLoader) {
+                thread.setContextClassLoader(old);
+            }
         }
     }
 
@@ -52,12 +57,17 @@ public class Executors {
      * @throws Exception if the Callable throws an exception
      */
     public static <T> T call(ClassLoader classLoader, Callable<T> callable) throws Exception {
-        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader old = thread.getContextClassLoader();
         try {
-            Thread.currentThread().setContextClassLoader(classLoader);
+            if (old != classLoader) {
+                thread.setContextClassLoader(classLoader);
+            }
             return callable.call();
         } finally {
-            Thread.currentThread().setContextClassLoader(old);
+            if (old != classLoader) {
+                thread.setContextClassLoader(old);
+            }
         }
     }
 
@@ -70,12 +80,17 @@ public class Executors {
      * @param supplier    Operation to execute
      */
     public static <T> T get(ClassLoader classLoader, Supplier<T> supplier) {
-        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        Thread thread = Thread.currentThread();
+        ClassLoader old = thread.getContextClassLoader();
         try {
-            Thread.currentThread().setContextClassLoader(classLoader);
+            if (old != classLoader) {
+                thread.setContextClassLoader(classLoader);
+            }
             return supplier.get();
         } finally {
-            Thread.currentThread().setContextClassLoader(old);
+            if (old != classLoader) {
+                thread.setContextClassLoader(old);
+            }
         }
     }
 }

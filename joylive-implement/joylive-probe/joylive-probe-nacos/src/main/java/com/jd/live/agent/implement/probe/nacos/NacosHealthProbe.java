@@ -18,19 +18,21 @@ package com.jd.live.agent.implement.probe.nacos;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.ObjectReader;
-import com.jd.live.agent.core.util.CollectionUtils;
+import com.jd.live.agent.core.parser.ObjectReader.StringReader;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpStatus;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.probe.HealthProbe;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.CHAR_COMMA;
 import static com.jd.live.agent.core.util.StringUtils.split;
+import static com.jd.live.agent.core.util.http.HttpUtils.get;
 import static com.jd.live.agent.governance.config.GovernanceConfig.CONFIG_PROBE_NACOS;
 
 @Injectable
@@ -40,21 +42,30 @@ public class NacosHealthProbe implements HealthProbe {
     @Config(CONFIG_PROBE_NACOS)
     private NacosConfig config = new NacosConfig();
 
+    private transient final Map<String, String> detects = new ConcurrentHashMap<>();
+
     @Override
     public boolean test(String address) {
-        List<URI> uris = CollectionUtils.toList(split(address, CHAR_COMMA), URI::parse);
+        List<URI> uris = toList(split(address, CHAR_COMMA), URI::parse);
+        String detect = detects.get(address);
+        String[] paths = getPaths(detect);
         for (URI uri : uris) {
-            uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(config.getPath()).build();
-            try {
-                HttpResponse<String> response = HttpUtils.get(uri.toString(), c -> {
-                    c.setConnectTimeout(config.getConnectTimeout());
-                    c.setReadTimeout(config.getReadTimeout());
-                }, new ObjectReader.StringReader<>());
-                if (response.getStatus() == HttpStatus.OK && config.match(response.getData())) {
-                    return true;
+            for (String path : paths) {
+                try {
+                    uri = URI.builder().scheme(uri.getScheme()).host(uri.getHost()).port(uri.getPort()).path(path).build();
+                    HttpResponse<String> response = get(uri.toString(),
+                            c -> {
+                                c.setConnectTimeout(config.getConnectTimeout());
+                                c.setReadTimeout(config.getReadTimeout());
+                            }, new StringReader<>());
+                    if (response.getStatus() == HttpStatus.OK) {
+                        detects.put(address, path);
+                        return config.match(response.getData());
+                    }
+                } catch (IOException ignore) {
                 }
-            } catch (IOException ignore) {
             }
+
         }
         return false;
     }
@@ -62,5 +73,22 @@ public class NacosHealthProbe implements HealthProbe {
     @Override
     public String type() {
         return HealthProbe.NACOS;
+    }
+
+    private String[] getPaths(String lastPath) {
+        String[] paths = config.getPaths();
+        if (lastPath != null && paths.length > 1) {
+            for (int i = 0; i < paths.length; i++) {
+                if (lastPath.equals(paths[i])) {
+                    if (i > 0) {
+                        paths = paths.clone();
+                        paths[i] = paths[0];
+                        paths[0] = lastPath;
+                    }
+                    break;
+                }
+            }
+        }
+        return paths;
     }
 }

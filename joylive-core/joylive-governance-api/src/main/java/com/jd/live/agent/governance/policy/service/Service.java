@@ -183,6 +183,7 @@ public class Service extends PolicyOwner implements ServiceName {
             if (defaultGroup != null) {
                 defaultGroup.supplement((ServiceGroup) null);
             }
+            // TODO Does not inherit default group policy
             for (ServiceGroup group : groups) {
                 if (group != defaultGroup) {
                     group.supplement(defaultGroup);

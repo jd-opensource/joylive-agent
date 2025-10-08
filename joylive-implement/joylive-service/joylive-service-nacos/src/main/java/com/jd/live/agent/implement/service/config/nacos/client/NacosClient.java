@@ -40,7 +40,7 @@ import lombok.Setter;
 import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -176,9 +176,14 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
      * @param version Current config version for consistency
      */
     private void addTask(ConfigWatcher watcher, long version, long delay) {
-        SubscriptionTask resubscribe = new SubscriptionTask(watcher);
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.config.subscription", resubscribe, version, predicate, timer);
-        task.delay(delay);
+        RetryVersionTimerTask.builder()
+                .name("nacos.config.subscription")
+                .task(new SubscriptionTask(watcher))
+                .version(version)
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(delay);
     }
 
     /**
@@ -279,6 +284,12 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
      */
     private class ConfigWatcher {
 
+        private static final int STATE_INIT = 0;
+
+        private static final int STATE_BETA = 1;
+
+        private static final int STATE_RELEASE = 2;
+
         private final ConfigKey keyRelease;
 
         private final ConfigKey keyPolicy;
@@ -289,7 +300,7 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
 
         private volatile String value;
 
-        private final AtomicBoolean beta = new AtomicBoolean(false);
+        private final AtomicInteger state = new AtomicInteger(STATE_INIT);
 
         private final Listener onUpdate = new AbstractListener() {
             @Override
@@ -322,9 +333,11 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
          */
         public void subscribe() throws NacosException {
             if (config.isGrayEnabled()) {
+                logger.info("Subscribe gray policy {}@{}", keyPolicy.getDataId(), keyPolicy.getGroup());
                 addListener(keyPolicy, onPolicy);
                 onPolicy(getConfig(keyPolicy));
             } else {
+                logger.info("Subscribe release config {}@{}", keyRelease.getDataId(), keyRelease.getGroup());
                 addListener(keyRelease, onUpdate);
                 onUpdate(getConfig(keyRelease));
             }
@@ -362,14 +375,19 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
                 }
                 if (policy != null) {
                     ConfigKey newKeyBeta = new ConfigKey(policy.getName(), keyRelease.getGroup());
-                    if (beta.compareAndSet(false, true) || !newKeyBeta.equals(keyBeta)) {
+                    if (state.compareAndSet(STATE_RELEASE, STATE_BETA)
+                            || state.compareAndSet(STATE_INIT, STATE_BETA)
+                            || state.get() == STATE_BETA && !newKeyBeta.equals(keyBeta)) {
+                        logger.info("Subscribe gray config {}@{}", keyBeta.getDataId(), keyBeta.getGroup());
                         removeListener(keyRelease, onUpdate);
                         removeListener(keyBeta, onUpdate);
                         keyBeta = newKeyBeta;
                         addListener(keyBeta, onUpdate);
                         onUpdate(getConfig(keyBeta));
                     }
-                } else if (beta.compareAndSet(true, false)) {
+                } else if (state.compareAndSet(STATE_BETA, STATE_RELEASE)
+                        || state.compareAndSet(STATE_INIT, STATE_RELEASE)) {
+                    logger.info("Subscribe release config {}@{}", keyRelease.getDataId(), keyRelease.getGroup());
                     removeListener(keyBeta, onUpdate);
                     addListener(keyRelease, onUpdate);
                     onUpdate(getConfig(keyRelease));

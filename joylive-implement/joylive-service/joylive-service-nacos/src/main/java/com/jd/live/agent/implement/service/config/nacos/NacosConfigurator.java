@@ -49,10 +49,11 @@ public class NacosConfigurator extends AbstractConfigurator<NacosClientApi> {
 
     @Override
     protected void subscribe(ConfigSubscription<NacosClientApi> subscription) throws Exception {
+        String parser = subscription.getParser().getClass().getSimpleName();
         ConfigName name = subscription.getName();
         String profile = name.getProfile();
         profile = profile == null || profile.isEmpty() ? Constants.DEFAULT_GROUP : profile;
-        logger.info("Subscribe {}, parser {}", name, subscription.getParser().getClass().getSimpleName());
+        logger.info("Subscribe config {}, parser {}", name, parser);
         subscription.getClient().subscribe(name.getName(), profile, new ChangeListener(subscription));
     }
 

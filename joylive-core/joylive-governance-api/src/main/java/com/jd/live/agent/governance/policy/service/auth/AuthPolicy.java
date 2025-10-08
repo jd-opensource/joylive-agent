@@ -103,4 +103,8 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
     public String getTypeOrDefault() {
         return type == null || type.isEmpty() ? DEFAULT_AUTH_TYPE : type;
     }
+
+    public boolean match(String application) {
+        return this.application == null || this.application.isEmpty() || this.application.equals(application);
+    }
 }

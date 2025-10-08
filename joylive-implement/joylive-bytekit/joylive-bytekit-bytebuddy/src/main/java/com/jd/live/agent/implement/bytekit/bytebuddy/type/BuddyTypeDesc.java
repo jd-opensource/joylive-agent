@@ -17,11 +17,11 @@ package com.jd.live.agent.implement.bytekit.bytebuddy.type;
 
 import com.jd.live.agent.core.bytekit.type.AnnotationDesc;
 import com.jd.live.agent.core.bytekit.type.TypeDesc;
-import net.bytebuddy.description.annotation.AnnotationList;
 import net.bytebuddy.description.type.TypeDescription;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * BuddyTypeDesc
@@ -83,10 +83,7 @@ public class BuddyTypeDesc extends BuddyTypeDef<TypeDescription> implements Type
 
     @Override
     public List<AnnotationDesc> getDeclaredAnnotations() {
-        AnnotationList annotations = desc.getDeclaredAnnotations();
-        List<AnnotationDesc> result = new ArrayList<>(annotations.size());
-        annotations.forEach(annotation -> result.add(new BuddyAnnotationDesc(annotation, classLoader)));
-        return result;
+        return toList(desc.getDeclaredAnnotations(), annotation -> new BuddyAnnotationDesc(annotation, classLoader));
     }
 
     public static class BuddyGeneric extends BuddyTypeDef<TypeDescription.Generic> implements Generic {

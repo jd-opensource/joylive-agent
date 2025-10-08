@@ -187,10 +187,21 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
      * @param delay Initial delay before first execution (milliseconds)
      */
     protected void addDetectTask(long delay, boolean connected) {
-        FailoverDetectTask detect = new FailoverDetectTask(addressList, probe, 1, connected, new NacosDetectTaskListener());
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.detect", detect, versions.get(), predicate, timer);
         // fast to reconnect when initialization
-        task.delay(delay);
+        RetryVersionTimerTask.builder()
+                .name("nacos.detect")
+                .task(FailoverDetectTask.builder()
+                        .addressList(addressList)
+                        .probe(probe)
+                        .successThreshold(1)
+                        .connected(connected)
+                        .listener(new NacosDetectTaskListener())
+                        .build())
+                .version(versions.get())
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(delay);
     }
 
     /**
@@ -291,8 +302,14 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
                 onDetected(addressList.current());
             }
         });
-        RetryVersionTimerTask task = new RetryVersionTimerTask("nacos.recover", execution, versions.get(), predicate, timer);
-        task.delay(Timer.getRetryInterval(1500, DEFAULT_CONNECTION_TIMEOUT));
+        RetryVersionTimerTask.builder()
+                .name("nacos.recover")
+                .task(execution)
+                .version(versions.get())
+                .predicate(predicate)
+                .timer(timer)
+                .build()
+                .delay(Timer.getRetryInterval(1500, DEFAULT_CONNECTION_TIMEOUT));
     }
 
     /**

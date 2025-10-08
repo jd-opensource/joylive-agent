@@ -329,12 +329,12 @@ public class Bootstrap implements AgentLifecycle {
             return;
         }
         Close.instance()
-                .closeIfExists(shutdown, Shutdown::unregister)
-                .closeIfExists(timer, TimeScheduler::close)
-                .closeIfExists(pluginManager, PluginSupervisor::uninstall)
-                .closeIfExists(serviceManager, ServiceManager::close)
-                .closeIfExists(eventBus, EventBus::stop)
-                .closeIfExists(classLoaderManager, ClassLoaderManager::close)
+                .close(shutdown)
+                .close(timer)
+                .close(pluginManager)
+                .close(serviceManager)
+                .close(eventBus)
+                .close(classLoaderManager)
                 .closeIfExists(unLoader, Runnable::run)
                 .close(subscribers)
                 .close((Runnable) LoggerFactory::reset);
@@ -527,6 +527,7 @@ public class Bootstrap implements AgentLifecycle {
             if (injectable != null && injectable.enable() || configurable != null) {
                 Map<String, Object> components = new HashMap<>();
                 InjectSource ctx = new InjectSource(option, components);
+                ctx.add(Option.COMPONENT_OPTION, option);
                 ctx.add(CipherConfig.COMPONENT_CIPHER_CONFIG, cipherConfig);
                 ctx.add(CipherDetector.COMPONENT_CIPHER_DETECTOR, cipherDetector);
                 ctx.add(CipherFactory.COMPONENT_CIPHER_FACTORY, cipherFactory);

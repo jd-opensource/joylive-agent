@@ -113,7 +113,8 @@ public class MapCache<K, T> implements Cache<K, T> {
      * @return The built map.
      */
     protected Map<K, T> build() {
-        return cacheBuilder == null ? new HashMap<>() : cacheBuilder.build();
+        Map<K, T> result = cacheBuilder == null ? new HashMap<>() : cacheBuilder.build();
+        return result == null ? new HashMap<>() : result;
     }
 
 }

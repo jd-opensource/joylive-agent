@@ -17,7 +17,9 @@ package com.jd.live.agent.plugin.router.springgateway.v4.util;
 
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.util.UriUtils;
+import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.netty.Connection;
 
 import java.net.URI;
 import java.util.LinkedHashSet;
@@ -67,6 +69,54 @@ public class WebExchangeUtils {
 
         attributes.put(GATEWAY_REQUEST_URL_ATTR, requestUrl);
         attributes.put(GATEWAY_LOADBALANCER_RESPONSE_ATTR, getResponse(endpoint));
+    }
+
+    /**
+     * Removes and returns an attribute from the server web exchange.
+     *
+     * @param <T>      the type of the attribute value
+     * @param exchange the server web exchange
+     * @param key      the attribute key
+     * @return the removed attribute value, or null if not found
+     */
+    public static <T> T removeAttribute(ServerWebExchange exchange, String key) {
+        return (T) exchange.getAttributes().remove(key);
+    }
+
+    /**
+     * Removes multiple attributes from the server web exchange.
+     *
+     * @param exchange the server web exchange
+     * @param keys     the attribute keys to remove
+     */
+    public static void removeAttributes(ServerWebExchange exchange, String... keys) {
+        if (keys != null) {
+            Map<String, Object> attributes = exchange.getAttributes();
+            for (String key : keys) {
+                attributes.remove(key);
+            }
+        }
+    }
+
+    /**
+     * Closes the client response connection associated with the exchange.
+     *
+     * @param exchange the server web exchange
+     */
+    public static void closeConnection(ServerWebExchange exchange) {
+        Connection conn = removeAttribute(exchange, ServerWebExchangeUtils.CLIENT_RESPONSE_CONN_ATTR);
+        if (conn != null) {
+            conn.dispose();
+        }
+    }
+
+    /**
+     * Resets the server web exchange to its initial state.
+     *
+     * @param exchange the server web exchange to reset
+     */
+    public static void reset(ServerWebExchange exchange) {
+        ServerWebExchangeUtils.reset(exchange);
     }
 
 }

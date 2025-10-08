@@ -22,22 +22,30 @@ import lombok.Setter;
 @Setter
 public class NacosConfig {
 
-    public static final String DEFAULT_PATH = "/nacos/v1/console/health/liveness";
+    public static final String[] DEFAULT_PATHS = new String[]{
+            "nacos/v1/ns/operator/metrics?onlyStatus=true",
+    };
 
-    public static final String DEFAULT_OK_RESPONSE = "OK";
+    public static final String[] DEFAULT_RESPONSES = new String[]{
+            "UP",
+    };
 
     private int connectTimeout = 1000;
 
     private int readTimeout = 1000;
 
-    private String path = DEFAULT_PATH;
+    private String[] paths = DEFAULT_PATHS;
 
-    private String response = DEFAULT_OK_RESPONSE;
+    private String[] responses = DEFAULT_RESPONSES;
 
     public boolean match(String response) {
-        if (this.response == null || this.response.isEmpty()) {
-            return true;
+        if (response != null && !response.isEmpty()) {
+            for (String r : responses) {
+                if (response.contains(r)) {
+                    return true;
+                }
+            }
         }
-        return response != null && response.contains(this.response);
+        return false;
     }
 }

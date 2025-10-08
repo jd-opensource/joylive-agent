@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.governance.probe;
 
+import lombok.Builder;
+
 /**
  * A detect task that tests connectivity to servers.
  * Requires consecutive successful checks to confirm recovery.
@@ -23,6 +25,7 @@ public class FailoverDetectTask extends AbstractDetectTask {
 
     private final FailoverAddressList addressList;
 
+    @Builder
     public FailoverDetectTask(FailoverAddressList addressList,
                               HealthProbe probe,
                               int successThreshold,

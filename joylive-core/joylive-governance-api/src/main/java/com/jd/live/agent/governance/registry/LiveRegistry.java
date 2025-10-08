@@ -17,9 +17,10 @@ package com.jd.live.agent.governance.registry;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
-import com.jd.live.agent.core.bootstrap.AppContext;
-import com.jd.live.agent.core.bootstrap.AppListener;
-import com.jd.live.agent.core.bootstrap.AppListenerSupplier;
+import com.jd.live.agent.core.bootstrap.*;
+import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
+import com.jd.live.agent.core.event.AgentEvent;
+import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.InjectSource;
@@ -30,8 +31,10 @@ import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.service.AbstractService;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.map.CaseInsensitiveConcurrentMap;
+import com.jd.live.agent.core.util.option.AppEnvironmentOption;
+import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
 import com.jd.live.agent.core.util.time.Timer;
 import com.jd.live.agent.governance.config.*;
@@ -49,7 +52,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.Constants.SAME_GROUP_PREDICATE;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 import static com.jd.live.agent.core.util.StringUtils.choose;
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * {@code LiveRegistry} is an implementation of {@link Registry} that manages the registration and unregistration
@@ -71,6 +76,12 @@ public class LiveRegistry extends AbstractService
 
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
+
+    @Inject(Publisher.SYSTEM)
+    private Publisher<AgentEvent> publisher;
+
+    @Inject(Option.COMPONENT_OPTION)
+    private Option option;
 
     @Inject(Timer.COMPONENT_TIMER)
     private Timer timer;
@@ -120,30 +131,6 @@ public class LiveRegistry extends AbstractService
 
     @Override
     protected CompletableFuture<Void> doStart() {
-        // start registries
-        List<RegistryClusterConfig> clusters = registryConfig.getClusters();
-        List<RegistryService> registries = new ArrayList<>();
-        try {
-            if (clusters != null && registryConfig.isEnabled()) {
-                for (RegistryClusterConfig cluster : clusters) {
-                    if (cluster.validate()) {
-                        RegistryFactory factory = factories.get(cluster.getType());
-                        if (factory == null) {
-                            throw new RegistryException("registry type " + cluster.getType() + " is not supported");
-                        }
-                        registries.add(factory.create(cluster));
-                    }
-                }
-            }
-            if (!registries.isEmpty()) {
-                for (RegistryService registry : registries) {
-                    startCluster(registry);
-                }
-            }
-        } catch (Throwable e) {
-            return Futures.future(e);
-        }
-        this.registries = registries;
         return CompletableFuture.completedFuture(null);
     }
 
@@ -153,25 +140,15 @@ public class LiveRegistry extends AbstractService
         ready.set(false);
         logger.info("Unregister services from registry.");
         // unregister first
-        for (Registration registration : registrations.values()) {
-            registration.unregister();
-        }
+        registrations.forEach((key, value) -> value.unregister());
         logger.info("Wait for completing flying requests.");
         // wait for flying request done
         flyingCounter.waitDone().whenComplete((v, e) -> {
             logger.info("Complete flying requests, start closing registry.");
             // stop and clear registrations
-            for (Registration registration : registrations.values()) {
-                registration.stop();
-            }
-            registrations.clear();
             // stop and clear subscriptions
-            for (Subscription subscription : subscriptions.values()) {
-                subscription.stop();
-            }
-            subscriptions.clear();
             // stop registries
-            Close.instance().close(registries);
+            Close.instance().closeAndClear(registrations).closeAndClear(subscriptions).close(registries);
             registries = null;
             future.complete(null);
         });
@@ -188,11 +165,18 @@ public class LiveRegistry extends AbstractService
 
     @Override
     public AppListener getAppListener() {
-        return new AppListener.AppListenerAdapter() {
+        return new AppListenerAdapter() {
+
+            @Override
+            public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
+                // start custom registry service
+                onAppEnvironmentPrepared(environment);
+            }
 
             @Override
             public void onReady(AppContext context) {
-                onApplicationReady();
+                // register
+                onAppReady();
             }
         };
     }
@@ -378,6 +362,9 @@ public class LiveRegistry extends AbstractService
             instance.setGroup(serviceId.getGroup());
             instance.setUniqueName(null);
         }
+        if (!isEmpty(serviceId.getCatalog()) && !serviceId.getCatalog().equalsIgnoreCase(instance.getCatalog())) {
+            instance.setCatalog(serviceId.getCatalog());
+        }
     }
 
     /**
@@ -396,7 +383,8 @@ public class LiveRegistry extends AbstractService
         String service = choose(serviceId.getService(), appService.getName());
         final String target = choose(aliases.get(service), service);
         String group = choose(serviceId.getGroup(), () -> role == ServiceRole.CONSUMER ? serviceConfig.getGroup(target) : appService.getGroup());
-        return serviceId.of(target, group);
+        String catalog = choose(serviceId.getCatalog(), appService.getCatalog());
+        return serviceId.of(target, group, catalog);
     }
 
     /**
@@ -431,9 +419,52 @@ public class LiveRegistry extends AbstractService
     }
 
     /**
+     * Handles application environment prepared event by starting registry services.
+     * Initializes and starts all configured registry clusters if registry is enabled.
+     *
+     * @param environment the prepared application environment
+     */
+    private void onAppEnvironmentPrepared(AppEnvironment environment) {
+        // start registries in environment prepared event
+        List<RegistryClusterConfig> clusters = registryConfig.getClusters();
+        List<RegistryService> registries = new ArrayList<>();
+        if (registryConfig.isEnabled() && clusters != null) {
+            try {
+                // source config
+                List<Map<String, Object>> maps = option.getObject(GovernanceConfig.CONFIG_REGISTRY_CLUSTERS);
+                AppEnvironmentOption env = new AppEnvironmentOption(environment);
+                for (int i = 0; i < clusters.size(); i++) {
+                    // reinject config by app envrionment
+                    RegistryClusterConfig cluster = clusters.get(i);
+                    cluster.supplement(new MapOption(maps.get(i)), env);
+                    // validate
+                    if (cluster.validate()) {
+                        // create registry service
+                        RegistryFactory factory = factories.get(cluster.getType());
+                        if (factory == null) {
+                            throw new RegistryException("registry type " + cluster.getType() + " is not supported");
+                        }
+                        registries.add(factory.create(cluster));
+                    }
+                }
+                if (!registries.isEmpty()) {
+                    for (RegistryService registry : registries) {
+                        startCluster(registry);
+                    }
+                } else {
+                    logger.warn("No registry cluster is configured.");
+                }
+            } catch (Throwable e) {
+                publisher.offer(AgentEvent.onAgentFailure("Failed to start registry cluster.", e));
+            }
+        }
+        this.registries = registries;
+    }
+
+    /**
      * Called when the application is ready to start. This method iterates through all registered services and calls their register method.
      */
-    private void onApplicationReady() {
+    private void onAppReady() {
         ready.set(true);
         // warmup
         List<ServiceId> services = new ArrayList<>(subscriptions.size());
@@ -515,7 +546,7 @@ public class LiveRegistry extends AbstractService
      *
      * @param subscriptions the list of cluster subscriptions to be sorted in-place
      */
-    private static void sort(List<ClusterSubscription> subscriptions) {
+    private static List<ClusterSubscription> sort(List<ClusterSubscription> subscriptions) {
         // sort by role PRIMARY > SYSTEM > SECONDARY
         subscriptions.sort((o1, o2) -> {
             RegistryRole role1 = o1.getConfig().getRole();
@@ -524,12 +555,13 @@ public class LiveRegistry extends AbstractService
             role2 = role2 == null ? RegistryRole.SECONDARY : role2;
             return role1.getOrder() - role2.getOrder();
         });
+        return subscriptions;
     }
 
     /**
      * A private static class that represents a registration of a service instance with the registry.
      */
-    private static class Registration {
+    private static class Registration implements AutoCloseable {
 
         /**
          * The name of the registration.
@@ -575,15 +607,6 @@ public class LiveRegistry extends AbstractService
             }
         }
 
-        public void register(ServiceInstance instance) {
-            for (ClusterInstanceRegistration registration : instances) {
-                if (!(registration.getCluster() instanceof AbstractSystemRegistryService)
-                        && Objects.equals(registration.getInstance().getSchemeAddress(), instance.getSchemeAddress())) {
-                    registration.register();
-                }
-            }
-        }
-
         /**
          * Unregisters the service instance from the registry.
          */
@@ -593,25 +616,10 @@ public class LiveRegistry extends AbstractService
             }
         }
 
-        public void unregister(ServiceInstance instance) {
-            for (ClusterInstanceRegistration registration : instances) {
-                if (!(registration.getCluster() instanceof AbstractSystemRegistryService)
-                        && Objects.equals(registration.getInstance().getSchemeAddress(), instance.getSchemeAddress())) {
-                    registration.unregister();
-                }
-            }
-        }
-
-        /**
-         * Stops the registration process.
-         */
-        public void stop() {
+        @Override
+        public void close() {
             started.set(false);
             unregister();
-        }
-
-        public void add(Callable<Void> doRegister) {
-
         }
 
         /**
@@ -629,13 +637,8 @@ public class LiveRegistry extends AbstractService
             if (!started.get()) {
                 return;
             }
-            int dones = 0;
-            for (ClusterInstanceRegistration registration : instances) {
-                if (registration.register()) {
-                    dones++;
-                }
-            }
-            if (dones < instances.size()) {
+            int does = count(instances, ClusterInstanceRegistration::register);
+            if (does < instances.size()) {
                 delayRegister();
             }
         }
@@ -644,16 +647,14 @@ public class LiveRegistry extends AbstractService
          * Performs the actual unregister of the service instance.
          */
         private void doUnregister() {
-            for (ClusterInstanceRegistration registration : instances) {
-                registration.unregister();
-            }
+            instances.forEach(ClusterInstanceRegistration::unregister);
         }
     }
 
     /**
      * A private static class that represents a subscription to endpoint events for a specific service group.
      */
-    private static class Subscription implements ServiceRegistry {
+    private static class Subscription implements ServiceRegistry, AutoCloseable {
 
         private static final int UNSUBSCRIBE = 0;
 
@@ -718,17 +719,14 @@ public class LiveRegistry extends AbstractService
         }
 
         public void addCluster(RegistryService cluster, String service) {
-            if (serviceId.getService().equals(service)) {
+            if (serviceId.isService(service)) {
                 addCluster(cluster);
             }
         }
 
         public void addCluster(RegistryService cluster) {
             synchronized (mutex) {
-                List<ClusterSubscription> clusters = new ArrayList<>(this.clusters);
-                clusters.add(new ClusterSubscription(cluster, serviceId));
-                sort(clusters);
-                this.clusters = clusters;
+                clusters = sort(copyAndAdd(clusters, new ClusterSubscription(cluster, serviceId)));
             }
             resubscribe();
         }
@@ -737,26 +735,13 @@ public class LiveRegistry extends AbstractService
             boolean removed = false;
             synchronized (mutex) {
                 List<ClusterSubscription> clusters = new ArrayList<>(this.clusters);
-                for (int i = clusters.size() - 1; i >= 0; i--) {
-                    if (clusters.get(i).getCluster() == cluster) {
-                        clusters.remove(i);
-                        removed = true;
-                        break;
-                    }
-                }
-                if (removed) {
-                    sort(clusters);
-                    this.clusters = clusters;
+                if (removeFirst(clusters.iterator(), subscription -> subscription.getCluster() == cluster)) {
+                    removed = true;
+                    this.clusters = sort(clusters);
                 }
             }
             if (removed) {
                 resubscribe();
-            }
-        }
-
-        public void removeCluster(RegistryService cluster, String service) {
-            if (serviceId.getService().equals(service)) {
-                removeCluster(cluster);
             }
         }
 
@@ -803,10 +788,8 @@ public class LiveRegistry extends AbstractService
             }
         }
 
-        /**
-         * Stops the registration process.
-         */
-        public void stop() {
+        @Override
+        public void close() {
             started.set(false);
             doUnsubscribe();
         }
@@ -948,12 +931,7 @@ public class LiveRegistry extends AbstractService
             if (!started.get()) {
                 return;
             }
-            int dones = 0;
-            for (ClusterSubscription cluster : clusters) {
-                if (cluster.subscribe(e -> update(cluster.getClusterName(), e))) {
-                    dones++;
-                }
-            }
+            int dones = count(clusters, cluster -> cluster.subscribe(e -> update(cluster.getClusterName(), e)));
             if (dones != clusters.size()) {
                 delaySubscribe();
             } else {
@@ -971,14 +949,10 @@ public class LiveRegistry extends AbstractService
         }
 
         private void resubscribe() {
-            for (ClusterSubscription cluster : clusters) {
-                if (!cluster.isDone()) {
-                    // Add new cluster subscription
-                    if (subscribed.compareAndSet(SUBSCRIBED, SUBSCRIBING)) {
-                        doSubscribe();
-                    }
-                    break;
-                }
+            if (anyMatch(clusters, cluster -> !cluster.isDone())
+                    && subscribed.compareAndSet(SUBSCRIBED, SUBSCRIBING)) {
+                // Add new cluster subscription
+                doSubscribe();
             }
         }
 
@@ -986,11 +960,7 @@ public class LiveRegistry extends AbstractService
          * Performs the actual unsubscription of the service.
          */
         private void doUnsubscribe() {
-            for (ClusterSubscription cluster : clusters) {
-                if (!cluster.isDone()) {
-                    cluster.unsubscribe();
-                }
-            }
+            clusters.forEach(ClusterSubscription::unsubscribe);
         }
     }
 
@@ -1017,7 +987,7 @@ public class LiveRegistry extends AbstractService
         ClusterOperation(RegistryService cluster, T instance) {
             this.cluster = cluster;
             this.instance = instance;
-            this.serviceId = new ServiceId(instance.getService(), getClusterGroup(cluster, instance.group), instance.isInterfaceMode());
+            this.serviceId = instance.of(getCatalog(cluster, instance.getCatalog()));
             this.name = instance.getUniqueName();
         }
 
@@ -1037,9 +1007,9 @@ public class LiveRegistry extends AbstractService
             return cluster.getConfig();
         }
 
-        protected String getClusterGroup(RegistryService cluster, String defaultGroup) {
+        protected String getCatalog(RegistryService cluster, String catalog) {
             RegistryClusterConfig config = cluster.getConfig();
-            return config == null ? defaultGroup : config.getGroup(defaultGroup);
+            return config == null ? catalog : config.getGroup(catalog);
         }
 
     }
@@ -1069,11 +1039,11 @@ public class LiveRegistry extends AbstractService
                         cluster.register(serviceId, instance);
                     }
                     setDone(true);
-                    logger.info("Success invoking registering instance {} to {} at {}",
+                    logger.info("Success invoking registering instance {} of {} to {}",
                             instance.getSchemeAddress(), name, cluster.getName());
                     return true;
                 } catch (Throwable e) {
-                    logger.error("Failed to invoke registering instance {} to {} at {}, caused by {}",
+                    logger.error("Failed to invoke registering instance {} of {} to {}, caused by {}",
                             instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
                 return false;
@@ -1089,10 +1059,10 @@ public class LiveRegistry extends AbstractService
                 try {
                     cluster.unregister(serviceId, instance);
                     setDone(false);
-                    logger.info("Success invoking unregistering instance {} to {} at {}",
+                    logger.info("Success invoking unregistering instance {} of {} to {}",
                             instance.getSchemeAddress(), name, cluster.getName());
                 } catch (Exception e) {
-                    logger.error("Failed to invoke unregistering instance {} to {} at {}, caused by {}",
+                    logger.error("Failed to invoke unregistering instance {} of {} to {}, caused by {}",
                             instance.getSchemeAddress(), name, cluster.getName(), e.getMessage(), e);
                 }
             }
@@ -1121,10 +1091,10 @@ public class LiveRegistry extends AbstractService
             try {
                 cluster.subscribe(serviceId, consumer);
                 setDone(true);
-                logger.info("Success invoking subscribing {} at {}", name, cluster.getName());
+                logger.info("Success invoking subscribing {} to {}", name, cluster.getName());
                 return true;
             } catch (Exception e) {
-                logger.error("Failed to invoke subscribing {} at {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
+                logger.error("Failed to invoke subscribing {} to {}, caused by {}", name, cluster.getName(), e.getMessage(), e);
             }
             return false;
         }
@@ -1134,12 +1104,14 @@ public class LiveRegistry extends AbstractService
          *
          */
         public void unsubscribe() {
-            try {
-                cluster.unsubscribe(serviceId);
-                setDone(false);
-                logger.info("Success invoking unsubscribing {} at {}", name, getClusterName());
-            } catch (Exception e) {
-                logger.error("Failed to invoke unsubscribing {} at {}, caused by {}", name, getClusterName(), e.getMessage(), e);
+            if (isDone()) {
+                try {
+                    cluster.unsubscribe(serviceId);
+                    setDone(false);
+                    logger.info("Success invoking unsubscribing {} to {}", name, getClusterName());
+                } catch (Exception e) {
+                    logger.error("Failed to invoke unsubscribing {} to {}, caused by {}", name, getClusterName(), e.getMessage(), e);
+                }
             }
         }
     }

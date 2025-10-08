@@ -22,6 +22,7 @@ import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.util.Executors;
 import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
 import com.jd.live.agent.core.util.shutdown.ShutdownHook;
 
@@ -40,7 +41,7 @@ import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWait
  * @since 1.0.0
  */
 @Injectable
-public class ServiceManager implements ServiceSupervisor, ShutdownHook, GracefullyShutdown {
+public class ServiceManager implements ServiceSupervisor, ShutdownHook, GracefullyShutdown, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
@@ -100,6 +101,7 @@ public class ServiceManager implements ServiceSupervisor, ShutdownHook, Graceful
     /**
      * Gracefully shuts down the service.
      */
+    @Override
     public void close() {
         try {
             stop().join();
@@ -120,18 +122,7 @@ public class ServiceManager implements ServiceSupervisor, ShutdownHook, Graceful
      * @return A CompletableFuture that represents the asynchronous start operation of the AgentService.
      */
     private CompletableFuture<Void> startService(AgentService service) {
-        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-        ClassLoader classLoader = service.getClass().getClassLoader();
-        try {
-            if (classLoader != contextLoader) {
-                Thread.currentThread().setContextClassLoader(classLoader);
-            }
-            return service.start();
-        } finally {
-            if (classLoader != contextLoader) {
-                Thread.currentThread().setContextClassLoader(contextLoader);
-            }
-        }
+        return Executors.get(service.getClass().getClassLoader(), () -> service.start());
     }
 
     /**

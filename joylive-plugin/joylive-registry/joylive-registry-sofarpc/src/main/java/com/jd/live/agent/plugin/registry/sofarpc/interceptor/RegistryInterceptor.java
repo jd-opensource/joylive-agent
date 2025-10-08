@@ -26,9 +26,9 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceInstance;
 import com.jd.live.agent.governance.util.FrameworkVersion;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 
 /**
@@ -42,26 +42,20 @@ public class RegistryInterceptor extends AbstractRegistryInterceptor {
 
     @Override
     protected List<ServiceInstance> getInstances(MethodContext ctx) {
-        List<ServiceInstance> instances = null;
         ProviderConfig<?> config  = ctx.getArgument(0);
         List<ServerConfig> serverConfigs = config.getServer();
         if (config.isRegister() && serverConfigs != null && !serverConfigs.isEmpty()) {
-            instances = new ArrayList<>(serverConfigs.size());
-            for (ServerConfig serverConfig : serverConfigs) {
-                instances.add(
-                        ServiceInstance.builder()
-                                .interfaceMode(true)
-                                .framework(FrameworkVersion.sofaRpc(Version.VERSION))
-                                .service(config.getInterfaceId())
-                                .group(choose(config.getGroup(), config.getUniqueId()))
-                                .version(choose(config.getVersion(), "1.0"))
-                                .scheme(serverConfig.getProtocol())
-                                .host(RegistryUtils.getServerHost(serverConfig))
-                                .port(getPort(serverConfig))
-                                .metadata(RegistryUtils.convertProviderToMap(config, serverConfig))
-                                .build());
-            }
-            return instances;
+            return toList(serverConfigs, cfg -> ServiceInstance.builder()
+                    .interfaceMode(true)
+                    .framework(FrameworkVersion.sofaRpc(Version.VERSION))
+                    .service(config.getInterfaceId())
+                    .group(choose(config.getGroup(), config.getUniqueId()))
+                    .version(choose(config.getVersion(), "1.0"))
+                    .scheme(cfg.getProtocol())
+                    .host(RegistryUtils.getServerHost(cfg))
+                    .port(getPort(cfg))
+                    .metadata(RegistryUtils.convertProviderToMap(config, cfg))
+                    .build());
         }
         return null;
     }

@@ -30,7 +30,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -39,6 +42,7 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Utility class for handling HTTP requests with support for gzip and deflate compression.
@@ -344,8 +348,7 @@ public abstract class HttpUtils {
                 if (cooke.size() == 1) {
                     result.set(name, valueFunc.apply(cooke.get(0)));
                 } else {
-                    List<String> values = new ArrayList<>(cooke.size());
-                    cooke.forEach(value -> values.add(valueFunc.apply(value)));
+                    List<String> values = toList(cooke, valueFunc);
                     result.setAll(name, values);
                 }
             }

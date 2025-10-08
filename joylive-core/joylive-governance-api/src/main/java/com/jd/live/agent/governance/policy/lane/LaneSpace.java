@@ -86,7 +86,7 @@ public class LaneSpace {
             }
             return map;
         }
-        return null;
+        return new HashMap<>();
     });
 
     private final transient Cache<String, LaneRule> ruleCache = new MapCache<>(new ListBuilder<>(() -> rules, LaneRule::getId));

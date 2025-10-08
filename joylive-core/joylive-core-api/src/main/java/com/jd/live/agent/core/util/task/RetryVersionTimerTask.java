@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util.task;
 
 import com.jd.live.agent.core.util.time.Timer;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.function.Predicate;
@@ -46,6 +47,7 @@ public class RetryVersionTimerTask implements RetryVersionTask {
      * @param predicate determines if retry should be attempted
      * @param timer     scheduler for retry attempts
      */
+    @Builder
     public RetryVersionTimerTask(String name,
                                  RetryExecution task,
                                  long version,

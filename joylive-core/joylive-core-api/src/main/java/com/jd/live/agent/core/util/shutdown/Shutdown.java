@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWaitTime;
 
 /**
@@ -36,7 +37,7 @@ import static com.jd.live.agent.core.util.shutdown.GracefullyShutdown.getMaxWait
  * can be added.
  * </p>
  */
-public class Shutdown {
+public class Shutdown implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(Shutdown.class);
 
@@ -85,11 +86,8 @@ public class Shutdown {
         CompletableFuture<Void> result;
         if (!hooks.isEmpty()) {
             List<ShutdownHookGroup> groups = sortGroup();
-            List<CompletableFuture<Void>> futures = new ArrayList<>(groups.size());
             // Sequentially execute hooks
-            for (ShutdownHookGroup group : groups) {
-                futures.add(group.stop());
-            }
+            List<CompletableFuture<Void>> futures = toList(groups, group -> group.stop());
             result = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         } else {
             result = CompletableFuture.completedFuture(null);
@@ -145,6 +143,11 @@ public class Shutdown {
         if (register.compareAndSet(true, false)) {
             Runtime.getRuntime().removeShutdownHook(shutdownTask);
         }
+    }
+
+    @Override
+    public void close() {
+        unregister();
     }
 
     /**

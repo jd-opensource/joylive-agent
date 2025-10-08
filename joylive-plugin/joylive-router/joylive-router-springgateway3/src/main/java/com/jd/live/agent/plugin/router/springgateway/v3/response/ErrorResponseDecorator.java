@@ -34,8 +34,11 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import static com.jd.live.agent.core.util.CollectionUtils.removeAndGetFirst;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR;
 
 /**
@@ -47,40 +50,88 @@ public class ErrorResponseDecorator extends ServerHttpResponseDecorator {
 
     private final Set<ErrorPolicy> policies;
 
-    public ErrorResponseDecorator(ServerWebExchange exchange, Set<ErrorPolicy> policies) {
+    private final boolean failover;
+
+    public ErrorResponseDecorator(ServerWebExchange exchange, Set<ErrorPolicy> policies, boolean failover) {
         super(exchange.getResponse());
         this.exchange = exchange;
         this.policies = policies;
+        this.failover = failover;
     }
 
     @NonNull
     @Override
     public Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
-        final HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
-        ServiceError error = ServiceError.build(key -> {
-            List<String> values = headers.remove(key);
-            return values == null || values.isEmpty() ? null : values.get(0);
-        });
+        Map<String, Object> attributes = exchange.getAttributes();
+        HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
+        ServiceError error = ServiceError.build(key -> removeAndGetFirst(headers, key));
         if (error != null) {
-            exchange.getAttributes().put(Request.KEY_SERVER_ERROR, error);
+            attributes.put(Request.KEY_SERVER_ERROR, error);
         }
         if (policies != null && !policies.isEmpty()) {
-            String contentType = exchange.getAttribute(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
-            if (body instanceof Flux && policyMatch(contentType)) {
-                Flux<? extends DataBuffer> fluxBody = Flux.from(body);
-                return super.writeWith(fluxBody.buffer().map(dataBuffers -> {
-                    DataBufferFactory bufferFactory = bufferFactory();
-                    DataBuffer join = bufferFactory.join(dataBuffers);
-                    byte[] content = new byte[join.readableByteCount()];
-                    join.read(content);
-                    // must release the buffer
-                    DataBufferUtils.release(join);
-                    exchange.getAttributes().put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
-                    return bufferFactory.wrap(content);
-                }));
+            String contentType = (String) attributes.get(ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
+            if (policyMatch(contentType)) {
+                if (body instanceof Flux) {
+                    body = Flux.from(body).buffer().map(buffers -> readBody(buffers, attributes));
+                } else if (body instanceof Mono) {
+                    body = Mono.from(body).map(buffers -> readBody(buffers, attributes));
+                }
             }
         }
-        return super.writeWith(body);
+        if (failover) {
+            // Defer write operations until retry completion.
+            Publisher<? extends DataBuffer> publisher = body;
+            Supplier<Mono<Void>> supplier = () -> super.writeWith(publisher);
+            attributes.put(Request.KEY_RESPONSE_WRITE, supplier);
+            return Mono.empty();
+        } else {
+            return super.writeWith(body);
+        }
+
+    }
+
+    /**
+     * Reads content from multiple DataBuffers by joining them into a single buffer.
+     *
+     * @param buffers    the list of DataBuffers to read from
+     * @param attributes the attributes map to store the response body
+     * @return a new DataBuffer containing the joined content
+     */
+    private DataBuffer readBody(List<? extends DataBuffer> buffers, Map<String, Object> attributes) {
+        DataBufferFactory factory = bufferFactory();
+        return readBody(factory, factory.join(buffers), attributes);
+    }
+
+    /**
+     * Reads content from a DataBuffer using the default buffer factory.
+     *
+     * @param buffer     the DataBuffer to read from
+     * @param attributes the attributes map to store the response body
+     * @return a new DataBuffer containing the content
+     */
+    private DataBuffer readBody(DataBuffer buffer, Map<String, Object> attributes) {
+        return readBody(bufferFactory(), buffer, attributes);
+    }
+
+    /**
+     * Reads content from a DataBuffer and stores it in attributes.
+     * Ensures proper resource cleanup by releasing the original buffer.
+     *
+     * @param factory    the DataBufferFactory to create the new buffer
+     * @param buffer     the DataBuffer to read from
+     * @param attributes the attributes map to store the response body
+     * @return a new DataBuffer containing the content
+     */
+    private DataBuffer readBody(DataBufferFactory factory, DataBuffer buffer, Map<String, Object> attributes) {
+        byte[] content = new byte[buffer.readableByteCount()];
+        try {
+            buffer.read(content);
+            attributes.put(Request.KEY_RESPONSE_BODY, new String(content, StandardCharsets.UTF_8));
+        } finally {
+            // must release the buffer
+            DataBufferUtils.release(buffer);
+        }
+        return factory.wrap(content);
     }
 
     /**

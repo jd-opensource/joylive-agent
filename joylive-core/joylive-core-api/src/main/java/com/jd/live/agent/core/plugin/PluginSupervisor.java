@@ -22,7 +22,7 @@ import java.util.Set;
  * An interface defining the contract for managing the lifecycle of plugins,
  * including their installation and uninstallation.
  */
-public interface PluginSupervisor {
+public interface PluginSupervisor extends AutoCloseable {
 
     /**
      * Installs plugins based on the specified installation mode.
@@ -72,4 +72,9 @@ public interface PluginSupervisor {
      * @param names The names of the plugins to uninstall.
      */
     void uninstall(Set<String> names);
+
+    @Override
+    default void close() {
+        uninstall();
+    }
 }

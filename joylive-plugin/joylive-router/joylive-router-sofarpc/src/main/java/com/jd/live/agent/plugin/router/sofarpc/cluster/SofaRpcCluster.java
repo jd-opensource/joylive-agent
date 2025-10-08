@@ -64,6 +64,7 @@ import java.util.concurrent.CompletionStage;
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Represents a live cluster specifically designed for managing Sofa RPC communications.
@@ -148,10 +149,7 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
                 providers.add(directProvider);
             }
         }
-        List<SofaRpcEndpoint> endpoints = new ArrayList<>(providers.size());
-        for (ProviderInfo provider : providers) {
-            endpoints.add(new SofaRpcEndpoint(provider, this::isConnected));
-        }
+        List<SofaRpcEndpoint> endpoints = toList(providers, provider -> new SofaRpcEndpoint(provider, this::isConnected));
         return CompletableFuture.completedFuture(endpoints);
     }
 

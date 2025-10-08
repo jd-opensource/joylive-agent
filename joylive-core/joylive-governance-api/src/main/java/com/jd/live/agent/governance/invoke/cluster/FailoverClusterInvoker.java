@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.exception.Unretryable;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedException;
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
@@ -31,6 +30,7 @@ import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParser;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
@@ -60,24 +60,23 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
     public <R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
-                                                            OutboundInvocation<R> invocation,
-                                                            ClusterPolicy defaultPolicy) {
+                                                           OutboundInvocation<R> invocation,
+                                                           ClusterPolicy defaultPolicy) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
         RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
         retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
         R request = invocation.getRequest();
+        request.setAttribute(Request.KEY_FAILOVER_REQUEST, Boolean.TRUE);
         request.addErrorPolicy(retryPolicy);
         RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
         Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getAndIncrement());
         cluster.onStart(request);
 
         // TODO test degrade when retry
-        return retryContext.execute(invocation, supplier).exceptionally(e ->
-                cluster.createResponse(
-                        cluster.createException(e, invocation),
-                        request,
-                        null));
+        return retryContext.execute(invocation, supplier)
+                .exceptionally(e ->
+                        cluster.createResponse(cluster.createException(e, invocation), request, null));
     }
 
     /**
@@ -182,19 +181,19 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
                     case RETRY:
                         Throwable ex = checkAndAwait(request, throwable);
                         if (ex != null) {
-                            future.completeExceptionally(ex);
+                            cluster.onRetryComplete(future, request, null, ex);
                         } else {
                             doExecute(invocation, supplier, future);
                         }
                         break;
                     case EXHAUSTED:
-                        future.completeExceptionally(new RetryExhaustedException("max retries is reached out.", throwable, retryPolicy.getRetry()));
+                        cluster.onRetryComplete(future, request, null, new RetryExhaustedException("max retries is reached out.", throwable, retryPolicy.getRetry()));
                         break;
                     case TIMEOUT:
-                        future.completeExceptionally(new RetryTimeoutException("retry is timeout.", throwable, retryPolicy.getTimeout()));
+                        cluster.onRetryComplete(future, request, null, new RetryTimeoutException("retry is timeout.", throwable, retryPolicy.getTimeout()));
                         break;
                     default:
-                        Futures.complete(future, v, e);
+                        cluster.onRetryComplete(future, request, v, e);
                 }
             });
         }
