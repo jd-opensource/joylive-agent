@@ -93,12 +93,6 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     }
 
     @Override
-    public int getStatusCode() {
-        HttpStatusCode code = response == null ? null : response.getStatusCode();
-        return code == null ? HttpStatus.INTERNAL_SERVER_ERROR.value() : code.value();
-    }
-
-    @Override
     public HttpStatusCode getHttpStatus() {
         HttpStatusCode code = response == null ? null : response.getStatusCode();
         return code == null ? HttpStatus.INTERNAL_SERVER_ERROR : code;

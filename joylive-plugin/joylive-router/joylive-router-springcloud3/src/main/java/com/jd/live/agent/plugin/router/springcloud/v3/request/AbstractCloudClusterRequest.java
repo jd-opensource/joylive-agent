@@ -28,7 +28,6 @@ import com.jd.live.agent.plugin.router.springcloud.v3.response.SpringClusterResp
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
@@ -138,15 +137,12 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
     @SuppressWarnings({"deprecation"})
     public void onSuccess(SpringClusterResponse response, ServiceEndpoint endpoint) {
         Object res = response;
+        // ResponseData has no status code in v3.0.0
         try {
-            HttpHeaders httpHeaders = response.getHttpHeaders();
-            int statusCode = response.getStatusCode();
-            org.springframework.http.HttpStatus httpStatus = response.getHttpStatus();
             MultiValueMap<String, ResponseCookie> cookies = null;
-            boolean useRawStatusCodeInResponseData = serviceContext.isUseRawStatusCodeInResponseData();
-            res = useRawStatusCodeInResponseData || httpStatus == null
-                    ? new ResponseData(httpHeaders, cookies, requestData, statusCode)
-                    : new ResponseData(httpStatus, httpHeaders, cookies, requestData);
+            res = serviceContext.isUseRawStatusCodeInResponseData()
+                    ? new ResponseData(response.getHttpHeaders(), cookies, requestData, response.getStatusCode())
+                    : new ResponseData(response.getHttpStatus(), response.getHttpHeaders(), cookies, requestData);
         } catch (Throwable ignore) {
         }
 

@@ -28,11 +28,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
+import static com.jd.live.agent.core.util.type.ClassUtils.*;
 import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled.TYPE_LOAD_BALANCED;
 
 /**
@@ -41,7 +43,19 @@ import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEn
 public class CloudUtils {
 
     // spring cloud
-    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
+    private static final Class<?> CLASS_LOAD_BALANCED = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
+
+    private static final String TYPE_LOAD_BALANCER_PROPERTIES = "org.springframework.cloud.client.loadbalancer.LoadBalancerProperties";
+
+    private static final Class<?> CLASS_LOAD_BALANCER_PROPERTIES = loadClass(TYPE_LOAD_BALANCER_PROPERTIES, HttpAccessor.class.getClassLoader());
+
+    private static final Field FIELD_RAW_STATUS = getDeclareField(CLASS_LOAD_BALANCER_PROPERTIES, "useRawStatusCodeInResponseData");
+
+    private static final String TYPE_REACTIVE_LOAD_BALANCER_FACTORY = "org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer$Factory";
+
+    private static final Class<?> CLASS_REACTIVE_LOAD_BALANCER_FACTORY = loadClass(TYPE_REACTIVE_LOAD_BALANCER_FACTORY, HttpAccessor.class.getClassLoader());
+
+    private static final Method METHOD_GET_PROPERTIES = getDeclaredMethod(CLASS_REACTIVE_LOAD_BALANCER_FACTORY, "getProperties", new Class[]{String.class});
 
     private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
 
@@ -51,7 +65,7 @@ public class CloudUtils {
      * @return true if Spring Cloud is present, false otherwise
      */
     public static boolean isCloudEnabled() {
-        return lbType != null;
+        return CLASS_LOAD_BALANCED != null;
     }
 
     /**
@@ -121,5 +135,23 @@ public class CloudUtils {
      */
     public static HttpHeaders writable(HttpHeaders headers) {
         return HttpHeaders.writableHttpHeaders(headers);
+    }
+
+    /**
+     * Checks if raw status code is enabled.
+     *
+     * @return true if raw status code is available, false otherwise
+     */
+    public static boolean isRawStatusCodeEnabled() {
+        return FIELD_RAW_STATUS != null;
+    }
+
+    /**
+     * Checks if service loadbalancer properties is enabled.
+     *
+     * @return true if service properties is available, false otherwise
+     */
+    public static boolean isServicePropertiesEnabled() {
+        return METHOD_GET_PROPERTIES != null;
     }
 }

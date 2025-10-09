@@ -20,13 +20,12 @@ import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.registry.SpringServiceRegistry;
+import com.jd.live.agent.plugin.router.springcloud.v3.util.CloudUtils;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,10 +42,6 @@ import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuie
 public abstract class AbstractCloudClusterContext implements CloudClusterContext {
 
     private static final String FIELD_PROPERTIES = "properties";
-
-    private static final Method METHOD_GET_PROPERTIES = getPropertiesMethod();
-
-    private static final Field FIELD_USE_RAW_STATUS_CODE_IN_RESPONSE_DATA = getUseRawStatusCodeField();
 
     private static final Map<String, RequestLifecycle> SERVICE_LIFECYCLES = new ConcurrentHashMap<>();
 
@@ -91,49 +86,17 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
 
     private LoadBalancerProperties getLoadBalancerProperties(String service) {
         try {
-            LoadBalancerProperties result = loadBalancerFactory == null || METHOD_GET_PROPERTIES == null ? null : loadBalancerFactory.getProperties(service);
+            // fix spring cloud 3.0.6 without getProperties
+            LoadBalancerProperties result = loadBalancerFactory == null || !CloudUtils.isServicePropertiesEnabled() ? null : loadBalancerFactory.getProperties(service);
             return result == null ? loadBalancerProperties : result;
         } catch (Throwable e) {
-            // fix spring cloud 3.0.6 without getProperties
             return loadBalancerProperties;
         }
     }
 
     private boolean isUseRawStatusCodeInResponseData(LoadBalancerProperties properties) {
-        boolean useRawStatusCodeInResponseData = false;
-        if (properties != null && FIELD_USE_RAW_STATUS_CODE_IN_RESPONSE_DATA != null) {
-            // fix for spring cloud 2020, without field useRawStatusCodeInResponseData
-            useRawStatusCodeInResponseData = properties.isUseRawStatusCodeInResponseData();
-        }
-        return useRawStatusCodeInResponseData;
-    }
-
-    /**
-     * Retrieves the field for raw status code usage in response data
-     *
-     * @return Field representing useRawStatusCodeInResponseData, or null if not found
-     */
-    private static Field getUseRawStatusCodeField() {
-        Field field = null;
-        try {
-            field = LoadBalancerProperties.class.getDeclaredField("useRawStatusCodeInResponseData");
-        } catch (NoSuchFieldException ignored) {
-        }
-        return field;
-    }
-
-    /**
-     * Retrieves the method to get load balancer properties
-     *
-     * @return Method to get properties, or null if not found
-     */
-    private static Method getPropertiesMethod() {
-        Method method = null;
-        try {
-            method = ReactiveLoadBalancer.Factory.class.getDeclaredMethod("getProperties", String.class);
-        } catch (NoSuchMethodException ignored) {
-        }
-        return method;
+        // fix for spring cloud 2020, without field useRawStatusCodeInResponseData
+        return properties != null && CloudUtils.isRawStatusCodeEnabled() ? properties.isUseRawStatusCodeInResponseData() : false;
     }
 
     private static class SpringRequestLifecycle implements RequestLifecycle {

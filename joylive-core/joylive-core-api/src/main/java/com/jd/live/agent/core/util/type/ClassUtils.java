@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util.type;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -184,6 +185,40 @@ public class ClassUtils {
     }
 
     /**
+     * Gets a declared field by name from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type      the class to search
+     * @param fieldName the field name to find
+     * @return the field if found, null otherwise
+     */
+    public static Field getDeclareField(Class<?> type, String fieldName) {
+        return getDeclaredField(type, field -> field.getName().equals(fieldName));
+    }
+
+    /**
+     * Gets a declared field by predicate from a class and makes it accessible.
+     * Returns null if not found.
+     *
+     * @param type      the class to search
+     * @param predicate the predicate to match
+     * @return the field if found, null otherwise
+     */
+    public static Field getDeclaredField(Class<?> type, Predicate<Field> predicate) {
+        if (type == null) {
+            return null;
+        }
+        Field[] fields = type.getDeclaredFields();
+        for (Field field : fields) {
+            if (predicate.test(field)) {
+                field.setAccessible(true);
+                return field;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Gets a declared method by name from a class and makes it accessible.
      * Returns null if not found.
      *
@@ -192,7 +227,7 @@ public class ClassUtils {
      * @return the method if found, null otherwise
      */
     public static Method getDeclaredMethod(Class<?> type, String methodName) {
-        return getDeclaredMethod(type, m -> m.getName().equals(methodName));
+        return getDeclaredMethod(type, method -> method.getName().equals(methodName));
     }
 
     /**
