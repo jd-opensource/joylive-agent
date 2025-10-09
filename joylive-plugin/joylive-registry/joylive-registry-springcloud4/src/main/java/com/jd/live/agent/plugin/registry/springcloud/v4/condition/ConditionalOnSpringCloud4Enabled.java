@@ -26,9 +26,13 @@ import java.lang.annotation.*;
 @Documented
 @ConditionalOnSpringCloudEnabled
 @ConditionalOnMissingClass(ConditionalOnSpringCloud4Enabled.TYPE_SPRING_CLOUD_APPLICATION)
+@ConditionalOnMissingClass(ConditionalOnSpringCloud4Enabled.TYPE_HTTP_SERVICE_FALLBACK)
 @ConditionalComposite
 public @interface ConditionalOnSpringCloud4Enabled {
 
     // spring cloud 2/3
     String TYPE_SPRING_CLOUD_APPLICATION = "org.springframework.cloud.client.SpringCloudApplication";
+
+    // spring cloud 5+
+    String TYPE_HTTP_SERVICE_FALLBACK = "org.springframework.cloud.client.circuitbreaker.httpservice.HttpServiceFallback";
 }

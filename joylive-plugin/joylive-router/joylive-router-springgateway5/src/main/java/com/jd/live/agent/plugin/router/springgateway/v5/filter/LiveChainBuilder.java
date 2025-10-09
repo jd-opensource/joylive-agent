@@ -24,7 +24,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.gateway.filter.*;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.cloud.gateway.filter.OrderedGatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.Ordered;
@@ -35,8 +38,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
+import static com.jd.live.agent.core.util.CollectionUtils.add;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;
 
 /**
@@ -46,13 +52,11 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 public class LiveChainBuilder {
 
     private static final String TYPE_GATEWAY_FILTER_ADAPTER = "org.springframework.cloud.gateway.handler.FilteringWebHandler$GatewayFilterAdapter";
-    private static final String TYPE_RETRY_FILTER = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$1";
     private static final String TYPE_ROUTE_TO_REQUEST_URL_FILTER = "org.springframework.cloud.gateway.filter.RouteToRequestUrlFilter";
     private static final String FIELD_CLIENT_FACTORY = "clientFactory";
     private static final String FIELD_RETRY_CONFIG = "val$retryConfig";
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
-    private static final int WRITE_RESPONSE_FILTER_ORDER = -1;
 
     /**
      * The invocation context for this filter configuration.
@@ -123,48 +127,60 @@ public class LiveChainBuilder {
     private LiveRouteFilter createRouteFilter(Route route, long version) {
         List<GatewayFilter> routeFilters = route.getFilters();
         List<GatewayFilter> pathFilters = new ArrayList<>(4);
+        AtomicReference<RetryConfig> retryConfig = new AtomicReference<>();
         List<GatewayFilter> filters = new ArrayList<>(globalFilters);
-        RetryConfig retryConfig = null;
-        if (!routeFilters.isEmpty()) {
-            GatewayFilter delegate;
-            for (GatewayFilter filter : routeFilters) {
-                delegate = filter instanceof OrderedGatewayFilter ? ((OrderedGatewayFilter) filter).getDelegate() : null;
-                if (delegate != null) {
-                    String name = delegate.getClass().getName();
-                    if (name.equals(TYPE_RETRY_FILTER)) {
-                        // ignore retry
-                        retryConfig = getQuietly(delegate, FIELD_RETRY_CONFIG);
-                    } else if (gatewayConfig.isPathFilter(name)) {
-                        // ignore path filter
-                        pathFilters.add(filter);
-                    } else {
-                        filters.add(filter);
-                    }
-                } else {
-                    filters.add(filter);
-                }
-            }
-        }
+        add(routeFilters, filters, filter -> !ignore(filter, retryConfig, pathFilters));
+
         AnnotationAwareOrderComparator.sort(filters);
         AnnotationAwareOrderComparator.sort(pathFilters);
+        addFilter(filters, gatewayConfig.getLiveFilterOrder(), pos -> new LiveGatewayFilter(context, gatewayConfig, cluster, retryConfig.get(), pos));
 
-        // insert filters
+        return new LiveRouteFilter(route, filters, pathFilters, version);
+
+    }
+
+    /**
+     * Adds a new ordered filter to the filter list at the appropriate position.
+     *
+     * @param filters  the list of gateway filters
+     * @param order    the order value for the new filter
+     * @param function function to create the filter, receives position as parameter
+     */
+    private void addFilter(List<GatewayFilter> filters, int order, Function<Integer, GatewayFilter> function) {
         int pos = 0;
-        int order;
         for (int i = 0; i < filters.size(); i++) {
             GatewayFilter gatewayFilter = filters.get(i);
             if (gatewayFilter instanceof Ordered) {
-                order = ((Ordered) gatewayFilter).getOrder();
-                if (order >= WRITE_RESPONSE_FILTER_ORDER) {
+                int ord = ((Ordered) gatewayFilter).getOrder();
+                if (ord > order) {
                     pos = i;
                     break;
                 }
             }
-
         }
-        LiveGatewayFilter liveFilter = new LiveGatewayFilter(context, gatewayConfig, cluster, retryConfig, pos);
-        filters.add(pos, new OrderedGatewayFilter(liveFilter, WRITE_RESPONSE_FILTER_ORDER - 1));
-        return new LiveRouteFilter(route, filters, pathFilters, version);
+        filters.add(pos, new OrderedGatewayFilter(function.apply(pos), order));
+    }
+
+    /**
+     * Checks if the given filter should be ignored and handles retry/path filter extraction.
+     *
+     * @param filter      the gateway filter to check
+     * @param retryConfig atomic reference to store retry configuration if found
+     * @param pathFilters list to collect path filters
+     * @return true if the filter should be ignored, false otherwise
+     */
+    private boolean ignore(GatewayFilter filter, AtomicReference<RetryConfig> retryConfig, List<GatewayFilter> pathFilters) {
+        GatewayFilter delegate = filter instanceof OrderedGatewayFilter ? ((OrderedGatewayFilter) filter).getDelegate() : filter;
+        String name = delegate.getClass().getName();
+        if (gatewayConfig.isRetryFilter(name)) {
+            // ignore retry
+            retryConfig.set(getQuietly(delegate, FIELD_RETRY_CONFIG));
+            return true;
+        } else if (gatewayConfig.isPathFilter(name)) {
+            pathFilters.add(filter);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -175,18 +191,22 @@ public class LiveChainBuilder {
      */
     private FilterDescriptor getGlobalFilters(Object target) {
         // this is sorted by order
-        return new FilterDescriptor(getQuietly(target, FIELD_GLOBAL_FILTERS));
+        return new FilterDescriptor(getQuietly(target, FIELD_GLOBAL_FILTERS), gatewayConfig);
     }
 
     private static class FilterDescriptor {
         @Getter
         private List<GatewayFilter> filters;
+
+        private GatewayConfig config;
+
         @Getter
         @Setter
         private ReactiveLoadBalancer.Factory<ServiceInstance> clientFactory;
 
-        FilterDescriptor(List<GatewayFilter> filters) {
+        FilterDescriptor(List<GatewayFilter> filters, GatewayConfig config) {
             this.filters = new ArrayList<>(filters == null ? 0 : filters.size());
+            this.config = config;
             if (filters != null) {
                 for (GatewayFilter filter : filters) {
                     parse(filter);
@@ -202,11 +222,18 @@ public class LiveChainBuilder {
             }
             if (delegate.getClass().getName().equals(TYPE_GATEWAY_FILTER_ADAPTER)) {
                 GlobalFilter globalFilter = getQuietly(delegate, FIELD_DELEGATE);
-                if (globalFilter instanceof ReactiveLoadBalancerClientFilter) {
-                    clientFactory = (getQuietly(globalFilter, FIELD_CLIENT_FACTORY));
-                } else if (globalFilter == null || !globalFilter.getClass().getName().equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
-                    // the filter is implemented by parseURI
+                if (globalFilter == null) {
                     filters.add(filter);
+                } else {
+                    String name = globalFilter.getClass().getName();
+                    if (config.isLoadBalancerFilter(name)) {
+                        // ignore loadbalance
+                        // org.springframework.cloud.gateway.filter.ReactiveLoadBalancerClientFilter
+                        clientFactory = getQuietly(globalFilter, FIELD_CLIENT_FACTORY);
+                    } else if (!name.equals(TYPE_ROUTE_TO_REQUEST_URL_FILTER)) {
+                        // ignore RouteToRequestUrlFilter, the filter is implemented by parseURI
+                        filters.add(filter);
+                    }
                 }
             } else {
                 filters.add(filter);

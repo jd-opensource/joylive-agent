@@ -21,10 +21,12 @@ import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
+import com.jd.live.agent.governance.request.Request;
 import com.jd.live.agent.governance.response.AbstractHttpResponse.AbstractHttpOutboundResponse;
 import com.jd.live.agent.plugin.router.springcloud.v5.response.SpringClusterResponse;
 import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import com.jd.live.agent.plugin.router.springgateway.v5.request.GatewayCloudClusterRequest;
+import com.jd.live.agent.plugin.router.springgateway.v5.util.WebExchangeUtils;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,6 +34,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -46,14 +49,17 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     private final CacheObject<String> body;
 
+    public GatewayClusterResponse(ServerWebExchange exchange) {
+        this(exchange.getResponse(),
+                () -> WebExchangeUtils.removeAttribute(exchange, Request.KEY_SERVER_ERROR),
+                () -> WebExchangeUtils.removeAttribute(exchange, Request.KEY_RESPONSE_BODY));
+    }
+
     public GatewayClusterResponse(ServerHttpResponse response) {
         this(response, null, null);
     }
 
-    public GatewayClusterResponse(ServerHttpResponse response, Supplier<String> bodySupplier) {
-        this(response, null, bodySupplier);
-    }
-
+    @SuppressWarnings("deprecation")
     public GatewayClusterResponse(ServerHttpResponse response, Supplier<ServiceError> errorSupplier, Supplier<String> bodySupplier) {
         super(response, errorSupplier, null);
         this.headers = new UnsafeLazyObject<>(() -> response.getHeaders().asMultiValueMap());
@@ -68,8 +74,8 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     @Override
     public String getCode() {
-        Integer code = response == null ? null : response.getStatusCode().value();
-        return code == null ? null : code.toString();
+        HttpStatusCode statusCode = response.getStatusCode();
+        return statusCode == null ? null : String.valueOf(statusCode.value());
     }
 
     @Override

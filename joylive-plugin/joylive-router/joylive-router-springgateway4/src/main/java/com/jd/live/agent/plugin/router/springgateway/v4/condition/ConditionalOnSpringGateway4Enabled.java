@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springgateway.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.annotation.ConditionalOnSpringGatewayEnabled;
 
@@ -31,10 +32,14 @@ import java.lang.annotation.*;
 @ConditionalOnSpringGatewayEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(ConditionalOnSpringGateway4Enabled.TYPE_HTTP_HTTP_STATUS_CODE)
+@ConditionalOnMissingClass(ConditionalOnSpringGateway4Enabled.TYPE_HTTP_SERVICE_FALLBACK)
 @ConditionalComposite
 public @interface ConditionalOnSpringGateway4Enabled {
 
-    // spring gateway 4
+    // spring gateway 4+
     String TYPE_HTTP_HTTP_STATUS_CODE = "org.springframework.http.HttpStatusCode";
+
+    // spring cloud 5+
+    String TYPE_HTTP_SERVICE_FALLBACK = "org.springframework.cloud.client.circuitbreaker.httpservice.HttpServiceFallback";
 
 }
