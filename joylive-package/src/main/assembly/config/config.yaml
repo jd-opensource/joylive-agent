@@ -258,6 +258,7 @@ agent:
           pathFilterPrefixes: ${CONFIG_SPRING_GATEWAY_PATH_FILTER_PREFIXES}
           loadBalancerFilters: ${CONFIG_SPRING_GATEWAY_LOAD_BALANCER_FILTERS}
           retryFilters: ${CONFIG_SPRING_GATEWAY_RETRY_FILTERS}
+          webSchemes: ${CONFIG_SPRING_GATEWAY_WEB_SCHEMES}
           liveFilterOrder: ${CONFIG_SPRING_GATEWAY_LIVE_FILTER_ORDER}
     transmission:
       type: ${CONFIG_TRANSMISSION_TYPE:live}
