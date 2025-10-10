@@ -3,22 +3,23 @@
 ## 1.9.0
 
 1. Support Spring cloud Dalston.SR1
-2. Support Spring cloud gateway dynamic routing
-3. Support enabling traffic coloring based on domain name
-4. Support loading remote environment variables
-5. Support gray deployment and unit domain forwarding
-6. Support Jasypt encrypted environment variables
-7. Fix class loading conflicts with other Agents
-8. Fix Dubbo 3.0 compatibility issues
-9. Fix Dubbo 2.7 registration issues
-10. Fix Nacos gray configuration subscription issues
-11. Fix Spring cloud gateway retry not working issue
-12. Fix Spring web Request wrapper causing stack overflow in certain scenarios
-13. Fix Feign compatibility issues
-14. Fix Spring cloud gateway lane routing issues
-15. Fix class loading issues
-16. Fix Dubbo zookeeper registry null pointer exception
-17. Fix other issues
+2. Support Spring cloud 2025.1
+3. Support Spring cloud gateway dynamic routing
+4. Support enabling coloring based on domain name
+5. Support loading remote environment variables
+6. Support gray deployment and unit domain forwarding
+7. Support Jasypt encrypted environment variables
+8. Fix class loading conflicts with other Agent classes
+9. Fix Dubbo 3.0 compatibility issues
+10. Fix Dubbo 2.7 registration issues
+11. Fix Nacos gray configuration subscription issues
+12. Fix Spring cloud gateway retry not taking effect issue
+13. Fix Spring cloud gateway lane routing issues
+14. Fix stack overflow issue caused by Spring web request wrapping
+15. Fix Feign compatibility issues
+16. Fix class loading issues
+17. Fix Dubbo zookeeper registry null pointer exception
+18. Fix other issues
 
 ## 1.8.0
 

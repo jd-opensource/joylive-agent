@@ -3,22 +3,23 @@
 # 1.9.0
 
 1. 支持 Spring cloud Dalston.SR1
-2. 支持 Spring cloud gateway 动态路由
-3. 支持根据域名来开启染色
-4. 支持加载远端的环境变量
-5. 支持灰度和单元域名转发
-6. 支持 Jasypt 加密的环境变量
-7. 修复和其它Agent类加载冲突问题
-8. 修复 Dubbo 3.0 兼容性问题
-9. 修复 Dubbo 2.7 注册问题
-10. 修复 Nacos 灰度配置订阅问题
-11. 修复 Spring cloud gateway 重试不生效问题
-12. 修复 Spring web下的Request 包装某些场景造成堆栈溢出问题
-13. 修复 Feign 兼容性问题
-14. 修复 Spring cloud gateway 泳道路由问题
-15. 修复类加载问题
-16. 修复 Dubbo zookeeper registry 空指针问题
-17. 修复其它问题
+2. 支持 Spring cloud 2025.1
+3. 支持 Spring cloud gateway 动态路由
+4. 支持根据域名来开启染色
+5. 支持加载远端的环境变量
+6. 支持灰度和单元域名转发
+7. 支持 Jasypt 加密的环境变量
+8. 修复和其它Agent类加载冲突问题
+9. 修复 Dubbo 3.0 兼容性问题
+10. 修复 Dubbo 2.7 注册问题
+11. 修复 Nacos 灰度配置订阅问题
+12. 修复 Spring cloud gateway 重试不生效问题
+13. 修复 Spring cloud gateway 泳道路由问题
+14. 修复 Spring web 包装请求带来的堆栈溢出问题
+15. 修复 Feign 兼容性问题
+16. 修复类加载问题
+17. 修复 Dubbo zookeeper registry 空指针问题
+18. 修复其它问题
 
 ## 1.8.0
 
