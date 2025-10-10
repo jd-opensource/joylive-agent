@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.governance.policy.service.exception;
 
+import com.jd.live.agent.core.util.map.CaseInsensitiveSet;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -102,10 +102,6 @@ public class ErrorParserPolicy implements Cloneable {
     }
 
     public void cache() {
-        if (contentTypes != null) {
-            Set<String> lowerCases = new HashSet<>(contentTypes);
-            contentTypes.forEach(o -> lowerCases.add(o.toLowerCase()));
-            contentTypes = lowerCases;
-        }
+        contentTypes = contentTypes == null ? null : new CaseInsensitiveSet(contentTypes);
     }
 }

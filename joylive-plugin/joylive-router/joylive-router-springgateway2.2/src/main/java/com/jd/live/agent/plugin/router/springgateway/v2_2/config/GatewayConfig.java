@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.config;
 
 import com.jd.live.agent.bootstrap.util.Inclusion;
+import com.jd.live.agent.core.inject.annotation.CaseInsensitive;
+import com.jd.live.agent.core.util.map.CaseInsensitiveSet;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -51,7 +53,8 @@ public class GatewayConfig {
 
     private Set<String> retryFilters = new HashSet<>();
 
-    private Set<String> webSchemes = new HashSet<>();
+    @CaseInsensitive
+    private Set<String> webSchemes = new CaseInsensitiveSet();
 
     private int liveFilterOrder = DEFAULT_LIVE_FILTER_ORDER;
 
@@ -74,7 +77,7 @@ public class GatewayConfig {
      * @return true if it's a load balancer filter, false otherwise
      */
     public boolean isLoadBalancerFilter(String filter) {
-        return filter != null && loadBalancerFilters != null && loadBalancerFilters.contains(filter);
+        return filter != null && loadBalancerFilters.contains(filter);
     }
 
     /**
@@ -84,11 +87,11 @@ public class GatewayConfig {
      * @return true if it's a retry filter, false otherwise
      */
     public boolean isRetryFilter(String filter) {
-        return filter != null && retryFilters != null && retryFilters.contains(filter);
+        return filter != null && retryFilters.contains(filter);
     }
 
     public boolean isWebScheme(String scheme) {
-        return scheme != null && webSchemes != null && webSchemes.contains(scheme.toLowerCase());
+        return scheme != null && webSchemes.contains(scheme);
     }
 
     public void initialize() {

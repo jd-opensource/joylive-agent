@@ -91,7 +91,6 @@ public class ErrorResponseDecorator extends ServerHttpResponseDecorator {
      * @return true if any of the code policies match the content type, false otherwise.
      */
     private boolean policyMatch(String contentType) {
-        contentType = contentType == null ? null : contentType.toLowerCase();
         HttpStatusCode statusCode = getStatusCode();
         Integer status = statusCode == null ? null : statusCode.value();
         int ok = HttpStatus.OK.value();

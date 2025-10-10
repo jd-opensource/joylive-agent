@@ -72,7 +72,7 @@ public class GatewayConfig {
      * @return true if it's a load balancer filter, false otherwise
      */
     public boolean isLoadBalancerFilter(String filter) {
-        return filter != null && loadBalancerFilters != null && loadBalancerFilters.contains(filter);
+        return filter != null && loadBalancerFilters.contains(filter);
     }
 
     /**
@@ -82,11 +82,11 @@ public class GatewayConfig {
      * @return true if it's a retry filter, false otherwise
      */
     public boolean isRetryFilter(String filter) {
-        return filter != null && retryFilters != null && retryFilters.contains(filter);
+        return filter != null && retryFilters.contains(filter);
     }
 
     public boolean isWebScheme(String scheme) {
-        return scheme != null && webSchemes != null && webSchemes.contains(scheme.toLowerCase());
+        return scheme != null && webSchemes.contains(scheme);
     }
 
     public void initialize() {
