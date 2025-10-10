@@ -7,7 +7,7 @@
 3. Support Spring cloud gateway dynamic routing
 4. Support enabling coloring based on domain name
 5. Support loading remote environment variables
-6. Support gray scale and unit domain forwarding
+6. Support forwarding to gray scale and unit domain names
 7. Support Jasypt encrypted environment variables
 8. Fix class loading issues and conflicts with other Agent class loaders
 9. Fix Dubbo 3.0 compatibility issues
