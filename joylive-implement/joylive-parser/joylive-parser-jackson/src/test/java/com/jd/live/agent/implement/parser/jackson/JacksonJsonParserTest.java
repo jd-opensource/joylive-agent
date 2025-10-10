@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.parser.fastjson2;
+package com.jd.live.agent.implement.parser.jackson;
 
 import com.jd.live.agent.core.util.IOUtils;
 import org.junit.jupiter.api.Assertions;
@@ -23,13 +23,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 
-public class FastJson2JsonParserTest {
+public class JacksonJsonParserTest {
 
     @Test
     public void testJson() throws IOException {
-        Fastjson2JsonParser jsonParser = new Fastjson2JsonParser();
-        jsonParser.initialize();
-        Fastjson2JsonPathParser pathParser = new Fastjson2JsonPathParser();
+        JacksonJsonParser jsonParser = new JacksonJsonParser();
+        JacksonJsonPathParser pathParser = new JacksonJsonPathParser();
         try (InputStream inputStream = this.getClass().getResourceAsStream("/person.json")) {
             Assertions.assertNotNull(inputStream);
             String json = new String(IOUtils.read(inputStream));

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.parser.fastjson2;
+package com.jd.live.agent.implement.parser.jackson;
 
 import com.jd.live.agent.core.parser.json.CaseInsensitiveSetJsonConverter;
 import com.jd.live.agent.core.parser.json.DeserializeConverter;
