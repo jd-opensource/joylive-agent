@@ -44,6 +44,9 @@ public interface HostTransformer {
     default HostTransformer then(HostTransformer transformer) {
         return ((host, context) -> {
             String newHost = transform(host, context);
+            if (transformer == null) {
+                return newHost;
+            }
             context.put(KEY_HOST, newHost);
             return transformer.transform(newHost, context);
         });
