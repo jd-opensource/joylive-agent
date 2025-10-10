@@ -7,19 +7,18 @@
 3. Support Spring cloud gateway dynamic routing
 4. Support enabling coloring based on domain name
 5. Support loading remote environment variables
-6. Support gray deployment and unit domain forwarding
+6. Support gray scale and unit domain forwarding
 7. Support Jasypt encrypted environment variables
-8. Fix class loading conflicts with other Agent classes
+8. Fix class loading issues and conflicts with other Agent class loaders
 9. Fix Dubbo 3.0 compatibility issues
 10. Fix Dubbo 2.7 registration issues
-11. Fix Nacos gray configuration subscription issues
-12. Fix Spring cloud gateway retry not taking effect issue
+11. Fix Nacos gray scale configuration subscription issues
+12. Fix Spring cloud gateway retry not working issue
 13. Fix Spring cloud gateway lane routing issues
-14. Fix stack overflow issue caused by Spring web request wrapping
+14. Fix stack overflow caused by Spring web request wrapping
 15. Fix Feign compatibility issues
-16. Fix class loading issues
-17. Fix Dubbo zookeeper registry null pointer exception
-18. Fix other issues
+16. Fix Dubbo zookeeper registry null pointer exception
+17. Fix other issues
 
 ## 1.8.0
 
