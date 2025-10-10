@@ -125,7 +125,7 @@ public class LiveReaderModule implements ObjectReaderModule {
          */
         private void processDeserializerConverter(FieldInfo fieldInfo, DeserializeConverter deserializeConverter, Field field) {
             Class<? extends JsonConverter<?, ?>> clazz = deserializeConverter.value();
-            String name = field.getName() + "@" + field.getType().getTypeName();
+            String name = field.getName() + "@" + field.getGenericType().getTypeName();
             Converters.getOrCreateConverter(name, clazz);
             fieldInfo.readUsing = ProxyObjectReader.class;
         }
