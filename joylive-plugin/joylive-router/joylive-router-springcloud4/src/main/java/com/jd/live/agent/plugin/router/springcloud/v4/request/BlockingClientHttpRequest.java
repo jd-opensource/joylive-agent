@@ -29,7 +29,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.lang.NonNull;
 
 import java.io.IOException;
@@ -53,7 +52,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private final String service;
 
-    private final HttpAccessor accessor;
+    private final BlockingClientHttpRequestBuilder builder;
 
     private final HostTransformer hostTransformer;
 
@@ -68,20 +67,18 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private UnsafeByteArrayOutputStream outputStream;
 
-    public BlockingClientHttpRequest(URI uri,
-                                     HttpMethod method,
+    public BlockingClientHttpRequest(BlockingClientHttpRequestBuilder builder,
                                      String service,
-                                     HttpAccessor accessor,
                                      HostTransformer hostTransformer,
                                      InvocationContext context) {
-        this.uri = uri;
-        this.method = method;
+        this.builder = builder;
+        this.uri = builder.getUri();
+        this.method = builder.getMethod();
         this.service = service;
-        this.accessor = accessor;
         this.hostTransformer = hostTransformer;
         this.context = context;
         this.registry = context.getRegistry();
-        accessor.getClientHttpRequestInitializers().forEach(initializer -> initializer.initialize(this));
+        builder.initialize(this);
     }
 
     @Override
@@ -172,7 +169,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws IOException if an I/O error occurs during request execution
      */
     private ClientHttpResponse execute(URI uri) throws IOException {
-        ClientHttpRequest request = accessor.getRequestFactory().createRequest(uri, method);
+        ClientHttpRequest request = builder.create(uri, method);
         request.getHeaders().putAll(headers);
         if (outputStream != null && outputStream.size() > 0) {
             outputStream.writeTo(request.getBody());

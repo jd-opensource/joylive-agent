@@ -192,8 +192,18 @@ public class ClassUtils {
      * @param fieldName the field name to find
      * @return the field if found, null otherwise
      */
-    public static Field getDeclareField(Class<?> type, String fieldName) {
+    public static Field getDeclaredField(Class<?> type, String fieldName) {
         return getDeclaredField(type, field -> field.getName().equals(fieldName));
+    }
+
+    /**
+     * Gets all declared fields from a class.
+     *
+     * @param type the class to search
+     * @return array of declared fields, empty array if type is null
+     */
+    public static Field[] getDeclaredFields(Class<?> type) {
+        return type == null ? new Field[0] : type.getDeclaredFields();
     }
 
     /**
@@ -205,10 +215,20 @@ public class ClassUtils {
      * @return the field if found, null otherwise
      */
     public static Field getDeclaredField(Class<?> type, Predicate<Field> predicate) {
-        if (type == null) {
+        return type == null ? null : getField(type.getDeclaredFields(), predicate);
+    }
+
+    /**
+     * Finds a field from the given array that matches the predicate and makes it accessible.
+     *
+     * @param fields    the field array to search
+     * @param predicate the predicate to match
+     * @return the matching field if found, null otherwise
+     */
+    public static Field getField(Field[] fields, Predicate<Field> predicate) {
+        if (fields == null) {
             return null;
         }
-        Field[] fields = type.getDeclaredFields();
         for (Field field : fields) {
             if (predicate.test(field)) {
                 field.setAccessible(true);
@@ -252,10 +272,20 @@ public class ClassUtils {
      * @return the method if found, null otherwise
      */
     public static Method getDeclaredMethod(Class<?> type, Predicate<Method> predicate) {
-        if (type == null) {
+        return type == null ? null : getMethod(type.getDeclaredMethods(), predicate);
+    }
+
+    /**
+     * Finds a method from the given array that matches the predicate and makes it accessible.
+     *
+     * @param methods   the method array to search
+     * @param predicate the predicate to match
+     * @return the matching method if found, null otherwise
+     */
+    public static Method getMethod(Method[] methods, Predicate<Method> predicate) {
+        if (methods == null) {
             return null;
         }
-        Method[] methods = type.getDeclaredMethods();
         for (Method method : methods) {
             if (predicate.test(method)) {
                 method.setAccessible(true);

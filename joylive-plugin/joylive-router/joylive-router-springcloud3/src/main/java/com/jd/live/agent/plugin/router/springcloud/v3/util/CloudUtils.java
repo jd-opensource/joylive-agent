@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v3.util;
 
+import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
 import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
@@ -49,7 +50,7 @@ public class CloudUtils {
 
     private static final Class<?> CLASS_LOAD_BALANCER_PROPERTIES = loadClass(TYPE_LOAD_BALANCER_PROPERTIES, HttpAccessor.class.getClassLoader());
 
-    private static final Field FIELD_RAW_STATUS = getDeclareField(CLASS_LOAD_BALANCER_PROPERTIES, "useRawStatusCodeInResponseData");
+    private static final Field FIELD_RAW_STATUS = ClassUtils.getDeclaredField(CLASS_LOAD_BALANCER_PROPERTIES, "useRawStatusCodeInResponseData");
 
     private static final String TYPE_REACTIVE_LOAD_BALANCER_FACTORY = "org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer$Factory";
 

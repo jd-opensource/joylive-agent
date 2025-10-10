@@ -1,5 +1,6 @@
-com.jd.live.agent.plugin.router.springcloud.v4.definition.BlockingClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.BlockingCloudClientDefinition
+com.jd.live.agent.plugin.router.springcloud.v4.definition.BlockingHttpAccessorDefinition
+com.jd.live.agent.plugin.router.springcloud.v4.definition.BlockingRestClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.BlockingRetryableCloudClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.FeignClientDefinition
 com.jd.live.agent.plugin.router.springcloud.v4.definition.FeignCloudClientDefinition
