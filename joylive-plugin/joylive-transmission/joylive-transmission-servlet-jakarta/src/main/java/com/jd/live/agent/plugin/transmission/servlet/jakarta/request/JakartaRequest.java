@@ -51,7 +51,7 @@ public class JakartaRequest extends HttpServletRequestWrapper implements HeaderP
             DateTimeFormatter.ofPattern(DATE_OBSOLETE_ASCTIME, Locale.US).withZone(GMT_ZONE)
     };
 
-    private final HttpServletRequest request;
+    private HttpServletRequest request;
 
     private final HeaderProviderRegistry registry;
 
@@ -473,6 +473,12 @@ public class JakartaRequest extends HttpServletRequestWrapper implements HeaderP
                     : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
         return headers;
+    }
+
+    @Override
+    public void setRequest(ServletRequest request) {
+        super.setRequest(request);
+        this.request = request instanceof HttpServletRequest ? (HttpServletRequest) request : this.request;
     }
 
     /**
