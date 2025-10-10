@@ -448,9 +448,6 @@ public class CircuitBreakPolicy extends PolicyId
     }
 
     public void cache() {
-        if (codePolicy != null) {
-            codePolicy.cache();
-        }
         if (degradeConfig != null) {
             degradeConfig.cache();
         }

@@ -190,9 +190,6 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
     }
 
     public void cache() {
-        if (codePolicy != null) {
-            codePolicy.cache();
-        }
         inclusion = new Inclusion(methods, methodPrefixes, true);
     }
 
