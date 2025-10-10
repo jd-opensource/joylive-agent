@@ -15,12 +15,11 @@
  */
 package com.jd.live.agent.governance.config;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.inject.annotation.CaseInsensitive;
 import com.jd.live.agent.governance.request.HostTransformer;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.jd.live.agent.core.util.template.Template.evaluate;
@@ -37,23 +36,14 @@ public class LaneConfig {
 
     private boolean hostEnabled;
 
+    @CaseInsensitive
     private Set<String> hosts;
 
     private String hostExpression;
 
-    private transient final LazyObject<Set<String>> hostCache = new LazyObject<>(() -> {
-        if (hosts == null) {
-            return new HashSet<>();
-        }
-        Set<String> result = new HashSet<>(hosts.size());
-        hosts.forEach(host -> result.add(host.toLowerCase()));
-        return result;
-    });
-
     public boolean isEnabled(String host) {
         if (hostEnabled && hostExpression != null && !hostExpression.isEmpty() && host != null && !host.isEmpty()) {
-            Set<String> cache = hostCache.get();
-            return cache.isEmpty() || cache.contains(host);
+            return hosts.isEmpty() || hosts.contains(host);
         }
         return false;
     }
