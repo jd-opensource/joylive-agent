@@ -114,11 +114,6 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
     }
 
     @Override
-    public int getStatusCode() {
-        return response == null ? INTERNAL_SERVER_ERROR.value() : response.status();
-    }
-
-    @Override
     public HttpStatusCode getHttpStatus() {
         try {
             return response == null ? INTERNAL_SERVER_ERROR : HttpStatusCode.valueOf(response.status());

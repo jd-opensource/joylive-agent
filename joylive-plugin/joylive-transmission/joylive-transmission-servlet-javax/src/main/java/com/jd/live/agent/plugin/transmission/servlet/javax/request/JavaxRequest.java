@@ -54,7 +54,7 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
 
     private MultiMap<String, String> headers;
 
-    private final HttpServletRequest request;
+    private HttpServletRequest request;
 
     private final HeaderProviderRegistry registry;
 
@@ -445,6 +445,12 @@ public class JavaxRequest extends ServletRequestWrapper implements HttpServletRe
                     : HttpUtils.parseHeader(request.getHeaderNames(), request::getHeaders);
         }
         return headers;
+    }
+
+    @Override
+    public void setRequest(ServletRequest request) {
+        super.setRequest(request);
+        this.request = request instanceof HttpServletRequest ? (HttpServletRequest) request : this.request;
     }
 
     /**

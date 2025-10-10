@@ -94,15 +94,6 @@ public class BlockingClusterResponse extends AbstractHttpOutboundResponse<Client
     }
 
     @Override
-    public int getStatusCode() {
-        try {
-            return response == null ? INTERNAL_SERVER_ERROR.value() : response.getStatusCode().value();
-        } catch (IOException e) {
-            return INTERNAL_SERVER_ERROR.value();
-        }
-    }
-
-    @Override
     public HttpStatusCode getHttpStatus() {
         try {
             return response == null ? INTERNAL_SERVER_ERROR : response.getStatusCode();

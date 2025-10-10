@@ -38,7 +38,7 @@ public class NacosPropertiesDefinition extends PluginDefinitionAdapter {
     private static final String METHOD = "buildNacosProperties";
 
     public NacosPropertiesDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new NacosPropertiesInterceptor())
         };

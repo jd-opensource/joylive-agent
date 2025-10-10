@@ -53,7 +53,7 @@ public class Curator5ZookeeperDefinition extends PluginDefinitionAdapter {
     private HealthProbe probe;
 
     public Curator5ZookeeperDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),

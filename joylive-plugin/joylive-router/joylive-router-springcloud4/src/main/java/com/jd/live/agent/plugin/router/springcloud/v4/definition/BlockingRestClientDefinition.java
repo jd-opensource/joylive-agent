@@ -25,28 +25,28 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6GovernanceEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingClientInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingRestClientInterceptor;
 
 /**
- * BlockingClientDefinition
+ * BlockingRestClientDefinition
  */
-@Extension(value = "BlockingClientDefinition_v6")
+@Extension(value = "BlockingRestClientDefinition_v6")
 @ConditionalOnSpringWeb6GovernanceEnabled
-@ConditionalOnClass(BlockingClientDefinition.TYPE)
+@ConditionalOnClass(BlockingRestClientDefinition.TYPE)
 @Injectable
-public class BlockingClientDefinition extends PluginDefinitionAdapter {
+public class BlockingRestClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
+    protected static final String TYPE = "org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec";
 
     private static final String METHOD = "createRequest";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingClientDefinition() {
+    public BlockingRestClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingClientInterceptor(context))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingRestClientInterceptor(context))
         };
     }
 }

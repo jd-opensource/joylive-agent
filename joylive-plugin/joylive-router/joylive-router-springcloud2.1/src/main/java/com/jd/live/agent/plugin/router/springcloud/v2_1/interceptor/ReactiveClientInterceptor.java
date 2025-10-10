@@ -57,18 +57,15 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
         ExchangeFunction exchanger = ctx.getArgument(0);
         WebClient.Builder builder = ctx.getArgument(5);
         // do not static import CloudUtils to avoid class loading issue.
-        if (CloudUtils.isCloudEnabled()) {
-            // with spring cloud
-            if (!CloudUtils.isReactiveCloudClient(builder) && context.isSubdomainEnabled()) {
+        if (!CloudUtils.isCloudEnabled() || !CloudUtils.isReactiveCloudClient(builder)) {
+            // without spring cloud or none discovery client
+            if (context.isMicroserviceTransformEnabled()) {
+                // Convert regular spring web requests to microservice calls
+                ctx.setArgument(0, exchanger.filter(this::invoke));
+            } else if (context.isSubdomainEnabled()) {
                 // Handle multi-active and lane domains
                 ctx.setArgument(0, exchanger.filter(this::forward));
             }
-        } else if (context.isMicroserviceTransformEnabled()) {
-            // Convert regular spring web requests to microservice calls
-            ctx.setArgument(0, exchanger.filter(this::invoke));
-        } else if (context.isSubdomainEnabled()) {
-            // Handle multi-active and lane domains
-            ctx.setArgument(0, exchanger.filter(this::forward));
         }
     }
 

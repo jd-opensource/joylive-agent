@@ -439,7 +439,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         gatewayRole = application.getService().getGateway();
         governEnabled = flowControlEnabled || laneEnabled || liveEnabled;
         registryEnabled = governanceConfig.getRegistryConfig().isEnabled();
-        microserviceTransformEnabled = registryEnabled && flowControlEnabled;
         docRegistry = new LiveDocumentRegistry();
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof UnitLiveFilter ? filter : null);
@@ -448,6 +447,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);
         subdomainEnabled = (laneEnabled || liveEnabled) && governanceConfig.isSubdomainEnabled();
+        microserviceTransformEnabled = governanceConfig.getRegistryConfig().getHostConfig().isEnabled() && flowControlEnabled;
 
         counterManager = new InternalCounterManager(timer);
         propagation = buildPropagation();

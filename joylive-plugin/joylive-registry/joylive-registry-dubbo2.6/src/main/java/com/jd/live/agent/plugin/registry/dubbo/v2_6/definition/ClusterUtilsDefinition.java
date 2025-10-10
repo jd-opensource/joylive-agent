@@ -50,7 +50,7 @@ public class ClusterUtilsDefinition extends PluginDefinitionAdapter {
     private Application application;
 
     public ClusterUtilsDefinition() {
-        this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD)

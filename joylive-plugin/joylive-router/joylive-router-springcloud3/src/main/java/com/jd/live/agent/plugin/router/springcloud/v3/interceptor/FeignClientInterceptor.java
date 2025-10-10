@@ -57,14 +57,8 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Request request = ctx.getArgument(0);
         // do not static import CloudUtils to avoid class loading issue.
-        if (CloudUtils.isCloudEnabled()) {
-            // with spring cloud
-            if (!RequestContext.hasAttribute(KEY_CLOUD_REQUEST)) {
-                // Handle multi-active and lane domains
-                forward(request, URI.create(request.url()), mc);
-            }
-        } else {
-            // only spring boot
+        if (!CloudUtils.isCloudEnabled() || !RequestContext.hasAttribute(KEY_CLOUD_REQUEST)) {
+            // without spring cloud or none cloud request
             URI uri = URI.create(request.url());
             // determine whether is a microservice request
             String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;

@@ -26,7 +26,7 @@ import org.springframework.http.HttpStatus;
 public interface SpringClusterResponse extends HttpOutboundResponse {
 
     /**
-     * Retrieves the HTTP status code of the response.
+     * Retrieves the raw HTTP status code of the response.
      *
      * @return the {@link HttpStatus} of the response
      */

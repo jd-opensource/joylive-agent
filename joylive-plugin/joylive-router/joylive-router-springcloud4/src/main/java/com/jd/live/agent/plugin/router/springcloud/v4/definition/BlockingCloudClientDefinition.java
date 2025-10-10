@@ -52,6 +52,7 @@ public class BlockingCloudClientDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public BlockingCloudClientDefinition() {
+        // Support RestTemplate & RestClient
         this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_INTERCEPTOR);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(

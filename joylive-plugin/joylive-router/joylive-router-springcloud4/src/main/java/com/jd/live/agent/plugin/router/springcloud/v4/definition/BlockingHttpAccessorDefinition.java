@@ -13,34 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.dubbo.v2_7.definition;
+package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
-import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.condition.ConditionalOnDubbo27GovernanceEnabled;
-import com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor.NacosPropertiesInterceptor;
+import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringWeb6GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.BlockingHttpAccessorInterceptor;
 
 /**
- * NacosPropertiesDefinition
+ * BlockingHttpAccessorDefinition
  */
-@Extension(value = "NacosNamingServiceUtilsDefinition_v2.7", order = PluginDefinition.ORDER_REGISTRY)
-@ConditionalOnDubbo27GovernanceEnabled
-@ConditionalOnClass(NacosPropertiesDefinition.TYPE)
-public class NacosPropertiesDefinition extends PluginDefinitionAdapter {
+@Extension(value = "BlockingHttpAccessorDefinition_v6")
+@ConditionalOnSpringWeb6GovernanceEnabled
+@ConditionalOnClass(BlockingHttpAccessorDefinition.TYPE)
+@Injectable
+public class BlockingHttpAccessorDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "org.apache.dubbo.registry.nacos.util.NacosNamingServiceUtils";
+    protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
 
-    private static final String METHOD = "buildNacosProperties";
+    private static final String METHOD = "createRequest";
 
-    public NacosPropertiesDefinition() {
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
+
+    public BlockingHttpAccessorDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new NacosPropertiesInterceptor())
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingHttpAccessorInterceptor(context))
         };
     }
 }

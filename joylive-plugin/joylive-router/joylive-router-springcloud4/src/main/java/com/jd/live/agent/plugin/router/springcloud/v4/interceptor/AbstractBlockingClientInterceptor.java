@@ -21,54 +21,51 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClientHttpRequest;
+import com.jd.live.agent.plugin.router.springcloud.v4.request.BlockingClientHttpRequestBuilder;
 import com.jd.live.agent.plugin.router.springcloud.v4.util.CloudUtils;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.client.support.HttpAccessor;
 
 import java.net.URI;
 
 /**
- * BlockingClientInterceptor
+ * AbstractBlockingClientInterceptor
  */
-public class BlockingClientInterceptor extends InterceptorAdaptor {
+public abstract class AbstractBlockingClientInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public BlockingClientInterceptor(InvocationContext context) {
+    public AbstractBlockingClientInterceptor(InvocationContext context) {
         this.context = context;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        HttpAccessor template = (HttpAccessor) ctx.getTarget();
-        URI uri = ctx.getArgument(0);
-        HttpMethod method = ctx.getArgument(1);
+        BlockingClientHttpRequestBuilder builder = builder(ctx);
+        URI uri = builder.getUri();
         // do not static import CloudUtils to avoid class loading issue.
-        if (CloudUtils.isCloudEnabled()) {
-            // with spring cloud
-            if (!CloudUtils.isBlockingCloudClient(template)) {
-                HostTransformer transformer = context.getHostTransformer(uri.getHost());
-                if (transformer != null) {
-                    // Handle multi-active and lane domains
-                    mc.skipWithResult(new BlockingClientHttpRequest(uri, method, null, template, transformer, context));
-                }
-            }
-        } else {
-            // only spring boot
+        if (!CloudUtils.isCloudEnabled() || !CloudUtils.isBlockingCloudClient(builder.getInterceptors())) {
+            // without spring cloud or none discovery client
             String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
             if (service != null && !service.isEmpty()) {
                 // Convert regular spring web requests to microservice calls
-                mc.skipWithResult(new BlockingClientHttpRequest(uri, method, service, template, null, context));
+                mc.skipWithResult(new BlockingClientHttpRequest(builder, service, null, context));
             } else {
                 // Handle multi-active and lane domains
                 HostTransformer transformer = context.getHostTransformer(uri.getHost());
                 if (transformer != null) {
                     // Handle multi-active and lane domains
-                    mc.skipWithResult(new BlockingClientHttpRequest(uri, method, null, template, transformer, context));
+                    mc.skipWithResult(new BlockingClientHttpRequest(builder, null, transformer, context));
                 }
             }
         }
     }
+
+    /**
+     * Creates a request specification from the execution context.
+     *
+     * @param ctx the execution context
+     * @return the request specification
+     */
+    protected abstract BlockingClientHttpRequestBuilder builder(ExecutableContext ctx);
 
 }

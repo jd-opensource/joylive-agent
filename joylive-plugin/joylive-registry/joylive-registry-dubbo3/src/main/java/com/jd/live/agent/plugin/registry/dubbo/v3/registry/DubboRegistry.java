@@ -171,19 +171,16 @@ public class DubboRegistry extends AbstractSystemRegistryService implements Regi
 
     @Override
     public void reExportRegister(URL url) {
-        if (isDestroy()) {
-            return;
-        }
-        // doReExport will call reExportUnregister -> reExportUnregister
-        doRegister(url, delegate::reExportRegister);
+        // doReExport will call reExportUnregister -> reExportRegister
+        // default reExportRegister will call register(url)
+        register(url);
     }
 
     @Override
     public void reExportUnregister(URL url) {
-        if (isDestroy()) {
-            return;
-        }
-        doUnregister(url, delegate::reExportUnregister);
+        // doReExport will call reExportUnregister -> reExportRegister
+        // default reExportUnregister will call unregister(url)
+        unregister(url);
     }
 
     @Override

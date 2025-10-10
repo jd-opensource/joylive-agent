@@ -42,6 +42,7 @@ public class DefaultMQProducerDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public DefaultMQProducerDefinition() {
+        // include org.apache.rocketmq.client.producer.TransactionMQProducer
         this.matcher = () -> MatcherBuilder.isSubTypeOf(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new DefaultMQProducerInterceptor(context))
