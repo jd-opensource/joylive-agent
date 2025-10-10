@@ -17,7 +17,8 @@ package com.jd.live.agent.core.inject.jbind.converter.supplier;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.jbind.*;
-import com.jd.live.agent.core.inject.jbind.converter.Abstract2PolyConverter;
+import com.jd.live.agent.core.inject.jbind.PolyObject.CollectionPolyObject;
+import com.jd.live.agent.core.inject.jbind.converter.Abstract2PolyConverter.String2PolyConverter;
 
 @Extension(value = "String2CollectionSupplier", order = ConverterSupplier.STRING_TO_COLLECTION_ORDER)
 public class String2CollectionSupplier implements ConverterSupplier {
@@ -26,12 +27,12 @@ public class String2CollectionSupplier implements ConverterSupplier {
         return type.getTargetType().isCollection() && type.getSourceType().isCharSequence() ? String2CollectionConverter.INSTANCE : null;
     }
 
-    public static class String2CollectionConverter extends Abstract2PolyConverter.String2PolyConverter {
+    public static class String2CollectionConverter extends String2PolyConverter {
         protected static final Converter INSTANCE = new String2CollectionConverter();
 
         @Override
         protected PolyObject createTargetSet(Conversion conversion, Class<?> componentType, int size) throws Exception {
-            return new PolyObject.CollectionPolyObject(createCollection(conversion.getTargetType().getRawType(), size));
+            return new CollectionPolyObject(createCollection(conversion.getField(), conversion.getTargetType().getRawType(), size));
         }
 
     }

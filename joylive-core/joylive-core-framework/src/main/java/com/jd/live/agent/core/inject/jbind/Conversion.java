@@ -20,6 +20,7 @@ import com.jd.live.agent.core.inject.jbind.InjectionContext.EmbedInjectionContex
 import lombok.Getter;
 import lombok.Setter;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 
 /**
@@ -30,53 +31,41 @@ import java.util.Map;
  */
 public class Conversion extends ConversionType implements ConverterSelector, ArrayFactory {
 
-    /**
-     * The source object to be converted.
-     */
+    @Getter
+    private final Field field;
+
     @Getter
     private final Object source;
 
-    /**
-     * The context for embeddable injections.
-     */
     private final EmbedInjectionContext context;
 
     @Getter
     private final Map<String, Object> components;
 
-    /**
-     * The path associated with the conversion operation.
-     */
     @Setter
     @Getter
     private String path;
 
-    /**
-     * Constructs a new Conversion with the specified source and target types,
-     * source object, and context.
-     *
-     * @param sourceType the source type of the conversion
-     * @param targetType the target type of the conversion
-     * @param source the object to be converted
-     * @param context the context for embeddable injections
-     */
-    public Conversion(TypeInfo sourceType, TypeInfo targetType, Object source, EmbedInjectionContext context, Map<String, Object> components) {
+    public Conversion(Field field,
+                      TypeInfo sourceType,
+                      TypeInfo targetType,
+                      Object source,
+                      EmbedInjectionContext context,
+                      Map<String, Object> components) {
         super(sourceType, targetType);
+        this.field = field;
         this.source = source;
         this.context = context;
         this.components = components;
     }
 
-    /**
-     * Constructs a new Conversion by copying an existing ConversionType and
-     * specifying the source object and context.
-     *
-     * @param type the existing ConversionType to copy
-     * @param source the object to be converted
-     * @param context the context for embeddable injections
-     */
-    public Conversion(ConversionType type, Object source, EmbedInjectionContext context, Map<String, Object> components) {
+    public Conversion(Field field,
+                      ConversionType type,
+                      Object source,
+                      EmbedInjectionContext context,
+                      Map<String, Object> components) {
         super(type);
+        this.field = field;
         this.source = source;
         this.context = context;
         this.components = components;
@@ -103,15 +92,27 @@ public class Conversion extends ConversionType implements ConverterSelector, Arr
     }
 
     /**
-     * Creates a new Conversion instance with the specified source and target types
-     * and the same context as this instance.
+     * Creates a new Conversion instance with specified parameters and current context.
      *
-     * @param sourceType the source type of the new conversion
-     * @param targetType the target type of the new conversion
-     * @param source the object to be converted
-     * @return a new Conversion instance
+     * @param field the field being converted
+     * @param sourceType the source type
+     * @param targetType the target type
+     * @param source the source object
+     * @return new Conversion instance
+     */
+    public Conversion of(Field field, TypeInfo sourceType, TypeInfo targetType, Object source) {
+        return new Conversion(field, sourceType, targetType, source, context, components);
+    }
+
+    /**
+     * Creates a new Conversion instance with specified parameters and current context.
+     *
+     * @param sourceType the source type
+     * @param targetType the target type
+     * @param source     the source object
+     * @return new Conversion instance
      */
     public Conversion of(TypeInfo sourceType, TypeInfo targetType, Object source) {
-        return new Conversion(sourceType, targetType, source, context, components);
+        return new Conversion(field, sourceType, targetType, source, context, components);
     }
 }

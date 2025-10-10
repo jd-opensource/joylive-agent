@@ -15,13 +15,12 @@
  */
 package com.jd.live.agent.core.inject.jbind.converter;
 
+import com.jd.live.agent.core.inject.annotation.CaseInsensitive;
 import com.jd.live.agent.core.inject.jbind.*;
 import com.jd.live.agent.core.inject.jbind.converter.array.StringArray;
+import com.jd.live.agent.core.util.map.CaseInsensitiveSet;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.*;
 
 import static com.jd.live.agent.core.util.StringUtils.SEMICOLON_COMMA;
@@ -66,22 +65,28 @@ public abstract class Abstract2PolyConverter implements Converter {
     protected abstract Class<?> getSourceComponentType(Conversion conversion);
 
     /**
-     * Attempts to create a collection of the specified target type and size.
-     * This method supports creation of {@link List}, {@link Set}, and {@link SortedSet} types.
+     * Creates a collection of the specified target type and size.
+     * Supports List, Set, and SortedSet types with case-insensitive Set handling.
      *
-     * @param targetType The class of the target collection.
-     * @param size       The initial size of the collection.
-     * @return A new collection instance of the specified type and size, or {@code null} if the type is not supported.
-     * @throws Exception If there is an error during the creation of the collection.
+     * @param field the field being converted (for annotation checking)
+     * @param targetType the target collection class
+     * @param size the initial collection size
+     * @return new collection instance or null if type not supported
+     * @throws Exception if collection creation fails
      */
     @SuppressWarnings("unchecked")
-    protected Collection<Object> createCollection(final Class<?> targetType, final int size) throws Exception {
+    protected Collection<Object> createCollection(Field field, Class<?> targetType, int size) throws Exception {
         if (targetType == null) {
             return null;
         } else if (targetType.equals(List.class)) {
             return new ArrayList<>(size);
         } else if (targetType.equals(Set.class)) {
-            return new HashSet<>(size);
+            CaseInsensitive insensitive = field == null ? null : field.getAnnotation(CaseInsensitive.class);
+            if (insensitive == null || !insensitive.value()) {
+                return new HashSet<>(size);
+            }
+            Object result = new CaseInsensitiveSet(size);
+            return (Collection<Object>) result;
         } else if (targetType.equals(SortedSet.class)) {
             return new TreeSet<>();
         } else if (targetType.isInterface()) {
@@ -183,7 +188,7 @@ public abstract class Abstract2PolyConverter implements Converter {
                     sourceElementConverter = defaultConverter;
                     sourceElementType = sourceComponentType;
                 }
-                Conversion conv = conversion.of(sourceElementType, targetComponentType, sourceElement);
+                Conversion conv = conversion.of(null, sourceElementType, targetComponentType, sourceElement);
                 conv.setPath(path + "[" + index + "]");
                 targetElement = sourceElementConverter.convert(conv);
                 conv.setPath(path);

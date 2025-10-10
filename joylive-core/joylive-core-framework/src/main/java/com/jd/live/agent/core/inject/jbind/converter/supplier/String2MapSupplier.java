@@ -45,7 +45,7 @@ public class String2MapSupplier implements ConverterSupplier {
         public Object convert(Conversion conversion) throws Exception {
             TypeInfo typeInfo = conversion.getTargetType();
             Class<?> targetClass = typeInfo.getRawType();
-            Map result = createMap(targetClass);
+            Map result = createMap(conversion.getField(), targetClass);
             if (result != null) {
                 String value = conversion.getSource().toString();
                 if (value != null && !value.isEmpty()) {

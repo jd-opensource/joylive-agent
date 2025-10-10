@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.inject.annotation.CaseInsensitive;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,6 +27,10 @@ public class HostConfig {
 
     private boolean enabled;
 
+    /**
+     * Host to Service mapping
+     */
+    @CaseInsensitive
     private Map<String, String> services;
 
     public String getService(String host) {
@@ -35,11 +40,15 @@ public class HostConfig {
     public String getService(String... names) {
         String result = null;
         if (names != null && services != null && !services.isEmpty()) {
-            for (String name : names) {
-                if (name != null) {
-                    result = services.get(name);
-                    if (result != null) {
-                        break;
+            if (names.length == 1) {
+                result = services.get(names[0]);
+            } else {
+                for (String name : names) {
+                    if (name != null) {
+                        result = services.get(name);
+                        if (result != null) {
+                            break;
+                        }
                     }
                 }
             }

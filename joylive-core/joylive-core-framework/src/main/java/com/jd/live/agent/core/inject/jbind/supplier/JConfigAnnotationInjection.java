@@ -90,7 +90,7 @@ public class JConfigAnnotationInjection extends AbstractInjection {
                 new TypeInfo(value.getClass(), sourceInboxCls),
                 new TypeInfo(fieldCls, targetInboxCls, field.getGenericType()));
         Converter converter = context.getConverter(conversionType);
-        Conversion conversion = new Conversion(conversionType, value, context, components);
+        Conversion conversion = new Conversion(field.getField(), conversionType, value, context, components);
         conversion.setPath(fieldPath);
         try {
             return converter.convert(conversion);

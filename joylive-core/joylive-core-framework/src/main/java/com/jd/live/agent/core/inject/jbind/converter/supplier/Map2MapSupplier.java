@@ -45,7 +45,7 @@ public class Map2MapSupplier implements ConverterSupplier {
         public Object convert(final Conversion conversion) throws Exception {
             TypeInfo typeInfo = conversion.getTargetType();
             Class<?> targetClass = typeInfo.getRawType();
-            Map result = createMap(targetClass);
+            Map result = createMap(conversion.getField(), targetClass);
             if (result != null) {
                 Type type = typeInfo.getType();
                 if (type instanceof ParameterizedType) {
@@ -64,7 +64,7 @@ public class Map2MapSupplier implements ConverterSupplier {
                                 TypeInfo srcValueType = value == null ? null : new TypeInfo(value.getClass());
                                 Converter keyConverter = conversion.getConverter(new ConversionType(srcKeyType, targetKeyType));
                                 Converter valueConverter = srcValueType == null ? null : conversion.getConverter(new ConversionType(srcValueType, targetValueType));
-                                Conversion keyConversion = conversion.of(srcKeyType, targetKeyType, key);
+                                Conversion keyConversion = conversion.of(null, srcKeyType, targetKeyType, key);
                                 Conversion valueConversion = valueConverter == null ? null : conversion.of(srcValueType, targetValueType, value);
                                 result.put(keyConverter.convert(keyConversion), valueConverter == null ? value : valueConverter.convert(valueConversion));
                             }

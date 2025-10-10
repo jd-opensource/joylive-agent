@@ -15,8 +15,11 @@
  */
 package com.jd.live.agent.core.inject.jbind.converter.supplier;
 
+import com.jd.live.agent.core.inject.annotation.CaseInsensitive;
 import com.jd.live.agent.core.inject.jbind.Converter;
+import com.jd.live.agent.core.util.map.CaseInsensitiveMap;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,7 +31,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * {@link Map} types. It implements the {@link Converter} interface, which should define the conversion logic
  * for specific use cases.
  *
- * <p>This class contains a protected method {@link #createMap(Class)} that instantiates different implementations
+ * <p>This class contains a protected method {@link #createMap(Field, Class)} that instantiates different implementations
  * of {@link Map} based on the provided type.</p>
  *
  * @see Converter
@@ -52,9 +55,10 @@ public abstract class AbstractMapConverter implements Converter {
      * @return a new instance of the specified map type, or {@code null} if the type is an interface that is not supported.
      * @throws Exception if there is an error creating the map instance.
      */
-    protected Map createMap(Class<?> type) throws Exception {
+    protected Map createMap(Field field, Class<?> type) throws Exception {
         if (Map.class == type) {
-            return new HashMap<>();
+            CaseInsensitive insensitive = field == null ? null : field.getAnnotation(CaseInsensitive.class);
+            return insensitive == null || !insensitive.value() ? new HashMap<>() : new CaseInsensitiveMap();
         } else if (ConcurrentMap.class == type) {
             return new ConcurrentHashMap<>();
         } else if (SortedMap.class == type) {
