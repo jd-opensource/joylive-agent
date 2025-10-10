@@ -142,7 +142,7 @@ public interface InvocationContext {
      * @return true if both registry and flow control are enabled, false otherwise
      */
     default boolean isMicroserviceTransformEnabled() {
-        return isRegistryEnabled() && isFlowControlEnabled();
+        return getGovernanceConfig().getRegistryConfig().getHostConfig().isEnabled() && isFlowControlEnabled();
     }
 
     /**

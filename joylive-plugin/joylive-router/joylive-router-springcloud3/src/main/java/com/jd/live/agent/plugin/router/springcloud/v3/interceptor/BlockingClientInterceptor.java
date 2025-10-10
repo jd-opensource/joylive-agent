@@ -45,17 +45,7 @@ public class BlockingClientInterceptor extends InterceptorAdaptor {
         URI uri = ctx.getArgument(0);
         HttpMethod method = ctx.getArgument(1);
         // do not static import CloudUtils to avoid class loading issue.
-        if (CloudUtils.isCloudEnabled()) {
-            // with spring cloud
-            if (!CloudUtils.isBlockingCloudClient(template)) {
-                HostTransformer transformer = context.getHostTransformer(uri.getHost());
-                if (transformer != null) {
-                    // Handle multi-active and lane domains
-                    mc.skipWithResult(new BlockingClientHttpRequest(uri, method, null, template, transformer, context));
-                }
-            }
-        } else {
-            // only spring boot
+        if (!CloudUtils.isCloudEnabled() || !CloudUtils.isBlockingCloudClient(template)) {
             String service = context.isMicroserviceTransformEnabled() ? context.getService(uri) : null;
             if (service != null && !service.isEmpty()) {
                 // Convert regular spring web requests to microservice calls

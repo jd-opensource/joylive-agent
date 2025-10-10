@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v4.cluster.BlockingClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v4.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
@@ -37,8 +38,6 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
-import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
  * HTTP request implementation with integrated service discovery and governance policy enforcement.
@@ -135,7 +134,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws IOException If request execution fails
      */
     public ClientHttpResponse execute(ServiceEndpoint endpoint) throws IOException {
-        URI u = newURI(uri, endpoint.getHost(), endpoint.getPort());
+        URI u = UriUtils.newURI(endpoint, uri);
         return execute(u);
     }
 

@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInbo
 import com.jd.live.agent.governance.request.HeaderProvider;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -111,7 +112,10 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     @Override
     public boolean isSystem() {
         if (handler != null) {
-            if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
+            if (handler instanceof Controller) {
+                // spring web mvc
+                return true;
+            } else if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
                 return true;
             } else if (handler instanceof HandlerMethod) {
                 HandlerMethod method = (HandlerMethod) handler;

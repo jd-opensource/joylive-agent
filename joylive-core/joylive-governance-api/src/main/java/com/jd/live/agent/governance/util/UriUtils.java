@@ -16,12 +16,15 @@
 package com.jd.live.agent.governance.util;
 
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.jd.live.agent.core.Constants.PREDICATE_LB;
 
 /**
  * A utility class for modifying URIs to redirect requests to specific service instances.
@@ -52,12 +55,13 @@ public class UriUtils {
     /**
      * Modifies the URI in order to redirect the request to a service instance of choice.
      *
-     * @param endpoint the {@link ServiceEndpoint} to redirect the request to.
+     * @param endpoint the {@link Endpoint} to redirect the request to.
      * @param uri      the {@link URI} from the uri request
      * @return the modified {@link URI}
      */
-    public static URI newURI(ServiceEndpoint endpoint, URI uri) {
-        return newURI(uri, endpoint.getScheme(), endpoint.isSecure(), endpoint.getHost(), endpoint.getPort());
+    public static URI newURI(Endpoint endpoint, URI uri) {
+        boolean secure = endpoint instanceof ServiceEndpoint ? ((ServiceEndpoint) endpoint).isSecure() : false;
+        return newURI(uri, endpoint.getScheme(), secure, endpoint.getHost(), endpoint.getPort());
     }
 
     /**
@@ -73,7 +77,7 @@ public class UriUtils {
     public static URI newURI(URI uri, String scheme, boolean secure, String host, int port) {
         if (scheme == null || scheme.isEmpty()) {
             scheme = uri.getScheme();
-            if (scheme == null || scheme.isEmpty()) {
+            if (scheme == null || scheme.isEmpty() || PREDICATE_LB.test(scheme)) {
                 scheme = DEFAULT_SCHEME;
             }
         }
