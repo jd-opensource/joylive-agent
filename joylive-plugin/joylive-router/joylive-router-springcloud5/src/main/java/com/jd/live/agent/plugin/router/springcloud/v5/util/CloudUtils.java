@@ -22,12 +22,11 @@ import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalan
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancedExchangeFilterFunction;
 import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.support.HttpAccessor;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -40,7 +39,7 @@ import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEn
  */
 public class CloudUtils {
 
-    private static final Class<?> readonlyType = loadClass("org.springframework.http.ReadOnlyHttpHeaders", HttpHeaders.class.getClassLoader());
+    private static final Class<?> CLASS_READONLY = loadClass("org.springframework.http.ReadOnlyHttpHeaders", HttpHeaders.class.getClassLoader());
 
     // spring cloud
     private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
@@ -59,14 +58,12 @@ public class CloudUtils {
     /**
      * Determines if the RestTemplate is configured as a load-balanced client.
      *
-     * @param client the RestTemplate to check
+     * @param interceptors the list of client HTTP request interceptors
      * @return true if configured with load balancer interceptors, false otherwise
      */
-    public static boolean isBlockingCloudClient(Object client) {
-        // Parameter client cannot be declared as RestTemplate, as it will cause class loading exceptions.
-        if (client instanceof RestTemplate) {
-            RestTemplate template = (RestTemplate) client;
-            for (ClientHttpRequestInterceptor interceptor : template.getInterceptors()) {
+    public static boolean isBlockingCloudClient(List<?> interceptors) {
+        if (interceptors != null) {
+            for (Object interceptor : interceptors) {
                 if (interceptor instanceof RetryLoadBalancerInterceptor) {
                     return true;
                 } else if (interceptor instanceof LoadBalancerInterceptor) {
@@ -102,6 +99,15 @@ public class CloudUtils {
         return false;
     }
 
+    /**
+     * Gets existing cluster or creates new one for the client.
+     *
+     * @param <K>      client type
+     * @param <V>      cluster type
+     * @param client   the client key
+     * @param function factory function to create cluster
+     * @return existing or newly created cluster
+     */
     public static <K, V extends LiveCluster> V getOrCreateCluster(K client, Function<K, V> function) {
         return (V) clusters.computeIfAbsent(client, o -> function.apply(client));
     }
@@ -112,8 +118,8 @@ public class CloudUtils {
      * @param headers source headers
      * @return writable headers instance
      */
+    @SuppressWarnings("deprecation")
     public static HttpHeaders writable(HttpHeaders headers) {
-        return readonlyType.isInstance(headers) ? new HttpHeaders(headers) : headers;
+        return CLASS_READONLY.isInstance(headers) ? new HttpHeaders(headers) : headers;
     }
-
 }

@@ -16,11 +16,11 @@
 package com.jd.live.agent.plugin.router.springcloud.v5.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpOutboundRequest;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -80,6 +80,7 @@ public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<Cl
         }
     }
 
+    @SuppressWarnings({"deprecation", "removal"})
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return request.headers().asMultiValueMap();
@@ -127,6 +128,6 @@ public class ReactiveClientClusterRequest extends AbstractHttpOutboundRequest<Cl
      * @return a new {@link ClientRequest}
      */
     public static ClientRequest create(ClientRequest request, Endpoint endpoint) {
-        return ClientRequest.from(request).url(HttpUtils.newURI(request.url(), endpoint.getHost(), endpoint.getPort())).build();
+        return ClientRequest.from(request).url(UriUtils.newURI(endpoint, request.url())).build();
     }
 }

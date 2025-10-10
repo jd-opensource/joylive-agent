@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.request.HostTransformer;
+import com.jd.live.agent.governance.util.UriUtils;
 import com.jd.live.agent.plugin.router.springcloud.v5.cluster.BlockingClientCluster;
 import com.jd.live.agent.plugin.router.springcloud.v5.response.BlockingClusterResponse;
 import org.springframework.core.NestedRuntimeException;
@@ -29,7 +30,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.lang.NonNull;
 
 import java.io.IOException;
@@ -38,8 +38,6 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
-import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
 
 /**
  * HTTP request implementation with integrated service discovery and governance policy enforcement.
@@ -53,7 +51,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private final String service;
 
-    private final HttpAccessor accessor;
+    private final BlockingClientHttpRequestBuilder builder;
 
     private final HostTransformer hostTransformer;
 
@@ -63,24 +61,23 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
 
     private final HttpHeaders headers = new HttpHeaders();
 
+    // fix for spring-web 6.2
     private Map<String, Object> attributes;
 
     private UnsafeByteArrayOutputStream outputStream;
 
-    public BlockingClientHttpRequest(URI uri,
-                                     HttpMethod method,
+    public BlockingClientHttpRequest(BlockingClientHttpRequestBuilder builder,
                                      String service,
-                                     HttpAccessor accessor,
                                      HostTransformer hostTransformer,
                                      InvocationContext context) {
-        this.uri = uri;
-        this.method = method;
+        this.builder = builder;
+        this.uri = builder.getUri();
+        this.method = builder.getMethod();
         this.service = service;
-        this.accessor = accessor;
         this.hostTransformer = hostTransformer;
         this.context = context;
         this.registry = context.getRegistry();
-        accessor.getClientHttpRequestInitializers().forEach(initializer -> initializer.initialize(this));
+        builder.initialize(this);
     }
 
     @Override
@@ -100,8 +97,8 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
         return headers;
     }
 
-    @Override
     public Map<String, Object> getAttributes() {
+        // fix for spring-web 6.2
         if (attributes == null) {
             attributes = new LinkedHashMap<>();
         }
@@ -137,7 +134,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws IOException If request execution fails
      */
     public ClientHttpResponse execute(ServiceEndpoint endpoint) throws IOException {
-        URI u = newURI(uri, endpoint.getHost(), endpoint.getPort());
+        URI u = UriUtils.newURI(endpoint, uri);
         return execute(u);
     }
 
@@ -171,7 +168,7 @@ public class BlockingClientHttpRequest implements ClientHttpRequest {
      * @throws IOException if an I/O error occurs during request execution
      */
     private ClientHttpResponse execute(URI uri) throws IOException {
-        ClientHttpRequest request = accessor.getRequestFactory().createRequest(uri, method);
+        ClientHttpRequest request = builder.create(uri, method);
         request.getHeaders().putAll(headers);
         if (outputStream != null && outputStream.size() > 0) {
             outputStream.writeTo(request.getBody());

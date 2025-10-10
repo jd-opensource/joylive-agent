@@ -28,8 +28,6 @@ import com.jd.live.agent.plugin.router.springcloud.v5.response.SpringClusterResp
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.*;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.MultiValueMap;
@@ -138,10 +136,8 @@ public abstract class AbstractCloudClusterRequest<T, C extends CloudClusterConte
 
     @Override
     public void onSuccess(SpringClusterResponse response, ServiceEndpoint endpoint) {
-        HttpHeaders httpHeaders = response.getHttpHeaders();
-        HttpStatusCode httpStatus = response.getHttpStatus();
         MultiValueMap<String, ResponseCookie> cookies = null;
-        ResponseData responseData = new ResponseData(httpStatus, httpHeaders, cookies, requestData);
+        ResponseData responseData = new ResponseData(response.getHttpStatus(), response.getHttpHeaders(), cookies, requestData);
 
         CompletionContext<Object, ServiceInstance, ?> ctx = new CompletionContext<>(
                 CompletionContext.Status.SUCCESS,

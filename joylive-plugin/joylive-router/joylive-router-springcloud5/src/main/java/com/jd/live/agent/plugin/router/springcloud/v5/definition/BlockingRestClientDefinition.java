@@ -24,42 +24,29 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringCloud5FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingCloudClientInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb7GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingRestClientInterceptor;
 
 /**
- * BlockingCloudClusterDefinition
- *
- * @since 1.0.0
+ * BlockingRestClientDefinition
  */
+@Extension(value = "BlockingRestClientDefinition_v6")
+@ConditionalOnSpringWeb7GovernanceEnabled
+@ConditionalOnClass(BlockingRestClientDefinition.TYPE)
 @Injectable
-@Extension(value = "BlockingCloudClusterDefinition_v4")
-@ConditionalOnSpringCloud5FlowControlEnabled
-@ConditionalOnClass(BlockingCloudClientDefinition.TYPE_LOADBALANCER_INTERCEPTOR)
-public class BlockingCloudClientDefinition extends PluginDefinitionAdapter {
+public class BlockingRestClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_LOADBALANCER_INTERCEPTOR = "org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor";
+    protected static final String TYPE = "org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec";
 
-    private static final String METHOD_INTERCEPT = "intercept";
-
-    private static final String[] ARGUMENT_INTERCEPT = new String[]{
-            "org.springframework.http.HttpRequest",
-            "byte[]",
-            "org.springframework.http.client.ClientHttpRequestExecution"
-    };
+    private static final String METHOD = "createRequest";
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingCloudClientDefinition() {
-        // Support RestTemplate & RestClient
-        this.matcher = () -> MatcherBuilder.named(TYPE_LOADBALANCER_INTERCEPTOR);
+    public BlockingRestClientDefinition() {
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INTERCEPT).
-                                and(MatcherBuilder.arguments(ARGUMENT_INTERCEPT)),
-                        () -> new BlockingCloudClientInterceptor(context)
-                )
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingRestClientInterceptor(context))
         };
     }
 }

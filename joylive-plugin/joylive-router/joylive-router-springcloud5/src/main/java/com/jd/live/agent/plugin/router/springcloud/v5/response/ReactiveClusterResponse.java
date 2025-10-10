@@ -80,11 +80,6 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
     }
 
     @Override
-    public int getStatusCode() {
-        return response == null ? INTERNAL_SERVER_ERROR.value() : response.statusCode().value();
-    }
-
-    @Override
     public HttpStatusCode getHttpStatus() {
         return response == null ? INTERNAL_SERVER_ERROR : response.statusCode();
     }
@@ -100,6 +95,7 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
         return cookies == null ? null : HttpUtils.parseCookie(cookies, ResponseCookie::getValue);
     }
 
+    @SuppressWarnings({"deprecation", "removal"})
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return response == null ? null : response.headers().asHttpHeaders().asMultiValueMap();

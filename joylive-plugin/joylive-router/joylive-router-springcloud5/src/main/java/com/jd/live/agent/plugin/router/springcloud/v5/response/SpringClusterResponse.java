@@ -29,13 +29,6 @@ public interface SpringClusterResponse extends HttpOutboundResponse {
     /**
      * Retrieves the HTTP status code of the response.
      *
-     * @return the {@link HttpStatus} of the response
-     */
-    int getStatusCode();
-
-    /**
-     * Retrieves the HTTP status code of the response.
-     *
      * @return the {@link HttpStatus} representing the HTTP status code
      */
     HttpStatusCode getHttpStatus();

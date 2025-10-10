@@ -25,16 +25,16 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v5.condition.ConditionalOnSpringWeb7GovernanceEnabled;
-import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingClientInterceptor;
+import com.jd.live.agent.plugin.router.springcloud.v5.interceptor.BlockingHttpAccessorInterceptor;
 
 /**
- * BlockingClientDefinition
+ * BlockingHttpAccessorDefinition
  */
-@Extension(value = "BlockingClientDefinition_v6")
+@Extension(value = "BlockingHttpAccessorDefinition_v6")
 @ConditionalOnSpringWeb7GovernanceEnabled
-@ConditionalOnClass(BlockingClientDefinition.TYPE)
+@ConditionalOnClass(BlockingHttpAccessorDefinition.TYPE)
 @Injectable
-public class BlockingClientDefinition extends PluginDefinitionAdapter {
+public class BlockingHttpAccessorDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "org.springframework.http.client.support.HttpAccessor";
 
@@ -43,10 +43,10 @@ public class BlockingClientDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    public BlockingClientDefinition() {
+    public BlockingHttpAccessorDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingClientInterceptor(context))
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD), () -> new BlockingHttpAccessorInterceptor(context))
         };
     }
 }
