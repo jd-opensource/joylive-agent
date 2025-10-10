@@ -102,9 +102,11 @@ public class MapCache<K, T> implements Cache<K, T> {
      * @return The converted key.
      */
     protected K convert(K key) {
-        Function<K, K> keyConverter = cacheBuilder == null ? null : cacheBuilder.getKeyConverter();
-        key = keyConverter == null || key == null ? key : keyConverter.apply(key);
-        return key;
+        if (key == null || cacheBuilder == null) {
+            return key;
+        }
+        Function<K, K> converter = cacheBuilder.getKeyConverter();
+        return converter == null ? key : converter.apply(key);
     }
 
     /**

@@ -167,7 +167,7 @@ public interface InvocationContext {
         if (!liveEnabled && !laneEnabled || !Ipv4.isHost(host)) {
             return null;
         }
-        // lower case host
+        // Convert to lowercase in advance to avoid multiple conversions
         host = host.toLowerCase();
         // add prefix or suffix to domain
         HostTransformer transformer = null;
@@ -176,6 +176,7 @@ public interface InvocationContext {
             // domain in live policy
             GovernancePolicy policy = getPolicySupplier().getPolicy();
             if (policy != null) {
+                // get domain is CaseInsensitive
                 Domain domain = policy.getDomain(host);
                 if (domain != null) {
                     DomainPolicy domainPolicy = domain.getPolicy();
@@ -192,10 +193,12 @@ public interface InvocationContext {
                 }
             }
             if (!unitHost && transformer == null) {
+                // getHostTransformer is CaseInsensitive
                 transformer = liveConfig.getHostTransformer(host);
             }
         }
         if (laneEnabled) {
+            // getHostTransformer is CaseInsensitive
             transformer = transformer == null ? laneConfig.getHostTransformer(host) : transformer.then(laneConfig.getHostTransformer(host));
 
         }

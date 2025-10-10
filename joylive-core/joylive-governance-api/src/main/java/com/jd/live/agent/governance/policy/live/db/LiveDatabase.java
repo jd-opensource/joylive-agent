@@ -16,13 +16,13 @@
 package com.jd.live.agent.governance.policy.live.db;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.map.CaseInsensitiveSet;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -66,6 +66,7 @@ public class LiveDatabase {
     @Getter
     private transient String primaryAddress;
 
+    // CaseInsensitiveSet
     @Getter
     private transient Set<String> nodes;
 
@@ -88,13 +89,13 @@ public class LiveDatabase {
     }
 
     public boolean contains(String address) {
-        return address != null && nodes.contains(address.toLowerCase());
+        return address != null && nodes.contains(address);
     }
 
     public boolean contains(String[] shards) {
         if (shards != null) {
             for (String shard : shards) {
-                if (nodes.contains(shard.toLowerCase())) {
+                if (nodes.contains(shard)) {
                     return true;
                 }
             }
@@ -105,7 +106,7 @@ public class LiveDatabase {
     public void cache() {
         if (addresses != null) {
             List<String> lowerAddresses = new ArrayList<>(addresses.size());
-            Set<String> lowerNodes = new HashSet<>(addresses.size());
+            Set<String> lowerNodes = new CaseInsensitiveSet(addresses.size());
             addresses.forEach(addr -> {
                 String lowerAddr = addr.toLowerCase();
                 lowerAddresses.add(lowerAddr);
@@ -113,7 +114,6 @@ public class LiveDatabase {
                 for (URI uri : uris) {
                     String host = uri.getHost();
                     Integer port = uri.getPort();
-                    host = host == null ? null : host.toLowerCase();
                     // for development environment
                     if (Ipv4.isLocalHost(host)) {
                         Ipv4.LOCAL_HOST.forEach(h -> lowerNodes.add(getAddress(h, port)));

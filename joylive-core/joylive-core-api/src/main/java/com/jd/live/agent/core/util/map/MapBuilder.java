@@ -18,27 +18,25 @@ package com.jd.live.agent.core.util.map;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Functional interface for building maps with optional key conversion.
+ */
 @FunctionalInterface
 public interface MapBuilder<K, T> {
-    Map<K, T> build();
-
-    default Function<K, K> getKeyConverter() {
-        return null;
-    }
 
     /**
-     * A {@link MapBuilder} extension that converts all keys to lowercase before insertion.
-     * This ensures case-insensitive key comparisons in the resulting map.
+     * Builds and returns a new map.
      *
-     * @param <T> the type of values stored in the map
-     *
-     * @see MapBuilder
+     * @return the built map
      */
-    interface LowercaseMapBuilder<T> extends MapBuilder<String, T> {
+    Map<K, T> build();
 
-        @Override
-        default Function<String, String> getKeyConverter() {
-            return String::toLowerCase;
-        }
+    /**
+     * Returns key converter function for map keys.
+     *
+     * @return key converter or null if no conversion needed
+     */
+    default Function<K, K> getKeyConverter() {
+        return null;
     }
 }

@@ -22,9 +22,8 @@ import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
+import com.jd.live.agent.core.util.map.CaseInsensitiveMap;
 import com.jd.live.agent.core.util.map.ListBuilder;
-import com.jd.live.agent.core.util.map.MapBuilder;
-import com.jd.live.agent.core.util.map.MapBuilder.LowercaseMapBuilder;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
 import com.jd.live.agent.governance.policy.lane.LaneDomain;
@@ -41,7 +40,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * Represents the governance policy for managing resources and configurations.
@@ -97,40 +95,41 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
 
     private final transient Cache<String, LaneSpace> laneSpaceCache = new MapCache<>(new ListBuilder<>(() -> laneSpaces, LaneSpace::getId));
 
-    private final transient Cache<String, Domain> domainCache = new MapCache<>((LowercaseMapBuilder<Domain>) () -> {
+    private final transient Cache<String, Domain> domainCache = new MapCache<>(() -> {
+        // CaseInsensitiveMap
         Map<String, Domain> laneDomains = getLaneDomains();
         Map<String, Domain> liveDomains = getLiveDomains();
-
-        Map<String, Domain> result = new HashMap<>(Integer.max(liveDomains.size(), laneDomains.size()));
-        for (Domain liveDomain : liveDomains.values()) {
-            Domain laneDomain = laneDomains.get(liveDomain.getHost());
-            DomainPolicy lanePolicy = laneDomain == null ? null : laneDomain.getPolicy();
-            DomainPolicy livePolicy = liveDomain.getPolicy();
-            result.put(liveDomain.getHost(), laneDomain == null ? liveDomain : new Domain(liveDomain.getHost(),
-                    new DomainPolicy(livePolicy.getLiveSpace(), livePolicy.getLiveDomain(), livePolicy.getUnitDomain(),
-                            lanePolicy.getLaneSpace(), lanePolicy.getLaneDomain())));
-        }
-        for (Domain laneDomain : laneDomains.values()) {
-            result.putIfAbsent(laneDomain.getHost(), laneDomain);
-        }
-        return result;
-    });
-
-    private final transient Cache<String, Service> serviceCache = new MapCache<>(new MapBuilder<String, Service>() {
-        @Override
-        public Map<String, Service> build() {
-            Map<String, Service> result = new HashMap<>();
-            if (services != null) {
-                services.forEach(service -> result.putIfAbsent(service.getName().toLowerCase(), service));
-                services.forEach(service -> service.alias(alias -> result.putIfAbsent(alias.toLowerCase(), service)));
+        if (liveDomains.isEmpty()) {
+            return laneDomains;
+        } else if (laneDomains.isEmpty()) {
+            return liveDomains;
+        } else {
+            Map<String, Domain> result = new CaseInsensitiveMap<>(Integer.max(liveDomains.size(), laneDomains.size()));
+            for (Domain liveDomain : liveDomains.values()) {
+                Domain laneDomain = laneDomains.get(liveDomain.getHost());
+                DomainPolicy lanePolicy = laneDomain == null ? null : laneDomain.getPolicy();
+                DomainPolicy livePolicy = liveDomain.getPolicy();
+                result.put(liveDomain.getHost(), laneDomain == null ? liveDomain : new Domain(liveDomain.getHost(),
+                        new DomainPolicy(livePolicy.getLiveSpace(), livePolicy.getLiveDomain(), livePolicy.getUnitDomain(),
+                                lanePolicy.getLaneSpace(), lanePolicy.getLaneDomain())));
+            }
+            for (Domain laneDomain : laneDomains.values()) {
+                result.putIfAbsent(laneDomain.getHost(), laneDomain);
             }
             return result;
         }
+    });
 
-        @Override
-        public Function<String, String> getKeyConverter() {
-            return String::toLowerCase;
+    private final transient Cache<String, Service> serviceCache = new MapCache<>(() -> {
+        int size = services == null ? 0 : services.size();
+        Map<String, Service> result = new CaseInsensitiveMap<>(size);
+        if (services != null) {
+            services.forEach(service -> {
+                result.putIfAbsent(service.getName(), service);
+                service.alias(alias -> result.putIfAbsent(alias, service));
+            });
         }
+        return result;
     });
 
     /**
@@ -224,16 +223,22 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
      * @return first matching service, or null if no matches found
      */
     public Service getService(String... names) {
-        if (names != null) {
-            Service service;
-            for (String name : names) {
-                service = serviceCache.get(name);
-                if (service != null) {
-                    return service;
+        int length = names == null ? 0 : names.length;
+        switch (length) {
+            case 0:
+                return null;
+            case 1:
+                return serviceCache.get(names[0]);
+            default:
+                Service service;
+                for (String name : names) {
+                    service = serviceCache.get(name);
+                    if (service != null) {
+                        return service;
+                    }
                 }
-            }
+                return null;
         }
-        return null;
     }
 
     /**
@@ -428,40 +433,40 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
 
     private Map<String, Domain> getLiveDomains() {
         String host;
-        Map<String, Domain> liveDomains = new HashMap<>();
+        Map<String, Domain> result = new CaseInsensitiveMap<>();
         if (liveSpaces != null) {
             for (LiveSpace liveSpace : liveSpaces) {
                 LiveSpec liveSpec = liveSpace.getSpec();
                 if (liveSpec.getDomains() != null) {
                     for (LiveDomain liveDomain : liveSpec.getDomains()) {
                         host = liveDomain.getHost().toLowerCase();
-                        liveDomains.put(host, new Domain(host, new DomainPolicy(liveSpace, liveDomain)));
+                        result.put(host, new Domain(host, new DomainPolicy(liveSpace, liveDomain)));
                         if (liveDomain.getUnitDomains() != null) {
                             for (UnitDomain unitDomain : liveDomain.getUnitDomains()) {
                                 host = unitDomain.getHost().toLowerCase();
-                                liveDomains.put(host, new Domain(host, new DomainPolicy(liveSpace, liveDomain, unitDomain)));
+                                result.put(host, new Domain(host, new DomainPolicy(liveSpace, liveDomain, unitDomain)));
                             }
                         }
                     }
                 }
             }
         }
-        return liveDomains;
+        return result;
     }
 
     private Map<String, Domain> getLaneDomains() {
         String host;
-        Map<String, Domain> laneDomains = new HashMap<>();
+        Map<String, Domain> result = new CaseInsensitiveMap<>();
         if (laneSpaces != null) {
             for (LaneSpace laneSpace : laneSpaces) {
                 if (laneSpace.getDomains() != null) {
                     for (LaneDomain laneDomain : laneSpace.getDomains()) {
                         host = laneDomain.getHost().toLowerCase();
-                        laneDomains.put(host, new Domain(host, new DomainPolicy(laneSpace, laneDomain)));
+                        result.put(host, new Domain(host, new DomainPolicy(laneSpace, laneDomain)));
                     }
                 }
             }
         }
-        return laneDomains;
+        return result;
     }
 }
