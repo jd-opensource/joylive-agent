@@ -832,6 +832,7 @@ public class LiveRegistry extends AbstractService
                 RegistryEvent oldsEvent = this.event;
                 int capacity = oldsEvent == null ? 0 : oldsEvent.size();
                 capacity = capacity + newSize - oldSize;
+                capacity = capacity < 0 ? newSize : capacity;
                 Map<String, ServiceEndpoint> merged = new HashMap<>(capacity);
                 for (ClusterSubscription cluster : clusters) {
                     olds = clustersEndpoints.get(cluster.getClusterName());
