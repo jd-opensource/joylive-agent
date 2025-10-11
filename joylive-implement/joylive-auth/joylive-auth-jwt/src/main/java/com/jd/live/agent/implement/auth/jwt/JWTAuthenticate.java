@@ -71,6 +71,8 @@ public class JWTAuthenticate implements Authenticate {
             JWTAlgorithm algorithm = getOrCreateAlgorithm(policy, () -> getVerifyContext(policy.getJwtPolicy()));
             if (algorithm == null) {
                 return Permission.success();
+            } else if (token == null || token.isEmpty()) {
+                return Permission.failure("Failed to verify JWT token, the token is empty.");
             }
             JWT.require(algorithm.getAlgorithm()).withIssuer(consumer).withAudience(service).build().verify(token);
             return Permission.success();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springgateway.v3.definition;
+package com.jd.live.agent.plugin.router.springgateway.v5.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.ExtensionInitializer;
@@ -27,20 +27,20 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springgateway.v3.condition.ConditionalOnSpringGateway3FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springgateway.v3.config.GatewayConfig;
-import com.jd.live.agent.plugin.router.springgateway.v3.interceptor.GatewayClusterInterceptor;
+import com.jd.live.agent.plugin.router.springgateway.v5.condition.ConditionalOnSpringGateway5GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springgateway.v5.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v5.interceptor.GatewayHandlerInterceptor;
 
 /**
- * GatewayClusterDefinition
+ * GatewayHandlerDefinition
  *
  * @since 1.0.0
  */
-@Extension(value = "GatewayClusterDefinition_v3")
-@ConditionalOnSpringGateway3FlowControlEnabled
-@ConditionalOnClass(GatewayClusterDefinition.TYPE_FILTERING_WEB_HANDLER)
+@Extension(value = "GatewayHandlerDefinition_v5")
+@ConditionalOnSpringGateway5GovernanceEnabled
+@ConditionalOnClass(GatewayHandlerDefinition.TYPE_FILTERING_WEB_HANDLER)
 @Injectable
-public class GatewayClusterDefinition extends PluginDefinitionAdapter implements ExtensionInitializer {
+public class GatewayHandlerDefinition extends PluginDefinitionAdapter implements ExtensionInitializer {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
 
@@ -56,13 +56,13 @@ public class GatewayClusterDefinition extends PluginDefinitionAdapter implements
     @Config(GovernanceConfig.CONFIG_ROUTER_SPRING_GATEWAY)
     private GatewayConfig config = new GatewayConfig();
 
-    public GatewayClusterDefinition() {
+    public GatewayHandlerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new GatewayClusterInterceptor(context, config)
+                        () -> new GatewayHandlerInterceptor(context, config)
                 )
         };
     }

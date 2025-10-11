@@ -33,6 +33,7 @@ import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +61,8 @@ public class LiveChainBuilder {
     private static final String FIELD_DELEGATE = "delegate";
     private static final String FIELD_GLOBAL_FILTERS = "globalFilters";
     private static final String FIELD_LOAD_BALANCER = "loadBalancer";
+
+    private static final Map<Object, LiveChainBuilder> BUILDERS = new ConcurrentHashMap<>();
 
     /**
      * The invocation context for this filter configuration.
@@ -111,11 +114,33 @@ public class LiveChainBuilder {
      * @param exchange the ServerWebExchange representing the incoming request
      * @return a new GatewayFilterChain instance
      */
-    public GatewayFilterChain chain(ServerWebExchange exchange) {
+    public GatewayFilterChain create(ServerWebExchange exchange) {
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
         GatewayRoute<Route> gatewayRoute = GatewayRoutes.get(route.getId());
         LiveRouteFilter filter = gatewayRoute.getOrCreate(this::createRouteFilter);
         return filter.build(exchange);
+    }
+
+    /**
+     * Filters the server web exchange.
+     *
+     * @param exchange the server web exchange
+     * @return a Mono that indicates when request processing is complete
+     */
+    public Mono<Void> chain(ServerWebExchange exchange) {
+        return create(exchange).filter(exchange);
+    }
+
+    /**
+     * Gets or creates a LiveChainBuilder for the target.
+     *
+     * @param target  the target object
+     * @param context the invocation context
+     * @param config  the gateway config
+     * @return LiveChainBuilder instance
+     */
+    public static LiveChainBuilder getOrCreate(Object target, InvocationContext context, GatewayConfig config) {
+        return BUILDERS.computeIfAbsent(target, t -> new LiveChainBuilder(context, config, t));
     }
 
     /**

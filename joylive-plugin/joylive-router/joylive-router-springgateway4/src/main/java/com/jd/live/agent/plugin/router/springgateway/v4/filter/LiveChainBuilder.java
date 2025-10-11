@@ -33,6 +33,7 @@ import org.springframework.cloud.gateway.route.Route;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,11 +111,21 @@ public class LiveChainBuilder {
      * @param exchange the ServerWebExchange representing the incoming request
      * @return a new GatewayFilterChain instance
      */
-    public GatewayFilterChain chain(ServerWebExchange exchange) {
+    public GatewayFilterChain create(ServerWebExchange exchange) {
         Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
         GatewayRoute<Route> gatewayRoute = GatewayRoutes.get(route.getId());
         LiveRouteFilter filter = gatewayRoute.getOrCreate(this::createRouteFilter);
         return filter.build(exchange);
+    }
+
+    /**
+     * Filters the server web exchange.
+     *
+     * @param exchange the server web exchange
+     * @return a Mono that indicates when request processing is complete
+     */
+    public Mono<Void> chain(ServerWebExchange exchange) {
+        return create(exchange).filter(exchange);
     }
 
     /**

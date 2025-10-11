@@ -16,23 +16,31 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Config;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.condition.ConditionalOnSpringGateway2OnlyRouteEnabled;
-import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayInterceptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.condition.ConditionalOnSpringGateway2GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor.GatewayHandlerInterceptor;
 
 /**
- * GatewayDefinition
+ * GatewayHandlerDefinition
  *
  * @since 1.5.0
  */
-@Extension(value = "GatewayDefinition_v2.2")
-@ConditionalOnSpringGateway2OnlyRouteEnabled
-@ConditionalOnClass(GatewayDefinition.TYPE_FILTERING_WEB_HANDLER)
-public class GatewayDefinition extends PluginDefinitionAdapter {
+@Extension(value = "GatewayHandlerDefinition_v2.2")
+@ConditionalOnSpringGateway2GovernanceEnabled
+@ConditionalOnClass(GatewayHandlerDefinition.TYPE_FILTERING_WEB_HANDLER)
+@Injectable
+public class GatewayHandlerDefinition extends PluginDefinitionAdapter implements ExtensionInitializer {
 
     protected static final String TYPE_FILTERING_WEB_HANDLER = "org.springframework.cloud.gateway.handler.FilteringWebHandler";
 
@@ -42,14 +50,25 @@ public class GatewayDefinition extends PluginDefinitionAdapter {
             "org.springframework.web.server.ServerWebExchange"
     };
 
-    public GatewayDefinition() {
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
+
+    @Config(GovernanceConfig.CONFIG_ROUTER_SPRING_GATEWAY)
+    private GatewayConfig config = new GatewayConfig();
+
+    public GatewayHandlerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_FILTERING_WEB_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new GatewayInterceptor()
+                        () -> new GatewayHandlerInterceptor(context, config)
                 )
         };
+    }
+
+    @Override
+    public void initialize() {
+        config.initialize();
     }
 }

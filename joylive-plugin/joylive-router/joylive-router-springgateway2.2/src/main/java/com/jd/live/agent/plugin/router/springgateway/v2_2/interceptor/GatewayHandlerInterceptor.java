@@ -16,28 +16,41 @@
 package com.jd.live.agent.plugin.router.springgateway.v2_2.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.handler.FilteringWebHandler;
+import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.config.GatewayConfig;
+import com.jd.live.agent.plugin.router.springgateway.v2_2.filter.LiveChainFactory;
 
 /**
- * GatewayInterceptor
+ * GatewayClusterInterceptor
  *
- * @since 1.0.0
+ * @since 1.5.0
  */
-public class GatewayInterceptor extends InterceptorAdaptor {
+public class GatewayHandlerInterceptor extends InterceptorAdaptor {
 
-    /**
-     * Enhanced logic before method execution
-     * <p>
-     *
-     * @param ctx ExecutableContext
-     * @see FilteringWebHandler#handle(ServerWebExchange)
-     */
+    private final InvocationContext context;
+
+    private final LiveChainFactory factory;
+
+    public GatewayHandlerInterceptor(InvocationContext context, GatewayConfig config) {
+        this.context = context;
+        this.factory = new LiveChainFactory(context, config);
+    }
+
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // org.springframework.cloud.gateway.handler.FilteringWebHandler#handle(ServerWebExchange)
+        // gateway request
         RequestContext.setAttribute(Carrier.ATTRIBUTE_GATEWAY, Boolean.TRUE);
+
+        // flow control
+        if (context.isFlowControlEnabled()) {
+            // invoke filter chain
+            ((MethodContext) ctx).skipWithResult(factory.create(ctx.getTarget()).chain(ctx.getArgument(0)));
+        }
     }
+
 }

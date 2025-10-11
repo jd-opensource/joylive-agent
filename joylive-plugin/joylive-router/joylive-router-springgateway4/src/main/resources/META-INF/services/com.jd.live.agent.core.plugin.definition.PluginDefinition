@@ -1,5 +1,4 @@
-com.jd.live.agent.plugin.router.springgateway.v4.definition.GatewayClusterDefinition
-com.jd.live.agent.plugin.router.springgateway.v4.definition.GatewayDefinition
+com.jd.live.agent.plugin.router.springgateway.v4.definition.GatewayHandlerDefinition
 com.jd.live.agent.plugin.router.springgateway.v4.definition.GatewayRouteDefinition
 com.jd.live.agent.plugin.router.springgateway.v4.definition.GatewayRouteLocatorDefinition
 com.jd.live.agent.plugin.router.springgateway.v4.definition.GatewayRouteRefreshDefinition
