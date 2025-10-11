@@ -109,7 +109,7 @@ public class GovernanceConfig {
     public static final String CONFIG_GOVERNANCE = "agent.governance";
     public static final String CONFIG_ROUTER = CONFIG_GOVERNANCE + ".router";
     public static final String CONFIG_ROUTER_SPRING = CONFIG_ROUTER + ".spring";
-    public static final String CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES = CONFIG_ROUTER_SPRING + ".discovery.disables";
+    public static final String CONFIG_ROUTER_SPRING_DISCOVERY = CONFIG_ROUTER_SPRING + ".discovery";
     public static final String CONFIG_ROUTER_SPRING_GATEWAY = CONFIG_ROUTER_SPRING + ".router.gateway";
 
     public static final String CONFIG_SERVICE = CONFIG_GOVERNANCE + ".service";

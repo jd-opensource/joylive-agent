@@ -30,6 +30,7 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvoca
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.SimpleServiceRegistry;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.config.DiscoveryConfig;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.exception.status.StatusThrower;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.EndpointInstance;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.instance.SpringEndpoint;
@@ -43,9 +44,7 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
@@ -63,28 +62,19 @@ public class ServiceInstanceListSupplierInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final Set<String> disableDiscovery;
+    private final DiscoveryConfig config;
 
-    public ServiceInstanceListSupplierInterceptor(InvocationContext context, Set<String> disableDiscovery) {
+    public ServiceInstanceListSupplierInterceptor(InvocationContext context, DiscoveryConfig config) {
         this.context = context;
-        this.disableDiscovery = disableDiscovery == null ? new HashSet<>() : new HashSet<>(disableDiscovery);
-        if (context.isLiveEnabled()) {
-            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
-            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.ZonePreferenceServiceInstanceListSupplier");
-        }
-        if (context.isFlowControlEnabled()) {
-            this.disableDiscovery.add("org.springframework.cloud.loadbalancer.core.SameInstancePreferenceServiceInstanceListSupplier");
-        }
+        this.config = config;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // Already switched to LiveRegistry, this interceptor is used as a fallback.
         MethodContext mc = (MethodContext) ctx;
         ServiceInstanceListSupplier target = (ServiceInstanceListSupplier) ctx.getTarget();
-        if (target instanceof DelegatingServiceInstanceListSupplier
-                && disableDiscovery != null
-                && !disableDiscovery.isEmpty()
-                && disableDiscovery.contains(target.getClass().getName())) {
+        if (target instanceof DelegatingServiceInstanceListSupplier && config.isDisabled(target.getClass().getName())) {
             // disable
             DelegatingServiceInstanceListSupplier delegating = (DelegatingServiceInstanceListSupplier) target;
             mc.skipWithResult(delegating.getDelegate().get());

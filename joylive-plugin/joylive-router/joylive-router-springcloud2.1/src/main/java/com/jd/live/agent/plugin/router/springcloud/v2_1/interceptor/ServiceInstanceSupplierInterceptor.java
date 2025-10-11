@@ -61,6 +61,7 @@ public class ServiceInstanceSupplierInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
+        // Already switched to LiveRegistry, this interceptor is used as a fallback.
         // Prevent duplicate calls
         ctx.tryLock(lock);
     }

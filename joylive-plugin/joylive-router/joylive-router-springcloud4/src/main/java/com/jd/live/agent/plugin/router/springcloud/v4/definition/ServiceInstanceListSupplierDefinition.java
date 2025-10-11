@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.router.springcloud.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
+import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Config;
@@ -27,9 +28,8 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springcloud.v4.condition.ConditionalOnSpringCloud4GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springcloud.v4.config.DiscoveryConfig;
 import com.jd.live.agent.plugin.router.springcloud.v4.interceptor.ServiceInstanceListSupplierInterceptor;
-
-import java.util.Set;
 
 /**
  * ServiceInstanceListSupplierDefinition
@@ -41,7 +41,7 @@ import java.util.Set;
 @Extension(value = "ServiceInstanceListSupplierDefinition_v4")
 @ConditionalOnSpringCloud4GovernanceEnabled
 @ConditionalOnClass(ServiceInstanceListSupplierDefinition.TYPE_SERVICE_INSTANCE_LIST_SUPPLIER)
-public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter {
+public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapter implements ExtensionInitializer {
 
     protected static final String TYPE_SERVICE_INSTANCE_LIST_SUPPLIER = "org.springframework.cloud.loadbalancer.core.ServiceInstanceListSupplier";
 
@@ -54,8 +54,8 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
-    @Config(GovernanceConfig.CONFIG_ROUTER_SPRING_DISCOVERY_DISABLES)
-    private Set<String> disableDiscovery;
+    @Config(GovernanceConfig.CONFIG_ROUTER_SPRING_DISCOVERY)
+    private DiscoveryConfig config;
 
     public ServiceInstanceListSupplierDefinition() {
         // enhance default method. so isImplementOf is not used.
@@ -64,8 +64,13 @@ public class ServiceInstanceListSupplierDefinition extends PluginDefinitionAdapt
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_GET).
                                 and(MatcherBuilder.arguments(ARGUMENTS_GET)),
-                        () -> new ServiceInstanceListSupplierInterceptor(context, disableDiscovery)
+                        () -> new ServiceInstanceListSupplierInterceptor(context, config)
                 )
         };
+    }
+
+    @Override
+    public void initialize() {
+        config.initialize(context);
     }
 }
