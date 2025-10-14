@@ -13,12 +13,13 @@
 9. Fix Dubbo 3.0 compatibility issues
 10. Fix Dubbo 2.7 registration issues
 11. Fix Nacos gray scale configuration subscription issues
-12. Fix Spring cloud gateway retry not working issue
-13. Fix Spring cloud gateway lane routing issues
-14. Fix stack overflow caused by Spring web request wrapping
-15. Fix Feign compatibility issues
-16. Fix Dubbo zookeeper registry null pointer exception
-17. Fix other issues
+12. Fix the issue where degradation is not effective for generic calls in Dubbo2, Dubbo3, and SofaRPC
+13. Fix Spring cloud gateway retry not working issue
+14. Fix Spring cloud gateway lane routing issues
+15. Fix stack overflow caused by Spring web request wrapping
+16. Fix Feign compatibility issues
+17. Fix Dubbo zookeeper registry null pointer exception
+18. Fix other issues
 
 ## 1.8.0
 
