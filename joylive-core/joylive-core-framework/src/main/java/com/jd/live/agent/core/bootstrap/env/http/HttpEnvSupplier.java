@@ -82,6 +82,7 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
             logger.info("Ignore loading env from http, caused by empty service namespace.");
             return;
         }
+        // http://x.x.x:port/v1/ns/${space_id}/application/${application}/environments?serviceName=${service}&group=${group}
         Template template = Template.parse(url);
         Map<String, String> context = new HashMap<>();
         context.put("application", app);
