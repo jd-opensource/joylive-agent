@@ -25,6 +25,7 @@ import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.http.HttpResponse;
 import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.core.util.http.HttpUtils;
@@ -35,14 +36,17 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.jd.live.agent.core.instance.Application.*;
-import static com.jd.live.agent.core.util.StringUtils.choose;
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 @Injectable
 @Extension(value = "HttpEnvSupplier", order = EnvSupplier.ORDER_HTTP_ENV_SUPPLIER)
 public class HttpEnvSupplier extends AbstractEnvSupplier {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpEnvSupplier.class);
+    private static final String DEFAULT_PATH = "/ns/${space_id}/application/${application}/environments?serviceName=${service}&group=${group}";
+    private static final String KEY_SERVICE_API_URL = "CONFIG_SERVICE_API_URL";
+    private static final String KEY_NACOS_NAMESPACE = "CONFIG_NACOS_NAMESPACE";
+    private static final String KEY_NACOS_SERVICE = "CONFIG_NACOS_SERVICE";
 
     @Config("env.http.url")
     private String url;
@@ -68,12 +72,16 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     @Override
     public void process(AppEnv env) {
         if (isEmpty(url)) {
-            logger.info("Ignore loading env from http, caused by empty url.");
-            return;
+            String serviceApi = env.getString(KEY_SERVICE_API_URL);
+            if (isEmpty(serviceApi)) {
+                logger.info("Ignore loading env from http, caused by empty url.");
+                return;
+            }
+            url = url(serviceApi, DEFAULT_PATH);
         }
         String app = choose(application, (String) env.get(KEY_APPLICATION_NAME));
-        String ns = choose(choose(namespace, (String) env.get(KEY_APPLICATION_SERVICE_NAMESPACE)), (String) env.get("CONFIG_NACOS_NAMESPACE"));
-        String svr = choose(choose(choose(service, (String) env.get(KEY_APPLICATION_SERVICE_NAME)), (String) env.get("CONFIG_NACOS_SERVICE")), app);
+        String ns = choose(choose(namespace, (String) env.get(KEY_APPLICATION_SERVICE_NAMESPACE)), (String) env.get(KEY_NACOS_NAMESPACE));
+        String svr = choose(choose(choose(service, (String) env.get(KEY_APPLICATION_SERVICE_NAME)), (String) env.get(KEY_NACOS_SERVICE)), app);
         String grp = choose(group, (String) env.get(KEY_APPLICATION_SERVICE_GROUP));
         if (isEmpty(app)) {
             logger.info("Ignore loading env from http, caused by empty application name.");
@@ -90,8 +98,18 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
         context.put("service", svr);
         context.put("group", grp);
         String newUrl = template.render(context, false);
+        URI uri = URI.parse(newUrl);
+        String address = uri.getAddress();
+        if (isEmpty(address)) {
+            logger.info("Ignore loading env from http, caused by invalid url.");
+            return;
+        }
         try {
-            logger.info("load env from " + newUrl);
+            if (logger.isDebugEnabled()) {
+                logger.info("load env from " + newUrl);
+            } else {
+                logger.info("load env from " + address);
+            }
             HttpResponse<HttpEnvResponse> response = HttpUtils.get(newUrl,
                     cnn -> Optional.ofNullable(parameters).ifPresent(p -> p.forEach(cnn::setRequestProperty)),
                     reader -> parser.read(reader, HttpEnvResponse.class));
@@ -103,16 +121,16 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
                     env.addRemotes(data);
                     data.forEach((k, v) -> env.putIfAbsent(k.toString(), v));
                 } else {
-                    logger.error("Failed to load env from " + newUrl + ", code=" + error.getCode() + ", message=" + error.getMessage());
+                    logger.error("Failed to load env from " + address + ", code=" + error.getCode() + ", message=" + error.getMessage());
                     if (error.getCode() == 404) {
                         logger.error("The namespace(" + ns + ") or application(" + app + ") are not found, please check your configuration.");
                     }
                 }
             } else {
-                logger.error("Failed to load env from " + newUrl + ", status=" + response.getCode() + ", message=" + response.getMessage());
+                logger.error("Failed to load env from " + address + ", status=" + response.getCode() + ", message=" + response.getMessage());
             }
         } catch (Throwable e) {
-            logger.error("Failed to load env from " + newUrl + ", caused by " + e.getMessage());
+            logger.error("Failed to load env from " + address + ", caused by " + e.getMessage());
         }
     }
 }
