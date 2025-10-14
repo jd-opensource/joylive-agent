@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.bootstrap.env.node;
 
+import com.jd.live.agent.core.bootstrap.AppEnv;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -29,9 +30,9 @@ import java.util.stream.Collectors;
 public class NodeEnvSupplier implements EnvSupplier {
 
     @Override
-    public void process(Map<String, Object> env) {
-        String nodeName = (String) env.get("NODE_NAME");
-        String nodeZones = (String) env.get("NODE_ZONES");
+    public void process(AppEnv env) {
+        String nodeName = env.getString("NODE_NAME");
+        String nodeZones = env.getString("NODE_ZONES");
         if (nodeName == null || nodeZones == null || nodeName.isEmpty() || nodeZones.isEmpty()) {
             return;
         }
@@ -44,7 +45,7 @@ public class NodeEnvSupplier implements EnvSupplier {
                 ));
         zoneToNodesMap.forEach((zone, nodeNames) -> {
             if (nodeNames.contains(nodeName)) {
-                env.put("NODE_CELL", zone);
+                env.putIfAbsent("NODE_CELL", zone);
             }
         });
     }

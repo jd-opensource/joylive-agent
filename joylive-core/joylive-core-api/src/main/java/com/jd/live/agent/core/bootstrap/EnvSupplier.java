@@ -17,8 +17,6 @@ package com.jd.live.agent.core.bootstrap;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
-import java.util.Map;
-
 /**
  * Represents a functional interface that supplies an environment processing capability.
  * This interface is designed to be extensible, allowing implementations to define how
@@ -41,14 +39,9 @@ public interface EnvSupplier {
     int ORDER_HTTP_ENV_SUPPLIER = ORDER_CONFIG_ENV_SUPPLIER + 10;
 
     /**
-     * Processes the given environment.
-     * Implementations of this method are expected to perform operations on or with the provided
-     * environment map. Such operations could include modifying the map's contents, performing
-     * validations, or using the environment for configuration purposes.
+     * Processes the application environment.
      *
-     * @param env A map representing the environment to be processed. The keys are environment
-     *            variable names or identifiers, and the values are the corresponding values
-     *            or settings associated with those keys.
+     * @param env the application environment to process
      */
-    void process(Map<String, Object> env);
+    void process(AppEnv env);
 }

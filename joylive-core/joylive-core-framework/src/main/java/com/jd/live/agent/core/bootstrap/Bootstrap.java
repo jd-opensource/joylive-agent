@@ -104,7 +104,7 @@ public class Bootstrap implements AgentLifecycle {
     /**
      * Environment variables passed to the agent.
      */
-    private final Map<String, Object> env;
+    private final AppEnv env;
 
     /**
      * Configuration properties passed to the agent.
@@ -248,7 +248,7 @@ public class Bootstrap implements AgentLifecycle {
                      Runnable unLoader) {
         this.instrumentation = instrumentation;
         this.dynamic = dynamic;
-        this.env = env;
+        this.env = new AppEnv(env);
         this.config = config;
         this.unLoader = unLoader;
         this.classLoader = Bootstrap.class.getClassLoader();
@@ -404,9 +404,9 @@ public class Bootstrap implements AgentLifecycle {
      */
     private AgentPath createAgentPath() {
         // Retrieve the root, log, and output paths from the environment variables
-        String root = (String) env.get(AgentPath.KEY_AGENT_PATH);
-        String log = (String) env.get(AgentPath.KEY_AGENT_LOG_PATH);
-        String output = (String) env.get(AgentPath.KEY_AGENT_OUTPUT_PATH);
+        String root = env.getString(AgentPath.KEY_AGENT_PATH);
+        String log = env.getString(AgentPath.KEY_AGENT_LOG_PATH);
+        String output = env.getString(AgentPath.KEY_AGENT_OUTPUT_PATH);
 
         // Create and return an AgentPath instance with the retrieved paths
         return new AgentPath(
@@ -519,7 +519,7 @@ public class Bootstrap implements AgentLifecycle {
 
     private Injector createInjector() {
         InjectorFactory factory = extensionManager.getOrLoadExtension(InjectorFactory.class);
-        final Injection injection = factory.create(extensionManager, new MapOption(env), classLoader);
+        final Injection injection = factory.create(extensionManager, new MapOption(env.getEnvs()), classLoader);
 
         return target -> {
             Injectable injectable = target.getClass().getAnnotation(Injectable.class);
@@ -652,6 +652,8 @@ public class Bootstrap implements AgentLifecycle {
         if (addOpens != null) {
             result.export(instrumentation, addOpens, classLoaderManager.getCoreImplLoader());
         }
+        // add system environments after add opens
+        env.addSystem();
         return result;
     }
 

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.bootstrap.env.config;
 
+import com.jd.live.agent.core.bootstrap.AppEnv;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -29,7 +30,7 @@ public class ConfigEnvSupplier extends AbstractEnvSupplier {
     private static final String RESOURCE_LIVE_AGENT_PROPERTIES = "live-agent.properties";
 
     @Override
-    public void process(Map<String, Object> env) {
+    public void process(AppEnv env) {
         Map<String, Object> map = loadConfigs(RESOURCE_LIVE_AGENT_PROPERTIES);
         if (map != null) {
             map.forEach(env::putIfAbsent);

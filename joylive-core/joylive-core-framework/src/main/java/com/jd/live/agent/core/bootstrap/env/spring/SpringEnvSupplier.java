@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.bootstrap.env.spring;
 
+import com.jd.live.agent.core.bootstrap.AppEnv;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.bootstrap.resource.BootResource;
@@ -49,14 +50,14 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";
 
     @Override
-    public void process(Map<String, Object> env) {
+    public void process(AppEnv env) {
         BootResource[] resources = getResources(env);
         Map<String, Object> configs = loadConfigs(env, resources);
         exist(configs, env, KEY_SPRING_APPLICATION_NAME, app -> env.putIfAbsent(Application.KEY_APPLICATION_NAME, app));
         exist(configs, env, KEY_SPRING_SERVER_PORT, port -> {
             try {
                 Integer.parseInt(port);
-                env.put(Application.KEY_APPLICATION_SERVICE_PORT, port);
+                env.putIfAbsent(Application.KEY_APPLICATION_SERVICE_PORT, port);
             } catch (NumberFormatException ignored) {
                 env.remove(Application.KEY_APPLICATION_SERVICE_PORT);
             }
@@ -77,7 +78,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
         exist(configs, env, "spring.cloud.nacos.config.namespace", v -> env.putIfAbsent("CONFIG_NACOS_NAMESPACE", v));
     }
 
-    private void addNacosGroup(Map<String, Object> env, String group) {
+    private void addNacosGroup(AppEnv env, String group) {
         env.putIfAbsent("CONFIG_NACOS_GROUP", group);
     }
 
@@ -90,7 +91,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @param env A {@link Map} containing environment configurations, typically system properties or environment variables.
      * @return An array of {@link BootResource} objects representing the resources to load.
      */
-    private BootResource[] getResources(Map<String, Object> env) {
+    private BootResource[] getResources(AppEnv env) {
         String config = (String) env.get(KEY_SPRING_CONFIG_LOCATION);
         if (config != null && !config.isEmpty()) {
             // location
@@ -148,7 +149,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
     }
 
     @Override
-    protected void onLoaded(BootResource resource, Map<String, Object> configs, Map<String, Object> env) {
+    protected void onLoaded(BootResource resource, Map<String, Object> configs, AppEnv env) {
         // profiles
         Object obj = getConfigAndResolve(configs, env, SPRING_PROFILES_ACTIVE);
         String profiles = obj == null ? null : obj.toString().trim();
@@ -171,7 +172,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @param key      configuration key
      * @param consumer action to execute with the resolved value
      */
-    private void exist(Map<String, Object> configs, Map<String, Object> env, String key, Consumer<String> consumer) {
+    private void exist(Map<String, Object> configs, AppEnv env, String key, Consumer<String> consumer) {
         Object obj = getConfigAndResolve(configs, env, key);
         String value = obj == null ? null : obj.toString();
         if (!StringUtils.isEmpty(value)) {
@@ -187,7 +188,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @param key     configuration key
      * @return resolved value as String, null if not found
      */
-    private String getString(Map<String, Object> configs, Map<String, Object> env, String key) {
+    private String getString(Map<String, Object> configs, AppEnv env, String key) {
         Object result = getConfigAndResolve(configs, env, key);
         return result == null ? null : result.toString();
     }
@@ -200,7 +201,7 @@ public class SpringEnvSupplier extends AbstractEnvSupplier {
      * @param key     the key for the configuration value to retrieve and resolve
      * @return the resolved configuration value as a String
      */
-    private Object getConfigAndResolve(Map<String, Object> configs, Map<String, Object> env, String key) {
+    private Object getConfigAndResolve(Map<String, Object> configs, AppEnv env, String key) {
         Object obj = env.get(key);
         String expression = obj == null ? null : obj.toString();
         if (isEmpty(expression)) {

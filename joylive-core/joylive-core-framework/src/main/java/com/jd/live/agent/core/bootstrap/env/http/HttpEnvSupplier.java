@@ -17,6 +17,7 @@ package com.jd.live.agent.core.bootstrap.env.http;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.bootstrap.AppEnv;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -65,7 +66,7 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     private ObjectParser parser;
 
     @Override
-    public void process(Map<String, Object> env) {
+    public void process(AppEnv env) {
         if (isEmpty(url)) {
             logger.info("Ignore loading env from http, caused by empty url.");
             return;
@@ -97,7 +98,9 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
                 HttpEnvResponse resp = response.getData();
                 HttpEnvError error = resp.getError();
                 if (error == null) {
-                    resp.getData().forEach((k, v) -> env.putIfAbsent(k.toString(), v));
+                    Map<String, String> data = resp.getData();
+                    env.addRemotes(data);
+                    data.forEach((k, v) -> env.putIfAbsent(k.toString(), v));
                 } else {
                     logger.error("Failed to load env from " + newUrl + ", code=" + error.getCode() + ", message=" + error.getMessage());
                     if (error.getCode() == 404) {

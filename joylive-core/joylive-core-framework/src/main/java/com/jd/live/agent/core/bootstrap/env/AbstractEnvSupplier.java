@@ -17,6 +17,7 @@ package com.jd.live.agent.core.bootstrap.env;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.bootstrap.AppEnv;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier;
 import com.jd.live.agent.core.bootstrap.resource.BootResource;
@@ -70,7 +71,7 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
      * @param resources the resources to load configurations from
      * @return a map containing the loaded configurations, or {@code null} if no configurations could be loaded
      */
-    protected Map<String, Object> loadConfigs(Map<String, Object> env, BootResource... resources) {
+    protected Map<String, Object> loadConfigs(AppEnv env, BootResource... resources) {
         if (resources != null) {
             for (BootResource resource : resources) {
                 Map<String, Object> result = loadConfigs(resource);
@@ -90,7 +91,7 @@ public abstract class AbstractEnvSupplier implements EnvSupplier {
      * @param configs  the configuration map associated with the resource
      * @param env      the environment map
      */
-    protected void onLoaded(BootResource resource, Map<String, Object> configs, Map<String, Object> env) {
+    protected void onLoaded(BootResource resource, Map<String, Object> configs, AppEnv env) {
     }
 
     /**
