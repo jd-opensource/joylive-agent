@@ -135,14 +135,14 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
     public static ReactiveClusterResponse create(ClientRequest request,
                                                  DegradeConfig degradeConfig,
                                                  ExchangeStrategies strategies) {
-        int length = degradeConfig.getBodyLength();
+        int length = degradeConfig.bodyLength();
         return new ReactiveClusterResponse(ClientResponse.create(degradeConfig.getResponseCode(), strategies)
                 .body(length == 0 ? "" : degradeConfig.getResponseBody())
                 .request(new DegradeHttpRequest(request))
                 .headers(headers -> {
                     headers.addAll(request.headers());
                     degradeConfig.foreach(headers::add);
-                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentTypeOrDefault());
                     headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
                 }).build());
     }

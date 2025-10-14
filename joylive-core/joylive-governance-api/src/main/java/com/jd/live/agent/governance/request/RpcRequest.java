@@ -15,10 +15,16 @@
  */
 package com.jd.live.agent.governance.request;
 
+import com.jd.live.agent.core.exception.ConfigException;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.tag.Label;
+import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.core.util.type.ValuePath;
 import com.jd.live.agent.governance.context.bag.Cargo;
+import com.jd.live.agent.governance.policy.service.circuitbreak.DegradeConfig;
 
+import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -152,12 +158,44 @@ public interface RpcRequest extends ServiceRequest {
         }
 
         /**
-         * Checks if this object is a generic type.
+         * Gets the RPC return type.
          *
-         * @return true if this object is a generic type, false otherwise.
+         * @return the RPC return type
+         * @throws Exception if an error occurs
          */
-        default boolean isGeneric() {
-            return false;
+        default RpcReturnType getReturnType() throws Exception {
+            return null;
+        }
+
+        /**
+         * Creates a degraded response based on the configuration.
+         *
+         * @param degradeConfig the degrade configuration
+         * @param parser        the object parser
+         * @return the degraded response value
+         * @throws Exception if an error occurs
+         */
+        default Object degrade(DegradeConfig degradeConfig, ObjectParser parser) throws Exception {
+            RpcReturnType type = getReturnType();
+            Class<?> returnClass = type.getReturnClass();
+            Type returnType = type.getReturnType();
+            if (type.isGeneric() && returnClass == null) {
+                returnClass = degradeConfig.getContentClass(type.getClassLoader());
+                returnType = returnClass;
+                if (returnClass == null) {
+                    throw new ConfigException("The content type of degrade degradeConfig is not configured.");
+                }
+            }
+            if (returnClass == void.class || returnClass == Void.class) {
+                // void return
+                return null;
+            } else if (degradeConfig.bodyLength() == 0) {
+                return ClassUtils.getDefaultValue(returnClass);
+            } else {
+                Object value = parser.read(new StringReader(degradeConfig.getResponseBody()), returnType);
+                return type.convert(value);
+            }
         }
     }
+
 }

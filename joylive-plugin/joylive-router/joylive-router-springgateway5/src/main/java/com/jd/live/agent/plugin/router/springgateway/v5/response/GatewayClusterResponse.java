@@ -108,21 +108,21 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
      * Creates a {@link GatewayClusterResponse} based on the provided {@link GatewayCloudClusterRequest} and {@link DegradeConfig}.
      * This method configures the response with the specified status code, headers, and content, and writes the response body.
      *
-     * @param httpRequest   the {@link GatewayCloudClusterRequest} containing the original request and exchange information
-     * @param degradeConfig the {@link DegradeConfig} containing the response configuration (e.g., status code, headers, content)
+     * @param httpRequest the {@link GatewayCloudClusterRequest} containing the original request and exchange information
+     * @param config      the {@link DegradeConfig} containing the response configuration (e.g., status code, headers, content)
      * @return a new {@link GatewayClusterResponse} representing the degraded response
      */
-    public static GatewayClusterResponse create(GatewayCloudClusterRequest httpRequest, DegradeConfig degradeConfig) {
+    public static GatewayClusterResponse create(GatewayCloudClusterRequest httpRequest, DegradeConfig config) {
         ServerHttpResponse response = httpRequest.getExchange().getResponse();
         ServerHttpRequest request = httpRequest.getExchange().getRequest();
 
-        DataBuffer buffer = response.bufferFactory().wrap(degradeConfig.getResponseBytes());
+        DataBuffer buffer = response.bufferFactory().wrap(config.getResponseBytes());
         HttpHeaders headers = CloudUtils.writable(response.getHeaders());
         headers.putAll(request.getHeaders());
-        degradeConfig.foreach(headers::add);
-        response.setRawStatusCode(degradeConfig.getResponseCode());
-        response.setStatusCode(HttpStatus.valueOf(degradeConfig.getResponseCode()));
-        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+        config.foreach(headers::add);
+        response.setRawStatusCode(config.getResponseCode());
+        response.setStatusCode(HttpStatus.valueOf(config.getResponseCode()));
+        headers.set(HttpHeaders.CONTENT_TYPE, config.contentTypeOrDefault());
 
         response.writeWith(Flux.just(buffer)).subscribe();
         return new GatewayClusterResponse(response);

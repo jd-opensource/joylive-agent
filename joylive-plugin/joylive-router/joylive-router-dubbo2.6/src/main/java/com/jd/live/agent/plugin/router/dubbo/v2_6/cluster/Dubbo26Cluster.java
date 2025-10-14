@@ -17,10 +17,13 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.cluster;
 
 
 import com.alibaba.dubbo.common.Constants;
+import com.alibaba.dubbo.remoting.exchange.support.SimpleFuture;
 import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.cluster.Directory;
 import com.alibaba.dubbo.rpc.cluster.support.*;
+import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.core.exception.ConfigException;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -42,8 +45,6 @@ import com.jd.live.agent.plugin.router.dubbo.v2_6.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboOutboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.response.DubboResponse.DubboOutboundResponse;
 
-import java.io.StringReader;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -179,6 +180,37 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
         return thrower.createException(throwable, invocation);
     }
 
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
+        return new DubboOutboundResponse(new RpcResult());
+    }
+
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig config) {
+        try {
+            RpcResult result = new RpcResult();
+            Object degrade = request.degrade(config, parser);
+            result.setAttachments(new HashMap<>(config.getAttributes()));
+            result.setValue(degrade);
+            Invocation invocation = request.getRequest();
+            if (RpcUtils.isAsync(request.getUrl(), invocation)) {
+                RpcContext.getContext().setFuture(new FutureAdapter<>(new SimpleFuture(degrade)));
+            }
+            return new DubboOutboundResponse(result);
+        } catch (ConfigException e) {
+            throw e;
+        } catch (Exception e) {
+            // degrade config is invalid for this method
+            throw new ConfigException(e.getMessage(), e);
+        }
+
+    }
+
+    @Override
+    protected DubboOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new DubboOutboundResponse(error, predicate);
+    }
+
     /**
      * Retrieves the configured number of retries for a specific method invocation.
      *
@@ -192,46 +224,6 @@ public class Dubbo26Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
             len = 1;
         }
         return len;
-    }
-
-    @Override
-    protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
-        return new DubboOutboundResponse(new RpcResult());
-    }
-
-    @Override
-    protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
-        RpcInvocation invocation = (RpcInvocation) request.getRequest();
-        String body = degradeConfig.getResponseBody();
-        RpcResult result = new RpcResult();
-        result.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
-        if (body != null) {
-            Object value;
-            if (request.isGeneric()) {
-                value = degradeConfig.isText()
-                        ? body
-                        : parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
-            } else {
-                Type[] types = RpcUtils.getReturnTypes(invocation);
-                if (types == null || types.length == 0) {
-                    // void return
-                    value = null;
-                } else if (types.length == 1) {
-                    Class<?> type = (Class<?>) types[0];
-                    value = String.class == type ? body : parser.read(new StringReader(body), type);
-                } else {
-                    value = parser.read(new StringReader(body), types[1]);
-                }
-            }
-            result.setValue(value);
-        }
-
-        return new DubboOutboundResponse(result);
-    }
-
-    @Override
-    protected DubboOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
-        return new DubboOutboundResponse(error, predicate);
     }
 
 }

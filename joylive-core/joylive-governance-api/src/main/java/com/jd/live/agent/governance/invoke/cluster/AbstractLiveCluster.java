@@ -67,7 +67,7 @@ public abstract class AbstractLiveCluster<R extends OutboundRequest,
      * @return true if the configuration is valid, false otherwise
      */
     protected boolean isValid(DegradeConfig config) {
-        return true;
+        return config.isEnabled();
     }
 
     /**

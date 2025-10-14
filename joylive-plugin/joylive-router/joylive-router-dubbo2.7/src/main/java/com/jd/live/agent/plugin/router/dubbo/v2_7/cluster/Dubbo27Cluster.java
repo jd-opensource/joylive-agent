@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_7.cluster;
 
 
 import com.alibaba.dubbo.rpc.support.RpcUtils;
+import com.jd.live.agent.core.exception.ConfigException;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -39,8 +40,6 @@ import com.jd.live.agent.plugin.router.dubbo.v2_7.response.DubboResponse.DubboOu
 import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.cluster.support.*;
 
-import java.io.StringReader;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,6 +169,41 @@ public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
         return thrower.createException(throwable, invocation);
     }
 
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
+        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
+    }
+
+    @Override
+    protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig config) {
+        try {
+            AppResponse response = new AppResponse();
+            response.setAttachments(new HashMap<>(config.getAttributes()));
+            Object degrade = request.degrade(config, parser);
+            response.setValue(degrade);
+            Invocation invocation = request.getRequest();
+            if (invocation instanceof RpcInvocation) {
+                RpcInvocation inv = (RpcInvocation) invocation;
+                inv.setInvokeMode(RpcUtils.getInvokeMode(request.getUrl(), inv));
+                if (inv.getInvokeMode() == InvokeMode.FUTURE) {
+                    CompletableFuture<Object> future = CompletableFuture.completedFuture(degrade);
+                    RpcContext.getContext().setFuture(future);
+                }
+            }
+            return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(response, invocation));
+        } catch (ConfigException e) {
+            throw e;
+        } catch (Exception e) {
+            // degrade config is invalid for this method
+            throw new ConfigException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    protected DubboOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
+        return new DubboOutboundResponse(error, predicate);
+    }
+
     /**
      * Retrieves the configured number of retries for a specific method invocation.
      *
@@ -190,46 +224,6 @@ public class Dubbo27Cluster extends AbstractLiveCluster<DubboOutboundRequest, Du
         }
 
         return len;
-    }
-
-    @Override
-    protected DubboOutboundResponse createResponse(DubboOutboundRequest request) {
-        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(null, null, request.getRequest()));
-    }
-
-    @Override
-    protected DubboOutboundResponse createResponse(DubboOutboundRequest request, DegradeConfig degradeConfig) {
-        RpcInvocation invocation = (RpcInvocation) request.getRequest();
-        String body = degradeConfig.getResponseBody();
-        AppResponse response = new AppResponse();
-        response.setAttachments(new HashMap<>(degradeConfig.getAttributes()));
-        if (body != null) {
-            Object value;
-            if (request.isGeneric()) {
-                value = degradeConfig.isText()
-                        ? body
-                        : parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
-            } else {
-                Type[] types = RpcUtils.getReturnTypes(invocation);
-                if (types == null || types.length == 0) {
-                    // void return
-                    value = null;
-                } else if (types.length == 1) {
-                    Class<?> type = (Class<?>) types[0];
-                    value = String.class == type ? body : parser.read(new StringReader(body), type);
-                } else {
-                    value = parser.read(new StringReader(body), types[1]);
-                }
-            }
-            response.setValue(value);
-        }
-
-        return new DubboOutboundResponse(AsyncRpcResult.newDefaultAsyncResult(response, invocation));
-    }
-
-    @Override
-    protected DubboOutboundResponse createResponse(ServiceError error, ErrorPredicate predicate) {
-        return new DubboOutboundResponse(error, predicate);
     }
 }
 

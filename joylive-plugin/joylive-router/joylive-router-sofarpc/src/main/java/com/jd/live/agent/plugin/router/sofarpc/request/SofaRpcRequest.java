@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.request;
 
-import com.alipay.sofa.rpc.api.GenericContext;
-import com.alipay.sofa.rpc.common.RemotingConstants;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
 import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.exception.SofaRpcRuntimeException;
@@ -36,13 +34,6 @@ import static com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcInboundTh
  * @since 1.0.0
  */
 public interface SofaRpcRequest {
-
-    /**
-     * generic call
-     */
-    String METHOD_$INVOKE = "$invoke";
-
-    String METHOD_$GENERIC_INVOKE = "$genericInvoke";
 
     /**
      * Represents an inbound RPC request for the SOFA framework, encapsulating the necessary
@@ -134,7 +125,7 @@ public interface SofaRpcRequest {
             return DEFAULT_ERROR_FUNCTION.apply(throwable);
         };
 
-        private final GenericType genericType;
+        private final SofaReturnType returnType;
 
         /**
          * Creates a new SofaRpcOutboundRequest with the specified SOFA request details and an optional sticky session
@@ -145,13 +136,13 @@ public interface SofaRpcRequest {
          */
         public SofaRpcOutboundRequest(SofaRequest request) {
             super(request);
-            this.genericType = computeGenericType();
+            this.returnType = SofaReturnType.of(request);
             String uniqueName = request.getTargetServiceUniqueName();
             int pos = uniqueName.indexOf(':');
             this.group = pos < 0 ? null : uniqueName.substring(pos + 1);
             this.service = pos < 0 ? uniqueName : uniqueName.substring(0, pos);
-            this.method = genericType == null ? request.getMethodName() : (String) request.getMethodArgs()[0];
-            this.arguments = genericType == null ? request.getMethodArgs() : (Object[]) request.getMethodArgs()[2];
+            this.method = !returnType.isGeneric() ? request.getMethodName() : (String) request.getMethodArgs()[0];
+            this.arguments = !returnType.isGeneric() ? request.getMethodArgs() : (Object[]) request.getMethodArgs()[2];
             this.attachments = request.getRequestProps();
         }
 
@@ -168,62 +159,9 @@ public interface SofaRpcRequest {
         }
 
         @Override
-        public boolean isGeneric() {
-            return genericType != null;
-        }
-
-        public GenericType getGenericType() {
-            return genericType;
-        }
-
-        /**
-         * Computes the generic type based on the request method name and arguments.
-         *
-         * @return The computed generic type, or null if no generic type could be determined.
-         */
-        private GenericType computeGenericType() {
-            String methodName = request.getMethodName();
-            if (METHOD_$INVOKE.equals(methodName)) {
-                return new GenericType(RemotingConstants.SERIALIZE_FACTORY_NORMAL, null);
-            } else if (METHOD_$GENERIC_INVOKE.equals(methodName)) {
-                Object[] args = request.getMethodArgs();
-                if (args.length == 3) {
-                    return new GenericType(RemotingConstants.SERIALIZE_FACTORY_GENERIC, null);
-                } else if (args.length == 4) {
-                    if (args[3] instanceof GenericContext) {
-                        return new GenericType(RemotingConstants.SERIALIZE_FACTORY_GENERIC, null);
-                    }
-                    if (args[3] instanceof Class) {
-                        return new GenericType(RemotingConstants.SERIALIZE_FACTORY_MIX, (Class<?>) args[3]);
-                    }
-                } else if (args.length == 5) {
-                    return new GenericType(RemotingConstants.SERIALIZE_FACTORY_MIX, (Class<?>) args[3]);
-                }
-            }
-            return null;
-        }
-    }
-
-    /**
-     * Represents a generic type with a specified type and return type.
-     */
-    class GenericType {
-
-        private final String type;
-
-        private final Class<?> returnType;
-
-        public GenericType(String type, Class<?> returnType) {
-            this.type = type;
-            this.returnType = returnType;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public Class<?> getReturnType() {
+        public SofaReturnType getReturnType() {
             return returnType;
         }
+
     }
 }

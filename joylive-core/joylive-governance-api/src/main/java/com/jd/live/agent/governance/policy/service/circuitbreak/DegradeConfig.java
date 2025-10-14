@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.circuitbreak;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * DegradeConfig
@@ -36,6 +41,10 @@ public class DegradeConfig {
     public static final String TYPE_APPLICATION_TEXT = "application/text";
     public static final String TYPE_APPLICATION_JSON = "application/json";
     public static final String TYPE_JSON = "json";
+
+    @Getter
+    @Setter
+    private boolean enabled = true;
 
     @Getter
     @Setter
@@ -52,13 +61,23 @@ public class DegradeConfig {
     @Setter
     private String responseBody;
 
-    private transient volatile byte[] responseBytes;
+    @Getter
+    private transient byte[] responseBytes;
+
+    @Getter
+    private transient boolean text;
+
+    @Setter
+    private transient Function<ClassLoader, Class<?>> contentClassFunc;
+
+    private transient LazyObject<Class<?>> contentClassCache = new LazyObject<>(null);
 
     public DegradeConfig() {
     }
 
     @Builder
-    public DegradeConfig(int responseCode, String contentType, Map<String, String> attributes, String responseBody) {
+    public DegradeConfig(boolean enabled, int responseCode, String contentType, Map<String, String> attributes, String responseBody) {
+        this.enabled = enabled;
         this.responseCode = responseCode;
         this.contentType = contentType;
         this.attributes = attributes;
@@ -66,6 +85,7 @@ public class DegradeConfig {
     }
 
     public DegradeConfig(DegradeConfig config) {
+        this.enabled = config.enabled;
         this.responseCode = config.responseCode;
         this.contentType = config.contentType;
         this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
@@ -74,6 +94,14 @@ public class DegradeConfig {
 
     public String getContentType() {
         return contentType == null ? TYPE_APPLICATION_JSON : contentType;
+    }
+
+    public String getContentType(String defaultValue) {
+        return contentType == null || contentType.isEmpty() ? defaultValue : contentType;
+    }
+
+    public String contentTypeOrDefault() {
+        return getContentType(TYPE_APPLICATION_JSON);
     }
 
     public void foreach(BiConsumer<String, String> consumer) {
@@ -88,26 +116,17 @@ public class DegradeConfig {
         }
     }
 
-    public int getBodyLength() {
+    public int bodyLength() {
         return responseBody == null ? 0 : responseBody.length();
     }
 
-    public boolean isText() {
-        return TYPE_STRING.equalsIgnoreCase(contentType)
-                || TYPE_JSON.equalsIgnoreCase(contentType)
-                || TYPE_APPLICATION_TEXT.equalsIgnoreCase(contentType)
-                || TYPE_APPLICATION_JSON.equalsIgnoreCase(contentType);
-    }
-
-    public byte[] getResponseBytes() {
-        if (responseBytes == null) {
-            synchronized (this) {
-                if (responseBytes == null) {
-                    responseBytes = responseBody == null ? new byte[0] : responseBody.getBytes();
-                }
-            }
+    public Class<?> getContentClass(ClassLoader classLoader) {
+        if (!isEmpty(contentType)) {
+            // cache
+            return contentClassCache.get(() -> loadClass(contentType, classLoader, false));
         }
-        return responseBytes;
+        // not cache
+        return contentClassFunc == null ? null : contentClassFunc.apply(classLoader);
     }
 
     protected void cache() {
@@ -128,5 +147,10 @@ public class DegradeConfig {
         } else {
             attributes = new HashMap<>();
         }
+        responseBytes = responseBody == null ? new byte[0] : responseBody.getBytes();
+        text = TYPE_STRING.equalsIgnoreCase(contentType)
+                || TYPE_JSON.equalsIgnoreCase(contentType)
+                || TYPE_APPLICATION_TEXT.equalsIgnoreCase(contentType)
+                || TYPE_APPLICATION_JSON.equalsIgnoreCase(contentType);
     }
 }

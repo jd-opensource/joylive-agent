@@ -19,11 +19,11 @@ import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.service.GenericException;
-import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
+import com.jd.live.agent.governance.request.RpcReturnType;
 import com.jd.live.agent.governance.request.StickySession;
 import com.jd.live.agent.governance.request.StickySessionFactory;
 
@@ -39,11 +39,6 @@ import static com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26Inboun
  * the identification and processing of Dubbo-specific request data in RPC operations.
  */
 public interface DubboRequest {
-
-    /**
-     * generic call
-     */
-    String METHOD_$INVOKE = "$invoke";
 
     /**
      * Represents an inbound request in a Dubbo RPC communication.
@@ -124,15 +119,21 @@ public interface DubboRequest {
 
         private final StickySessionFactory sessionFactory;
 
+        private final URL url;
+
         public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory) {
             super(request);
             this.sessionFactory = sessionFactory;
-            URL url = request.getInvoker().getUrl();
+            this.url = request.getInvoker().getUrl();
             this.service = url.getServiceInterface();
             this.group = url.getParameter(Constants.GROUP_KEY);
             this.method = RpcUtils.getMethodName(request);
             this.arguments = RpcUtils.getArguments(request);
             this.attachments = request.getAttachments();
+        }
+
+        public URL getUrl() {
+            return url;
         }
 
         @Override
@@ -161,16 +162,13 @@ public interface DubboRequest {
         }
 
         @Override
-        public boolean isGeneric() {
-            Invoker<?> invoker = request.getInvoker();
-            String methodName = request.getMethodName();
-            return METHOD_$INVOKE.equals(methodName)
-                    && invoker.getInterface().isAssignableFrom(GenericService.class);
+        public boolean isSystem() {
+            return isDubboSystemService(service);
         }
 
         @Override
-        public boolean isSystem() {
-            return isDubboSystemService(service);
+        public RpcReturnType getReturnType() throws Exception {
+            return DubboReturnType.of(request);
         }
     }
 }

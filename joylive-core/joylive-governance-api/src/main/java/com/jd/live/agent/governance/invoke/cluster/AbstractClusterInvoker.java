@@ -201,8 +201,11 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
         R request = invocation.getRequest();
         Throwable cause = error.getThrowable();
         boolean serverError = error.isServerError();
-        response = response != null && serverError ? response : cluster.createResponse(cause, request, endpoint);
-        error = response.getError();
+        if (response == null || !serverError) {
+            // convert client response error.
+            response = cluster.createResponse(cause, request, endpoint);
+            error = response.getError();
+        }
         try {
             invocation.onFailure(endpoint, cause);
             if (error == null) {

@@ -15,9 +15,7 @@
  */
 package com.jd.live.agent.plugin.router.sofarpc.cluster;
 
-import com.alipay.hessian.generic.model.GenericObject;
 import com.alipay.sofa.rpc.client.*;
-import com.alipay.sofa.rpc.common.RemotingConstants;
 import com.alipay.sofa.rpc.common.RpcConstants;
 import com.alipay.sofa.rpc.config.ConsumerConfig;
 import com.alipay.sofa.rpc.context.RpcInternalContext;
@@ -27,8 +25,11 @@ import com.alipay.sofa.rpc.core.exception.SofaRpcException;
 import com.alipay.sofa.rpc.core.invoke.SofaResponseCallback;
 import com.alipay.sofa.rpc.core.request.SofaRequest;
 import com.alipay.sofa.rpc.core.response.SofaResponse;
+import com.alipay.sofa.rpc.message.AbstractResponseFuture;
+import com.alipay.sofa.rpc.message.bolt.BoltResponseFuture;
 import com.alipay.sofa.rpc.transport.ClientTransport;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.core.exception.ConfigException;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
@@ -46,20 +47,17 @@ import com.jd.live.agent.governance.request.StickySession;
 import com.jd.live.agent.governance.request.StickySession.DefaultStickySession;
 import com.jd.live.agent.plugin.router.sofarpc.exception.SofaRpcOutboundThrower;
 import com.jd.live.agent.plugin.router.sofarpc.instance.SofaRpcEndpoint;
-import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.GenericType;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaLiveCallback;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
 
-import java.io.StringReader;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 import static com.alipay.sofa.rpc.common.RpcConstants.INTERNAL_KEY_CLIENT_ROUTER_TIME_NANO;
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
@@ -205,38 +203,24 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
     }
 
     @Override
-    protected SofaRpcOutboundResponse createResponse(SofaRpcOutboundRequest request, DegradeConfig degradeConfig) {
-        SofaRequest sofaRequest = request.getRequest();
-        String body = degradeConfig.getResponseBody();
-        SofaResponse result = new SofaResponse();
-        result.setResponseProps(new HashMap<>(degradeConfig.getAttributes()));
-        if (body != null) {
-            Object value;
-            if (request.isGeneric()) {
-                GenericType genericType = request.getGenericType();
-                if (degradeConfig.isText()) {
-                    value = body;
-                } else if (RemotingConstants.SERIALIZE_FACTORY_GENERIC.equals(genericType.getType())) {
-                    value = convertGenericObject(parser.read(new StringReader(body), Object.class));
-                } else if (RemotingConstants.SERIALIZE_FACTORY_MIX.equals(genericType.getType())) {
-                    value = parser.read(new StringReader(body), genericType.getReturnType());
-                } else {
-                    value = parser.read(new StringReader(body), request.loadClass(degradeConfig.getContentType(), Object.class));
-                }
-            } else {
-                Method method = sofaRequest.getMethod();
-                Type type = method.getGenericReturnType();
-                if (void.class == type) {
-                    // void return
-                    value = null;
-                } else {
-                    value = parser.read(new StringReader(body), type);
-                }
+    protected SofaRpcOutboundResponse createResponse(SofaRpcOutboundRequest request, DegradeConfig config) {
+        try {
+            SofaResponse response = new SofaResponse();
+            response.setResponseProps(new HashMap<>(config.getAttributes()));
+            response.setAppResponse(request.degrade(config, parser));
+            SofaRequest req = request.getRequest();
+            CompletableFuture<Object> future = getFuture(req);
+            if (RpcConstants.INVOKER_TYPE_FUTURE.equals(req.getInvokeType())) {
+                SofaLiveCallback.FUTURE.remove();
+                RpcInvokeContext.getContext().setFuture(new LiveResponseFuture<>(req, response.getAppResponse()));
             }
-            result.setAppResponse(value);
+            return new SofaRpcOutboundResponse(response, future);
+        } catch (ConfigException e) {
+            throw e;
+        } catch (Exception e) {
+            // degrade config is invalid for this method
+            throw new ConfigException(e.getMessage(), e);
         }
-
-        return new SofaRpcOutboundResponse(result);
     }
 
     @Override
@@ -256,12 +240,19 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
      * @param sofaRequest the RPC request to register
      * @return CompletionStage for async result, or null if not applicable
      */
-    private CompletionStage<Object> getFuture(SofaRequest sofaRequest) {
+    private CompletableFuture<Object> getFuture(SofaRequest sofaRequest) {
         CompletableFuture<Object> future = null;
         String invokeType = sofaRequest.getInvokeType();
+        ConsumerConfig<?> config = cluster.getConsumerConfig();
+        if (invokeType == null && config.isGeneric()) {
+            invokeType = config.getMethodInvokeType(sofaRequest.getMethodName());
+            if (invokeType != null) {
+                sofaRequest.setInvokeType(invokeType);
+            }
+        }
         if (RpcConstants.INVOKER_TYPE_CALLBACK.equals(invokeType)) {
             SofaResponseCallback<?> callback = sofaRequest.getSofaResponseCallback();
-            callback = callback != null ? callback : cluster.getConsumerConfig().getMethodOnreturn(sofaRequest.getMethodName());
+            callback = callback != null ? callback : config.getMethodOnreturn(sofaRequest.getMethodName());
             future = new CompletableFuture<>();
             callback = new SofaLiveCallback(callback, future);
             sofaRequest.setSofaResponseCallback(callback);
@@ -303,16 +294,48 @@ public class SofaRpcCluster extends AbstractLiveCluster<SofaRpcOutboundRequest, 
         return lastTransport != null && lastTransport.isAvailable();
     }
 
-    private Object convertGenericObject(Object value) {
-        if (value instanceof Map) {
-            GenericObject object = new GenericObject(value.getClass().getName());
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                object.putField(entry.getKey().toString(), convertGenericObject(entry.getValue()));
-            }
-            return object;
-        } else {
-            return value;
+    private static class LiveResponseFuture<V> extends AbstractResponseFuture<V> {
+
+        protected final SofaRequest request;
+
+        LiveResponseFuture(SofaRequest request) {
+            super(request.getTimeout() == null ? 0 : request.getTimeout());
+            this.request = request;
         }
+
+        LiveResponseFuture(SofaRequest request, V result) {
+            this(request);
+            setSuccess(result);
+        }
+
+        @Override
+        protected V getNow() throws ExecutionException {
+            if (cause != null) {
+                throw new ExecutionException(cause);
+            } else {
+                return (V) result;
+            }
+        }
+
+        @Override
+        protected void releaseIfNeed(Object result) {
+
+        }
+
+        @Override
+        public BoltResponseFuture addListeners(List<SofaResponseCallback> list) {
+            throw new UnsupportedOperationException("Not supported, Please use callback function");
+        }
+
+        @Override
+        public BoltResponseFuture addListener(SofaResponseCallback sofaResponseCallback) {
+            throw new UnsupportedOperationException("Not supported, Please use callback function");
+        }
+
+        @Override
+        public void notifyListeners() {
+        }
+
     }
 
 }

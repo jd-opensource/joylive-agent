@@ -124,17 +124,17 @@ public class FeignClusterResponse extends AbstractHttpOutboundResponse<Response>
      * Creates degraded response using fallback configuration
      *
      * @param request       Original Feign request
-     * @param degradeConfig Fallback settings including response body/headers
+     * @param config Fallback settings including response body/headers
      * @return Preconfigured fallback response wrapper
      */
-    public static FeignClusterResponse create(Request request, DegradeConfig degradeConfig) {
-        byte[] data = degradeConfig.getResponseBytes();
+    public static FeignClusterResponse create(Request request, DegradeConfig config) {
+        byte[] data = config.getResponseBytes();
         Map<String, Collection<String>> headers = new HashMap<>(request.headers());
-        degradeConfig.append(headers);
+        config.append(headers);
         headers.put(HttpHeaders.CONTENT_LENGTH, Collections.singletonList(String.valueOf(data.length)));
-        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(degradeConfig.getContentType()));
+        headers.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(config.contentTypeOrDefault()));
 
-        Response response = Response.builder().status(degradeConfig.getResponseCode()).body(data).headers(headers).request(request).build();
+        Response response = Response.builder().status(config.getResponseCode()).body(data).headers(headers).request(request).build();
         return new FeignClusterResponse(response);
     }
 

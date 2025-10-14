@@ -103,15 +103,15 @@ public class RibbonClusterResponse extends AbstractHttpOutboundResponse<HttpResp
      * Creates degraded response using fallback configuration
      *
      * @param request       Http client request
-     * @param degradeConfig Fallback settings including response body/headers
+     * @param config Fallback settings including response body/headers
      * @return Preconfigured fallback response wrapper
      */
-    public static CloseableHttpResponse create(HttpRequest request, DegradeConfig degradeConfig) {
-        LiveHttpResponse response = new LiveHttpResponse(HttpVersion.HTTP_1_1, degradeConfig.getResponseCode(), "OK");
-        byte[] data = degradeConfig.getResponseBytes();
-        degradeConfig.foreach(response::addHeader);
+    public static CloseableHttpResponse create(HttpRequest request, DegradeConfig config) {
+        LiveHttpResponse response = new LiveHttpResponse(HttpVersion.HTTP_1_1, config.getResponseCode(), "OK");
+        byte[] data = config.getResponseBytes();
+        config.foreach(response::addHeader);
         response.addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(data.length));
-        response.addHeader(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+        response.addHeader(HttpHeaders.CONTENT_TYPE, config.contentTypeOrDefault());
         response.setEntity(new ByteArrayEntity(data));
         return response;
     }

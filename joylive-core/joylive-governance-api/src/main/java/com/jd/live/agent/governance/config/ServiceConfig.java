@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.governance.config;
 
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.trie.Path.PrefixPath;
 import com.jd.live.agent.core.util.trie.PathMatchType;
 import com.jd.live.agent.core.util.trie.PathMatcherTrie;
@@ -25,6 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * ServiceConfig is a configuration class that defines various settings for service behavior,
@@ -129,6 +133,13 @@ public class ServiceConfig {
     @Setter
     private boolean responseException = true;
 
+    @Getter
+    @Setter
+    private String genericResultType;
+
+    @Getter
+    private transient LazyObject<Class<?>> genericResultTypeCache = new LazyObject<>(null);
+
     private transient final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
         List<PrefixPath> result = new ArrayList<>();
         if (systemPaths != null) {
@@ -176,6 +187,20 @@ public class ServiceConfig {
      */
     public String getGroup(String service) {
         return serviceGroups == null || service == null ? null : serviceGroups.get(service);
+    }
+
+    /**
+     * Gets the generic result class, loading it if necessary.
+     *
+     * @param classLoader the class loader to use for loading the class
+     * @return the generic result class, or null if not available
+     */
+    public Class<?> getGenericResultClass(ClassLoader classLoader) {
+        if (classLoader != null && !isEmpty(genericResultType)) {
+            // load class by application classloader.
+            return genericResultTypeCache.get(() -> loadClass(genericResultType, classLoader, false));
+        }
+        return null;
     }
 
     protected void initialize() {

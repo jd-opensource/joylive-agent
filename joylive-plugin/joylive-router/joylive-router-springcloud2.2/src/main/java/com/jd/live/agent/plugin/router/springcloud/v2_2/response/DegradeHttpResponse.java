@@ -40,7 +40,7 @@ public class DegradeHttpResponse implements ClientHttpResponse {
     public DegradeHttpResponse(DegradeConfig degradeConfig, HttpOutboundRequest httpRequest) {
         this.degradeConfig = degradeConfig;
         this.httpRequest = httpRequest;
-        this.length = degradeConfig.getBodyLength();
+        this.length = degradeConfig.bodyLength();
         this.bodyStream = new ByteArrayInputStream(degradeConfig.getResponseBytes());
     }
 
@@ -85,7 +85,7 @@ public class DegradeHttpResponse implements ClientHttpResponse {
             headers.putAll(requestHeaders);
         }
         degradeConfig.foreach(headers::add);
-        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+        headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.contentTypeOrDefault());
         headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
         return headers;
     }

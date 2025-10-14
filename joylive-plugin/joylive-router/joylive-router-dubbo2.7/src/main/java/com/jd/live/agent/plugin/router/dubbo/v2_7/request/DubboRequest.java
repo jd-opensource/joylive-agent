@@ -15,17 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.dubbo.v2_7.request;
 
-import com.alibaba.dubbo.rpc.support.RpcUtils;
 import com.jd.live.agent.governance.exception.ErrorName;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcInboundRequest;
 import com.jd.live.agent.governance.request.AbstractRpcRequest.AbstractRpcOutboundRequest;
+import com.jd.live.agent.governance.request.RpcReturnType;
 import com.jd.live.agent.governance.request.StickySession;
 import com.jd.live.agent.governance.request.StickySessionFactory;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.service.GenericException;
-import org.apache.dubbo.rpc.service.GenericService;
 
 import java.util.function.Function;
 
@@ -41,11 +40,34 @@ import static org.apache.dubbo.common.constants.RegistryConstants.*;
 public interface DubboRequest {
 
     /**
-     * generic call
+     * Gets the actual method name from invocation, handling generic calls.
+     *
+     * @param invocation the invocation
+     * @return the method name
      */
-    String METHOD_$INVOKE = "$invoke";
+    static String getMethodName(Invocation invocation) {
+        return ("$invoke".equals(invocation.getMethodName()) || "$invokeAsync".equals(invocation.getMethodName()))
+                && invocation.getArguments() != null
+                && invocation.getArguments().length > 0
+                && invocation.getArguments()[0] instanceof String
+                ? (String) invocation.getArguments()[0]
+                : invocation.getMethodName();
+    }
 
-    String METHOD_$INVOKE_ASYNC = "$invokeAsync";
+    /**
+     * Gets the actual arguments from invocation, handling generic calls.
+     *
+     * @param invocation the invocation
+     * @return the arguments array
+     */
+    static Object[] getArguments(Invocation invocation) {
+        return ("$invoke".equals(invocation.getMethodName()) || "$invokeAsync".equals(invocation.getMethodName()))
+                && invocation.getArguments() != null
+                && invocation.getArguments().length > 2
+                && invocation.getArguments()[2] instanceof Object[]
+                ? (Object[]) invocation.getArguments()[2]
+                : invocation.getArguments();
+    }
 
     /**
      * Represents an inbound request in a Dubbo RPC communication.
@@ -83,8 +105,10 @@ public interface DubboRequest {
             }
 
             this.group = url.getParameter(CommonConstants.GROUP_KEY);
-            this.method = RpcUtils.getMethodName(request);
-            this.arguments = RpcUtils.getArguments(request);
+            // fix RpcUtils issue
+            this.method = DubboRequest.getMethodName(request);
+            // fix RpcUtils issue
+            this.arguments = DubboRequest.getArguments(request);
             this.attachments = request.getAttachments();
         }
 
@@ -146,17 +170,23 @@ public interface DubboRequest {
 
         private final StickySessionFactory sessionFactory;
 
+        private final URL url;
+
         public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory) {
             super(request);
             this.sessionFactory = sessionFactory;
-            URL url = request.getInvoker().getUrl();
+            this.url = request.getInvoker().getUrl();
             this.interfaceName = url.getServiceInterface();
             String providedBy = url.getParameter(PROVIDED_BY);
             this.service = providedBy == null ? interfaceName : providedBy;
             this.group = url.getParameter(CommonConstants.GROUP_KEY);
             this.path = providedBy == null ? null : interfaceName;
-            this.method = RpcUtils.getMethodName(request);
-            this.arguments = RpcUtils.getArguments(request);
+            this.method = DubboRequest.getMethodName(request);
+            this.arguments = DubboRequest.getArguments(request);
+        }
+
+        public URL getUrl() {
+            return url;
         }
 
         @Override
@@ -183,13 +213,8 @@ public interface DubboRequest {
         }
 
         @Override
-        public boolean isGeneric() {
-            Invoker<?> invoker = request.getInvoker();
-            String methodName = request.getMethodName();
-            return ((
-                    METHOD_$INVOKE.equals(methodName)
-                            || METHOD_$INVOKE_ASYNC.equals(methodName))
-                    && invoker.getInterface().isAssignableFrom(GenericService.class));
+        public RpcReturnType getReturnType() throws Exception {
+            return DubboReturnType.of(request);
         }
     }
 }

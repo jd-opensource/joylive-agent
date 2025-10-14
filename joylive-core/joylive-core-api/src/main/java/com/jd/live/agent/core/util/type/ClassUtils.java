@@ -32,22 +32,33 @@ import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
  */
 public class ClassUtils {
 
-    private static final Map<Class<?>, Class<?>> inboxes = new HashMap<>(10);
+    private static final Map<Class<?>, Class<?>> INBOXES = new HashMap<>(10);
+
     /**
      * Cache for class metadata.
      */
-    private final static Map<Class<?>, ClassDesc> classDescs = new ConcurrentHashMap<>(5000);
+    private final static Map<Class<?>, ClassDesc> CLASS_DESCS = new ConcurrentHashMap<>(5000);
+
+    private static final Map<Class<?>, Object> PRIMITIVE_DEFAULTS = new HashMap<>(10);
 
     static {
         // Mapping of primitive types to their corresponding wrapper classes.
-        inboxes.put(long.class, Long.class);
-        inboxes.put(int.class, Integer.class);
-        inboxes.put(short.class, Short.class);
-        inboxes.put(byte.class, Byte.class);
-        inboxes.put(double.class, Double.class);
-        inboxes.put(float.class, Float.class);
-        inboxes.put(char.class, Character.class);
-        inboxes.put(boolean.class, Boolean.class);
+        INBOXES.put(long.class, Long.class);
+        INBOXES.put(int.class, Integer.class);
+        INBOXES.put(short.class, Short.class);
+        INBOXES.put(byte.class, Byte.class);
+        INBOXES.put(double.class, Double.class);
+        INBOXES.put(float.class, Float.class);
+        INBOXES.put(char.class, Character.class);
+        INBOXES.put(boolean.class, Boolean.class);
+        PRIMITIVE_DEFAULTS.put(boolean.class, Boolean.FALSE);
+        PRIMITIVE_DEFAULTS.put(byte.class, Byte.valueOf((byte) 0));
+        PRIMITIVE_DEFAULTS.put(short.class, Short.valueOf((short) 0));
+        PRIMITIVE_DEFAULTS.put(int.class, Integer.valueOf(0));
+        PRIMITIVE_DEFAULTS.put(long.class, Long.valueOf(0));
+        PRIMITIVE_DEFAULTS.put(float.class, Float.valueOf(0.0f));
+        PRIMITIVE_DEFAULTS.put(double.class, Double.valueOf(0.0d));
+        PRIMITIVE_DEFAULTS.put(char.class, Character.valueOf('\u0000'));
     }
 
     /**
@@ -57,7 +68,7 @@ public class ClassUtils {
      * @return The corresponding wrapper class if the given class is a primitive type, otherwise the class itself.
      */
     public static Class<?> inbox(Class<?> type) {
-        return type == null || !type.isPrimitive() ? type : inboxes.getOrDefault(type, type);
+        return type == null || !type.isPrimitive() ? type : INBOXES.getOrDefault(type, type);
     }
 
     /**
@@ -67,7 +78,7 @@ public class ClassUtils {
      * @return The metadata description of the class.
      */
     public static ClassDesc describe(final Class<?> type) {
-        return type == null ? null : classDescs.computeIfAbsent(type, ClassDesc::new);
+        return type == null ? null : CLASS_DESCS.computeIfAbsent(type, ClassDesc::new);
     }
 
     /**
@@ -170,14 +181,28 @@ public class ClassUtils {
      * @return the loaded class, or null if the class cannot be loaded
      */
     public static Class<?> loadClass(String className, ClassLoader classLoader) {
+        return loadClass(className, classLoader, true);
+    }
+
+    /**
+     * Loads the class with the specified class name using the provided class loader.
+     *
+     * @param className   the name of the class to load
+     * @param classLoader the class loader to use for loading the class
+     * @param fallback    whether to fallback to context class loader if loading fails
+     * @return the loaded class, or null if the class cannot be loaded
+     */
+    public static Class<?> loadClass(String className, ClassLoader classLoader, boolean fallback) {
         try {
             return classLoader.loadClass(className);
         } catch (Throwable e) {
-            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-            if (classLoader != contextClassLoader) {
-                try {
-                    return contextClassLoader.loadClass(className);
-                } catch (Throwable ignored) {
+            if (fallback) {
+                ClassLoader candidate = Thread.currentThread().getContextClassLoader();
+                if (classLoader != candidate) {
+                    try {
+                        return candidate.loadClass(className);
+                    } catch (Throwable ignored) {
+                    }
                 }
             }
             return null;
@@ -343,6 +368,16 @@ public class ClassUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Gets the default value for the specified type.
+     *
+     * @param type the class type
+     * @return default value for primitive types, null for others or null type
+     */
+    public static Object getDefaultValue(Class<?> type) {
+        return type == null ? null : PRIMITIVE_DEFAULTS.get(type);
     }
 
 }

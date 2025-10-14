@@ -66,7 +66,7 @@ public class ProviderBootstrapDefinition extends PluginDefinitionAdapter impleme
     @Override
     public Map<String, String> getExports() {
         Map<String, String> exports = new HashMap<>();
-        exports.put("java.lang.StackTraceElement", "com.caucho.hessian.io.JavaDeserializer");
+        exports.put("java.lang.StackTraceElement", TYPE_MODULE);
         return exports;
     }
 }

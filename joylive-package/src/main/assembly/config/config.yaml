@@ -209,6 +209,7 @@ agent:
       serviceGroups: ${CONFIG_SERVICE_GROUPS:}
       serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}
       responseException: ${CONFIG_RESPONSE_EXCEPTION:true}
+      genericResultType: ${CONFIG_GENERIC_RESULT_TYPE}
       warmups: ${CONFIG_WARMUP_SERVICES:}
       systemPaths: ${CONFIG_SYSTEM_HTTP_PATHS}
       concurrencyLimiter:

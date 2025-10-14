@@ -122,22 +122,22 @@ public class ReactiveClusterResponse extends AbstractHttpOutboundResponse<Client
     /**
      * Builds a response object based on the client request, degrade configuration, and exchange strategies.
      *
-     * @param request       Client request information.
-     * @param degradeConfig Degrade configuration, containing response code, body length, body content, and headers.
-     * @param strategies    Exchange strategies for handling requests and responses.
+     * @param request     Client request information.
+     * @param config      Degrade configuration, containing response code, body length, body content, and headers.
+     * @param strategies  Exchange strategies for handling requests and responses.
      * @return The constructed response object.
      */
     public static ReactiveClusterResponse create(ClientRequest request,
-                                                 DegradeConfig degradeConfig,
+                                                 DegradeConfig config,
                                                  ExchangeStrategies strategies) {
-        int length = degradeConfig.getBodyLength();
-        return new ReactiveClusterResponse(ClientResponse.create(degradeConfig.getResponseCode(), strategies)
-                .body(length == 0 ? "" : degradeConfig.getResponseBody())
+        int length = config.bodyLength();
+        return new ReactiveClusterResponse(ClientResponse.create(config.getResponseCode(), strategies)
+                .body(length == 0 ? "" : config.getResponseBody())
                 .request(new DegradeHttpRequest(request))
                 .headers(headers -> {
                     headers.addAll(request.headers());
-                    degradeConfig.foreach(headers::add);
-                    headers.set(HttpHeaders.CONTENT_TYPE, degradeConfig.getContentType());
+                    config.foreach(headers::add);
+                    headers.set(HttpHeaders.CONTENT_TYPE, config.contentTypeOrDefault());
                     headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
                 }).build());
     }

@@ -26,7 +26,7 @@ import java.io.StringReader;
 public class JacksonJsonParserTest {
 
     @Test
-    public void testJson() throws IOException {
+    public void testParsePerson() throws IOException {
         JacksonJsonParser jsonParser = new JacksonJsonParser();
         JacksonJsonPathParser pathParser = new JacksonJsonPathParser();
         try (InputStream inputStream = this.getClass().getResourceAsStream("/person.json")) {
@@ -38,5 +38,18 @@ public class JacksonJsonParserTest {
             Assertions.assertTrue(person.containsAlias("john doe"));
         }
 
+    }
+
+    @Test
+    public void testParseObject() throws IOException {
+        JacksonJsonParser jsonParser = new JacksonJsonParser();
+        Object obj1 = jsonParser.read(new StringReader("123"), Object.class);
+        Object obj2 = jsonParser.read(new StringReader("[123]"), Object.class);
+        Object obj3 = jsonParser.read(new StringReader("\"abc\""), Object.class);
+        Object obj4 = jsonParser.read(new StringReader("{\"name\":\"abc\"}"), Object.class);
+        Assertions.assertNotNull(obj1);
+        Assertions.assertNotNull(obj2);
+        Assertions.assertNotNull(obj3);
+        Assertions.assertNotNull(obj4);
     }
 }

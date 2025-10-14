@@ -515,7 +515,7 @@
     ]
   },
   {
-    "name": "dubbo3-provider",
+    "name": "app-dubbo3-provider",
     "serviceType": "RPC_APP",
     "version": 0,
     "groups": [
@@ -531,11 +531,59 @@
         },
         "paths": [
           {
-            "path": "com.jd.live.agent.demo.service.HelloService",
+            "path": "com.jd.live.agent.demo.service.AsyncSleepService",
             "matchType": "EQUAL",
             "methods": [
               {
                 "name": "status",
+                "servicePolicy": {
+                  "clusterPolicy": {
+                    "type": "failover",
+                    "retryPolicy": {
+                      "retry": 2,
+                      "interval": 1000,
+                      "timeout": 5000,
+                      "exceptions": [
+                        "com.jd.live.agent.demo.exception.RetryableException"
+                      ],
+                      "version": 1704038400000
+                    }
+                  },
+                  "circuitBreakPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "com.jd.live.agent.demo.exception.BreakableException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 50,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "realizeType": "Resilience4j",
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "statusAsync",
                 "servicePolicy": {
                   "clusterPolicy": {
                     "type": "failover",
@@ -589,7 +637,7 @@
     ]
   },
   {
-    "name": "dubbo2.7-provider",
+    "name": "app-dubbo2-provider",
     "serviceType": "RPC_APP",
     "version": 0,
     "groups": [
@@ -605,11 +653,47 @@
         },
         "paths": [
           {
-            "path": "com.jd.live.agent.demo.service.HelloService",
+            "path": "com.jd.live.agent.demo.service.AsyncSleepService",
             "matchType": "EQUAL",
             "methods": [
               {
                 "name": "status",
+                "servicePolicy": {
+                  "circuitBreakPolicies": [
+                    {
+                      "name": "cb1",
+                      "level": "SERVICE",
+                      "slidingWindowType": "count",
+                      "slidingWindowSize": 5,
+                      "minCallsThreshold": 1,
+                      "errorCodes": [
+                        "3"
+                      ],
+                      "exceptions": [
+                        "java.lang.RuntimeException"
+                      ],
+                      "failureRateThreshold": 20,
+                      "slowCallRateThreshold": 20,
+                      "slowCallDurationThreshold": 1000,
+                      "waitDurationInOpenState": 50,
+                      "allowedCallsInHalfOpenState": 3,
+                      "forceOpen": false,
+                      "realizeType": "Resilience4j",
+                      "degradeConfig": {
+                        "responseCode": 200,
+                        "attributes": {
+                          "degrade-header-1": "service1",
+                          "degrade-header-2": "service2"
+                        },
+                        "responseBody": "{\"code\":200,\"traces\":[{\"service\":\"service-provider\",\"location\":{\"liveSpaceId\":\"v4bEh4kd6Jvu5QBX09qYq-qlbcs\",\"unit\":\"unit1\",\"cell\":\"cell1\",\"laneSpaceId\":\"1\",\"lane\":\"production\"},\"transmission\":{\"carrier\":\"header\"}}],\"data\":999}"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "statusAsync",
                 "servicePolicy": {
                   "circuitBreakPolicies": [
                     {
@@ -651,7 +735,7 @@
     ]
   },
   {
-    "name": "com.jd.live.agent.demo.service.HelloService",
+    "name": "com.jd.live.agent.demo.service.SleepService",
     "serviceType": "RPC_INTERFACE",
     "version": 0,
     "groups": [

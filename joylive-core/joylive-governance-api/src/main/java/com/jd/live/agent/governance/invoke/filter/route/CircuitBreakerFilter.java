@@ -23,6 +23,7 @@ import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.exception.CircuitBreakException;
 import com.jd.live.agent.governance.exception.ErrorCause;
 import com.jd.live.agent.governance.instance.Endpoint;
@@ -227,6 +228,8 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             if (config == null) {
                 throw FaultType.CIRCUIT_BREAK.reject("The traffic circuit break policy rejected the request.");
             } else {
+                ServiceConfig serviceConfig = invocation.getContext().getGovernanceConfig().getServiceConfig();
+                config.setContentClassFunc(serviceConfig::getGenericResultClass);
                 throw FaultType.CIRCUIT_BREAK.degrade("The circuit break policy triggers a degrade response.", config);
             }
         });
