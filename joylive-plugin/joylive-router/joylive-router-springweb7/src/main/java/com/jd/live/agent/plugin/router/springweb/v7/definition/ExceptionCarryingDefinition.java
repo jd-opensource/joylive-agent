@@ -34,10 +34,13 @@ import com.jd.live.agent.plugin.router.springweb.v7.interceptor.ExceptionCarryin
 @Extension(value = "ExceptionCarryingDefinition_v6")
 @ConditionalOnSpringWeb7FlowControlEnabled
 @ConditionalOnClass(ExceptionCarryingDefinition.TYPE_DISPATCHER_SERVLET)
+@ConditionalOnClass(ExceptionCarryingDefinition.TYPE_HTTP_SERVLET)
 public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
     protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
     protected static final String METHOD = "processHandlerException";
+
+    protected static final String TYPE_HTTP_SERVLET = "jakarta.servlet.http.HttpServlet";
 
     @Inject(ServiceConfig.COMPONENT_SERVICE_CONFIG)
     private ServiceConfig serviceConfig;
