@@ -21,6 +21,7 @@ import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import java.util.Map;
@@ -35,17 +36,20 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
      */
     private final Instance instance;
 
+    private final String service;
+
     /**
      * Creates a new NacosEndpoint object with the specified instance.
      *
      * @param instance the instance associated with this endpoint
      */
     public NacosEndpoint(Instance instance) {
-        this.instance = instance;
+        this(instance, null);
     }
 
     public NacosEndpoint(Instance instance, Boolean secure) {
         this.instance = instance;
+        service = ServiceId.getNacosServiceName(instance.getServiceName());
         if (secure != null && secure) {
             Map<String, String> metadata = instance.getMetadata();
             if (metadata != null) {
@@ -61,7 +65,7 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
 
     @Override
     public String getService() {
-        return instance.getServiceName();
+        return service;
     }
 
     @Override

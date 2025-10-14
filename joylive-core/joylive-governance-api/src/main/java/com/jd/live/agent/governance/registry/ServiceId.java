@@ -15,17 +15,22 @@
  */
 package com.jd.live.agent.governance.registry;
 
+import com.jd.live.agent.core.util.StringUtils;
 import com.jd.live.agent.governance.policy.service.ServiceName;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.List;
 
 import static com.jd.live.agent.core.Constants.DEFAULT_GROUP_BIPREDICATE;
+import static com.jd.live.agent.core.util.StringUtils.splitList;
 
 @Getter
 @Setter
 public class ServiceId implements Serializable {
+
+    public static final String NACOS_SERVICE_SPLITER = "@@";
 
     protected String namespace;
 
@@ -151,6 +156,34 @@ public class ServiceId implements Serializable {
             return DEFAULT_GROUP_BIPREDICATE.test(targetGroup, defaultGroup);
         }
         return sourceGroup.equalsIgnoreCase(targetGroup);
+    }
+
+    /**
+     * Extracts service name from Nacos service name with group.
+     *
+     * @param serviceNameWithGroup the service name containing group information
+     * @return the extracted service name, or empty string if not found
+     */
+    public static String getNacosServiceName(String serviceNameWithGroup) {
+        return getServiceName(serviceNameWithGroup, NACOS_SERVICE_SPLITER, 1);
+    }
+
+    /**
+     * Extracts service name from a composite service name using specified splitter and index.
+     *
+     * @param serviceNameWithGroup the composite service name
+     * @param splitter             the delimiter to split the service name
+     * @param index                the index of the desired part after splitting
+     * @return the extracted service name part, or empty string if invalid
+     */
+    public static String getServiceName(String serviceNameWithGroup, String splitter, int index) {
+        if (serviceNameWithGroup == null || serviceNameWithGroup.isEmpty()) {
+            return StringUtils.EMPTY;
+        } else if (splitter == null || splitter.isEmpty()) {
+            return serviceNameWithGroup;
+        }
+        List<String> parts = splitList(serviceNameWithGroup, splitter);
+        return index < 0 || index >= parts.size() ? StringUtils.EMPTY : parts.get(index);
     }
 
 }
