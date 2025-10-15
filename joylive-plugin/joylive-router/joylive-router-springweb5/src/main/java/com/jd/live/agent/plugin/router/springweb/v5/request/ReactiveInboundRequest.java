@@ -29,7 +29,6 @@ import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
 
@@ -176,19 +175,8 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
      * @return a Mono that represents the completion of the stage.
      */
     public Mono<HandlerResult> convert(CompletionStage<Object> stage) {
-        CompletableFuture<HandlerResult> future = new CompletableFuture<>();
-        stage.whenComplete((r, t) -> {
-            if (t != null) {
-                future.completeExceptionally(THROWER.createException(t, this));
-            } else if (r == null) {
-                future.complete(null);
-            } else if (r instanceof HandlerResult) {
-                future.complete((HandlerResult) r);
-            } else {
-                future.completeExceptionally(new UnsupportedOperationException(
-                        "Expected type is " + HandlerResult.class.getName() + ", but actual type is " + r.getClass()));
-            }
-        });
-        return Mono.fromCompletionStage(future);
+        return Mono.fromCompletionStage(stage)
+                .cast(HandlerResult.class)
+                .onErrorMap(e -> THROWER.createException(e, this));
     }
 }

@@ -23,10 +23,10 @@ import com.jd.live.agent.governance.request.HttpRequest.HttpInboundRequest;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
-import javax.servlet.ServletException;
+import java.lang.reflect.Constructor;
 
+import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredConstructor;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
@@ -36,8 +36,14 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  */
 public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequest> {
 
+    private static final String TYPE_RESPONSE_STATUS_EXCEPTION = "org.springframework.web.server.ResponseStatusException";
+    private static final String TYPE_SERVLET_EXCEPTION = "javax.servlet.ServletException";
     // spring web 5+
-    private static final Class<?> TYPE = loadClass("org.springframework.web.server.ResponseStatusException", NestedRuntimeException.class.getClassLoader());
+    private static final Class<?> CLASS_RESPONSE_STATUS_EXCEPTION = loadClass(TYPE_RESPONSE_STATUS_EXCEPTION, HttpStatus.class.getClassLoader());
+    // spring web 4.x
+    private static final Class<?> CLASS_SERVLET_EXCEPTION = loadClass(TYPE_SERVLET_EXCEPTION, HttpStatus.class.getClassLoader());
+    private static final Constructor<?> CONSTRUCTOR_SERVLET_EXCEPTION = getDeclaredConstructor(CLASS_SERVLET_EXCEPTION, new Class[]{String.class, Throwable.class});
+    private static final Constructor<?> CONSTRUCTOR_RESPONSE_STATUS_EXCEPTION = getDeclaredConstructor(CLASS_RESPONSE_STATUS_EXCEPTION, new Class[]{HttpStatus.class, String.class, Throwable.class});
 
     public static final SpringInboundThrower THROWER = new SpringInboundThrower();
 
@@ -102,13 +108,18 @@ public class SpringInboundThrower extends AbstractInboundThrower<HttpInboundRequ
      * @return an {@link Throwable} instance with the specified details
      */
     public static Throwable createException(HttpStatus status, String message, Throwable throwable) {
-        if (TYPE != null) {
-            // spring web 5+
-            return new ResponseStatusException(status, message, throwable);
-        } else {
-            // spring web 4.x
-            return new ServletException(message, throwable);
+        try {
+            if (CONSTRUCTOR_RESPONSE_STATUS_EXCEPTION != null) {
+                // spring web 5+
+                return (Throwable) CONSTRUCTOR_RESPONSE_STATUS_EXCEPTION.newInstance(status, message, throwable);
+            } else if (CLASS_SERVLET_EXCEPTION != null) {
+                // spring web 4.x
+                return (Throwable) CONSTRUCTOR_SERVLET_EXCEPTION.newInstance(message, throwable);
+            } else {
+                return new RuntimeException(message, throwable);
+            }
+        } catch (Throwable e) {
+            return new RuntimeException(message, throwable);
         }
-
     }
 }
