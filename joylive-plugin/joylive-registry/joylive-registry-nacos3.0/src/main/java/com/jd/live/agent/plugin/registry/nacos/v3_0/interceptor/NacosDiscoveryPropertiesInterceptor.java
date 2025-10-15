@@ -25,7 +25,11 @@ import com.jd.live.agent.plugin.registry.nacos.v3_0.instance.NacosEndpoint;
 import java.util.Properties;
 
 /**
- * NacosDiscoveryPropertiesInterceptor
+ * Nacos Discovery Properties Interceptor.
+ *
+ * <p>This interceptor supplements configuration information by adding
+ * group, namespace, and security settings to the properties when
+ * getNacosProperties method executes successfully.</p>
  */
 public class NacosDiscoveryPropertiesInterceptor extends InterceptorAdaptor {
 

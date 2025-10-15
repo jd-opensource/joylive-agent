@@ -29,7 +29,10 @@ import com.jd.live.agent.plugin.registry.nacos.v2_0.condition.ConditionalOnNacos
 import com.jd.live.agent.plugin.registry.nacos.v2_0.interceptor.NacosBeatInfoInterceptor;
 
 /**
- * NacosBeatInfoDefinition
+ * Plugin that disables heartbeat when the application is shutting down.
+ *
+ * <p>Intercepts the BeatInfo.isStopped() method to control heartbeat behavior
+ * based on application lifecycle state for Nacos 2.0 governance.</p>
  */
 @Injectable
 @Extension(value = "NacosBeatInfoDefinition_v2.0", order = PluginDefinition.ORDER_REGISTRY)

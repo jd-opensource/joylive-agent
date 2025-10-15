@@ -27,7 +27,15 @@ import com.jd.live.agent.plugin.registry.nacos.v2_0.condition.ConditionalOnNacos
 import com.jd.live.agent.plugin.registry.nacos.v2_0.interceptor.NacosNotifyCenterInterceptor;
 
 /**
- * NotifyCenterDefinition
+ * Nacos Notify Center Plugin Definition.
+ *
+ * <p>This plugin modifies the subscription method to register subscribers with
+ * custom notifiers, enabling notification of aggregated instance change events.
+ * It intercepts the NotifyCenter's registerSubscriber method to enhance event
+ * handling capabilities for service discovery operations.</p>
+ *
+ * <p>The plugin targets Nacos 2.0.x versions and is conditionally loaded when
+ * Nacos governance is enabled and the target class is present in the classpath.</p>
  */
 @Injectable
 @Extension(value = "NotifyCenterDefinition_v2.0", order = PluginDefinition.ORDER_REGISTRY)

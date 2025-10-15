@@ -24,7 +24,12 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.registry.Registry;
 
 /**
- * NacosDiscoveryPropertiesInterceptor
+ * Nacos Discovery Constructor Interceptor.
+ *
+ * <p>This interceptor adds hooks to the Agent's registry to preemptively warm up
+ * service instances when the application is ready. It registers a listener that
+ * triggers service instance discovery for all registered services, improving
+ * initial response times by pre-loading service information into cache.</p>
  */
 public class NacosDiscoveryConstructorInterceptor extends InterceptorAdaptor {
 

@@ -29,7 +29,11 @@ import static com.jd.live.agent.governance.registry.RegistryService.SYSTEM_REGIS
 import static com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**
- * NacosNamingServiceConstructorInterceptor
+ * Nacos Naming Client Proxy Delegate Interceptor.
+ *
+ * <p>This interceptor modifies the notifier to use a custom notifier implementation.
+ * It replaces the default InstancesChangeNotifier with a custom NacosInstancesChangeNotifier
+ * during constructor execution to enable enhanced instance change handling.</p>
  */
 public class NacosNamingServiceInitInterceptor extends InterceptorAdaptor {
 

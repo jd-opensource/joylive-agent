@@ -27,7 +27,12 @@ import static com.jd.live.agent.core.Constants.LABEL_WEIGHT;
 import static com.jd.live.agent.governance.instance.Endpoint.*;
 
 /**
- * NacosServiceDiscoveryInterceptor
+ * Nacos Discovery Instance Interceptor.
+ *
+ * <p>This interceptor supplements registered instance information by enhancing
+ * service instance metadata. It extracts Nacos-specific properties like weight
+ * and health status, then standardizes them into common metadata labels for
+ * consistent instance management across different registry implementations.</p>
  */
 public class NacosDiscoveryInstanceInterceptor extends InterceptorAdaptor {
 

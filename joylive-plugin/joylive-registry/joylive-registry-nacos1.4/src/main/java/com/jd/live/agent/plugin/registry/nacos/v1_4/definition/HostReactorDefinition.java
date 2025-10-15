@@ -26,7 +26,11 @@ import com.jd.live.agent.plugin.registry.nacos.v1_4.condition.ConditionalOnNacos
 import com.jd.live.agent.plugin.registry.nacos.v1_4.interceptor.HostReactorInterceptor;
 
 /**
- * HostReactorDefinition
+ * Plugin definition that modifies the notifier to use a custom notifier.
+ *
+ * <p>Intercepts the HostReactor constructor to replace the default notification
+ * mechanism with a custom implementation for Nacos 1.4 governance.</p>
+ *
  */
 @Extension(value = "HostReactorDefinition_v1.4", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos14GovernanceEnabled

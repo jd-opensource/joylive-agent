@@ -30,7 +30,12 @@ import static com.jd.live.agent.governance.registry.RegistryService.SYSTEM_REGIS
 import static com.jd.live.agent.plugin.registry.nacos.v3_0.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**
- * NacosNamingServiceConstructorInterceptor
+ * Nacos Naming Service Initialization Interceptor.
+ *
+ * <p>This interceptor intercepts the initialization method to create custom
+ * registry service and event publisher, then registers them with the Agent's
+ * registry center. It enhances the naming service with additional monitoring
+ * and management capabilities.</p>
  */
 public class NacosNamingServiceInitInterceptor extends InterceptorAdaptor {
 

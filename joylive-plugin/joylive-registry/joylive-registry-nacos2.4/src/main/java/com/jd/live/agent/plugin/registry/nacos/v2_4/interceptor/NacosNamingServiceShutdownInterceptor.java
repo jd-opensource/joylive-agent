@@ -26,7 +26,11 @@ import com.jd.live.agent.plugin.registry.nacos.v2_4.registry.NacosRegistryServic
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 
 /**
- * NacosNamingServiceConstructorInterceptor
+ * Nacos Naming Service Shutdown Interceptor.
+ *
+ * <p>This interceptor intercepts the shutdown method to deregister the custom
+ * registry service from the Agent's registry center during naming service
+ * shutdown, ensuring proper cleanup and resource management.</p>
  */
 public class NacosNamingServiceShutdownInterceptor extends InterceptorAdaptor {
 
