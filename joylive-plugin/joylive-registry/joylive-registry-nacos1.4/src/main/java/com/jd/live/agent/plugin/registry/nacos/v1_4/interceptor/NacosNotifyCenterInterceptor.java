@@ -22,7 +22,12 @@ import com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosInstancePublis
 import static com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**
- * NacosNotifyCenterInterceptor
+ * Nacos Notify Center Interceptor.
+ *
+ * <p>This interceptor modifies the subscription method by replacing the default
+ * notifier with a custom notifier to enable aggregated instance change notifications.
+ * It intercepts the registerSubscriber method and substitutes the subscriber argument
+ * with a custom NacosInstancesChangeNotifier when available.</p>
  */
 public class NacosNotifyCenterInterceptor extends InterceptorAdaptor {
 

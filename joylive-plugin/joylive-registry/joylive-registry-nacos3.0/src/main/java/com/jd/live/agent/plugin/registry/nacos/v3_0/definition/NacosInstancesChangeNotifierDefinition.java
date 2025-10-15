@@ -27,7 +27,14 @@ import com.jd.live.agent.plugin.registry.nacos.v3_0.condition.ConditionalOnNacos
 import com.jd.live.agent.plugin.registry.nacos.v3_0.interceptor.NacosInstancesChangeNotifierInterceptor;
 
 /**
- * NacosInstanceChangeDefinition
+ * Nacos Instances Change Notifier Plugin Definition.
+ *
+ * <p>This plugin intercepts the instances change notifier to inject
+ * custom notifier functionality for capturing instance change events.
+ * It enhances the default notifier with additional event handling capabilities.</p>
+ *
+ * <p>The plugin targets Nacos 3.0.x versions and is conditionally loaded when
+ * Nacos governance is enabled and the target class is present in the classpath.</p>
  */
 @Injectable
 @Extension(value = "NacosInstanceChangeDefinition_v3.0", order = PluginDefinition.ORDER_REGISTRY)

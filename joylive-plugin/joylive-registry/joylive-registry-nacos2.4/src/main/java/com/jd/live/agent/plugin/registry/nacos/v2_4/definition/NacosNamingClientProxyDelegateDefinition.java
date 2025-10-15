@@ -27,7 +27,14 @@ import com.jd.live.agent.plugin.registry.nacos.v2_4.condition.ConditionalOnNacos
 import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingClientProxyDelegateInterceptor;
 
 /**
- * NacosNamingClientProxyDelegateDefinition
+ * Nacos Naming Client Proxy Delegate Plugin Definition.
+ *
+ * <p>This plugin modifies the client proxy delegate to replace the default
+ * notifier with a custom notifier, enabling enhanced notification handling
+ * for naming service operations.</p>
+ *
+ * <p>The plugin targets Nacos 2.4.x versions and intercepts the constructor
+ * of NamingClientProxyDelegate to inject custom notification capabilities.</p>
  */
 @Injectable
 @Extension(value = "NacosNamingClientProxyDelegateDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)

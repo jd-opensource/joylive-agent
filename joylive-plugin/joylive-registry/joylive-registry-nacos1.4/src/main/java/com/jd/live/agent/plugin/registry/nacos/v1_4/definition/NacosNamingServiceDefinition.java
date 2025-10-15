@@ -31,7 +31,14 @@ import com.jd.live.agent.plugin.registry.nacos.v1_4.interceptor.NacosNamingServi
 import com.jd.live.agent.plugin.registry.nacos.v1_4.interceptor.NacosNamingServiceShutdownInterceptor;
 
 /**
- * NacosNamingServiceDefinition
+ * Nacos Naming Service Plugin Definition.
+ *
+ * <p>This plugin intercepts naming service initialization and shutdown methods
+ * to register with and deregister from the Agent's registry center. It ensures
+ * proper lifecycle management of the naming service within the Agent framework.</p>
+ *
+ * <p>The plugin targets Nacos 1.4.x versions and is conditionally loaded when
+ * Nacos governance is enabled and the target class is present in the classpath.</p>
  */
 @Injectable
 @Extension(value = "NacosNamingServiceDefinition_v1.4", order = PluginDefinition.ORDER_REGISTRY)

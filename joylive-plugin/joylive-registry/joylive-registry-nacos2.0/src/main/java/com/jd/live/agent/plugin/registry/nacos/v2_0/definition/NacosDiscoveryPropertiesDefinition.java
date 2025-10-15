@@ -27,7 +27,14 @@ import com.jd.live.agent.plugin.registry.nacos.v2_0.condition.ConditionalOnNacos
 import com.jd.live.agent.plugin.registry.nacos.v2_0.interceptor.NacosDiscoveryPropertiesInterceptor;
 
 /**
- * NacosDiscoveryPropertiesDefinition
+ * Nacos Discovery Properties Plugin Definition.
+ *
+ * <p>This plugin supplements configuration information including
+ * group, namespace and other properties by intercepting the
+ * getNacosProperties method to enhance discovery configuration.</p>
+ *
+ * <p>The plugin targets Nacos 2.0.x versions and is conditionally loaded when
+ * Nacos governance is enabled and the target class is present in the classpath.</p>
  */
 @Injectable
 @Extension(value = "NacosDiscoveryPropertiesDefinition_v2.0", order = PluginDefinition.ORDER_REGISTRY)

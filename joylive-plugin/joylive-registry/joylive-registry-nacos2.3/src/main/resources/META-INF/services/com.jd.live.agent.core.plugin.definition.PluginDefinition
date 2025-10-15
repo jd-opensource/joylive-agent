@@ -1,6 +1,8 @@
-com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosServiceDiscoveryDefinition
-com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosInstancesChangeNotifierDefinition
-com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNamingServiceDefinition
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosDiscoveryPropertiesDefinition
+com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosInstancesChangeNotifierDefinition
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNamingClientProxyDelegateDefinition
+com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNamingGrpcClientProxyDefinition
+com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNamingHttpClientProxyDefinition
+com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNamingServiceDefinition
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNotifyCenterDefinition
+com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosServiceDiscoveryDefinition

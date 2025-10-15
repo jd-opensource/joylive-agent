@@ -21,7 +21,10 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
 /**
- * NacosBeatInfoInterceptor
+ * Interceptor that disables heartbeat when the application is shutting down.
+ *
+ * <p>Intercepts the BeatInfo.isStopped() method and returns true if the application
+ * is in destroy state, effectively stopping the heartbeat mechanism during shutdown.</p>
  */
 public class NacosBeatInfoInterceptor extends InterceptorAdaptor {
 

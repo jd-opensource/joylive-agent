@@ -24,7 +24,12 @@ import com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosInstancesChang
 import static com.jd.live.agent.plugin.registry.nacos.v1_4.registry.NacosRegistryPublisher.LOCAL_PUBLISHER;
 
 /**
- * NacosInstanceNotifierConstructorInterceptor
+ * Nacos Instances Change Notifier Constructor Interceptor.
+ *
+ * <p>This interceptor injects a custom publisher from thread context
+ * into the instances change notifier during construction to capture
+ * instance change events. It wraps the original notifier with enhanced
+ * functionality for event publishing.</p>
  */
 public class NacosInstancesChangeNotifierInterceptor extends InterceptorAdaptor {
 

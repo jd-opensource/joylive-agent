@@ -30,7 +30,14 @@ import com.jd.live.agent.plugin.registry.nacos.v3_0.interceptor.NacosDiscoveryCo
 import com.jd.live.agent.plugin.registry.nacos.v3_0.interceptor.NacosDiscoveryInstanceInterceptor;
 
 /**
- * NacosServiceDiscoveryDefinition
+ * Nacos Service Discovery Plugin Definition.
+ *
+ * <p>This plugin supplements registered instance metadata and initializes
+ * warm-up instances. It intercepts service discovery operations to enhance
+ * instance information and ensure proper initialization of discovery services.</p>
+ *
+ * <p>The plugin targets Nacos 3.0.x versions and is conditionally loaded when
+ * Nacos governance is enabled and the target class is present in the classpath.</p>
  */
 @Extension(value = "NacosServiceDiscoveryDefinition_v3.0", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos3GovernanceEnabled
