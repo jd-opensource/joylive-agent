@@ -105,7 +105,7 @@ public class DubboZookeeperRegistry implements RegistryService {
         this.uris = shuffle(toList(split(config.getAddress(), SEMICOLON_COMMA), URI::parse));
         this.address = join(uris, uri -> uri.getAddress(true), CHAR_COMMA);
         this.name = "dubbo-zookeeper://" + address;
-        Option option = new MapOption(config.getProperties());
+        Option option = MapOption.of(config.getProperties());
         this.connectionTimeout = Converts.getPositive(option.getString("connectionTimeout", System.getenv("ZOOKEEPER_CONNECTION_TIMEOUT")), DEFAULT_CONNECTION_TIMEOUT_MS);
         this.sessionTimeout = Converts.getPositive(option.getString("sessionTimeout", System.getenv("ZOOKEEPER_SESSION_TIMEOUT")), DEFAULT_SESSION_TIMEOUT_MS);
 

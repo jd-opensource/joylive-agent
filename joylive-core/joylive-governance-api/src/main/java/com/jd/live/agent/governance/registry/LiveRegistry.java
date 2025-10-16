@@ -436,7 +436,7 @@ public class LiveRegistry extends AbstractService
                 for (int i = 0; i < clusters.size(); i++) {
                     // reinject config by app envrionment
                     RegistryClusterConfig cluster = clusters.get(i);
-                    cluster.supplement(new MapOption(maps.get(i)), env);
+                    cluster.supplement(MapOption.of(maps.get(i)), env);
                     // validate
                     if (cluster.validate()) {
                         // create registry service

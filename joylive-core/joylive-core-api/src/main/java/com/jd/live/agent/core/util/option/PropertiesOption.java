@@ -44,4 +44,13 @@ public class PropertiesOption extends AbstractOption {
         return new PropertiesOption(properties);
     }
 
+    /**
+     * Creates an option backed by system properties.
+     *
+     * @return an option that reads from System.getProperties()
+     */
+    public static Option ofSystemProperties() {
+        return new PropertiesOption(System.getProperties());
+    }
+
 }

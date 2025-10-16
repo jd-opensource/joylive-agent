@@ -20,25 +20,25 @@ import java.util.Map;
 /**
  * Options represented as a Map.
  */
-public class MapOption extends AbstractOption {
+public class MapOption<V> extends AbstractOption {
     /**
      * The map containing options.
      */
-    protected Map<String, ?> map;
+    protected Map<String, V> parameters;
 
     /**
      * Constructs a new MapOption with the specified map.
      *
-     * @param map A map containing option keys and values.
+     * @param parameters A map containing option keys and values.
      */
-    public MapOption(Map<String, ?> map) {
-        this.map = map;
+    public MapOption(Map<String, V> parameters) {
+        this.parameters = parameters;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getObject(final String key) {
-        return map == null ? null : (T) map.get(key);
+        return parameters == null ? null : (T) parameters.get(key);
     }
 
     /**
@@ -47,7 +47,7 @@ public class MapOption extends AbstractOption {
      * @param map A map containing option keys and values.
      * @return An Option instance backed by the given map.
      */
-    public static Option of(Map<String, ?> map) {
+    public static <V> Option of(Map<String, V> map) {
         return new MapOption(map);
     }
 

@@ -31,6 +31,7 @@ public class URITest {
         Assertions.assertEquals("/order", uri.getPath());
         Assertions.assertEquals("123", uri.getParameter("id"));
         Assertions.assertTrue(uri.hasParameter("a"));
+        Assertions.assertEquals(123, uri.getInteger("id"));
         uri = uri.port(8080).path("/book").parameter("author", "zhangsan");
         Assertions.assertNotNull(uri);
         Assertions.assertEquals(8080, uri.getPort());

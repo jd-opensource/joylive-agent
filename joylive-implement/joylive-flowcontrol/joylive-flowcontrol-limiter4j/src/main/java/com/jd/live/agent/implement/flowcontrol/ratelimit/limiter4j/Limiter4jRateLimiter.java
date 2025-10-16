@@ -64,7 +64,7 @@ public class Limiter4jRateLimiter extends AbstractRateLimiter {
         this.window = window;
         this.parameters = createParameters(policy, clientManager.getConfig());
         // Create gRPC configuration
-        this.client = clientManager.getOrCreateClient(new GrpcConfig(policy.getId(), new MapOption(parameters)));
+        this.client = clientManager.getOrCreateClient(new GrpcConfig(policy.getId(), MapOption.of(parameters)));
         // Create token bucket in constructor
         this.bucketId = client.createTokenBucket(name, window.getThreshold(), window.getTimeWindowInMs(), parameters);
     }
