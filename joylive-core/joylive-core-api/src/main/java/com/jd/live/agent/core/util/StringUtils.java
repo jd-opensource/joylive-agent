@@ -182,6 +182,23 @@ public class StringUtils {
     }
 
     /**
+     * Returns the first non-null and non-empty string from the given array.
+     *
+     * @param values array of strings to check
+     * @return first non-null and non-empty string, or null if none found
+     */
+    public static String choose(String... values) {
+        if (values != null) {
+            for (String value : values) {
+                if (value != null && !value.isEmpty()) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the first non-null and non-empty string, otherwise returns the supplier result.
      *
      * @param cs1      the first string to check

@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.bootstrap;
 
+import java.util.Map;
+
 /**
  * An interface for retrieving configuration properties.
  *
@@ -36,4 +38,29 @@ public interface AppPropertySource {
      * @return The name of the object.
      */
     String getName();
+
+    /**
+     * A property source implementation backed by a Map.
+     */
+    class MapSource implements AppPropertySource {
+
+        private final String name;
+
+        private final Map<String, String> map;
+
+        public MapSource(String name, Map<String, String> map) {
+            this.name = name;
+            this.map = map;
+        }
+
+        @Override
+        public String getProperty(String name) {
+            return name == null || map == null ? null : map.get(name);
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+    }
 }

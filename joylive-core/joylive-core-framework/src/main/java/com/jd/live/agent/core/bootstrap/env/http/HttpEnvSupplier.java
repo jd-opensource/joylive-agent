@@ -17,6 +17,7 @@ package com.jd.live.agent.core.bootstrap.env.http;
 
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
+import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppEnv;
 import com.jd.live.agent.core.bootstrap.EnvSupplier;
 import com.jd.live.agent.core.bootstrap.env.AbstractEnvSupplier;
@@ -51,6 +52,9 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     @Config("env.http.url")
     private String url;
 
+    @Config("env.http.environment")
+    private boolean environment;
+
     @Config("env.http.parameters")
     private Map<String, String> parameters;
 
@@ -71,6 +75,7 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
 
     @Override
     public void process(AppEnv env) {
+        env.setEnvironment(environment);
         if (isEmpty(url)) {
             String serviceApi = env.getString(KEY_SERVICE_API_URL);
             if (isEmpty(serviceApi)) {
@@ -80,8 +85,8 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
             url = url(serviceApi, DEFAULT_PATH);
         }
         String app = choose(application, (String) env.get(KEY_APPLICATION_NAME));
-        String ns = choose(choose(namespace, (String) env.get(KEY_APPLICATION_SERVICE_NAMESPACE)), (String) env.get(KEY_NACOS_NAMESPACE));
-        String svr = choose(choose(choose(service, (String) env.get(KEY_APPLICATION_SERVICE_NAME)), (String) env.get(KEY_NACOS_SERVICE)), app);
+        String ns = choose(namespace, (String) env.get(KEY_APPLICATION_SERVICE_NAMESPACE), (String) env.get(KEY_NACOS_NAMESPACE), Constants.DEFAULT_GROUP);
+        String svr = choose(service, (String) env.get(KEY_APPLICATION_SERVICE_NAME), (String) env.get(KEY_NACOS_SERVICE), app);
         String grp = choose(group, (String) env.get(KEY_APPLICATION_SERVICE_GROUP));
         if (isEmpty(app)) {
             logger.info("Ignore loading env from http, caused by empty application name.");

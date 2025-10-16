@@ -17,12 +17,13 @@ package com.jd.live.agent.governance.bootstrap;
 
 import com.jd.live.agent.core.bootstrap.*;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
+import com.jd.live.agent.core.bootstrap.AppPropertySource.MapSource;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.config.RefreshConfig;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
-import com.jd.live.agent.governance.subscription.config.Configurator;
+import com.jd.live.agent.governance.subscription.config.ConfiguratorSource;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,6 +42,9 @@ public class ConfigPreparation extends AppListenerAdapter {
 
     @Inject(value = ConfigCenter.COMPONENT_CONFIG_CENTER, component = true, nullable = true)
     private ConfigCenter configCenter;
+
+    @Inject(AppEnv.COMPONENT_APP_ENV)
+    private AppEnv env;
 
     @Override
     public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
@@ -62,8 +66,9 @@ public class ConfigPreparation extends AppListenerAdapter {
 
     @Override
     public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
+        env.ifPresentRemotes(remotes -> environment.addFirst(new MapSource("LiveAgent.http", remotes)));
         if (configCenter != null) {
-            configCenter.ifPresent(configurator -> environment.addFirst(new LivePropertySource(configurator)));
+            configCenter.ifPresent(configurator -> environment.addFirst(new ConfiguratorSource(configurator)));
         }
     }
 
@@ -71,32 +76,6 @@ public class ConfigPreparation extends AppListenerAdapter {
     public void onStarted(AppContext context) {
         if (configCenter != null && context instanceof ConfigurableAppContext) {
             configCenter.ifPresent(configurator -> ((ConfigurableAppContext) context).subscribe(configCenter));
-        }
-    }
-
-    private static class LivePropertySource implements AppPropertySource {
-
-        private final Configurator configurator;
-
-        LivePropertySource(Configurator configurator) {
-            this.configurator = configurator;
-        }
-
-        @Override
-        public String getProperty(String name) {
-            Object property = configurator.getProperty(name);
-            if (property == null) {
-                String key = getKebabToCamel(name);
-                if (key != null) {
-                    property = configurator.getProperty(key);
-                }
-            }
-            return property == null ? null : property.toString();
-        }
-
-        @Override
-        public String getName() {
-            return configurator.getName();
         }
     }
 }

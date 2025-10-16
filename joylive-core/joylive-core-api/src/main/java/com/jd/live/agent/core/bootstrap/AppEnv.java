@@ -17,18 +17,25 @@ package com.jd.live.agent.core.bootstrap;
 
 import com.jd.live.agent.bootstrap.util.option.ValueSupplier;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
 
 @Getter
 public class AppEnv implements ValueSupplier {
 
+    public static final String COMPONENT_APP_ENV = "AppEnv";
+
     private final Map<String, Object> envs;
 
     private final Map<String, String> remotes = new HashMap<>();
+
+    @Setter
+    private boolean environment;
 
     public AppEnv(Map<String, Object> envs) {
         this.envs = envs;
@@ -66,7 +73,7 @@ public class AppEnv implements ValueSupplier {
     }
 
     public void addSystem() {
-        if (!remotes.isEmpty()) {
+        if (environment && !remotes.isEmpty()) {
             try {
                 Map<String, String> env = modifiedMap(System.getenv());
                 remotes.forEach(env::putIfAbsent);
@@ -74,4 +81,11 @@ public class AppEnv implements ValueSupplier {
             }
         }
     }
+
+    public void ifPresentRemotes(Consumer<Map<String, String>> consumer) {
+        if (consumer != null && !remotes.isEmpty()) {
+            consumer.accept(remotes);
+        }
+    }
+
 }
