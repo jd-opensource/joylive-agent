@@ -355,6 +355,20 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
         }
 
         /**
+         * Resubscribes by resetting state and recreating subscription.
+         * Unsubscribes first to avoid duplicate listeners.
+         *
+         * @throws NacosException if subscription fails
+         */
+        public void resubscribe() throws NacosException {
+            // Since connection recovery keeps the state, we need to initialize the state
+            state.set(STATE_INIT);
+            // unsubscribe first to avoid add duplicated listeners.
+            unsubscribe();
+            subscribe();
+        }
+
+        /**
          * Handles policy config updates.
          *
          * @param value New policy config JSON
@@ -440,7 +454,13 @@ public class NacosClient extends AbstractNacosClient<NacosProperties, ConfigServ
         @Override
         public Boolean call() throws Exception {
             if (watchers.get(watcher.keyRelease) == watcher) {
-                watcher.subscribe();
+                try {
+                    // retry on exception
+                    watcher.resubscribe();
+                } catch (NacosException e) {
+                    logger.error("Failed to subscribe {}, retry later, caused by {}", watcher.keyRelease.dataId, e.getMessage());
+                    throw e;
+                }
             }
             return true;
         }
