@@ -44,13 +44,13 @@ public class NacosNamingProxyDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE = "com.alibaba.nacos.client.naming.net.NamingProxy";
 
-    private static final String METHOD = "reqApi";
+    private static final String METHOD = "callServer";
 
     private static final String[] ARGUMENTS = new String[]{
             "java.lang.String",
             "java.util.Map",
             "java.util.Map",
-            "java.util.List",
+            "java.lang.String",
             "java.lang.String",
     };
 

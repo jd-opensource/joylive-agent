@@ -15,24 +15,34 @@
  */
 package com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor;
 
+import com.alibaba.nacos.api.remote.response.Response;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
+import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.registry.nacos.v2_4.util.SecurityContext;
 
 /**
- * Nacos Naming Client Proxy Interceptor.
+ * Nacos Config Client Interceptor.
  *
  * <p>This interceptor handles authentication exceptions by automatically
  * refreshing the authentication token when a NO_RIGHT error occurs.
  * It intercepts authentication failures and triggers a re-login process
  * to obtain a new valid token.</p>
  */
-public class NacosNamingGrpcClientProxyInterceptor extends InterceptorAdaptor {
+public class NacosConfigClientInterceptor extends InterceptorAdaptor {
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        if (SecurityContext.isNoRight(ctx.getArgument(1))) {
+    public void onError(ExecutableContext ctx) {
+        if (SecurityContext.isNoRight(ctx.getThrowable())) {
             // refresh token
+            SecurityContext.reLogin(ctx.getTarget());
+        }
+    }
+
+    @Override
+    public void onSuccess(ExecutableContext ctx) {
+        Response response = ((MethodContext) ctx).getResult();
+        if (SecurityContext.isNoRight(response.getErrorCode())) {
             SecurityContext.reLogin(ctx.getTarget());
         }
     }

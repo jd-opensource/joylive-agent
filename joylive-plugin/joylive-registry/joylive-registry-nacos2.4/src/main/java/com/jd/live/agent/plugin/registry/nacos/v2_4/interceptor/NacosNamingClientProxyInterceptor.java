@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.registry.nacos.v2_0.interceptor;
+package com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.registry.nacos.v2_0.util.SecurityContext;
+import com.jd.live.agent.plugin.registry.nacos.v2_4.util.SecurityContext;
 
 /**
  * Nacos Naming Client Proxy Interceptor.
@@ -27,7 +27,7 @@ import com.jd.live.agent.plugin.registry.nacos.v2_0.util.SecurityContext;
  * It intercepts authentication failures and triggers a re-login process
  * to obtain a new valid token.</p>
  */
-public class NacosNamingHttpClientProxyInterceptor extends InterceptorAdaptor {
+public class NacosNamingClientProxyInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onError(ExecutableContext ctx) {
@@ -36,5 +36,4 @@ public class NacosNamingHttpClientProxyInterceptor extends InterceptorAdaptor {
             SecurityContext.reLogin(ctx.getTarget());
         }
     }
-
 }

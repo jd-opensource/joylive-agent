@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.registry.nacos.v1_4.util;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.jd.live.agent.bootstrap.logger.Logger;
@@ -34,7 +35,9 @@ public class SecurityContext {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityContext.class);
 
-    private static final FieldAccessor SECURITY_PROXY = getAccessor(NamingProxy.class, "securityProxy");
+    private static final FieldAccessor CONFIG_SECURITY_PROXY = getAccessor(ServerHttpAgent.class, "securityProxy");
+
+    private static final FieldAccessor NAMING_SECURITY_PROXY = getAccessor(NamingProxy.class, "securityProxy");
 
     private static final FieldAccessor LAST_REFRESH_TIME = getAccessor(SecurityProxy.class, "lastRefreshTime");
 
@@ -50,13 +53,17 @@ public class SecurityContext {
      */
     public static void reLogin(Object proxy) {
         try {
-            SecurityProxy securityProxy = SECURITY_PROXY.get(proxy, SecurityProxy.class);
+            SecurityProxy securityProxy = proxy instanceof NamingProxy
+                    ? NAMING_SECURITY_PROXY.get(proxy, SecurityProxy.class)
+                    : CONFIG_SECURITY_PROXY.get(proxy, SecurityProxy.class);
             Long ttl = TOKEN_TTL.get(securityProxy, Long.class);
             Long lastRefreshTime = LAST_REFRESH_TIME.get(securityProxy, Long.class);
-            if (lastRefreshTime != null && lastRefreshTime > 0 && ttl != null && ttl > 0) {
-                // reset last refresh time
-                logger.info("403 no right exception, try to login again.");
-                LAST_REFRESH_TIME.set(proxy, 0L);
+            synchronized (securityProxy) {
+                if (lastRefreshTime != null && lastRefreshTime > 0 && ttl != null && ttl > 0 && (System.currentTimeMillis() - lastRefreshTime) > 100000) {
+                    // reset last refresh time
+                    logger.info("403 no right exception, try to login again for {}", securityProxy);
+                    LAST_REFRESH_TIME.set(securityProxy, 0L);
+                }
             }
         } catch (Throwable e) {
             logger.error("Failed to relogin, caused by {} ", e.getMessage(), e);
@@ -88,5 +95,9 @@ public class SecurityContext {
             }
         }
         return false;
+    }
+
+    public static boolean isNoRight(int errorCode) {
+        return errorCode == NacosException.NO_RIGHT;
     }
 }

@@ -27,11 +27,11 @@ import com.jd.live.agent.plugin.registry.nacos.v2_3.util.SecurityContext;
  * It intercepts authentication failures and triggers a re-login process
  * to obtain a new valid token.</p>
  */
-public class NacosNamingGrpcClientProxyInterceptor extends InterceptorAdaptor {
+public class NacosNamingClientProxyInterceptor extends InterceptorAdaptor {
 
     @Override
-    public void onEnter(ExecutableContext ctx) {
-        if (SecurityContext.isNoRight(ctx.getArgument(1))) {
+    public void onError(ExecutableContext ctx) {
+        if (SecurityContext.isNoRight(ctx.getThrowable())) {
             // refresh token
             SecurityContext.reLogin(ctx.getTarget());
         }

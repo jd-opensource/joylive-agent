@@ -32,7 +32,7 @@ public @interface ConditionalOnNacos23Enabled {
     // Compatible with 2.1+
     String TYPE_SOURCE_TYPE = "com.alibaba.nacos.client.env.SourceType";
 
-    // 2.4+
+    // 2.3+
     String TYPE_SELECTOR_MANAGER = "com.alibaba.nacos.client.selector.SelectorManager";
 
 }

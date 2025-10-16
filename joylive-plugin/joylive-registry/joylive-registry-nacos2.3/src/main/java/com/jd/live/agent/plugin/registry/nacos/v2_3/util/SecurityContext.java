@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.registry.nacos.v2_3.util;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl;
+import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
@@ -37,7 +38,9 @@ public class SecurityContext {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityContext.class);
 
-    private static final FieldAccessor SECURITY_PROXY = getAccessor(AbstractNamingClientProxy.class, "securityProxy");
+    private static final FieldAccessor CONFIG_SECURITY_PROXY = getAccessor(ConfigTransportClient.class, "securityProxy");
+
+    private static final FieldAccessor NAMING_SECURITY_PROXY = getAccessor(AbstractNamingClientProxy.class, "securityProxy");
 
     private static final FieldAccessor CLIENT_AUTH_PLUGIN_MANAGE = getAccessor(SecurityProxy.class, "clientAuthPluginManager");
 
@@ -72,6 +75,10 @@ public class SecurityContext {
         return false;
     }
 
+    public static boolean isNoRight(int errorCode) {
+        return errorCode == NacosException.NO_RIGHT;
+    }
+
     /**
      * Performs re-login operation to refresh authentication token.
      *
@@ -82,7 +89,9 @@ public class SecurityContext {
      */
     public static void reLogin(Object proxy) {
         try {
-            SecurityProxy securityProxy = SECURITY_PROXY.get(proxy, SecurityProxy.class);
+            SecurityProxy securityProxy = proxy instanceof AbstractNamingClientProxy
+                    ? NAMING_SECURITY_PROXY.get(proxy, SecurityProxy.class)
+                    : CONFIG_SECURITY_PROXY.get(proxy, SecurityProxy.class);
             // reset last refresh time
             boolean flag = false;
             ClientAuthPluginManager manager = CLIENT_AUTH_PLUGIN_MANAGE.get(securityProxy, ClientAuthPluginManager.class);
@@ -91,12 +100,14 @@ public class SecurityContext {
                     NacosClientAuthServiceImpl authServiceImpl = (NacosClientAuthServiceImpl) authService;
                     Long ttl = TOKEN_TTL.get(authServiceImpl, Long.class);
                     Long lastRefreshTime = LAST_REFRESH_TIME.get(authServiceImpl, Long.class);
-                    if (lastRefreshTime != null && lastRefreshTime > 0 && ttl != null && ttl > 0) {
-                        if (!flag) {
-                            flag = true;
-                            logger.info("403 no right exception, try to login again.");
+                    synchronized (authServiceImpl) {
+                        if (lastRefreshTime != null && lastRefreshTime > 0 && ttl != null && ttl > 0 && (System.currentTimeMillis() - lastRefreshTime) > 100000) {
+                            if (!flag) {
+                                flag = true;
+                                logger.info("403 no right exception, try to login again for {}", authService);
+                            }
+                            LAST_REFRESH_TIME.set(authServiceImpl, 0L);
                         }
-                        LAST_REFRESH_TIME.set(authServiceImpl, 0L);
                     }
                 }
             }

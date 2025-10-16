@@ -441,6 +441,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                     response.getClass().getName(), responseClass.getName());
             throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
         } catch (NacosException e) {
+            // If the 403 login operation is triggered, refresh the accessToken of the client
+            if (NacosException.NO_RIGHT == response.getErrorCode()) {
+                NAMING_LOGGER.info("403 no right exception, try to login again.");
+                reLogin();
+            }
             recordRequestFailedMetrics(request, e, response);
             throw e;
         } catch (Exception e) {

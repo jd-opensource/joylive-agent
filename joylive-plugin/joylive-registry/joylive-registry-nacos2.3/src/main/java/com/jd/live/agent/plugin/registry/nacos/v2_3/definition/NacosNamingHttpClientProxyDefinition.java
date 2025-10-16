@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.registry.nacos.v2_3.condition.ConditionalOnNacos23Enabled;
-import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosNamingHttpClientProxyInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_3.interceptor.NacosNamingClientProxyInterceptor;
 
 /**
  * Nacos Naming Client Proxy Plugin Definition.
@@ -44,13 +44,13 @@ public class NacosNamingHttpClientProxyDefinition extends PluginDefinitionAdapte
 
     protected static final String TYPE = "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy";
 
-    private static final String METHOD = "reqApi";
+    private static final String METHOD = "callServer";
 
     private static final String[] ARGUMENTS = new String[]{
             "java.lang.String",
             "java.util.Map",
             "java.util.Map",
-            "java.util.List",
+            "java.lang.String",
             "java.lang.String",
     };
 
@@ -59,7 +59,7 @@ public class NacosNamingHttpClientProxyDefinition extends PluginDefinitionAdapte
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new NacosNamingHttpClientProxyInterceptor())
+                        () -> new NacosNamingClientProxyInterceptor())
         };
     }
 }

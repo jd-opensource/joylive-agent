@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
@@ -91,5 +92,13 @@ public class SecurityProxy implements Closeable {
     @Override
     public void shutdown() throws NacosException {
         clientAuthPluginManager.shutdown();
+    }
+
+    public void reLogin() {
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            if (clientAuthService instanceof NacosClientAuthServiceImpl) {
+                ((NacosClientAuthServiceImpl) clientAuthService).reLogin();
+            }
+        }
     }
 }

@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.registry.nacos.v2_0.condition.ConditionalOnNacos20Enabled;
-import com.jd.live.agent.plugin.registry.nacos.v2_0.interceptor.NacosNamingGrpcClientProxyInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_0.interceptor.NacosNamingClientProxyInterceptor;
 
 /**
  * Nacos Naming Client Proxy Plugin Definition.
@@ -48,7 +48,7 @@ public class NacosNamingGrpcClientProxyDefinition extends PluginDefinitionAdapte
 
     private static final String[] ARGUMENTS = new String[]{
             "com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest",
-            "java.lang.Class"
+            "java.lang.Class",
     };
 
     public NacosNamingGrpcClientProxyDefinition() {
@@ -56,7 +56,7 @@ public class NacosNamingGrpcClientProxyDefinition extends PluginDefinitionAdapte
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new NacosNamingGrpcClientProxyInterceptor())
+                        () -> new NacosNamingClientProxyInterceptor())
         };
     }
 }

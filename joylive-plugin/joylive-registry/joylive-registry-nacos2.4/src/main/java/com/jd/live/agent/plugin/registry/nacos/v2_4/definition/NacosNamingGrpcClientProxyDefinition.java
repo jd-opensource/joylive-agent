@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.registry.nacos.v2_4.condition.ConditionalOnNacos24SecurityEnabled;
-import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingGrpcClientProxyInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingClientProxyInterceptor;
 
 /**
  * Nacos Naming Client Proxy Plugin Definition.
@@ -44,12 +44,11 @@ public class NacosNamingGrpcClientProxyDefinition extends PluginDefinitionAdapte
 
     protected static final String TYPE = "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy";
 
-    private static final String METHOD = "recordRequestFailedMetrics";
+    private static final String METHOD = "requestToServer";
 
     private static final String[] ARGUMENTS = new String[]{
             "com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest",
-            "java.lang.Exception",
-            "com.alibaba.nacos.api.remote.response.Response"
+            "java.lang.Class",
     };
 
     public NacosNamingGrpcClientProxyDefinition() {
@@ -57,7 +56,7 @@ public class NacosNamingGrpcClientProxyDefinition extends PluginDefinitionAdapte
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new NacosNamingGrpcClientProxyInterceptor())
+                        () -> new NacosNamingClientProxyInterceptor())
         };
     }
 }

@@ -24,10 +24,10 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.plugin.registry.nacos.v2_4.condition.ConditionalOnNacos24SecurityEnabled;
-import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingClientProxyInterceptor;
+import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosConfigClientInterceptor;
 
 /**
- * Nacos Naming Client Proxy Plugin Definition.
+ * Nacos Config Client Plugin Definition.
  *
  * <p>This plugin is used to fix the issue where clients cannot immediately
  * recognize token changes after the server modifies the authentication token.
@@ -37,29 +37,28 @@ import com.jd.live.agent.plugin.registry.nacos.v2_4.interceptor.NacosNamingClien
  * Nacos governance is enabled and the target class is present in the classpath.</p>
  */
 @Injectable
-@Extension(value = "NacosNamingHttpClientProxyDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
+@Extension(value = "NacosConfigGrpcClientDefinition_v2.4", order = PluginDefinition.ORDER_REGISTRY)
 @ConditionalOnNacos24SecurityEnabled
-@ConditionalOnClass(NacosNamingHttpClientProxyDefinition.TYPE)
-public class NacosNamingHttpClientProxyDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(NacosConfigClientDefinition.TYPE)
+public class NacosConfigClientDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy";
+    protected static final String TYPE = "com.alibaba.nacos.client.config.impl.ClientWorker$ConfigRpcTransportClient";
 
-    private static final String METHOD = "callServer";
+    private static final String METHOD = "requestProxy";
 
     private static final String[] ARGUMENTS = new String[]{
-            "java.lang.String",
-            "java.util.Map",
-            "java.util.Map",
-            "java.lang.String",
-            "java.lang.String",
+            "com.alibaba.nacos.common.remote.client.RpcClient",
+            "com.alibaba.nacos.api.remote.request.Request",
+            "long"
     };
 
-    public NacosNamingHttpClientProxyDefinition() {
+    public NacosConfigClientDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new NacosNamingClientProxyInterceptor())
+                        () -> new NacosConfigClientInterceptor())
         };
     }
 }
+

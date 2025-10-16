@@ -45,7 +45,6 @@ import com.alibaba.nacos.common.utils.*;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.shaded.com.google.gson.Gson;
 import com.alibaba.nacos.shaded.com.google.gson.JsonObject;
-import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -1179,7 +1178,21 @@ public class ClientWorker implements Closeable {
                 throw new NacosException(NacosException.CLIENT_OVER_THRESHOLD,
                         "More than client-side current limit threshold");
             }
-            return rpcClientInner.request(request, timeoutMills);
+            try {
+                Response response = rpcClientInner.request(request, timeoutMills);
+                // If the 403 login operation is triggered, refresh the accessToken of the client
+                if (response.getErrorCode() == NacosException.NO_RIGHT) {
+                    LOGGER.info("403 no right exception, try to login again.");
+                    reLogin();
+                }
+                return response;
+            } catch (NacosException e) {
+                if (e.getErrCode() == NacosException.NO_RIGHT) {
+                    LOGGER.info("403 no right exception, try to login again.");
+                    reLogin();
+                }
+                throw e;
+            }
         }
 
         private RequestResource resourceBuild(Request request) {
