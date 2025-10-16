@@ -25,7 +25,7 @@
     <property scope="context" name="logger.unitFilter.level" value="${LIVE_LOG_UNIT_FILTER_LEVEL:-${logger.level}}"/>
     <property scope="context" name="logger.totalSize" value="${LIVE_LOG_TOTAL_SIZE:-10GB}"/>
     <property scope="context" name="logger.maxHistory" value="${LIVE_LOG_MAX_HISTORY:-30}"/>
-    <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-1GB}"/>
+    <property scope="context" name="logger.maxFileSize" value="${LIVE_LOG_MAX_SIZE:-100MB}"/>
     <property scope="context" name="logger.fileName" value="${LIVE_LOG_FILE_NAME:-${logger.dir}/live-agent.log}"/>
     <property scope="context" name="logger.fileNamePattern" value="${LIVE_LOG_FILE_NAME_PATTERN:-${logger.fileName}.%d{yyyyMMdd}.%i}"/>
 
