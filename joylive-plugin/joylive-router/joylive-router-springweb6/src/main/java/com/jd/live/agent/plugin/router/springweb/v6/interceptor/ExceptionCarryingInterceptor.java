@@ -26,6 +26,8 @@ import org.springframework.web.servlet.DispatcherServlet;
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
+ * Interceptor that captures exceptions from DispatcherServlet and carries them in response headers.
+ *
  * @author Axkea
  */
 public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
@@ -52,8 +54,9 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
      */
     private static class Accessor {
 
-        private static final String TYPE_NAME = "org.springframework.web.reactive.function.client.WebClientResponseException";
-        private static final Class<?> type = ClassUtils.loadClass(TYPE_NAME, DispatcherServlet.class.getClassLoader());
+        private static final String TYPE_EXCEPTION = "org.springframework.web.reactive.function.client.WebClientResponseException";
+
+        private static final Class<?> CLASS_EXCEPTION = ClassUtils.loadClass(TYPE_EXCEPTION, DispatcherServlet.class.getClassLoader());
 
         /**
          * Safely extracts error message from exception, including WebClient response body when available.
@@ -63,9 +66,9 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
          */
         public static String getErrorMessage(Throwable e) {
             // without webflux
-            if (type != null && type.isInstance(e)) {
-                WebClientResponseException webError = (WebClientResponseException) e;
-                return webError.getResponseBodyAsString();
+            if (CLASS_EXCEPTION != null && CLASS_EXCEPTION.isInstance(e)) {
+                WebClientResponseException error = (WebClientResponseException) e;
+                return error.getResponseBodyAsString();
             }
             return e.getMessage();
         }

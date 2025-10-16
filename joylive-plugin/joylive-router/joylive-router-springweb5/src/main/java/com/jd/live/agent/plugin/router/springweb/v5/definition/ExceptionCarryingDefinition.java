@@ -28,6 +28,9 @@ import com.jd.live.agent.plugin.router.springweb.v5.condition.ConditionalOnSprin
 import com.jd.live.agent.plugin.router.springweb.v5.interceptor.ExceptionCarryingInterceptor;
 
 /**
+ * Plugin definition for capturing servlet exceptions and carrying them back via response headers.
+ * Intercepts exception handling in Spring MVC's DispatcherServlet.
+ *
  * @author Axkea
  */
 @Injectable

@@ -53,8 +53,9 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
      */
     private static class Accessor {
 
-        private static final String TYPE_NAME = "org.springframework.web.reactive.function.client.WebClientResponseException";
-        private static final Class<?> type = ClassUtils.loadClass(TYPE_NAME, DispatcherServlet.class.getClassLoader());
+        private static final String TYPE_EXCEPTION = "org.springframework.web.reactive.function.client.WebClientResponseException";
+
+        private static final Class<?> CLASS_EXCEPTION = ClassUtils.loadClass(TYPE_EXCEPTION, DispatcherServlet.class.getClassLoader());
 
         /**
          * Safely extracts error message from exception, including WebClient response body when available.
@@ -64,7 +65,7 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
          */
         public static String getErrorMessage(Throwable e) {
             // without webflux
-            if (type != null && type.isInstance(e)) {
+            if (CLASS_EXCEPTION != null && CLASS_EXCEPTION.isInstance(e)) {
                 WebClientResponseException webError = (WebClientResponseException) e;
                 return webError.getResponseBodyAsString();
             }
