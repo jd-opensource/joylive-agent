@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
 import org.slf4j.Logger;
@@ -108,7 +110,15 @@ public class RpcClientFactory {
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
                                          Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
-        return createClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig, null);
+
+        if (!ConnectionType.GRPC.equals(connectionType)) {
+            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+        }
+
+        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
+            LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
+            return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
+        });
     }
 
     /**
@@ -116,23 +126,31 @@ public class RpcClientFactory {
      *
      * @param clientName         client name.
      * @param connectionType     client type.
-     * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize  grpc thread pool max size
-     * @param tlsConfig          tlsconfig
+     * @param grpcClientConfig   grpc client config.
      * @return rpc client.
      */
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                         Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig,
-                                         Properties properties) {
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, GrpcClientConfig grpcClientConfig) {
+        return createClient(clientName, connectionType, grpcClientConfig, null);
+    }
+
+    /**
+     * create a rpc client.
+     *
+     * @param clientName       client name.
+     * @param connectionType   client type.
+     * @param grpcClientConfig grpc client config.
+     * @return rpc client.
+     */
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, GrpcClientConfig grpcClientConfig, Properties properties) {
 
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
 
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
-            RpcClient result = new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig, properties);
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
-            return result;
+            grpcClientConfig.setName(clientNameInner);
+            return new GrpcSdkClient(grpcClientConfig, properties);
         });
     }
 

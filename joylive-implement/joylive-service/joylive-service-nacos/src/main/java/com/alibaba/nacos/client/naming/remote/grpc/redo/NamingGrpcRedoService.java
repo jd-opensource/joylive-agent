@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.remote.grpc.redo;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoDa
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
 import com.alibaba.nacos.client.naming.remote.grpc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
@@ -33,8 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
-
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * Naming client gprc redo service.
@@ -83,20 +83,20 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     @Override
     public void onConnected(Connection connection) {
         connected = true;
-        NAMING_LOGGER.info("Grpc connection connect");
+        LogUtils.NAMING_LOGGER.info("Grpc connection connect");
     }
 
     @Override
     public void onDisConnect(Connection connection) {
         connected = false;
-        NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
+        LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
         synchronized (registeredInstances) {
             registeredInstances.values().forEach(instanceRedoData -> instanceRedoData.setRegistered(false));
         }
         synchronized (subscribes) {
             subscribes.values().forEach(subscriberRedoData -> subscriberRedoData.setRegistered(false));
         }
-        NAMING_LOGGER.warn("mark to redo completed");
+        LogUtils.NAMING_LOGGER.warn("mark to redo completed");
     }
 
     /**
@@ -324,7 +324,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * Shutdown redo service.
      */
     public void shutdown() {
-        NAMING_LOGGER.info("Shutdown grpc redo service executor " + redoExecutor);
+        LogUtils.NAMING_LOGGER.info("Shutdown grpc redo service executor " + redoExecutor);
         registeredInstances.clear();
         subscribes.clear();
         redoExecutor.shutdownNow();

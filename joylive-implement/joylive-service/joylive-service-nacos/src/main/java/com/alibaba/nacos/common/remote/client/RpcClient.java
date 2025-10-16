@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.option.PropertiesOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -870,17 +871,10 @@ public abstract class RpcClient implements Closeable {
     private ServerInfo resolveServerInfo(String serverAddress) {
         // parse server info by live
         URI uri = URI.parse(serverAddress);
-        int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
+        int defaultPort = PropertiesOption.ofSystemProperties().getPositive("nacos.server.port", 8848);
         Integer port = uri.getPort();
         port = port == null || port < 0 ? defaultPort : port;
-        String value = uri.getParameter("grpc.port");
-        Integer grpcPort = null;
-        if (value != null) {
-            try {
-                grpcPort = Integer.parseInt(value);
-            } catch (NumberFormatException ignored) {
-            }
-        }
+        Integer grpcPort = uri.getPositive("grpc.port", (Integer) null);
         return new ServerInfo(uri.getHost(), port, grpcPort);
     }
 

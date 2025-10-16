@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.alibaba.nacos.common.remote.client.grpc;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.jd.live.agent.core.util.option.CompositeOption;
+import com.jd.live.agent.core.util.option.Option;
+import com.jd.live.agent.core.util.option.PropertiesOption;
 
 import java.util.Map;
 import java.util.Properties;
@@ -53,6 +56,16 @@ public class GrpcSdkClient extends GrpcClient {
     }
 
     /**
+     * constructor.
+     *
+     * @param config of GrpcClientConfig.
+     */
+    public GrpcSdkClient(GrpcClientConfig config, Properties properties) {
+        super(config);
+        this.properties = properties;
+    }
+
+    /**
      * Constructor.
      *
      * @param name               name of client.
@@ -60,17 +73,14 @@ public class GrpcSdkClient extends GrpcClient {
      * @param threadPoolMaxSize  .
      * @param labels             .
      */
+    @Deprecated
     public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
-        this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null, null);
+        this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
 
+    @Deprecated
     public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
-        this(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig, null);
-    }
-
-    public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig, Properties properties) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
-        this.properties = properties;
     }
 
     @Override
@@ -81,9 +91,8 @@ public class GrpcSdkClient extends GrpcClient {
     @Override
     public int rpcPortOffset() {
         // parse rpc port by live
-        String value = properties == null ? null : properties.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET);
-        value = value != null && !value.isEmpty() ? value : System.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET, String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET));
-        return Integer.parseInt(value);
+        Option option = CompositeOption.of(PropertiesOption.of(properties), PropertiesOption.ofSystemProperties());
+        return option.getPositive(NACOS_SERVER_GRPC_PORT_OFFSET, Constants.SDK_GRPC_PORT_DEFAULT_OFFSET);
     }
 
 }
