@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.util;
 
+import com.jd.live.agent.core.util.option.MapOption;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -28,7 +29,7 @@ import java.util.zip.CRC32;
  * Represents a URI (Uniform Resource Identifier) with components like scheme, host, port, path, and parameters.
  * Provides methods to construct and modify the URI.
  */
-public class URI {
+public class URI extends MapOption<String> {
 
     @Getter
     private String scheme;
@@ -48,8 +49,6 @@ public class URI {
     @Getter
     private String path;
 
-    private Map<String, String> parameters;
-
     private String url;
 
     private Long id;
@@ -58,6 +57,7 @@ public class URI {
      * Default constructor.
      */
     public URI() {
+        super(null);
     }
 
     private URI(String scheme,
@@ -68,13 +68,13 @@ public class URI {
                 String path,
                 Map<String, String> parameters,
                 String url) {
+        super(parameters);
         this.scheme = scheme;
         this.user = user;
         this.password = password;
         this.host = host;
         this.port = port;
         this.path = path;
-        this.parameters = parameters;
         this.url = url;
     }
 

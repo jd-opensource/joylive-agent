@@ -252,7 +252,7 @@ public class Bootstrap implements AgentLifecycle {
         this.config = config;
         this.unLoader = unLoader;
         this.classLoader = Bootstrap.class.getClassLoader();
-        this.valueResolver = new ValueResolver(new MapOption(env));
+        this.valueResolver = new ValueResolver(MapOption.of(env));
     }
 
     @Override
@@ -263,7 +263,7 @@ public class Bootstrap implements AgentLifecycle {
             extensionManager = createExtensionManager(); // depend on conditionMatcher
             injector = createInjector(); //depend on classloader
             inject();
-            option = new MapOption(config); // option include bootstrap.properties.
+            option = MapOption.of(config); // option include bootstrap.properties.
             classLoaderConfig = createClassLoaderConfig(); //depend on env option
             classLoaderManager = createClassLoaderManager(); //depend on agentPath and env option
             supplyEnv(); //depend on classLoaderManager
@@ -519,7 +519,7 @@ public class Bootstrap implements AgentLifecycle {
 
     private Injector createInjector() {
         InjectorFactory factory = extensionManager.getOrLoadExtension(InjectorFactory.class);
-        final Injection injection = factory.create(extensionManager, new MapOption(env.getEnvs()), classLoader);
+        final Injection injection = factory.create(extensionManager, MapOption.of(env.getEnvs()), classLoader);
 
         return target -> {
             Injectable injectable = target.getClass().getAnnotation(Injectable.class);

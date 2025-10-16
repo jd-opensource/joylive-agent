@@ -18,6 +18,9 @@ package com.jd.live.agent.core.util.option;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class OptionTest {
 
     @Test
@@ -26,6 +29,21 @@ public class OptionTest {
         option.put("a.b.c", "123");
         String value = option.getString("a.b.c");
         Assertions.assertEquals("123", value);
+    }
+
+    @Test
+    public void testCompositeOption() {
+
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put("u1", 1);
+        Map<String, Object> map2 = new HashMap<>();
+        map1.put("u2", 2);
+        Option option = CompositeOption.of(MapOption.of(map1), MapOption.of(map2));
+
+        Assertions.assertEquals(1, option.getInteger("u1"));
+        Assertions.assertEquals(2, option.getInteger("u2"));
+        Assertions.assertNull(option.getString("u3"));
+
     }
 
 }

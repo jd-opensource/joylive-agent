@@ -20,6 +20,7 @@ import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.parser.TypeReference;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.option.MapOption;
+import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import com.jd.live.agent.governance.registry.ServiceInstance;
@@ -161,7 +162,7 @@ public class UrlUtils {
                                              ObjectParser parser) {
         Map<String, String> metadata = instance.getMetadata();
         application.labelRegistry(metadata::put);
-        MapOption option = new MapOption(metadata);
+        Option option = MapOption.of(metadata);
         URLParams urlParams = getUrlParams(metadata, parser);
         return ServiceInstance.builder()
                 .interfaceMode(false)

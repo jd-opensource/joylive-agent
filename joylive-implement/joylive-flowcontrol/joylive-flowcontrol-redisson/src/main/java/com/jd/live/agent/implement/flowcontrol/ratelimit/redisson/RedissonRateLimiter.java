@@ -50,7 +50,7 @@ public class RedissonRateLimiter extends AbstractRateLimiter {
 
     public RedissonRateLimiter(RedisClientManager manager, RateLimitPolicy policy, SlidingWindow window, String name) {
         super(policy, TimeUnit.MILLISECONDS);
-        RedisConfig redisConfig = new RedisConfig(policy.getId(), new Options(option, new MapOption(manager.getConfig().getConfigs())));
+        RedisConfig redisConfig = new RedisConfig(policy.getId(), new Options(option, MapOption.of(manager.getConfig().getConfigs())));
         this.client = manager.getOrCreateClient(redisConfig);
         this.limiter = client.getRateLimiter(name);
         if (limiter != null) {
