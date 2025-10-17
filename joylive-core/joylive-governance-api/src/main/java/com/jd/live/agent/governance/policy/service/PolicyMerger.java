@@ -16,30 +16,55 @@
 package com.jd.live.agent.governance.policy.service;
 
 /**
- * Interface for merging service policies. Implementations of this interface
- * define the behavior for adding, deleting, and updating service policies.
+ * Merges different policy models by handling policy additions, deletions and updates.
+ * Defines the core operations for policy model management.
  */
 public interface PolicyMerger {
 
     /**
-     * Handles the addition of a new service policy.
-     *
-     * @param newPolicy The service to be added.
+     * Handles new policy addition
+     * @param newPolicy Policy to add
      */
     void onAdd(ServicePolicy newPolicy);
 
     /**
-     * Handles the deletion of an existing service policy.
-     *
-     * @param oldPolicy The service to be deleted.
+     * Handles policy deletion
+     * @param oldPolicy Policy to delete
      */
     void onDelete(ServicePolicy oldPolicy);
 
     /**
-     * Handles the update of an existing service policy using another policy.
-     *
-     * @param oldPolicy The service policy to be updated.
-     * @param newPolicy The service policy providing the update information.
+     * Updates existing policy with new policy data
+     * @param oldPolicy Policy to update
+     * @param newPolicy Policy containing new data
      */
     void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy);
+
+    /**
+     * Handles service addition
+     *
+     * @param service Service to add
+     */
+    default void onAdd(Service service) {
+
+    }
+
+    /**
+     * Handles service deletion
+     *
+     * @param service Service to delete
+     */
+    default void onDelete(Service service) {
+
+    }
+
+    /**
+     * Updates existing service with new service data
+     *
+     * @param oldService Service to update
+     * @param newService Service containing new data
+     */
+    default void onUpdate(Service oldService, Service newService) {
+
+    }
 }

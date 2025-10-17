@@ -81,7 +81,22 @@
   {
     "name": "service-provider",
     "serviceType": "HTTP",
-    "authorized": true,
+    "authorized": false,
+    "authPolicy": {
+      "type": "token",
+      "params": {
+        "token": "1234567890"
+      }
+    },
+    "authPolicies": [
+      {
+        "application": "service-consumer",
+        "type": "token",
+        "params": {
+          "token": "1234567890"
+        }
+      }
+    ],
     "version": 0,
     "groups": [
       {
@@ -131,13 +146,6 @@
               "type": "DENY"
             }
           ],
-          "authPolicy": {
-            "type": "jwt",
-            "params": {
-              "jwt.algorithm": "HMAC256",
-              "jwt.secretKey": "szo8E2NYIpxPYRmHWFNtt55sslji0eAi"
-            }
-          },
           "faultInjectionPolicies": [
             {
               "name": "fault-rule-1",

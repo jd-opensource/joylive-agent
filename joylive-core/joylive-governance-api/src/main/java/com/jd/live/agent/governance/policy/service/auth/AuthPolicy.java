@@ -37,16 +37,16 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
 
     public static final String DEFAULT_AUTH_TYPE = "token";
 
+    @Getter
+    @Setter
+    private String application;
+
     /**
      * The type of the auth policy.
      */
     @Getter
     @Setter
     private String type;
-
-    @Getter
-    @Setter
-    private String application;
 
     @Getter
     @Setter

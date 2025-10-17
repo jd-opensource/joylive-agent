@@ -19,7 +19,9 @@ import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
+import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
+import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -54,15 +56,23 @@ public class Service extends PolicyOwner implements ServiceName {
 
     @Getter
     @Setter
-    private Boolean authorized;
-
-    @Getter
-    @Setter
     private Set<String> aliases;
 
     @Getter
     @Setter
     private long version = 1;
+
+    @Getter
+    @Setter
+    private Boolean authorized;
+
+    @Getter
+    @Setter
+    private AuthPolicy authPolicy;
+
+    @Getter
+    @Setter
+    private List<AuthPolicy> authPolicies;
 
     @Getter
     @Setter
@@ -72,6 +82,8 @@ public class Service extends PolicyOwner implements ServiceName {
     private transient ServiceGroup defaultGroup;
 
     private transient final Cache<String, ServiceGroup> groupCache = new MapCache<>(new LowercaseListBuilder<>(() -> groups, null, ServiceGroup::getName));
+
+    private transient final Cache<String, AuthPolicy> authPolicyCache = new MapCache<>(new ListBuilder<>(() -> authPolicies, AuthPolicy::getApplication));
 
     public Service() {
     }
@@ -163,6 +175,22 @@ public class Service extends PolicyOwner implements ServiceName {
         }
     }
 
+    public boolean authorized() {
+        return authorized == null ? false : authorized;
+    }
+
+    /**
+     * Gets the authentication policy for specified application
+     *
+     * @param application Application identifier
+     * @return AuthPolicy if found and matches, null otherwise
+     */
+    public AuthPolicy getAuthPolicy(String application) {
+        // get consumer auth policy
+        AuthPolicy result = authPolicyCache.get(application);
+        return result == null && authPolicy != null && authPolicy.match(application) ? authPolicy : null;
+    }
+
     /**
      * Supplements the service with default values and updates service groups accordingly.
      */
@@ -174,7 +202,6 @@ public class Service extends PolicyOwner implements ServiceName {
         if (groups != null) {
             for (ServiceGroup group : groups) {
                 group.setServiceType(serviceType);
-                group.supplement(authorized);
                 group.supplement(() -> uri.parameter(KEY_SERVICE_GROUP, group.getName()));
                 if (group.isDefaultGroup() && group != defaultGroup) {
                     defaultGroup = group;
@@ -202,6 +229,7 @@ public class Service extends PolicyOwner implements ServiceName {
             groups.forEach(ServiceGroup::cache);
         }
         groupCache.get("");
+        authPolicyCache.get("");
     }
 
     /**
@@ -245,22 +273,33 @@ public class Service extends PolicyOwner implements ServiceName {
         }
     }
 
+    @Override
+    protected void onAdd(PolicyMerger merger, String owner) {
+        merger.onAdd(this);
+        super.onAdd(merger, owner);
+    }
+
+    @Override
+    protected boolean onDelete(PolicyMerger merger, String owner) {
+        merger.onDelete(this);
+        return super.onDelete(merger, owner);
+    }
+
     /**
-     * Updates the current service with the provided service, using the specified policy merger and owner.
-     * This method will handle the addition, update, or deletion of service groups as needed.
-     *
-     * @param service The service containing the updates.
-     * @param merger The policy merger to handle the merging logic.
-     * @param owner The owner of the service.
+     * Updates service using specified merger and owner
+     * @param newService Service containing new data
+     * @param merger Policy merger to handle the update
+     * @param owner Owner of the service
      */
-    protected void onUpdate(Service service, PolicyMerger merger, String owner) {
+    protected void onUpdate(Service newService, PolicyMerger merger, String owner) {
+        merger.onUpdate(this, newService);
         owners.addOwner(owner);
         List<ServiceGroup> targets = new ArrayList<>();
         Set<String> olds = new HashSet<>();
         if (groups != null) {
             for (ServiceGroup old : groups) {
                 olds.add(old.getName());
-                ServiceGroup update = service.getGroup(old.getName());
+                ServiceGroup update = newService.getGroup(old.getName());
                 if (update == null) {
                     if (old.onDelete(merger, owner)) {
                         targets.add(old);
@@ -271,18 +310,19 @@ public class Service extends PolicyOwner implements ServiceName {
                 }
             }
         }
-        if (service.groups != null) {
-            for (ServiceGroup update : service.groups) {
+        if (newService.groups != null) {
+            for (ServiceGroup update : newService.groups) {
                 if (!olds.contains(update.getName())) {
                     update.onAdd(merger, owner);
                     targets.add(update);
                 }
             }
         }
-        version = service.getVersion();
+        version = newService.getVersion();
         groups = targets;
         defaultGroup = null;
         groupCache.clear();
-        service.groupCache.clear();
+        authPolicyCache.clear();
+        newService.groupCache.clear();
     }
 }

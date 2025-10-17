@@ -29,11 +29,12 @@ public abstract class PolicyOwner extends PolicyId {
     protected transient final Owner owners = new Owner();
 
     /**
-     * Deletes the service policy using the specified merger and owner, and returns whether the owner list is not empty.
+     * Deletes a policy model from this service.
+     * Removes the owner and updates associated policies.
      *
-     * @param merger The policy merger to handle the deletion logic.
-     * @param owner  The owner of the service policy.
-     * @return true if the owner list is not empty after deletion, false otherwise.
+     * @param merger The policy merger to handle policy deletions
+     * @param owner The owner identifier to remove
+     * @return True if service still has other owners, false otherwise
      */
     protected boolean onDelete(PolicyMerger merger, String owner) {
         owners.removeOwner(owner);
@@ -45,10 +46,11 @@ public abstract class PolicyOwner extends PolicyId {
     }
 
     /**
-     * Adds the service policy using the specified merger and owner.
+     * Adds a new policy model owner to this service.
+     * Updates owners list and associated policies.
      *
-     * @param merger The policy merger to handle the addition logic.
-     * @param owner  The owner of the service policy.
+     * @param merger The policy merger to handle policy additions
+     * @param owner The owner identifier to add
      */
     protected void onAdd(PolicyMerger merger, String owner) {
         owners.addOwner(owner);

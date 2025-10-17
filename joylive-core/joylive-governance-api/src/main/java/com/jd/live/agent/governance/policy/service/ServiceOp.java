@@ -16,41 +16,41 @@
 package com.jd.live.agent.governance.policy.service;
 
 /**
- * Utility class providing static methods to operate on {@code Service} objects.
- * This class defines operations such as delete, update, and add that can be performed on services.
+ * Utility class for accessing protected methods in Service class.
+ * Provides static methods to handle service operations like delete, update and add.
  */
 public class ServiceOp {
 
     /**
-     * Invokes the onDelete method on the provided {@code Service} object.
+     * Deletes a policy model from service. Returns true if other models still exist.
      *
-     * @param service The {@code Service} object on which the delete operation is to be performed.
-     * @param merger  The {@code PolicyMerger} used to handle the merging of policies during the delete operation.
-     * @param owner   The owner identifier as a {@code String} that is associated with the service.
-     * @return A boolean value indicating the success or failure of the delete operation.
+     * @param service The target service
+     * @param merger The policy merger to handle merging
+     * @param owner The policy model to delete
+     * @return True if service still has other policy models, false otherwise
      */
     public static boolean onDelete(Service service, PolicyMerger merger, String owner) {
         return service.onDelete(merger, owner);
     }
 
     /**
-     * Invokes the onUpdate method on the provided {@code Service} object with the given update parameters.
+     * Updates a service with changes from a policy model.
      *
-     * @param service The {@code Service} object on which the update operation is to be performed.
-     * @param update  The {@code Service} object that contains the update details.
-     * @param merger  The {@code PolicyMerger} used to handle the merging of policies during the update operation.
-     * @param owner   The owner identifier as a {@code String} that is associated with the service being updated.
+     * @param oldService The service to be updated
+     * @param newService The newer to apply
+     * @param merger     The policy merger to handle merging
+     * @param owner      The policy model identifier
      */
-    public static void onUpdate(Service service, Service update, PolicyMerger merger, String owner) {
-        service.onUpdate(update, merger, owner);
+    public static void onUpdate(Service oldService, Service newService, PolicyMerger merger, String owner) {
+        oldService.onUpdate(newService, merger, owner);
     }
 
     /**
-     * Invokes the onAdd method on the provided {@code Service} object.
+     * Adds a new policy model to the service.
      *
-     * @param service The {@code Service} object on which the add operation is to be performed.
-     * @param merger  The {@code PolicyMerger} used to handle the merging of policies during the add operation.
-     * @param owner   The owner identifier as a {@code String} that is associated with the service being added.
+     * @param service The target service
+     * @param merger The policy merger to handle merging
+     * @param owner The policy model identifier to add
      */
     public static void onAdd(Service service, PolicyMerger merger, String owner) {
         service.onAdd(merger, owner);

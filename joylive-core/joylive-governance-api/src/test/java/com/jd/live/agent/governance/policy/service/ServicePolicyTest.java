@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.policy.service;
 
 import com.jd.live.agent.core.util.URI;
-import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
@@ -47,7 +46,6 @@ public class ServicePolicyTest {
         target.setLoadBalancePolicy(new LoadBalancePolicy());
         target.setClusterPolicy(new ClusterPolicy());
         target.setLivePolicy(new ServiceLivePolicy());
-        target.setAuthPolicy(new AuthPolicy());
         target.setRateLimitPolicies(Arrays.asList(new RateLimitPolicy("rateLimitPolicy1", "LeakyBucket")));
         target.setConcurrencyLimitPolicies(Arrays.asList(new ConcurrencyLimitPolicy("concurrencyLimitPolicy1")));
         target.setLoadLimitPolicies(Arrays.asList(new LoadLimitPolicy("loadLimitPolicy1")));
@@ -62,7 +60,6 @@ public class ServicePolicyTest {
         Assertions.assertEquals(target.getId(), target.getLoadBalancePolicy().getId());
         Assertions.assertEquals(target.getId(), target.getClusterPolicy().getId());
         Assertions.assertEquals(target.getId(), target.getLivePolicy().getId());
-        Assertions.assertEquals(target.getId(), target.getAuthPolicy().getId());
         Assertions.assertEquals("rateLimitPolicy1", target.getRateLimitPolicies().get(0).getUri().getParameter(KEY_SERVICE_RATE_LIMIT));
         Assertions.assertEquals("concurrencyLimitPolicy1", target.getConcurrencyLimitPolicies().get(0).getUri().getParameter(KEY_SERVICE_CONCURRENCY_LIMIT));
         Assertions.assertEquals("loadLimitPolicy1", target.getLoadLimitPolicies().get(0).getUri().getParameter(KEY_SERVICE_LOAD_LIMIT));
@@ -80,7 +77,6 @@ public class ServicePolicyTest {
         Assertions.assertNotNull(target.getLoadBalancePolicy());
         Assertions.assertNotNull(target.getClusterPolicy());
         Assertions.assertNotNull(target.getLivePolicy());
-        Assertions.assertNotNull(target.getAuthPolicy());
         Assertions.assertEquals(1, target.getRateLimitPolicies().size());
         Assertions.assertEquals("rateLimitPolicy1", target.getRateLimitPolicies().get(0).getUri().getParameter(KEY_SERVICE_RATE_LIMIT));
         Assertions.assertEquals(1, target.getConcurrencyLimitPolicies().size());

@@ -343,13 +343,14 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
     }
 
     /**
-     * Updates services, using the specified policy merger and owner.
+     * Updates services from a specific policy model. Services are aggregated by service name
+     * across different policy models. This method handles updates from one policy model source.
      *
-     * @param updates The list of services to update the current services with.
-     * @param deletes The list of services to be deleted.
-     * @param merger The policy merger to handle the merging logic.
-     * @param owner The owner of the services.
-     * @return The updated list of services.
+     * @param updates The list of services to be updated from this policy model
+     * @param deletes The set of service names to be removed from this policy model
+     * @param merger The policy merger to handle the merging logic across different policy models
+     * @param owner The identifier of the policy model source
+     * @return The list of services after applying updates from this policy model
      */
     public List<Service> onUpdate(List<Service> updates, Set<String> deletes, PolicyMerger merger, String owner) {
         List<Service> result = new ArrayList<>();
@@ -361,13 +362,9 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
                 olds.add(old.getName());
                 Service update = updateMap.get(old.getName());
                 if (update == null) {
-                    if (deletes == null || !deletes.contains(old.getName())) {
+                    if (deletes == null || !deletes.contains(old.getName()) || ServiceOp.onDelete(old, merger, owner)) {
+                        // Not deleted, or still has other policy models after deletion
                         result.add(old);
-                    } else {
-                        // Delete
-                        if (ServiceOp.onDelete(old, merger, owner)) {
-                            result.add(old);
-                        }
                     }
                 } else if (old.getVersion() != update.getVersion()) {
                     // Update
@@ -390,24 +387,24 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
     }
 
     /**
-     * Updates the service, using the specified policy merger and owner.
+     * Updates a single service from a policy model.
      *
-     * @param service The service to update the current services with.
-     * @param merger  The policy merger to handle the merging logic.
-     * @param owner   The owner of the services.
-     * @return The updated list of services.
+     * @param service The service to update
+     * @param merger The policy merger to handle merging
+     * @param owner The policy model identifier
+     * @return The list of updated services
      */
     public List<Service> onUpdate(Service service, PolicyMerger merger, String owner) {
         return onUpdate(Collections.singletonList(service), null, merger, owner);
     }
 
     /**
-     * Delete the service, using the specified policy merger and owner.
+     * Deletes a service from a policy model.
      *
-     * @param name   The service name to delete.
-     * @param merger The policy merger to handle the merging logic.
-     * @param owner  The owner of the services.
-     * @return The updated list of services.
+     * @param name The service name to delete
+     * @param merger The policy merger to handle merging
+     * @param owner The policy model identifier
+     * @return The list of remaining services
      */
     public List<Service> onDelete(String name, PolicyMerger merger, String owner) {
         return onUpdate(new ArrayList<>(), Collections.singleton(name), merger, owner);

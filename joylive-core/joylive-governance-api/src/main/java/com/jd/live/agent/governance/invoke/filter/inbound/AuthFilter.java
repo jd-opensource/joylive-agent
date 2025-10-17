@@ -27,12 +27,14 @@ import com.jd.live.agent.governance.invoke.filter.InboundFilter;
 import com.jd.live.agent.governance.invoke.filter.InboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.policy.live.FaultType;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * AuthFilter
@@ -50,14 +52,15 @@ public class AuthFilter implements InboundFilter {
     @Override
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
-        ServicePolicy servicePolicy = metadata.getServicePolicy();
-        if (servicePolicy != null && servicePolicy.authorized()) {
-            AuthPolicy authPolicy = servicePolicy.getAuthPolicy(metadata.getConsumer());
+        Service service = metadata.getService();
+        if (service != null && service.authorized()) {
+            AuthPolicy authPolicy = service.getAuthPolicy(metadata.getConsumer());
             if (authPolicy == null) {
                 return Futures.future(FaultType.UNAUTHORIZED.reject("the consumer is not authorized for service " + metadata.getServiceName()));
             }
+            String authType = authPolicy.getType();
             // check auth policy
-            Authenticate authenticate = authenticates.get(authPolicy.getTypeOrDefault());
+            Authenticate authenticate = isEmpty(authType) ? null : authenticates.get(authType);
             if (authenticate != null) {
                 Permission permission = authenticate.authenticate(invocation.getRequest(), authPolicy,
                         metadata.getServiceName(), metadata.getConsumer());
