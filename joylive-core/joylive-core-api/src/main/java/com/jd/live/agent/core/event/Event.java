@@ -68,4 +68,16 @@ public class Event<E> {
     public Event(E data) {
         this.data = data;
     }
+
+    /**
+     * Clears all fields of this event for object reuse.
+     * Called after event processing is complete.
+     */
+    public void clear() {
+        this.instanceId = null;
+        this.ip = null;
+        this.topic = null;
+        this.time = 0;
+        this.data = null;
+    }
 }

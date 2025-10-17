@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.implement.event.disruptor;
 
+import com.jd.live.agent.bootstrap.logger.Logger;
+import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.EventHandler;
 import com.jd.live.agent.core.event.Publisher;
@@ -42,6 +44,8 @@ import java.util.concurrent.locks.LockSupport;
  * @param <E> The type of event to be published.
  */
 public class DisruptorPublisher<E> implements Publisher<E> {
+
+    private static final Logger logger = LoggerFactory.getLogger(DisruptorPublisher.class);
 
     private final String topic;
 
@@ -212,10 +216,16 @@ public class DisruptorPublisher<E> implements Publisher<E> {
         public void onEvent(Event<E> event, long sequence, boolean endOfBatch) {
             events.add(event);
             if (endOfBatch || events.size() == batchSize) {
-                for (EventHandler<E> handler : handlers) {
-                    handler.handle(events);
+                try {
+                    for (EventHandler<E> handler : handlers) {
+                        handler.handle(events);
+                    }
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                } finally {
+                    events.forEach(Event::clear);
+                    events.clear();
                 }
-                events.clear();
             }
         }
     }
