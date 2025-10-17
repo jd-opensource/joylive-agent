@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.invoke.filter.outbound;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
@@ -26,7 +25,6 @@ import com.jd.live.agent.governance.invoke.auth.Authenticate;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilter;
 import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
-import com.jd.live.agent.governance.policy.live.FaultType;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
@@ -63,17 +61,16 @@ public class AuthFilter implements OutboundFilter {
         if (service != null && service.authorized()) {
             String application = invocation.getContext().getApplication().getName();
             AuthPolicy authPolicy = service.getAuthPolicy(application);
-            if (authPolicy == null) {
-                return Futures.future(FaultType.UNAUTHORIZED.reject("the consumer is not authorized for service " + metadata.getServiceName()));
-            }
-            String authType = authPolicy.getType();
-            Authenticate authenticate = isEmpty(authType) ? null : authenticates.get(authType);
-            if (authenticate != null) {
-                authenticate.inject(
-                        invocation.getRequest(),
-                        authPolicy,
-                        metadata.getServiceName(),
-                        application);
+            if (authPolicy != null) {
+                String authType = authPolicy.getType();
+                Authenticate authenticate = isEmpty(authType) ? null : authenticates.get(authType);
+                if (authenticate != null) {
+                    authenticate.inject(
+                            invocation.getRequest(),
+                            authPolicy,
+                            metadata.getServiceName(),
+                            application);
+                }
             }
         }
         return chain.filter(invocation, endpoint);
