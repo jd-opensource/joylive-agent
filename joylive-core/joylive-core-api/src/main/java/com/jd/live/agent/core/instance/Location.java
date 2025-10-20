@@ -16,12 +16,15 @@
 package com.jd.live.agent.core.instance;
 
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.util.network.Ipv4;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * Represents the geographical and logical location information for an application or service.
@@ -135,18 +138,6 @@ public class Location {
     }
 
     public Map<String, String> getTags() {
-        if (tags == null) {
-            tags = new HashMap<>();
-            if (liveSpaceId != null && !liveSpaceId.isEmpty()) {
-                tags.put(Constants.LABEL_LOCATION_LIVE_SPACE_ID, liveSpaceId);
-                if (unit != null && !unit.isEmpty()) {
-                    tags.put(Constants.LABEL_LOCATION_UNIT, unit);
-                }
-                if (cell != null && !cell.isEmpty()) {
-                    tags.put(Constants.LABEL_LOCATION_CELL, cell);
-                }
-            }
-        }
         return tags;
     }
 
@@ -197,5 +188,22 @@ public class Location {
             builder.append(suffix);
         }
         return builder.toString();
+    }
+
+    protected void initialize() {
+        ip = Ipv4.getLocalIp();
+        host = Ipv4.getLocalHost();
+        if (tags == null) {
+            tags = new HashMap<>();
+        }
+        if (!isEmpty(liveSpaceId)) {
+            tags.put(Constants.LABEL_LOCATION_LIVE_SPACE_ID, liveSpaceId);
+            if (!isEmpty(unit)) {
+                tags.put(Constants.LABEL_LOCATION_UNIT, unit);
+            }
+            if (!isEmpty(cell)) {
+                tags.put(Constants.LABEL_LOCATION_CELL, cell);
+            }
+        }
     }
 }

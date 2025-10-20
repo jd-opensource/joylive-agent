@@ -23,7 +23,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -48,7 +47,6 @@ import com.jd.live.agent.core.inject.Injection.Injector;
 import com.jd.live.agent.core.inject.InjectorFactory;
 import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
@@ -62,7 +60,6 @@ import com.jd.live.agent.core.service.ServiceManager;
 import com.jd.live.agent.core.service.ServiceSupervisor;
 import com.jd.live.agent.core.service.ServiceSupervisorAware;
 import com.jd.live.agent.core.util.Close;
-import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.option.CascadeOption;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
@@ -70,7 +67,6 @@ import com.jd.live.agent.core.util.shutdown.Shutdown;
 import com.jd.live.agent.core.util.shutdown.ShutdownHookAdapter;
 import com.jd.live.agent.core.util.time.TimeScheduler;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.core.util.type.Artifact;
 import com.jd.live.agent.core.util.version.JVM;
 import com.jd.live.agent.core.util.version.VersionExpression;
 
@@ -79,7 +75,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.lang.instrument.Instrumentation;
-import java.security.CodeSource;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -473,42 +468,8 @@ public class Bootstrap implements AgentLifecycle {
     private Application createApplication() {
         Application app = new Application();
         injector.inject(app);
-        AppService appService = app.getService();
-        Location location = app.getLocation();
-        Map<String, String> meta = app.getMeta();
-        if (location == null) {
-            location = new Location();
-            app.setLocation(location);
-        }
-        if (appService == null) {
-            appService = new AppService();
-            app.setService(appService);
-        }
-        if (meta == null) {
-            meta = new HashMap<>();
-            app.setMeta(meta);
-        }
-        setAgentVersion(app);
-        location.setIp(Ipv4.getLocalIp());
-        location.setHost(Ipv4.getLocalHost());
-        location.getTags();
-        setProperty(Constants.LABEL_INSTANCE_ID, app.getInstance());
-        setProperty(Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
-        setProperty(Constants.LABEL_RULE_ID, location.getUnitRuleId());
-        setProperty(Constants.LABEL_UNIT, location.getUnit());
-        setProperty(Constants.LABEL_CELL, location.getCell());
-        setProperty(Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
-        setProperty(Constants.LABEL_LANE, location.getLane());
-        setProperty(Constants.LABEL_SERVICE_NAMESPACE, appService.getNamespace());
-        setProperty(Constants.LABEL_SERVICE_ID, appService.getName());
-        setProperty(Constants.LABEL_SERVICE_GROUP, appService.getGroup());
+        app.initialize();
         return app;
-    }
-
-    private void setProperty(String key, String value) {
-        if (value != null && !value.isEmpty()) {
-            System.setProperty(key, value);
-        }
     }
 
     private AgentConfig createAgentConfig() {
@@ -680,17 +641,6 @@ public class Bootstrap implements AgentLifecycle {
         Location location = application.getLocation();
         logger.info("Starting application name={}, instance={}, location=[{}]",
                 application.getName(), application.getInstance(), location.toString(null, null));
-    }
-
-    private void setAgentVersion(Application app) {
-        try {
-            CodeSource codeSource = this.getClass().getProtectionDomain().getCodeSource();
-            Artifact artifact = new Artifact(codeSource.getLocation().getPath());
-            String agentVersion = artifact.getVersion();
-            app.getMeta().put(Constants.LABEL_AGENT_VERSION, agentVersion);
-        } catch (Throwable t) {
-            logger.error(t.getMessage(), t);
-        }
     }
 
     private boolean supportEnhance() {

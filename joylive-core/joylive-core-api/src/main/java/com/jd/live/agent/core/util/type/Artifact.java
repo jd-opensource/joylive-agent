@@ -21,6 +21,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.CodeSource;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -160,6 +161,18 @@ public class Artifact {
             start = name.lastIndexOf('-', end);
         }
         return result;
+    }
+
+    /**
+     * Gets version from the JAR file containing the specified class.
+     *
+     * @param type The class to get version for
+     * @return Version string from JAR manifest
+     */
+    public static String getVersion(Class<?> type) {
+        CodeSource codeSource = type.getProtectionDomain().getCodeSource();
+        Artifact artifact = new Artifact(codeSource.getLocation().getPath());
+        return artifact.getVersion();
     }
 
 }

@@ -18,11 +18,13 @@ package com.jd.live.agent.core.instance;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Configurable;
+import com.jd.live.agent.core.util.type.Artifact;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.lang.management.ManagementFactory;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -92,7 +94,7 @@ public class Application {
      */
     @Setter
     @Config("service")
-    private AppService service;
+    private AppService service = new AppService();
 
     /**
      * Location information of the application.
@@ -149,9 +151,10 @@ public class Application {
     public Application(String name, String instance, AppService service, Location location, Map<String, String> meta) {
         this.name = name;
         this.instance = instance;
-        this.service = service;
-        this.location = location;
-        this.meta = meta;
+        // not null
+        this.service = service == null ? new AppService() : service;
+        this.location = location == null ? new Location() : location;
+        this.meta = meta == null ? new HashMap<>() : meta;
         this.pid = pid();
         this.timestamp = System.currentTimeMillis();
     }
@@ -248,6 +251,25 @@ public class Application {
     }
 
     /**
+     * Initializes application with location and service properties.
+     * Sets agent version, IP, hostname, and various identification labels.
+     */
+    public void initialize() {
+        setAgentVersion();
+        location.initialize();
+        setProperty(Constants.LABEL_INSTANCE_ID, instance);
+        setProperty(Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
+        setProperty(Constants.LABEL_RULE_ID, location.getUnitRuleId());
+        setProperty(Constants.LABEL_UNIT, location.getUnit());
+        setProperty(Constants.LABEL_CELL, location.getCell());
+        setProperty(Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
+        setProperty(Constants.LABEL_LANE, location.getLane());
+        setProperty(Constants.LABEL_SERVICE_NAMESPACE, service.getNamespace());
+        setProperty(Constants.LABEL_SERVICE_ID, service.getName());
+        setProperty(Constants.LABEL_SERVICE_GROUP, service.getGroup());
+    }
+
+    /**
      * Labels the instance information using the provided consumer.
      *
      * @param consumer the consumer to use for labeling
@@ -338,6 +360,19 @@ public class Application {
             return Integer.parseInt(processName.split("@")[0]);
         } catch (NumberFormatException ignore) {
             return 0;
+        }
+    }
+
+    private void setAgentVersion() {
+        try {
+            meta.put(Constants.LABEL_AGENT_VERSION, Artifact.getVersion(this.getClass()));
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void setProperty(String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            System.setProperty(key, value);
         }
     }
 
