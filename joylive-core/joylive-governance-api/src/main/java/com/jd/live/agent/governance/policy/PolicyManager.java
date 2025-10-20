@@ -28,7 +28,6 @@ import com.jd.live.agent.core.inject.InjectSourceSupplier;
 import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -543,27 +542,19 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
      */
     private void warmup() {
         if (warmup.compareAndSet(false, true)) {
-            ServiceConfig serviceConfig = governanceConfig.getServiceConfig();
-            Set<String> warmups = serviceConfig.getWarmups() == null ? new HashSet<>() : new HashSet<>(serviceConfig.getWarmups());
-            Map<String, String> services = governanceConfig.getRegistryConfig().getHostConfig().getServices();
-            if (services != null && !services.isEmpty()) {
-                services.forEach((k, v) -> {
-                    warmups.add(v);
-                });
+            // warmup application service policy
+            subscribe(application.getService().getName());
+            // warmup services
+            Set<String> warmups = governanceConfig.getServiceConfig().getWarmups();
+            if (warmups != null && !warmups.isEmpty()) {
+                // only subscribe policy
+                warmups.forEach(v -> subscribe(v));
             }
-            AppService service = application.getService();
-            String namespace = service == null ? null : service.getNamespace();
-            String name = service == null || service.getName() == null ? null : service.getName();
-            if (name != null) {
-                warmups.add(name);
-            }
-            if (!warmups.isEmpty()) {
-                warmups.forEach(o -> subscribe(new PolicySubscription(o, namespace, TYPE_SERVICE_POLICY, serviceSyncers)));
-            }
-
-            // warm up for spring boot service mapping
-            if (services != null && !services.isEmpty()) {
-                services.forEach((k, v) -> registry.subscribe(v));
+            // warmup host to service
+            Map<String, String> hosts = governanceConfig.getRegistryConfig().getHostConfig().getServices();
+            if (hosts != null && !hosts.isEmpty()) {
+                // subscribe policy and instance
+                hosts.forEach((k, v) -> registry.subscribe(v));
             }
         }
     }
