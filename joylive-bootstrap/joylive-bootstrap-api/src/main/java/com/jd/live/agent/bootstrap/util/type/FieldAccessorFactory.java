@@ -350,6 +350,8 @@ public class FieldAccessorFactory {
                     return Optional.of(f);
                 } catch (NoSuchFieldException e) {
                     parent = parent.getSuperclass();
+                } catch (NoClassDefFoundError e) {
+                    break;
                 }
             }
             return Optional.empty();
