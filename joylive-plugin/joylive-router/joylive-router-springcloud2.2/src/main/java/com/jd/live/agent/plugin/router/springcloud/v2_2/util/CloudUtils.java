@@ -45,6 +45,11 @@ public class CloudUtils {
     // spring cloud 2.2.7+
     private static final Class<?> CLASS_REACTIVE_RETRYABLE_FILTER_FUNCTION = loadClass(TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION, HttpAccessor.class.getClassLoader());
 
+    private static final String TYPE_BACKOFF = "org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties$Backoff";
+
+    // backoff is introduced from spring cloud 2.2.7+
+    private static final Class<?> CLASS_BACKOFF = loadClass(TYPE_BACKOFF, HttpAccessor.class.getClassLoader());
+
     private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
 
     /**
@@ -58,6 +63,10 @@ public class CloudUtils {
 
     public static boolean isRetryableLoadBalanceFilterFunction(Object target) {
         return target != null && CLASS_REACTIVE_RETRYABLE_FILTER_FUNCTION != null && CLASS_REACTIVE_RETRYABLE_FILTER_FUNCTION.isInstance(target);
+    }
+
+    public static boolean isBackOffEnabled() {
+        return CLASS_BACKOFF != null;
     }
 
     /**

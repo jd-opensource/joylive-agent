@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceRegistryFactory;
 import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.util.CloudUtils;
 import lombok.Getter;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 
@@ -28,8 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
-
-import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * Abstract implementation of CloudClusterContext for load balancing and service instance management
@@ -84,7 +83,7 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
         codes.forEach(status -> statuses.add(String.valueOf(status)));
         retryPolicy.setRetry(properties.getMaxRetriesOnNextServiceInstance());
         // backoff is introduced from spring cloud 2.2.7+
-        if (Accessor.backOffType != null) {
+        if (CloudUtils.isBackOffEnabled()) {
             retryPolicy.setInterval(properties.getBackoff().getMinBackoff().toMillis());
         }
         retryPolicy.setErrorCodes(statuses);
@@ -95,10 +94,4 @@ public abstract class AbstractCloudClusterContext implements CloudClusterContext
         }
         return retryPolicy;
     }
-
-    private static class Accessor {
-
-        private static final Class<?> backOffType = loadClass("org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties.Backoff", LoadBalancerRetryProperties.class.getClassLoader());
-    }
-
 }
