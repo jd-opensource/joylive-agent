@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.router.springweb.v7.interceptor.ExceptionCarryin
  * @author Axkea
  */
 @Injectable
-@Extension(value = "ExceptionCarryingDefinition_v6")
+@Extension(value = "ExceptionCarryingDefinition_v7")
 @ConditionalOnSpringWeb7FlowControlEnabled
 @ConditionalOnClass(ExceptionCarryingDefinition.TYPE_DISPATCHER_SERVLET)
 @ConditionalOnClass(ExceptionCarryingDefinition.TYPE_HTTP_SERVLET)

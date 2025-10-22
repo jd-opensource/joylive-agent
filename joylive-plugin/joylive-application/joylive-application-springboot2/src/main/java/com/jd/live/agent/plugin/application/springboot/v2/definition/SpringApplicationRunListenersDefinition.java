@@ -16,12 +16,14 @@
 package com.jd.live.agent.plugin.application.springboot.v2.definition;
 
 import com.jd.live.agent.core.bootstrap.AppListener;
+import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
@@ -30,6 +32,7 @@ import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.governance.registry.Registry;
+import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnContextPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnEnvironmentPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnReadyInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnStartedInterceptor;
@@ -55,8 +58,10 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
 
     private static final String METHOD_ENVIRONMENT_PREPARED = "environmentPrepared";
 
+    private static final String METHOD_CONTEXT_PREPARED = "contextPrepared";
+
     @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
-    private AppListener listener;
+    private AppListenerSupervisor supervisor;
 
     @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
     private GovernanceConfig config;
@@ -70,15 +75,20 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
 
+    @Inject
+    private ObjectConverter converter;
+
     public SpringApplicationRunListenersDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationOnStartedInterceptor(listener, docRegistry, application)),
-                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING, METHOD_FINISHED),
-                        () -> new ApplicationOnReadyInterceptor(listener, config, registry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
-                        () -> new ApplicationOnEnvironmentPreparedInterceptor(listener, config, registry, application))
+                        () -> new ApplicationOnEnvironmentPreparedInterceptor(supervisor, config, registry, application)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
+                        () -> new ApplicationOnStartedInterceptor(supervisor, docRegistry, application)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_CONTEXT_PREPARED),
+                        () -> new ApplicationOnContextPreparedInterceptor(supervisor, config, converter)),
+                new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING, METHOD_FINISHED),
+                        () -> new ApplicationOnReadyInterceptor(supervisor, config, registry, application)),
         };
     }
 }

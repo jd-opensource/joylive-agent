@@ -44,6 +44,11 @@ public class AppLifecycle {
     public static final String EVENT_ON_STARTED = "onStarted";
 
     /**
+     * Event key representing the event when the application context is prepared.
+     */
+    public static final String EVENT_ON_CONTEXT_PREPARED = "onContextPrepared";
+
+    /**
      * Event key representing the event when the application is ready.
      */
     public static final String EVENT_ON_READY = "onReady";
@@ -142,17 +147,6 @@ public class AppLifecycle {
     }
 
     /**
-     * Executes the provided {@code Runnable} task when the application environment is prepared.
-     * The task is executed only if the {@link #enter(String)} method returns {@code true} for
-     * the {@link #EVENT_ON_ENVIRONMENT_PREPARED} event.
-     *
-     * @param runnable the task to execute when the application environment is prepared
-     */
-    public static void prepared(Runnable runnable) {
-        enter(EVENT_ON_ENVIRONMENT_PREPARED, runnable);
-    }
-
-    /**
      * Executes the provided {@code Runnable} task when the application has started.
      * The task is executed only if the {@link #enter(String)} method returns {@code true} for
      * the {@link #EVENT_ON_STARTED} event.
@@ -161,6 +155,26 @@ public class AppLifecycle {
      */
     public static void started(Runnable runnable) {
         enter(EVENT_ON_STARTED, runnable);
+    }
+
+    /**
+     * Executes the provided {@code Runnable} task when the application environment is prepared.
+     * The task is executed only if the {@link #enter(String)} method returns {@code true} for
+     * the {@link #EVENT_ON_ENVIRONMENT_PREPARED} event.
+     *
+     * @param runnable the task to execute when the application environment is prepared
+     */
+    public static void environmentPrepared(Runnable runnable) {
+        enter(EVENT_ON_ENVIRONMENT_PREPARED, runnable);
+    }
+
+    /**
+     * Registers a callback to be executed when the application context is prepared.
+     *
+     * @param runnable The callback to execute on context prepared event
+     */
+    public static void contextPrepared(Runnable runnable) {
+        enter(EVENT_ON_CONTEXT_PREPARED, runnable);
     }
 
     /**

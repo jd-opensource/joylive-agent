@@ -20,6 +20,7 @@ import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
@@ -66,13 +67,16 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
+    @Inject
+    private JsonPathParser parser;
+
     public DispatcherHandlerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_HANDLER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE_REQUEST_WITH).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new DispatcherHandlerInterceptor(context)
+                        () -> new DispatcherHandlerInterceptor(context, parser)
                 ),
                 new InterceptorDefinitionAdapter(
                         // For spring web flux 6.1.*

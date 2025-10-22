@@ -461,6 +461,25 @@ public class URI extends MapOption<String> {
     }
 
     /**
+     * Checks if a path is a sub-path of the root path
+     *
+     * @param path The path to check
+     * @param root The root path to check against
+     * @return true if path is under root, false otherwise
+     */
+    public static boolean isSubPath(String path, String root) {
+        if (path == null || root == null) {
+            return false;
+        } else if (root.equals("/")) {
+            return true;
+        } else if (!path.startsWith(root)) {
+            return false;
+        }
+        int length = root.length();
+        return path.length() == length || path.charAt(length) == '/';
+    }
+
+    /**
      * Represents a parsed URI with all components.
      * Handles schema, authentication, host, port, path, query and fragment.
      */

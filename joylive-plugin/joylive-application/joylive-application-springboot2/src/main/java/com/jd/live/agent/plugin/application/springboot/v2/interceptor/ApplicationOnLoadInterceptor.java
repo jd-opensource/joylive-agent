@@ -19,11 +19,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
+import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.util.ClassUtils;
 
 public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
 
@@ -40,7 +39,7 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
         // fix for spring boot 1.x
         if (ctx.tryLock(lock)) {
             // fix for spring boot devtools, it will create SpringApplication
-            if (Accessor.isDevThread()) {
+            if (SpringUtils.isDevThread()) {
                 return;
             }
             // fix for spring boot 2.1, it will trigger twice.
@@ -53,7 +52,6 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
                 ClassLoader classLoader = resourceLoader != null
                         ? resourceLoader.getClassLoader()
                         : SpringApplication.class.getClassLoader();
-                InnerListener.foreach(l -> l.onLoading(classLoader, mainClass));
                 listener.onLoading(classLoader, mainClass);
             });
         }
@@ -76,17 +74,5 @@ public class ApplicationOnLoadInterceptor extends InterceptorAdaptor {
             // Swallow and continue
         }
         return null;
-    }
-
-    private static class Accessor {
-
-        private static final String type = "org.springframework.boot.devtools.livereload.LiveReloadServer";
-        private static final String threadName = "restartedMain";
-        private static final boolean isDevTools = ClassUtils.isPresent(type, ResourceLoader.class.getClassLoader());
-
-        public static boolean isDevThread() {
-            return isDevTools && threadName.equals(Thread.currentThread().getName());
-        }
-
     }
 }

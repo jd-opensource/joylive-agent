@@ -28,7 +28,7 @@ import com.jd.live.agent.plugin.router.springweb.v7.interceptor.HierarchicalUriC
 /**
  * HierarchicalUriComponentsDefinition
  */
-@Extension(value = "HierarchicalUriComponentsDefinition_v6")
+@Extension(value = "HierarchicalUriComponentsDefinition_v7")
 @ConditionalOnSpringWeb7GovernanceEnabled
 @ConditionalOnClass(HierarchicalUriComponentsDefinition.TYPE)
 @Injectable

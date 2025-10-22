@@ -17,9 +17,6 @@ package com.jd.live.agent.core.bootstrap;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * An interface for listening to application events.
  *
@@ -51,6 +48,13 @@ public interface AppListener {
      * @param environment The application environment.
      */
     void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment);
+
+    /**
+     * Called when application context is prepared
+     *
+     * @param context Application context
+     */
+    void onContextPrepared(AppContext context);
 
     /**
      * Called when the application has started.
@@ -91,6 +95,11 @@ public interface AppListener {
         }
 
         @Override
+        public void onContextPrepared(AppContext context) {
+
+        }
+
+        @Override
         public void onStarted(AppContext context) {
             // Do nothing
         }
@@ -106,52 +115,4 @@ public interface AppListener {
         }
     }
 
-    /**
-     * A wrapper class for multiple ApplicationListeners.
-     *
-     * @since 1.6.0
-     */
-    class AppListenerWrapper implements AppListener {
-
-        private final List<AppListener> listeners;
-
-        public AppListenerWrapper(List<AppListener> listeners) {
-            this.listeners = listeners == null ? new ArrayList<>(0) : listeners;
-        }
-
-        @Override
-        public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
-            for (AppListener listener : listeners) {
-                listener.onLoading(classLoader, mainClass);
-            }
-        }
-
-        @Override
-        public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
-            for (AppListener listener : listeners) {
-                listener.onEnvironmentPrepared(context, environment);
-            }
-        }
-
-        @Override
-        public void onStarted(AppContext context) {
-            for (AppListener listener : listeners) {
-                listener.onStarted(context);
-            }
-        }
-
-        @Override
-        public void onReady(AppContext context) {
-            for (AppListener listener : listeners) {
-                listener.onReady(context);
-            }
-        }
-
-        @Override
-        public void onCLose(AppContext context) {
-            for (AppListener listener : listeners) {
-                listener.onCLose(context);
-            }
-        }
-    }
 }

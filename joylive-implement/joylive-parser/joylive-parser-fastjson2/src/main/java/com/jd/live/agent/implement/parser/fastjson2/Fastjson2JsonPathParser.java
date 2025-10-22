@@ -39,6 +39,9 @@ public class Fastjson2JsonPathParser implements JsonPathParser {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T read(InputStream in, String path) {
+        if (in == null || path == null) {
+            return null;
+        }
         try {
             byte[] buffer = IOUtils.read(in);
             return (T) JSONPath.eval(new String(buffer), path);

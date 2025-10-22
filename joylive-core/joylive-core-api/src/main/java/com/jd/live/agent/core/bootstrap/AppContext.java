@@ -22,5 +22,7 @@ package com.jd.live.agent.core.bootstrap;
  */
 public interface AppContext {
 
+    String getProperty(String name);
+
 }
 

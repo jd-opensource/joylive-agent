@@ -43,6 +43,11 @@ public class SpringAppContext implements ConfigurableAppContext {
     }
 
     @Override
+    public String getProperty(String name) {
+        return context.getEnvironment().getProperty(name);
+    }
+
+    @Override
     public void subscribe(ConfigCenter configCenter) {
         refresher.subscribe(configCenter);
     }

@@ -23,7 +23,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerBridge;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.util.option.ValueResolver;
-import com.jd.live.agent.core.bootstrap.AppListener.AppListenerWrapper;
 import com.jd.live.agent.core.bytekit.ByteSupplier;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.classloader.ClassLoaderManager;
@@ -183,7 +182,7 @@ public class Bootstrap implements AgentLifecycle {
      */
     private ServiceManager serviceManager;
 
-    private AppListener applicationListener;
+    private AppListenerManager appListenerManager;
 
     /**
      * Supervises plugins, handling their lifecycle.
@@ -283,7 +282,7 @@ public class Bootstrap implements AgentLifecycle {
             createSourceSuppliers();
             serviceManager = createServiceManager(); //depend on extensionManager & classLoaderManager & eventBus & sourceSuppliers
             setupServiceManager(); // inject to source supplier
-            applicationListener = new AppListenerWrapper(createApplicationListeners()); // depend on source suppliers & serviceManager
+            appListenerManager = new AppListenerManager(createApplicationListeners()); // depend on source suppliers & serviceManager
             byteSupplier = createByteSupplier();
             pluginManager = createPluginManager(); //depend on context & extensionManager & classLoaderManager & byteSupplier
             commandManager = createCommandManager();
@@ -502,7 +501,7 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(Application.COMPONENT_APPLICATION, application);
                 ctx.add(ExtensionManager.COMPONENT_EXTENSION_MANAGER, extensionManager);
                 ctx.add(ServiceSupervisor.COMPONENT_SERVICE_SUPERVISOR, serviceManager);
-                ctx.add(AppListener.COMPONENT_APPLICATION_LISTENER, applicationListener);
+                ctx.add(AppListener.COMPONENT_APPLICATION_LISTENER, appListenerManager);
                 ctx.add(Timer.COMPONENT_TIMER, timer);
                 ctx.add(EventBus.COMPONENT_EVENT_BUS, eventBus);
                 ctx.add(Resourcer.COMPONENT_RESOURCER, classLoaderManager == null ? null : classLoaderManager.getPluginLoaders());

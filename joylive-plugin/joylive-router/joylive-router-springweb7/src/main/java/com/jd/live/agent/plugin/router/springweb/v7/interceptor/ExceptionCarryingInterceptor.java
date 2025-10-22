@@ -17,11 +17,9 @@ package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.type.ClassUtils;
 import com.jd.live.agent.governance.config.ServiceConfig;
+import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.servlet.DispatcherServlet;
 
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
@@ -41,39 +39,16 @@ public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        // org.springframework.web.servlet.DispatcherServlet.processHandlerException
         if (config.isResponseException()) {
+            // org.springframework.web.servlet.DispatcherServlet.processHandlerException
             HttpServletResponse response = ctx.getArgument(1);
             Exception ex = ctx.getArgument(3);
-            labelHeaders(ex, Accessor::getErrorMessage, response::setHeader);
+            labelHeaders(ex, this::getErrorMessage, response::setHeader);
         }
     }
 
-    /**
-     * Helper class for accessing WebClientResponseException error messages.
-     * Handles both WebFlux and non-WebFlux environments gracefully.
-     */
-    private static class Accessor {
-
-        private static final String TYPE_EXCEPTION = "org.springframework.web.reactive.function.client.WebClientResponseException";
-
-        private static final Class<?> CLASS_EXCEPTION = ClassUtils.loadClass(TYPE_EXCEPTION, DispatcherServlet.class.getClassLoader());
-
-        /**
-         * Safely extracts error message from exception, including WebClient response body when available.
-         *
-         * @param e the exception to process
-         * @return the response body for WebClient exceptions, or regular message otherwise
-         */
-        public static String getErrorMessage(Throwable e) {
-            // without webflux
-            if (CLASS_EXCEPTION != null && CLASS_EXCEPTION.isInstance(e)) {
-                WebClientResponseException error = (WebClientResponseException) e;
-                return error.getResponseBodyAsString();
-            }
-            return e.getMessage();
-        }
-
+    private String getErrorMessage(Throwable ex) {
+        return CloudUtils.getErrorMessage(ex);
     }
 
 }

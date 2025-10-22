@@ -42,11 +42,11 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
     /**
      * A map of custom converters keyed by their respective classes.
      */
-    protected Map<Class<?>, JacksonConverter<?, ?>> converters = new ConcurrentHashMap<>();
+    protected Map<Class<?>, JacksonStdConverter<?, ?>> converters = new ConcurrentHashMap<>();
 
     @Override
     public Object findDeserializationConverter(Annotated a) {
-        JacksonConverter<?, ?> converter = getConverter(a, DeserializeConverter.class, DeserializeConverter::value);
+        JacksonStdConverter<?, ?> converter = getConverter(a, DeserializeConverter.class, DeserializeConverter::value);
         return converter != null ? converter : super.findDeserializationConverter(a);
     }
 
@@ -59,14 +59,14 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
      * @param func           a function to extract the converter class from the annotation.
      * @return the custom converter, or null if none is found.
      */
-    protected <T extends Annotation> JacksonConverter<?, ?> getConverter(Annotated a,
-                                                                         Class<T> annotationType,
-                                                                         Function<T, Class<?>> func) {
+    protected <T extends Annotation> JacksonStdConverter<?, ?> getConverter(Annotated a,
+                                                                            Class<T> annotationType,
+                                                                            Function<T, Class<?>> func) {
         T annotation = a.getAnnotation(annotationType);
         if (annotation != null) {
             return converters.computeIfAbsent(func.apply(annotation), type -> {
                 try {
-                    return new JacksonConverter<>((JsonConverter<?, ?>) type.newInstance());
+                    return new JacksonStdConverter<>((JsonConverter<?, ?>) type.newInstance());
                 } catch (Throwable e) {
                     throw new ParseException("an error occurred while parsing data.", e);
                 }
@@ -87,7 +87,7 @@ public class JsonAnnotationIntrospector extends JacksonAnnotationIntrospector {
 
     @Override
     public Object findSerializationConverter(Annotated a) {
-        JacksonConverter<?, ?> converter = getConverter(a, SerializeConverter.class, SerializeConverter::value);
+        JacksonStdConverter<?, ?> converter = getConverter(a, SerializeConverter.class, SerializeConverter::value);
         return converter != null ? converter : super.findSerializationConverter(a);
     }
 

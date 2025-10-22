@@ -17,13 +17,17 @@ package com.jd.live.agent.implement.parser.jackson;
 
 import com.jd.live.agent.core.parser.json.JsonConverter;
 
-public class SexConverter implements JsonConverter<Integer, Sex> {
+public class SexConverter implements JsonConverter<Object, Sex> {
 
     @Override
-    public Sex convert(Integer source) {
+    public Sex convert(Object source) {
         if (source == null) {
             return null;
         }
-        return source == 1 ? Sex.FEMALE : Sex.MALE;
+        if (source instanceof Integer) {
+            return ((Integer) source) == 1 ? Sex.FEMALE : Sex.MALE;
+        } else {
+            return Sex.valueOf(source.toString());
+        }
     }
 }
