@@ -16,14 +16,18 @@
 package com.jd.live.agent.implement.parser.jackson;
 
 import com.jd.live.agent.core.util.IOUtils;
+import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-public class JacksonJsonParserTest {
+public class JacksonTest {
 
     @Test
     public void testParsePerson() throws IOException {
@@ -51,5 +55,27 @@ public class JacksonJsonParserTest {
         Assertions.assertNotNull(obj2);
         Assertions.assertNotNull(obj3);
         Assertions.assertNotNull(obj4);
+    }
+
+    @Test
+    public void testObjectConverter() throws Exception {
+
+        JacksonConverter converter = new JacksonConverter();
+        Assert.assertEquals(1, (Object) converter.convert("1", int.class));
+        Assert.assertEquals(1, (Object) converter.convert(1L, int.class));
+        Assert.assertEquals(1, (Object) converter.convert(1.1, int.class));
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", "John");
+        map.put("age", 30L);
+        map.put("sex", "MALE");
+        map.put("aliases", Arrays.asList("john", "doe"));
+        Person person = converter.convert(map, Person.class);
+        Assert.assertEquals("John", person.getName());
+        Assert.assertEquals(30, person.getAge());
+        Assert.assertEquals(Sex.MALE, person.getSex());
+        Assert.assertEquals(2, person.getAliases().size());
+        Assert.assertTrue(person.getAliases().contains("john"));
+        Assert.assertTrue(person.getAliases().contains("doe"));
     }
 }

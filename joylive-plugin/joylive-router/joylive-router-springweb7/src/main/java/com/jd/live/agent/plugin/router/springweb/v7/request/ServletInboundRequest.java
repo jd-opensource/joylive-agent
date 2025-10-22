@@ -15,16 +15,19 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v7.request;
 
+import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
+import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.governance.request.HeaderProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -32,7 +35,6 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
-import static com.jd.live.agent.plugin.router.springweb.v7.exception.SpringInboundThrower.THROWER;
 
 /**
  * ServletHttpInboundRequest
@@ -86,10 +88,20 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     private final Predicate<String> systemPredicate;
 
-    public ServletInboundRequest(HttpServletRequest request, Object handler, Predicate<String> systemPredicate) {
+    private final Predicate<String> mcpPredicate;
+
+    private final JsonPathParser parser;
+
+    public ServletInboundRequest(HttpServletRequest request,
+                                 Object handler,
+                                 Predicate<String> systemPredicate,
+                                 Predicate<String> mcpPredicate,
+                                 JsonPathParser parser) {
         super(request);
         this.handler = handler;
         this.systemPredicate = systemPredicate;
+        this.mcpPredicate = mcpPredicate;
+        this.parser = parser;
         URI u = null;
         try {
             u = new URI(request.getRequestURI());
@@ -140,6 +152,18 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         return super.isSystem();
     }
 
+    public boolean isMcp() {
+        return McpToolMethod.HANDLE_METHOD != null && mcpPredicate != null && mcpPredicate.test(getPath());
+    }
+
+    public Object getMcpRequestId() {
+        try {
+            return parser.read(request.getInputStream(), JsonRpcRequest.JSON_PATH_ID);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     @Override
     protected Map<String, List<String>> parseHeaders() {
         return request instanceof HeaderProvider
@@ -184,29 +208,6 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
             return new Address(serverName, serverPort < 0 ? null : serverPort);
         }
         return null;
-    }
-
-    /**
-     * Converts an object to a ModelAndView.
-     * <p>
-     * This method checks if the object is already a ModelAndView, and if so, returns it directly.
-     * Otherwise, it returns null.
-     * </p>
-     *
-     * @param obj the object to convert to a ModelAndView.
-     * @return a ModelAndView representing the object, or null if the object is not a ModelAndView.
-     */
-    public ModelAndView convert(Object obj) {
-        if (obj == null) {
-            return null;
-        } else if (obj instanceof ModelAndView) {
-            return (ModelAndView) obj;
-        } else if (obj instanceof Throwable) {
-            return new ExceptionView(THROWER.createException((Throwable) obj, this));
-        } else {
-            return new ExceptionView(THROWER.createException(new UnsupportedOperationException(
-                    "Expected type is " + ModelAndView.class.getName() + ", but actual type is " + obj.getClass()), this));
-        }
     }
 
 }

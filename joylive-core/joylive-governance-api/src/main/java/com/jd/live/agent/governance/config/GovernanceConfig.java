@@ -21,6 +21,10 @@ import com.jd.live.agent.core.util.shutdown.GracefullyShutdown;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
+import static com.jd.live.agent.core.util.CollectionUtils.modifiedMap;
+
 /**
  * The {@code GovernanceConfig} class is a configuration holder for various governance features within an application.
  * It includes configurations for live service management, lane management, transmission strategies, registry settings,
@@ -158,6 +162,9 @@ public class GovernanceConfig {
     @Config("configCenter")
     private ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
 
+    @Config("mcp")
+    private McpConfig mcpConfig = new McpConfig();
+
     @Config("db")
     private DbConfig dbConfig = new DbConfig();
 
@@ -204,5 +211,14 @@ public class GovernanceConfig {
         serviceConfig.initialize();
         redisConfig.initialize();
         transmitConfig.initialize();
+        mcpConfig.initialize();
+        if (mcpConfig.isEnabled()) {
+            try {
+                Map<String, String> env = modifiedMap(System.getenv());
+                env.putIfAbsent("CONFIG_MCP_PATH", mcpConfig.getPath());
+            } catch (Throwable e) {
+            }
+        }
+
     }
 }

@@ -15,26 +15,21 @@
  */
 package com.jd.live.agent.implement.parser.jackson;
 
-import com.fasterxml.jackson.databind.util.StdConverter;
-import com.jd.live.agent.core.parser.json.JsonConverter;
+import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.parser.ObjectConverter;
 
-/**
- * JacksonConverter is a custom converter that extends StdConverter to convert objects of type S to type T.
- * It uses a provided JsonConverter to perform the actual conversion.
- *
- * @param <S> the source type to convert from.
- * @param <T> the target type to convert to.
- */
-public class JacksonConverter<S, T> extends StdConverter<S, T> {
+import java.lang.reflect.Type;
 
-    private final JsonConverter<S, T> converter;
+@Extension(JacksonConverter.JACKSON)
+public class JacksonConverter extends AbstractJackson implements ObjectConverter {
 
-    public JacksonConverter(JsonConverter<S, T> converter) {
-        this.converter = converter;
+    @Override
+    public <T> T convert(Object source, Class<T> type) {
+        return mapper.convertValue(source, type);
     }
 
     @Override
-    public T convert(S src) {
-        return converter.convert(src);
+    public Object convert(Object source, Type type) {
+        return mapper.convertValue(source, new SimpleTypeReference(type));
     }
 }

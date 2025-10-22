@@ -15,9 +15,12 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.definition;
 
+import com.jd.live.agent.core.bootstrap.AppListener;
+import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
@@ -37,12 +40,15 @@ public class NacosRegistrationDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_NACOS_AUTO_SERVICE_REGISTRATION = "com.alibaba.cloud.nacos.registry.NacosAutoServiceRegistration";
 
+    @Inject(value = AppListener.COMPONENT_APPLICATION_LISTENER, component = true)
+    private AppListenerSupervisor supervisor;
+
     public NacosRegistrationDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_NACOS_AUTO_SERVICE_REGISTRATION);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.isConstructor(),
-                        () -> new NacosRegistrationInterceptor()),
+                        () -> new NacosRegistrationInterceptor(supervisor)),
         };
     }
 }

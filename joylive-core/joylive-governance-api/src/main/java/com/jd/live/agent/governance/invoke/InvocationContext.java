@@ -74,7 +74,9 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
@@ -575,6 +577,56 @@ public interface InvocationContext {
             return function.apply(inward(invocation, callable));
         } catch (Throwable e) {
             return function.apply(e);
+        }
+    }
+
+    /**
+     * Processes inbound invocation with error handling support.
+     *
+     * @param <R>            Type of inbound request
+     * @param <T>            Type of result
+     * @param invocation     The inbound invocation to process
+     * @param callable       The actual invocation logic
+     * @param successHandler Handler for successful result
+     * @param errorHandler   Handler for processing errors
+     */
+    default <R extends InboundRequest, T> void inward(final InboundInvocation<R> invocation,
+                                                      final Callable<Object> callable,
+                                                      final Consumer<T> successHandler,
+                                                      final Consumer<Throwable> errorHandler) {
+        try {
+            successHandler.accept((T) inward(invocation, callable));
+        } catch (Throwable e) {
+            errorHandler.accept(e);
+        }
+    }
+
+    /**
+     * Processes inbound invocation with error conversion support.
+     *
+     * @param <R>        Type of inbound request
+     * @param <T>        Type of result
+     * @param invocation The inbound invocation to process
+     * @param callable   The actual invocation logic
+     * @param predicate  Predicate to determine if error should be converted
+     * @param errorFunc  Function to convert error to result type
+     * @return Result of type T, either from successful invocation or error conversion
+     * @throws RuntimeException If error occurs and cannot be converted
+     */
+    default <R extends InboundRequest, T> T inward(final InboundInvocation<R> invocation,
+                                                   final Callable<Object> callable,
+                                                   final Predicate<Throwable> predicate,
+                                                   final Function<Throwable, T> errorFunc) {
+        try {
+            return (T) inward(invocation, callable);
+        } catch (Throwable e) {
+            if (predicate != null && predicate.test(e)) {
+                return errorFunc.apply(e);
+            }
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException(e);
         }
     }
 

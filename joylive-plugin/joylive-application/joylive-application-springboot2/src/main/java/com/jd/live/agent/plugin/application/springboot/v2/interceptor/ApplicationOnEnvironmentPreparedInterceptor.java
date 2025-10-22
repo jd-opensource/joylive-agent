@@ -23,7 +23,6 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppBootstrapContext;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppEnvironment;
-import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -55,15 +54,13 @@ public class ApplicationOnEnvironmentPreparedInterceptor extends InterceptorAdap
         SpringAppBootstrapContext context = new SpringAppBootstrapContext();
         Object[] arguments = ctx.getArguments();
         ConfigurableEnvironment env = (ConfigurableEnvironment) (arguments.length > 1 ? arguments[1] : arguments[0]);
-        SpringAppEnvironment environment = new SpringAppEnvironment(env);
         // fix for spring boot 2.1, it will trigger twice.
-        AppLifecycle.prepared(() -> {
+        AppLifecycle.environmentPrepared(() -> {
             if (config.getRegistryConfig().isRegisterAppServiceEnabled()) {
                 // subscribe policy
                 registry.register(application.getService().getName());
             }
-            InnerListener.foreach(l -> l.onEnvironmentPrepared(context, environment));
-            listener.onEnvironmentPrepared(context, environment);
+            listener.onEnvironmentPrepared(context, new SpringAppEnvironment(env));
         });
     }
 }

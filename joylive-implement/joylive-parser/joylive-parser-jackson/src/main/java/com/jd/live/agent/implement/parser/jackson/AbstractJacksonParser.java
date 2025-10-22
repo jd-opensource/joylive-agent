@@ -15,11 +15,6 @@
  */
 package com.jd.live.agent.implement.parser.jackson;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jd.live.agent.core.exception.ParseException;
 import com.jd.live.agent.core.parser.ConfigParser;
 import com.jd.live.agent.core.parser.ObjectParser;
@@ -35,43 +30,7 @@ import java.util.Map;
  * AbstractJacksonParser is an abstract class that implements both ConfigParser and ObjectParser.
  * It provides methods to configure and use an ObjectMapper for JSON parsing and serialization.
  */
-public abstract class AbstractJacksonParser implements ConfigParser, ObjectParser {
-
-    /**
-     * The ObjectMapper instance used for JSON parsing and serialization.
-     */
-    protected ObjectMapper mapper;
-
-    /**
-     * Constructs an AbstractJacksonParser and initializes the ObjectMapper with custom configuration.
-     */
-    public AbstractJacksonParser() {
-        mapper = configure(new ObjectMapper(createFactory())).registerModules(
-                ObjectMapper.findModules(AbstractJacksonParser.class.getClassLoader()));
-    }
-
-    /**
-     * Creates a JsonFactory instance. Subclasses can override this method to provide a custom JsonFactory.
-     *
-     * @return a new JsonFactory instance.
-     */
-    protected JsonFactory createFactory() {
-        return null;
-    }
-
-    /**
-     * Configures the given ObjectMapper with custom settings.
-     *
-     * @param mapper the ObjectMapper to configure.
-     * @return the configured ObjectMapper.
-     */
-    @SuppressWarnings("deprecation")
-    protected ObjectMapper configure(ObjectMapper mapper) {
-        return mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .configure(MapperFeature.PROPAGATE_TRANSIENT_MARKER, true)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .setAnnotationIntrospector(new JsonAnnotationIntrospector());
-    }
+public abstract class AbstractJacksonParser extends AbstractJackson implements ConfigParser, ObjectParser {
 
     @SuppressWarnings("unchecked")
     @Override

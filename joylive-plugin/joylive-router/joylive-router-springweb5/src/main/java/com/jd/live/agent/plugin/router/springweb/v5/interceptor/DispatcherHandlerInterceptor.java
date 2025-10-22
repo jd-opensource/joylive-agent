@@ -17,7 +17,10 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.McpConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
@@ -44,25 +47,30 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public DispatcherHandlerInterceptor(InvocationContext context) {
+    private final JsonPathParser parser;
+
+    public DispatcherHandlerInterceptor(InvocationContext context, JsonPathParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         // private Mono<HandlerResult> invokeHandler(ServerWebExchange exchange, Object handler)
-        ServiceConfig config = context.getGovernanceConfig().getServiceConfig();
+        GovernanceConfig govnConfig = context.getGovernanceConfig();
+        McpConfig mcpConfig = govnConfig.getMcpConfig();
+        ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
         Object handler = mc.getArguments()[1];
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, config::isSystem);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
         if (!request.isSystem()) {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
-            if (config.isResponseException()) {
+            if (serviceConfig.isResponseException()) {
                 mono = mono.doOnError(ex -> {
                     HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                     labelHeaders(ex, headers::set);

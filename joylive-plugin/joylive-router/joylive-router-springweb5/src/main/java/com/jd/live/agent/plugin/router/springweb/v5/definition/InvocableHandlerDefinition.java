@@ -18,33 +18,47 @@ package com.jd.live.agent.plugin.router.springweb.v5.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.Inject;
+import com.jd.live.agent.core.inject.annotation.Injectable;
+import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v5.condition.ConditionalOnSpringWeb5GovernanceEnabled;
-import com.jd.live.agent.plugin.router.springweb.v5.interceptor.RequestBuilderInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v5.interceptor.InvocableHandlerInterceptor;
 
 /**
- * RequestBuilderDefinition
+ * Plugin definition for intercepting Spring Web Controller invocations.
+ * Provides governance capabilities and MCP exception wrapping for Controller method calls.
+ *
+ * <p>This definition targets Spring's InvocableHandlerMethod to intercept controller
+ * method invocations via the 'invokeForRequest' method.</p>
+ *
+ * @since 1.9.0
  */
-@Extension(value = "RequestBuilderDefinition_v5")
+@Injectable
+@Extension(value = "InvocableHandlerDefinition_v5")
 @ConditionalOnSpringWeb5GovernanceEnabled
-@ConditionalOnClass(RequestBuilderDefinition.TYPE)
-@ConditionalOnClass(RequestBuilderDefinition.REACTOR_MONO)
-@Deprecated
-public class RequestBuilderDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(InvocableHandlerDefinition.TYPE)
+public class InvocableHandlerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE = "org.springframework.http.server.reactive.DefaultServerHttpRequestBuilder";
+    protected static final String TYPE = "org.springframework.web.method.support.InvocableHandlerMethod";
 
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
+    private static final String METHOD = "invokeForRequest";
 
-    private static final String METHOD = "getUriToUse";
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
-    public RequestBuilderDefinition() {
+    @Inject
+    private JsonPathParser parser;
+
+    public InvocableHandlerDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
-                new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD),
-                        () -> new RequestBuilderInterceptor())
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD), () -> new InvocableHandlerInterceptor(context, parser)
+                )
         };
     }
 }

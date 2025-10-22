@@ -21,13 +21,11 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
+import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
-import com.jd.live.agent.plugin.application.springboot.v2.listener.InnerListener;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
-import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * NacosRegistrationInterceptor
@@ -36,31 +34,45 @@ public class NacosRegistrationInterceptor extends InterceptorAdaptor {
 
     private static final Logger logger = LoggerFactory.getLogger(NacosRegistrationInterceptor.class);
 
-    @SuppressWarnings("deprecation")
+    private final AppListenerSupervisor supervisor;
+
+    public NacosRegistrationInterceptor(AppListenerSupervisor supervisor) {
+        this.supervisor = supervisor;
+    }
+
     @Override
     public void onSuccess(ExecutableContext ctx) {
         // Fixed the issue that the WAR application cannot automatically register within the Tomcat container.
-        NacosAutoServiceRegistration registration = (NacosAutoServiceRegistration) ctx.getTarget();
-        InnerListener.add(new AppListenerAdapter() {
-            @Override
-            public void onStarted(AppContext appContext) {
-                ConfigurableApplicationContext context = ((SpringAppContext) appContext).getContext();
-                if (registration.isAutoStartup() && !registration.isRunning()) {
-                    PortDetector detector = PortDetectorFactory.get(context);
-                    try {
-                        PortInfo port = detector.getPort();
-                        if (port != null) {
-                            registration.setPort(port.getPort());
-                        }
-                        registration.start();
-                        logger.info("Success starting nacos registration.");
-                    } catch (Throwable e) {
-                        logger.error("Failed to start nacos registration, caused by " + e.getMessage(), e);
-                    }
-                }
-                InnerListener.remove(this);
-            }
-        });
+        supervisor.addFirst(new StartedListener((NacosAutoServiceRegistration) ctx.getTarget(), supervisor));
     }
 
+    private static class StartedListener extends AppListenerAdapter {
+
+        private final NacosAutoServiceRegistration registration;
+
+        private final AppListenerSupervisor supervisor;
+
+        StartedListener(NacosAutoServiceRegistration registration, AppListenerSupervisor supervisor) {
+            this.registration = registration;
+            this.supervisor = supervisor;
+        }
+
+        @Override
+        public void onStarted(AppContext appContext) {
+            if (registration.isAutoStartup() && !registration.isRunning()) {
+                PortDetector detector = PortDetectorFactory.get(appContext);
+                try {
+                    PortInfo port = detector.getPort();
+                    if (port != null) {
+                        registration.setPort(port.getPort());
+                    }
+                    registration.start();
+                    logger.info("Success starting nacos registration.");
+                } catch (Throwable e) {
+                    logger.error("Failed to start nacos registration, caused by " + e.getMessage(), e);
+                }
+            }
+            supervisor.remove(this);
+        }
+    }
 }

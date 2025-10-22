@@ -17,7 +17,10 @@ package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.McpConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
@@ -26,6 +29,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ReactiveInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import org.springframework.http.HttpHeaders;
+import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -40,26 +44,31 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    public DispatcherHandlerInterceptor(InvocationContext context) {
+    private final JsonPathParser parser;
+
+    public DispatcherHandlerInterceptor(InvocationContext context, JsonPathParser parser) {
         this.context = context;
+        this.parser = parser;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
         // private Mono<Void> handleRequestWith(ServerWebExchange exchange, Object handler)
-        ServiceConfig config = context.getGovernanceConfig().getServiceConfig();
+        GovernanceConfig govnConfig = context.getGovernanceConfig();
+        McpConfig mcpConfig = govnConfig.getMcpConfig();
+        ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
         Object handler = mc.getArguments()[1];
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, config::isSystem);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
         if (!request.isSystem()) {
             exchange.getAttributes().put(KEY_LIVE_REQUEST, Boolean.TRUE);
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
-            Mono<Void> mono = context.inbound(invocation, () -> ((Mono<Void>) mc.invokeOrigin()).toFuture(), request::convert);
-            if (config.isResponseException()) {
+            Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
+            if (serviceConfig.isResponseException()) {
                 mono = mono.doOnError(ex -> {
                     Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
                     if (handled == null || !handled) {
