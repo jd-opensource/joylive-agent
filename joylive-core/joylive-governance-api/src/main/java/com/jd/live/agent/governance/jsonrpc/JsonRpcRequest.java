@@ -101,7 +101,7 @@ public class JsonRpcRequest implements Serializable {
      *
      * @return true if this is a notification
      */
-    public boolean isNotification() {
+    public boolean notification() {
         return id == null;
     }
 

@@ -31,7 +31,7 @@ public class JsonRpcResponse implements Serializable {
     /**
      * A String specifying the version of the JSON-RPC protocol. MUST be exactly "2.0".
      */
-    private String jsonrpc = "2.0";
+    private String jsonrpc = JSON_RPC_VERSION;
 
     /**
      * This member is REQUIRED on success.
@@ -118,29 +118,34 @@ public class JsonRpcResponse implements Serializable {
     }
 
     /**
-     * Create a successful JSON-RPC 2.0 response
+     * Create a notification response
+     */
+    public static JsonRpcResponse createNotificationResponse() {
+        return new JsonRpcResponse();
+    }
+
+    /**
+     * Create a successful response
      */
     public static JsonRpcResponse createSuccessResponse(Object id, Object result) {
         JsonRpcResponse response = new JsonRpcResponse();
-        response.setJsonrpc(JSON_RPC_VERSION);
         response.setId(id);
         response.setResult(result);
         return response;
     }
 
     /**
-     * Create an error JSON-RPC 2.0 response
+     * Create an error response
      */
     public static JsonRpcResponse createErrorResponse(Object id, JsonRpcError error) {
         JsonRpcResponse response = new JsonRpcResponse();
-        response.setJsonrpc(JSON_RPC_VERSION);
         response.setId(id);
         response.setError(error);
         return response;
     }
 
     /**
-     * Create an error JSON-RPC 2.0 response with error code and message
+     * Create an error response with error code and message
      */
     public static JsonRpcResponse createErrorResponse(Object id, int errorCode, String errorMessage) {
         return createErrorResponse(id, new JsonRpcError(errorCode, errorMessage));

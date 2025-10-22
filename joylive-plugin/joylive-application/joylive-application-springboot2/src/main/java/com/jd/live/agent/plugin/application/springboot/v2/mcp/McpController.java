@@ -81,7 +81,10 @@ public class McpController implements ApplicationListener<ApplicationStartedEven
             if (method == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            return JsonRpcResponse.createSuccessResponse(request.getId(), invokeMethod(method, request.getParams()));
+            Object result = invokeMethod(method, request.getParams());
+            return request.notification()
+                    ? JsonRpcResponse.createNotificationResponse()
+                    : JsonRpcResponse.createSuccessResponse(request.getId(), result);
         } catch (JsonRpcException e) {
             return JsonRpcResponse.createErrorResponse(request.getId(), e.getCode(), e.getMessage());
         } catch (Throwable e) {
