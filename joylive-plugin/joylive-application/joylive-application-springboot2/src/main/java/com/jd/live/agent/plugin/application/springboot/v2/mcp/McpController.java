@@ -41,7 +41,7 @@ import java.util.Map;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 
 @RestController
-@RequestMapping("${CONFIG_MCP_PATH:/mcp}")
+@RequestMapping("${mcp.path:${CONFIG_MCP_PATH:/mcp}}")
 public class McpController implements ApplicationListener<ApplicationStartedEvent> {
 
     public static final String NAME = "mcpController";
