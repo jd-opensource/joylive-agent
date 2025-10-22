@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.mcp;
 
 import java.lang.reflect.Method;
+import java.util.Set;
 
 /**
  * Represents a method definition for MCP tool.
@@ -32,11 +33,14 @@ public class McpToolMethod {
 
     private McpToolParameter[] parameters;
 
-    public McpToolMethod(String name, Object controller, Method method, McpToolParameter[] parameters) {
+    private Set<String> paths;
+
+    public McpToolMethod(String name, Object controller, Method method, McpToolParameter[] parameters, Set<String> paths) {
         this.name = name;
         this.controller = controller;
         this.method = method;
         this.parameters = parameters;
+        this.paths = paths;
     }
 
     public String getName() {
@@ -53,6 +57,10 @@ public class McpToolMethod {
 
     public McpToolParameter[] getParameters() {
         return parameters;
+    }
+
+    public Set<String> getPaths() {
+        return paths;
     }
 
 }
