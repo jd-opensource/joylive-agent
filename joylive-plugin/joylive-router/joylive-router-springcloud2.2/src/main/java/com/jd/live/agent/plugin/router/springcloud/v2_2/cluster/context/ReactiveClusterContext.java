@@ -17,13 +17,13 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.cluster.context;
 
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.router.springcloud.v2_2.registry.SpringServiceRegistry;
+import com.jd.live.agent.plugin.router.springcloud.v2_2.util.CloudUtils;
 import lombok.Getter;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerRetryProperties;
 import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerClientRequestTransformer;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactiveLoadBalancer;
-import org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
 import java.util.List;
@@ -58,7 +58,7 @@ public class ReactiveClusterContext extends AbstractCloudClusterContext {
                 this.system = service -> new SpringServiceRegistry(service, loadBalancerFactory);
             }
         }
-        LoadBalancerRetryProperties retryProperties = filterFunction instanceof RetryableLoadBalancerExchangeFilterFunction ? getQuietly(filterFunction, FIELD_RETRY_PROPERTIES) : null;
+        LoadBalancerRetryProperties retryProperties = CloudUtils.isRetryableLoadBalanceFilterFunction(filterFunction) ? getQuietly(filterFunction, FIELD_RETRY_PROPERTIES) : null;
         this.defaultRetryPolicy = getDefaultRetryPolicy(retryProperties);
         this.transformers = getQuietly(filterFunction, FIELD_TRANSFORMERS);
     }

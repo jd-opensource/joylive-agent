@@ -39,11 +39,11 @@ import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEn
 public class CloudUtils {
 
     // spring cloud
-    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
+    private static final Class<?> CLASS_LOAD_BALANCED = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
     private static final String TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION = "org.springframework.cloud.client.loadbalancer.reactive.RetryableLoadBalancerExchangeFilterFunction";
     // spring cloud 2.2.7+
-    private static final Class<?> retryLbType = loadClass(TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION, HttpAccessor.class.getClassLoader());
+    private static final Class<?> CLASS_REACTIVE_RETRYABLE_FILTER_FUNCTION = loadClass(TYPE_REACTIVE_RETRYABLE_FILTER_FUNCTION, HttpAccessor.class.getClassLoader());
 
     private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
 
@@ -53,7 +53,11 @@ public class CloudUtils {
      * @return true if Spring Cloud is present, false otherwise
      */
     public static boolean isCloudEnabled() {
-        return lbType != null;
+        return CLASS_LOAD_BALANCED != null;
+    }
+
+    public static boolean isRetryableLoadBalanceFilterFunction(Object target) {
+        return target != null && CLASS_REACTIVE_RETRYABLE_FILTER_FUNCTION != null && CLASS_REACTIVE_RETRYABLE_FILTER_FUNCTION.isInstance(target);
     }
 
     /**
@@ -89,8 +93,7 @@ public class CloudUtils {
             final boolean[] result = new boolean[]{false};
             builder.filters(filters -> {
                 for (ExchangeFilterFunction filter : filters) {
-                    if (filter instanceof DeferringLoadBalancerExchangeFilterFunction
-                            || retryLbType != null && retryLbType.isInstance(filter)) {
+                    if (filter instanceof DeferringLoadBalancerExchangeFilterFunction || isRetryableLoadBalanceFilterFunction(filter)) {
                         result[0] = true;
                         break;
                     }
