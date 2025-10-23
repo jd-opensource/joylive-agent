@@ -32,7 +32,10 @@ public class GatewayConfig {
     public static final String TYPE_REWRITE_PATH_FILTER_PREFIX = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$$Lambda$";
 
     // 2.1.1
-    public static final String TYPE_STRIP_PREFIX_FILTER_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$$Lambda$";
+    public static final String TYPE_STRIP_FILTER_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$$Lambda$";
+
+    // 2.1.1
+    public static final String TYPE_RETRY_FILTER_PREFIX = "org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory$$Lambda$";
 
     // 2.1.3+
     public static final String TYPE_REWRITE_PATH_FILTER = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$1";
@@ -60,12 +63,16 @@ public class GatewayConfig {
 
     private Set<String> retryFilters = new HashSet<>();
 
+    private Set<String> retryFiltersPrefixes = new HashSet<>();
+
     @CaseInsensitive
     private Set<String> webSchemes = new CaseInsensitiveSet();
 
     private int liveFilterOrder = DEFAULT_LIVE_FILTER_ORDER;
 
-    private transient Inclusion inclusion;
+    private transient Inclusion path;
+
+    private transient Inclusion retry;
 
     /**
      * Checks if the given name is a path filter.
@@ -74,7 +81,7 @@ public class GatewayConfig {
      * @return true if the filter is a path filter, false otherwise.
      */
     public boolean isPathFilter(String filter) {
-        return filter != null && inclusion != null && inclusion.test(filter);
+        return filter != null && path != null && path.test(filter);
     }
 
     /**
@@ -94,7 +101,7 @@ public class GatewayConfig {
      * @return true if it's a retry filter, false otherwise
      */
     public boolean isRetryFilter(String filter) {
-        return filter != null && retryFilters.contains(filter);
+        return filter != null && retry != null && retry.test(filter);
     }
 
     public boolean isWebScheme(String scheme) {
@@ -107,16 +114,18 @@ public class GatewayConfig {
         pathFilters.add(TYPE_PREFIX_PATH);
         pathFilters.add(TYPE_SET_PATH);
         pathFilterPrefixes.add(TYPE_REWRITE_PATH_FILTER_PREFIX);
-        pathFilterPrefixes.add(TYPE_STRIP_PREFIX_FILTER_PREFIX);
+        pathFilterPrefixes.add(TYPE_STRIP_FILTER_PREFIX);
         loadBalancerFilters.add(TYPE_REACTIVE_LOAD_BALANCE_FILTER);
         loadBalancerFilters.add(TYPE_LOAD_BALANCE_FILTER);
         retryFilters.add(TYPE_RETRY_FILTER);
+        retryFiltersPrefixes.add(TYPE_RETRY_FILTER_PREFIX);
         webSchemes.add("http");
         webSchemes.add("https");
         webSchemes.add("http3");
         webSchemes.add("ws");
         webSchemes.add("wss");
-        inclusion = new Inclusion(pathFilters, pathFilterPrefixes);
+        path = new Inclusion(pathFilters, pathFilterPrefixes);
+        retry = new Inclusion(retryFilters, retryFiltersPrefixes);
     }
 
 }
