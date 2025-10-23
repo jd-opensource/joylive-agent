@@ -31,6 +31,9 @@ public class GatewayConfig {
     // 2.1.1
     public static final String TYPE_REWRITE_PATH_FILTER_PREFIX = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$$Lambda$";
 
+    // 2.1.1
+    public static final String TYPE_STRIP_PREFIX_FILTER_PREFIX = "org.springframework.cloud.gateway.filter.factory.StripPrefixGatewayFilterFactory$$Lambda$";
+
     // 2.1.3+
     public static final String TYPE_REWRITE_PATH_FILTER = "org.springframework.cloud.gateway.filter.factory.RewritePathGatewayFilterFactory$1";
 
@@ -104,6 +107,7 @@ public class GatewayConfig {
         pathFilters.add(TYPE_PREFIX_PATH);
         pathFilters.add(TYPE_SET_PATH);
         pathFilterPrefixes.add(TYPE_REWRITE_PATH_FILTER_PREFIX);
+        pathFilterPrefixes.add(TYPE_STRIP_PREFIX_FILTER_PREFIX);
         loadBalancerFilters.add(TYPE_REACTIVE_LOAD_BALANCE_FILTER);
         loadBalancerFilters.add(TYPE_LOAD_BALANCE_FILTER);
         retryFilters.add(TYPE_RETRY_FILTER);
