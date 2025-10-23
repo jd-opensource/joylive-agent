@@ -93,7 +93,7 @@ public class McpToolParameter {
     }
 
     public Object convert(Object value) {
-        return value == null || converter == null ? null : converter.apply(value);
+        return value == null || converter == null ? value : converter.apply(value);
     }
 
 }
