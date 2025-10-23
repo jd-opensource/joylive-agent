@@ -34,7 +34,14 @@ import org.springframework.web.servlet.function.ServerResponse;
 import java.util.Optional;
 
 /**
- * RouterFunctionInterceptor
+ * Interceptor for RouterFunction's HandlerFunction to provide service governance capabilities.
+ *
+ * This interceptor wraps the original HandlerFunction to:
+ * 1. Handle system and MCP requests differently
+ * 2. Apply governance policies for non-system requests
+ * 3. Process errors according to MCP protocol if needed
+ *
+ * The interception happens in a thread-safe manner using locks.
  */
 public class RouterFunctionInterceptor extends InterceptorAdaptor {
 
