@@ -20,10 +20,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.cluster.BlockingCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v3.request.BlockingCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v3.response.BlockingClusterResponse;
-import com.jd.live.agent.plugin.router.springcloud.v3.util.CloudUtils;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -52,7 +52,7 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ClientHttpRequestInterceptor interceptor = (ClientHttpRequestInterceptor) ctx.getTarget();
         // do not static import CloudUtils to avoid class loading issue.
-        BlockingCloudCluster cluster = CloudUtils.getOrCreateCluster(interceptor, i -> new BlockingCloudCluster(context.getRegistry(), i));
+        BlockingCloudCluster cluster = LiveCluster.getOrCreate(interceptor, i -> new BlockingCloudCluster(context.getRegistry(), i));
         BlockingCloudClusterRequest request = new BlockingCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),

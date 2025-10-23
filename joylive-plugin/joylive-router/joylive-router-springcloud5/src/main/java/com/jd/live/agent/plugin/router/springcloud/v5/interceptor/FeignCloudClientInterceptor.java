@@ -20,10 +20,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.springcloud.v5.cluster.FeignCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v5.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v5.response.FeignClusterResponse;
-import com.jd.live.agent.plugin.router.springcloud.v5.util.CloudUtils;
 import feign.Client;
 
 /**
@@ -44,7 +44,7 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Client client = (Client) ctx.getTarget();
         // do not static import CloudUtils to avoid class loading issue.
-        FeignCloudCluster cluster = CloudUtils.getOrCreateCluster(client, i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudCluster cluster = LiveCluster.getOrCreate(client, i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest request = new FeignCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),

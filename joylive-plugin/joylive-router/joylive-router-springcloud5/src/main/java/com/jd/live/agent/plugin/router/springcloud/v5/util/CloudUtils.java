@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.router.springcloud.v5.util;
 
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
 import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerInterceptor;
 import org.springframework.cloud.client.loadbalancer.reactive.DeferringLoadBalancerExchangeFilterFunction;
@@ -27,9 +26,6 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEnabled.TYPE_LOAD_BALANCED;
@@ -42,9 +38,7 @@ public class CloudUtils {
     private static final Class<?> CLASS_READONLY = loadClass("org.springframework.http.ReadOnlyHttpHeaders", HttpHeaders.class.getClassLoader());
 
     // spring cloud
-    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
-
-    private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
+    private static final Class<?> CLASS_LOAD_BALANCED = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
     /**
      * Checks if Spring Cloud is available in the classpath.
@@ -52,7 +46,7 @@ public class CloudUtils {
      * @return true if Spring Cloud is present, false otherwise
      */
     public static boolean isCloudEnabled() {
-        return lbType != null;
+        return CLASS_LOAD_BALANCED != null;
     }
 
     /**
@@ -100,25 +94,11 @@ public class CloudUtils {
     }
 
     /**
-     * Gets existing cluster or creates new one for the client.
-     *
-     * @param <K>      client type
-     * @param <V>      cluster type
-     * @param client   the client key
-     * @param function factory function to create cluster
-     * @return existing or newly created cluster
-     */
-    public static <K, V extends LiveCluster> V getOrCreateCluster(K client, Function<K, V> function) {
-        return (V) clusters.computeIfAbsent(client, o -> function.apply(client));
-    }
-
-    /**
      * Creates writable copy of HTTP headers.
      *
      * @param headers source headers
      * @return writable headers instance
      */
-    @SuppressWarnings("deprecation")
     public static HttpHeaders writable(HttpHeaders headers) {
         return CLASS_READONLY.isInstance(headers) ? new HttpHeaders(headers) : headers;
     }

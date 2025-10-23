@@ -20,10 +20,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.springcloud.v1.cluster.FeignCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.FeignCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v1.response.FeignClusterResponse;
-import com.jd.live.agent.plugin.router.springcloud.v1.util.CloudUtils;
 import org.springframework.cloud.netflix.feign.ribbon.LoadBalancerFeignClient;
 
 /**
@@ -43,7 +43,7 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         LoadBalancerFeignClient client = (LoadBalancerFeignClient) ctx.getTarget();
-        FeignCloudCluster cluster = CloudUtils.getOrCreateCluster(client, i -> new FeignCloudCluster(context.getRegistry(), i));
+        FeignCloudCluster cluster = LiveCluster.getOrCreate(client, i -> new FeignCloudCluster(context.getRegistry(), i));
         FeignCloudClusterRequest request = new FeignCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),

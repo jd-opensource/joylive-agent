@@ -20,10 +20,10 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpOutboundInvocation;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.cluster.ReactiveCloudCluster;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.request.ReactiveCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springcloud.v2_1.response.ReactiveClusterResponse;
-import com.jd.live.agent.plugin.router.springcloud.v2_1.util.CloudUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import reactor.core.publisher.Mono;
@@ -48,7 +48,7 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
         // Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next);
         MethodContext mc = (MethodContext) ctx;
         ExchangeFilterFunction filter = (ExchangeFilterFunction) ctx.getTarget();
-        ReactiveCloudCluster cluster = CloudUtils.getOrCreateCluster(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
+        ReactiveCloudCluster cluster = LiveCluster.getOrCreate(filter, i -> new ReactiveCloudCluster(context.getRegistry(), i));
         ReactiveCloudClusterRequest request = new ReactiveCloudClusterRequest(
                 ctx.getArgument(0),
                 ctx.getArgument(1),

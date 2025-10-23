@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springcloud.v1.util;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.FeignCloudOutboundRequest;
 import com.jd.live.agent.plugin.router.springcloud.v1.request.RibbonOutboundRequest;
@@ -26,10 +25,6 @@ import org.springframework.cloud.client.loadbalancer.RetryLoadBalancerIntercepto
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.support.HttpAccessor;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
@@ -41,15 +36,13 @@ import static com.jd.live.agent.governance.annotation.ConditionalOnSpringCloudEn
 public class CloudUtils {
 
     // spring cloud
-    private static final Class<?> lbType = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
+    private static final Class<?> CLASS_LOAD_BALANCED = loadClass(TYPE_LOAD_BALANCED, HttpAccessor.class.getClassLoader());
 
     private static final String TYPE_RIBBON_REQUEST = "org.springframework.cloud.netflix.feign.ribbon.FeignLoadBalancer$RibbonRequest";
 
-    private static final Class<?> ribbonRequestType = loadClass(TYPE_RIBBON_REQUEST, HttpAccessor.class.getClassLoader());
+    private static final Class<?> CLASS_RIBBON_REQUEST = loadClass(TYPE_RIBBON_REQUEST, HttpAccessor.class.getClassLoader());
 
-    private static final FieldAccessor ribbonRequestAccessor = getAccessor(ribbonRequestType, "request");
-
-    private static final Map<Object, LiveCluster> clusters = new ConcurrentHashMap<>();
+    private static final FieldAccessor ACCESSOR_RIBBON_REQUEST = getAccessor(CLASS_RIBBON_REQUEST, "request");
 
     /**
      * Checks if Spring Cloud is available in the classpath.
@@ -57,7 +50,7 @@ public class CloudUtils {
      * @return true if Spring Cloud is present, false otherwise
      */
     public static boolean isCloudEnabled() {
-        return lbType != null;
+        return CLASS_LOAD_BALANCED != null;
     }
 
     /**
@@ -81,15 +74,11 @@ public class CloudUtils {
         return false;
     }
 
-    public static <K, V extends LiveCluster> V getOrCreateCluster(K client, Function<K, V> function) {
-        return (V) clusters.computeIfAbsent(client, o -> function.apply(client));
-    }
-
     public static HttpOutboundRequest build(Object request, String service) {
         if (request instanceof org.springframework.http.HttpRequest) {
             return new RibbonOutboundRequest((org.springframework.http.HttpRequest) request, service);
-        } else if (ribbonRequestType != null && ribbonRequestType.isInstance(request)) {
-            Request feignRequest = (Request) ribbonRequestAccessor.get(request);
+        } else if (CLASS_RIBBON_REQUEST != null && CLASS_RIBBON_REQUEST.isInstance(request)) {
+            Request feignRequest = (Request) ACCESSOR_RIBBON_REQUEST.get(request);
             return new FeignCloudOutboundRequest(feignRequest, service);
         }
         return null;

@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.cluster.Dubbo27Cluster;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.instance.DubboEndpoint;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboOutboundRequest;
@@ -30,8 +31,6 @@ import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -42,8 +41,6 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     private final InvocationContext context;
 
     private final ObjectParser parser;
-
-    private final Map<AbstractClusterInvoker<?>, Dubbo27Cluster> clusters = new ConcurrentHashMap<>();
 
     public ClusterInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
@@ -61,7 +58,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        Dubbo27Cluster cluster = clusters.computeIfAbsent((AbstractClusterInvoker<?>) ctx.getTarget(),
+        Dubbo27Cluster cluster = LiveCluster.getOrCreate((AbstractClusterInvoker<?>) ctx.getTarget(),
                 invoker -> new Dubbo27Cluster(invoker, parser));
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());

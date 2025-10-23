@@ -22,13 +22,11 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
+import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.sofarpc.cluster.SofaRpcCluster;
 import com.jd.live.agent.plugin.router.sofarpc.request.SofaRpcRequest.SofaRpcOutboundRequest;
 import com.jd.live.agent.plugin.router.sofarpc.request.invoke.SofaRpcInvocation.SofaRpcOutboundInvocation;
 import com.jd.live.agent.plugin.router.sofarpc.response.SofaRpcResponse.SofaRpcOutboundResponse;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ClusterInterceptor
@@ -39,8 +37,6 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final ObjectParser parser;
 
-    private final Map<AbstractCluster, SofaRpcCluster> clusters = new ConcurrentHashMap<>();
-
     public ClusterInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
         this.parser = parser;
@@ -50,7 +46,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Object[] arguments = ctx.getArguments();
-        SofaRpcCluster cluster = clusters.computeIfAbsent((AbstractCluster) ctx.getTarget(),
+        SofaRpcCluster cluster = LiveCluster.getOrCreate((AbstractCluster) ctx.getTarget(),
                 c -> new SofaRpcCluster(c, parser));
         SofaRpcOutboundRequest request = new SofaRpcOutboundRequest((SofaRequest) arguments[0]);
         if (!request.isSystem() && !request.isDisabled()) {

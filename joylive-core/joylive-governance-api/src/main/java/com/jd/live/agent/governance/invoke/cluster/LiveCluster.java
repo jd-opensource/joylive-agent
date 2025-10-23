@@ -28,8 +28,10 @@ import com.jd.live.agent.governance.request.StickySessionFactory;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
@@ -50,6 +52,21 @@ import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 public interface LiveCluster<R extends OutboundRequest,
         O extends OutboundResponse,
         E extends Endpoint> extends StickySessionFactory, OutboundThrower<R, E> {
+
+    Map<Object, LiveCluster> CLUSTERS = new ConcurrentHashMap<>();
+
+    /**
+     * Gets an existing cluster or creates a new one if not present.
+     *
+     * @param client   the client key to lookup/create cluster
+     * @param function factory function to create new cluster
+     * @param <K>      type of client key
+     * @param <V>      type of cluster extending LiveCluster
+     * @return existing or newly created cluster
+     */
+    static <K, V extends LiveCluster> V getOrCreate(K client, Function<K, V> function) {
+        return (V) CLUSTERS.computeIfAbsent(client, o -> function.apply(client));
+    }
 
     /**
      * Routes the given request to a list of suitable endpoints.
