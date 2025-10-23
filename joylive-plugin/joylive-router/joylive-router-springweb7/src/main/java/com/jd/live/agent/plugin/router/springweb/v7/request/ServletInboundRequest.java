@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.request.HeaderProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.net.URI;
@@ -43,6 +42,10 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  * @since 1.0.0
  */
 public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServletRequest> {
+
+    private static final String CONTROLLER_TYPE = "org.springframework.web.servlet.mvc.Controller";
+
+    private static final Class<?> CONTROLLER_CLASS = loadClass(CONTROLLER_TYPE, HttpServletRequest.class.getClassLoader());
 
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
 
@@ -124,7 +127,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     @Override
     public boolean isSystem() {
         if (handler != null) {
-            if (handler instanceof Controller) {
+            if (CONTROLLER_CLASS != null && CONTROLLER_CLASS.isInstance(handler)) {
                 // spring web mvc
                 return true;
             } else if (RESOURCE_HANDLER_CLASS != null && RESOURCE_HANDLER_CLASS.isInstance(handler)) {
