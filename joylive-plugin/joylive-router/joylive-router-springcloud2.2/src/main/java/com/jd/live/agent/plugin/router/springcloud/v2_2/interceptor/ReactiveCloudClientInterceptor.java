@@ -28,7 +28,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -56,9 +55,7 @@ public class ReactiveCloudClientInterceptor extends InterceptorAdaptor {
                 ctx.getArgument(1),
                 cluster.getContext());
         HttpOutboundInvocation<ReactiveCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
-        CompletionStage<ReactiveClusterResponse> response = cluster.invoke(invocation);
-        CompletableFuture<ClientResponse> future = response.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse);
-        Mono<ClientResponse> mono = Mono.fromFuture(future);
-        mc.skipWithResult(mono);
+        CompletionStage<ClientResponse> stage = cluster.invoke(invocation, ReactiveClusterResponse::getResponse);
+        mc.skipWithResult(Mono.fromCompletionStage(stage));
     }
 }

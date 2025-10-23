@@ -121,8 +121,8 @@ public class ReactiveClientInterceptor extends InterceptorAdaptor {
             public Mono<ClientResponse> onSuccess() {
                 ReactiveClientClusterRequest rr = new ReactiveClientClusterRequest(req, service, registry, n);
                 HttpOutboundInvocation<ReactiveClientClusterRequest> invocation = new HttpOutboundInvocation<>(rr, context);
-                CompletionStage<ReactiveClusterResponse> stage = ReactiveClientCluster.INSTANCE.invoke(invocation);
-                return Mono.fromFuture(stage.toCompletableFuture().thenApply(ReactiveClusterResponse::getResponse));
+                CompletionStage<ClientResponse> stage = ReactiveClientCluster.INSTANCE.invoke(invocation, ReactiveClusterResponse::getResponse);
+                return Mono.fromCompletionStage(stage);
             }
 
             @Override

@@ -27,7 +27,6 @@ import com.jd.live.agent.plugin.router.springgateway.v5.cluster.GatewayCluster;
 import com.jd.live.agent.plugin.router.springgateway.v5.config.GatewayConfig;
 import com.jd.live.agent.plugin.router.springgateway.v5.request.GatewayCloudClusterRequest;
 import com.jd.live.agent.plugin.router.springgateway.v5.request.GatewayForwardRequest;
-import com.jd.live.agent.plugin.router.springgateway.v5.response.GatewayClusterResponse;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory.RetryConfig;
@@ -37,7 +36,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.jd.live.agent.plugin.router.springgateway.v5.request.GatewayForwardRequest.getURI;
@@ -121,16 +119,8 @@ public class LiveGatewayFilter implements GatewayFilter {
     private Mono<Void> invoke(ServerWebExchange exchange, GatewayFilterChain chain) {
         GatewayCloudClusterRequest request = new GatewayCloudClusterRequest(exchange, cluster.getContext(), chain, gatewayConfig, retryConfig, index);
         OutboundInvocation<GatewayCloudClusterRequest> invocation = new GatewayHttpOutboundInvocation<>(request, context);
-        CompletionStage<GatewayClusterResponse> response = cluster.invoke(invocation);
-        CompletableFuture<Void> result = new CompletableFuture<>();
-        response.whenComplete((v, t) -> {
-            if (t != null) {
-                result.completeExceptionally(t);
-            } else {
-                v.completeVoid(result);
-            }
-        });
-        return Mono.fromCompletionStage(result);
+        CompletionStage<Void> response = cluster.invoke(invocation, r -> null);
+        return Mono.fromCompletionStage(response);
     }
 
     /**

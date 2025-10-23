@@ -15,7 +15,9 @@
  */
 package com.jd.live.agent.governance.invoke.cluster;
 
+import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
+import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.OutboundThrower;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 /**
  * Defines the behavior of a live cluster capable of routing and invoking outbound requests.
@@ -133,6 +136,28 @@ public interface LiveCluster<R extends OutboundRequest,
         ClusterPolicy defaultPolicy = getDefaultPolicy(invocation.getRequest());
         ClusterInvoker invoker = invocation.getContext().getClusterInvoker(invocation, defaultPolicy);
         return invoker.execute(this, invocation, defaultPolicy);
+    }
+
+    /**
+     * Executes a service request with result transformation.
+     * Handles endpoint selection, request execution, error checking and result conversion.
+     *
+     * @param invocation The outbound invocation to execute
+     * @param function   Function to transform the response from type O to T
+     * @param <T>        Target type after transformation
+     * @return CompletionStage with transformed result or error
+     */
+    default <T> CompletionStage<T> invoke(OutboundInvocation<R> invocation, Function<O, T> function) {
+        return invoke(invocation).thenCompose(r -> {
+            // handle service error.
+            ServiceError error = r.getError();
+            if (error != null && error.getThrowable() != null) {
+                return Futures.future(error.getThrowable());
+            } else {
+                // handle conversion
+                return CompletableFuture.completedFuture(function.apply(r));
+            }
+        });
     }
 
     /**

@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -116,21 +115,6 @@ public interface ServiceResponse extends Response, ResultProvider {
             throw thrower == null ? (R) error.getThrowable() : thrower.apply(error.getError(), error.getThrowable());
         } else {
             return (T) getResponse();
-        }
-    }
-
-    /**
-     * Completes the given CompletableFuture based on the service error status.
-     * Completes exceptionally if there's an error with a throwable, otherwise completes normally.
-     *
-     * @param future the CompletableFuture to complete
-     */
-    default void completeVoid(CompletableFuture<Void> future) {
-        ServiceError error = getError();
-        if (error != null && error.getThrowable() != null) {
-            future.completeExceptionally(error.getThrowable());
-        } else {
-            future.complete(null);
         }
     }
 
