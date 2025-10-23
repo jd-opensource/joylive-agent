@@ -10,17 +10,18 @@
 6. Support forwarding to gray scale and unit domain names
 7. Support Jasypt encrypted environment variables
 8. Support timely token refresh for Nacos client versions below 2.5
-9. Fix class loading issues and conflicts with other Agent class loaders
-10. Fix Dubbo 3.0 compatibility issues
-11. Fix Dubbo 2.7 registration issues
-12. Fix Nacos gray scale configuration subscription issues
-13. Fix the issue where degradation is not effective for generic calls in Dubbo2, Dubbo3, and SofaRPC
-14. Fix Spring cloud gateway retry not working issue
-15. Fix Spring cloud gateway lane routing issues
-16. Fix stack overflow caused by Spring web request wrapping
-17. Fix Feign compatibility issues
-18. Fix Dubbo zookeeper registry null pointer exception
-19. Fix other issues
+9. Support MCP protocol calls for Spring Web
+10. Fix class loading issues and conflicts with other Agent class loaders
+11. Fix Dubbo 3.0 compatibility issues
+12. Fix Dubbo 2.7 registration issues
+13. Fix Nacos gray scale configuration subscription issues
+14. Fix the issue where degradation is not effective for generic calls in Dubbo2, Dubbo3, and SofaRPC
+15. Fix Spring cloud gateway retry not working issue
+16. Fix Spring cloud gateway lane routing issues
+17. Fix stack overflow caused by Spring web request wrapping
+18. Fix Feign compatibility issues
+19. Fix Dubbo zookeeper registry null pointer exception
+20. Fix other issues
 
 ## 1.8.0
 

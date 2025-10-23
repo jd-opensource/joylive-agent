@@ -10,17 +10,18 @@
 6. 支持转发到灰度和单元域名
 7. 支持 Jasypt 加密的环境变量
 8. 支持 Nacos client 2.5 以下版本的令牌及时刷新
-9. 修复类加载问题，以及和其它Agent类加载冲突问题
-10. 修复 Dubbo 3.0 兼容性问题
-11. 修复 Dubbo 2.7 注册问题
-12. 修复 Nacos 灰度配置订阅问题
-13. 修复 dubbo2、dubbo3和sofarpc 的泛化调用，降级不生效的问题
-14. 修复 Spring cloud gateway 重试不生效问题
-15. 修复 Spring cloud gateway 泳道路由问题
-16. 修复 Spring web 包装请求带来的堆栈溢出问题
-17. 修复 Feign 兼容性问题
-18. 修复 Dubbo zookeeper registry 空指针问题
-19. 修复其它问题
+9. 支持 Spring web 的MCP协议调用
+10. 修复类加载问题，以及和其它Agent类加载冲突问题
+11. 修复 Dubbo 3.0 兼容性问题
+12. 修复 Dubbo 2.7 注册问题
+13. 修复 Nacos 灰度配置订阅问题
+14. 修复 dubbo2、dubbo3和sofarpc 的泛化调用，降级不生效的问题
+15. 修复 Spring cloud gateway 重试不生效问题
+16. 修复 Spring cloud gateway 泳道路由问题
+17. 修复 Spring web 包装请求带来的堆栈溢出问题
+18. 修复 Feign 兼容性问题
+19. 修复 Dubbo zookeeper registry 空指针问题
+20. 修复其它问题
 
 ## 1.8.0
 
