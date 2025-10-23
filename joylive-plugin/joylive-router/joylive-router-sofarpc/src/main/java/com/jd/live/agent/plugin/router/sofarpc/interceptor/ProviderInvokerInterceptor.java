@@ -48,7 +48,7 @@ public class ProviderInvokerInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         SofaRpcInboundRequest request = new SofaRpcInboundRequest((SofaRequest) mc.getArguments()[0]);
         SofaRpcInboundInvocation invocation = new SofaRpcInboundInvocation(request, context);
-        SofaResponse result = context.inward(invocation, mc::invokeOrigin, request::convert);
+        SofaResponse result = context.inward(invocation, mc::invokeOrigin, request::recover);
         mc.skipWithResult(result);
     }
 }

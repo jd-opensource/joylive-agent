@@ -69,28 +69,6 @@ public interface LiveCluster<R extends OutboundRequest,
     }
 
     /**
-     * Executes a service request against a live cluster of endpoints.
-     *
-     * @param invocation The {@link OutboundInvocation} defining the outbound invocation logic.
-     *                   This parameter specifies how the request should be executed, including
-     *                   the selection of endpoints, serialization of the request, and handling
-     *                   of responses.
-     * @param instances  A list of {@code E} instances representing the available endpoints or
-     *                   services against which the request can be executed. This list is typically
-     *                   determined based on the current state of the cluster and the applicable
-     *                   routing policies.
-     * @return An outbound response of type {@code O}, corresponding to the executed request.
-     * The response type is generic and can be adapted based on the specific needs of
-     * the implementation.
-     */
-    default CompletionStage<O> invoke(OutboundInvocation<R> invocation, List<E> instances) {
-        if (instances != null && !instances.isEmpty()) {
-            invocation.setInstances(instances);
-        }
-        return invoke(invocation);
-    }
-
-    /**
      * Executes an outbound invocation synchronously and returns the result.
      *
      * @param invocation The outbound invocation details, including the request data. This is used
@@ -124,6 +102,28 @@ public interface LiveCluster<R extends OutboundRequest,
     }
 
     /**
+     * Executes a service request against a live cluster of endpoints.
+     *
+     * @param invocation The {@link OutboundInvocation} defining the outbound invocation logic.
+     *                   This parameter specifies how the request should be executed, including
+     *                   the selection of endpoints, serialization of the request, and handling
+     *                   of responses.
+     * @param instances  A list of {@code E} instances representing the available endpoints or
+     *                   services against which the request can be executed. This list is typically
+     *                   determined based on the current state of the cluster and the applicable
+     *                   routing policies.
+     * @return An outbound response of type {@code O}, corresponding to the executed request.
+     * The response type is generic and can be adapted based on the specific needs of
+     * the implementation.
+     */
+    default CompletionStage<O> invoke(OutboundInvocation<R> invocation, List<E> instances) {
+        if (instances != null && !instances.isEmpty()) {
+            invocation.setInstances(instances);
+        }
+        return invoke(invocation);
+    }
+
+    /**
      * Executes a service request against a live cluster of endpoints. The method handles
      * the entire invocation process, including selecting endpoints based on the provided
      * routing function, invoking the request on the selected endpoints, and returning the
@@ -150,7 +150,7 @@ public interface LiveCluster<R extends OutboundRequest,
     default <T> CompletionStage<T> invoke(OutboundInvocation<R> invocation, Function<O, T> function) {
         return invoke(invocation).thenCompose(r -> {
             // handle service error.
-            ServiceError error = r.getError();
+            ServiceError error = r == null ? null : r.getError();
             if (error != null && error.getThrowable() != null) {
                 return Futures.future(error.getThrowable());
             } else {
@@ -158,6 +158,28 @@ public interface LiveCluster<R extends OutboundRequest,
                 return CompletableFuture.completedFuture(function.apply(r));
             }
         });
+    }
+
+    /**
+     * Executes a service request and transforms its result.
+     *
+     * @param invocation        The invocation to execute
+     * @param valueFunction     Function to transform successful response
+     * @param exceptionFunction Function to handle errors
+     * @param <T>               Type of transformed result
+     * @return CompletionStage containing either transformed result or error
+     */
+    default <T> CompletionStage<T> invoke(OutboundInvocation<R> invocation, Function<O, T> valueFunction, Function<Throwable, T> exceptionFunction) {
+        return invoke(invocation).thenCompose(r -> {
+            // handle service error.
+            ServiceError error = r == null ? null : r.getError();
+            if (error != null && error.getThrowable() != null) {
+                return CompletableFuture.completedFuture(exceptionFunction.apply(error.getThrowable()));
+            } else {
+                // handle conversion
+                return CompletableFuture.completedFuture(valueFunction.apply(r));
+            }
+        }).exceptionally(exceptionFunction);
     }
 
     /**

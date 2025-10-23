@@ -123,24 +123,13 @@ public interface DubboRequest {
         }
 
         /**
-         * Converts an object to a Dubbo Result.
-         * <p>
-         * This method checks if the object is already a Dubbo Result, and if so, returns it directly.
-         * If the object is a Throwable, it creates a new AppResponse with the Throwable wrapped in a RpcException.
-         * Otherwise, it creates a new AppResponse with the object as the result.
-         * </p>
+         * Converts throwable to RPC result.
          *
-         * @param obj the object to convert to a Dubbo Result.
-         * @return a Dubbo Result representing the object.
+         * @param e The throwable to convert
+         * @return AsyncRpcResult containing the exception
          */
-        public Result convert(Object obj) {
-            if (obj instanceof Result) {
-                return (Result) obj;
-            } else if (obj instanceof Throwable) {
-                return AsyncRpcResult.newDefaultAsyncResult(THROWER.createException((Throwable) obj, this), this.request);
-            } else {
-                return AsyncRpcResult.newDefaultAsyncResult(obj, this.request);
-            }
+        public Result recover(Throwable e) {
+            return AsyncRpcResult.newDefaultAsyncResult(THROWER.createException(e, this), this.request);
         }
     }
 

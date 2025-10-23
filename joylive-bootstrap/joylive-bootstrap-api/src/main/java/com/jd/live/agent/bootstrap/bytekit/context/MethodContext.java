@@ -21,6 +21,7 @@ import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 /**
@@ -104,6 +105,14 @@ public class MethodContext extends ExecutableContext {
                 skipWithResult(result);
             }
         });
+    }
+
+    public void skipWith(final Callable<Object> callable) {
+        try {
+            skipWithResult(callable.call());
+        } catch (Throwable e) {
+            skipWithThrowable(e);
+        }
     }
 
     @SuppressWarnings("unchecked")

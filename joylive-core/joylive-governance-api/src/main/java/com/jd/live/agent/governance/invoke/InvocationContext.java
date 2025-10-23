@@ -22,6 +22,7 @@ import com.jd.live.agent.core.instance.AppStatus;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.core.instance.Location;
+import com.jd.live.agent.core.util.ExceptionUtils;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.time.Timer;
@@ -66,7 +67,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -74,9 +74,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.Constants.K8S_SERVICE_NAME_FUNC;
@@ -542,39 +541,25 @@ public interface InvocationContext {
             CompletionStage<Object> stage = inbound(invocation, callable);
             return stage.toCompletableFuture().get();
         } catch (Throwable e) {
-            if (e instanceof ExecutionException) {
-                if (e.getCause() != null) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof InvocationTargetException) {
-                        if (cause.getCause() != null) {
-                            throw cause.getCause();
-                        }
-                    }
-                    throw cause;
-                }
-            }
-            throw e;
+            throw ExceptionUtils.getCause(e);
         }
     }
 
     /**
-     * Processes an inbound invocation through a chain of configured inbound filters and invokes a callable object synchronously,
-     * then applies a function to the result and the inbound request.
+     * Processes inbound request through filters and transforms result.
      *
-     * @param <R>        the type of the inbound request extending {@link InboundRequest}.
-     * @param <T>        the type of the result returned by the function.
-     * @param invocation the inbound invocation context containing the request to be processed along
-     *                   with any associated data. This context is passed through the filter chain for
-     *                   processing.
-     * @param callable   the callable object to invoke after all the filters have been processed.
-     * @param function   the function to apply to the result of the callable object.
-     * @return the result of applying the function to the result of the callable object and the inbound request.
+     * @param <R>        Type of inbound request
+     * @param <T>        Type of transformed result
+     * @param invocation he inbound invocation context
+     * @param callable   Operation to execute after filtering
+     * @param function   Function to handle errors
+     * @return Transformed result or error handling result
      */
     default <R extends InboundRequest, T> T inward(final InboundInvocation<R> invocation,
                                                    final Callable<Object> callable,
-                                                   final Function<Object, T> function) {
+                                                   final Function<Throwable, T> function) {
         try {
-            return function.apply(inward(invocation, callable));
+            return (T) inward(invocation, callable);
         } catch (Throwable e) {
             return function.apply(e);
         }
@@ -583,50 +568,19 @@ public interface InvocationContext {
     /**
      * Processes inbound invocation with error handling support.
      *
-     * @param <R>            Type of inbound request
-     * @param <T>            Type of result
-     * @param invocation     The inbound invocation to process
-     * @param callable       The actual invocation logic
-     * @param successHandler Handler for successful result
-     * @param errorHandler   Handler for processing errors
-     */
-    default <R extends InboundRequest, T> void inward(final InboundInvocation<R> invocation,
-                                                      final Callable<Object> callable,
-                                                      final Consumer<T> successHandler,
-                                                      final Consumer<Throwable> errorHandler) {
-        try {
-            successHandler.accept((T) inward(invocation, callable));
-        } catch (Throwable e) {
-            errorHandler.accept(e);
-        }
-    }
-
-    /**
-     * Processes inbound invocation with error conversion support.
-     *
      * @param <R>        Type of inbound request
      * @param <T>        Type of result
      * @param invocation The inbound invocation to process
      * @param callable   The actual invocation logic
-     * @param predicate  Predicate to determine if error should be converted
-     * @param errorFunc  Function to convert error to result type
-     * @return Result of type T, either from successful invocation or error conversion
-     * @throws RuntimeException If error occurs and cannot be converted
+     * @param handler    Handler for result and error
      */
-    default <R extends InboundRequest, T> T inward(final InboundInvocation<R> invocation,
-                                                   final Callable<Object> callable,
-                                                   final Predicate<Throwable> predicate,
-                                                   final Function<Throwable, T> errorFunc) {
+    default <R extends InboundRequest, T> void inward(final InboundInvocation<R> invocation,
+                                                      final Callable<Object> callable,
+                                                      final BiConsumer<T, Throwable> handler) {
         try {
-            return (T) inward(invocation, callable);
+            handler.accept((T) inward(invocation, callable), null);
         } catch (Throwable e) {
-            if (predicate != null && predicate.test(e)) {
-                return errorFunc.apply(e);
-            }
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new RuntimeException(e);
+            handler.accept(null, e);
         }
     }
 
@@ -665,34 +619,6 @@ public interface InvocationContext {
             CompletionStage<List<ServiceEndpoint>> stage = registry.getEndpoints(request.getService(), request.getGroup(), system);
             List<ServiceEndpoint> instances = stage.toCompletableFuture().get();
             return (E) route(invocation, instances, (RouteFilter[]) null);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        } catch (ExecutionException e) {
-            return route(invocation, null, (RouteFilter[]) null);
-        }
-    }
-
-    /**
-     * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
-     *
-     * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed.
-     * @param <E>        the type parameter extending {@link Endpoint}, representing the specific type of endpoint.
-     * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
-     *                   its initially considered endpoints.
-     * @param system     the system registry provider.
-     * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
-     * @throws RejectNoProviderException if no provider is found for the invocation.
-     * @throws RejectException           if the request is rejected during filtering.
-     */
-    @SuppressWarnings("unchecked")
-    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(final OutboundInvocation<R> invocation, final ServiceRegistry system) {
-        try {
-            Registry registry = getRegistry();
-            R request = invocation.getRequest();
-            CompletionStage<List<ServiceEndpoint>> stage = registry.getEndpoints(request.getService(), request.getGroup(), system);
-            List<ServiceEndpoint> instances = stage.toCompletableFuture().get();
-            return (List<E>) routes(invocation, instances, (RouteFilter[]) null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -812,6 +738,34 @@ public interface InvocationContext {
         } catch (RejectException e) {
             invocation.onReject(e);
             throw e;
+        }
+    }
+
+    /**
+     * Applies route filters to the given {@link OutboundInvocation} and retrieves the endpoints that are determined to be suitable targets.
+     *
+     * @param <R>        the type parameter extending {@link OutboundRequest}, representing the specific type of request being routed.
+     * @param <E>        the type parameter extending {@link Endpoint}, representing the specific type of endpoint.
+     * @param invocation the {@code OutboundInvocation} to which the route filters are to be applied, encompassing the request and
+     *                   its initially considered endpoints.
+     * @param system     the system registry provider.
+     * @return An {@link Endpoint} instance deemed suitable for the invocation after the application of route filters, or {@code null} if no suitable endpoint is found.
+     * @throws RejectNoProviderException if no provider is found for the invocation.
+     * @throws RejectException           if the request is rejected during filtering.
+     */
+    @SuppressWarnings("unchecked")
+    default <R extends OutboundRequest, E extends Endpoint> List<E> routes(final OutboundInvocation<R> invocation, final ServiceRegistry system) {
+        try {
+            Registry registry = getRegistry();
+            R request = invocation.getRequest();
+            CompletionStage<List<ServiceEndpoint>> stage = registry.getEndpoints(request.getService(), request.getGroup(), system);
+            List<ServiceEndpoint> instances = stage.toCompletableFuture().get();
+            return (List<E>) routes(invocation, instances, (RouteFilter[]) null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            return route(invocation, null, (RouteFilter[]) null);
         }
     }
 
@@ -937,6 +891,11 @@ public interface InvocationContext {
         }
 
         @Override
+        public HostTransformer getHostTransformer(String host) {
+            return delegate.getHostTransformer(host);
+        }
+
+        @Override
         public boolean isLiveEnabled() {
             return delegate.isLiveEnabled();
         }
@@ -1027,6 +986,11 @@ public interface InvocationContext {
         }
 
         @Override
+        public String getService(URI uri) {
+            return delegate.getService(uri);
+        }
+
+        @Override
         public InboundFilter[] getInboundFilters() {
             return delegate.getInboundFilters();
         }
@@ -1084,8 +1048,15 @@ public interface InvocationContext {
         @Override
         public <R extends InboundRequest, T> T inward(final InboundInvocation<R> invocation,
                                                       final Callable<Object> callable,
-                                                      final Function<Object, T> function) {
+                                                      final Function<Throwable, T> function) {
             return delegate.inward(invocation, callable, function);
+        }
+
+        @Override
+        public <R extends InboundRequest, T> void inward(final InboundInvocation<R> invocation,
+                                                         final Callable<Object> callable,
+                                                         final BiConsumer<T, Throwable> handler) {
+            delegate.inward(invocation, callable, handler);
         }
 
         @Override
@@ -1099,6 +1070,12 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest,
+                E extends Endpoint> E route(OutboundInvocation<R> invocation, ServiceRegistry system) {
+            return delegate.route(invocation, system);
+        }
+
+        @Override
+        public <R extends OutboundRequest,
                 E extends Endpoint> E route(final OutboundInvocation<R> invocation, final List<E> instances) {
             // call this method.
             return route(invocation, instances, (RouteFilter[]) null);
@@ -1106,9 +1083,7 @@ public interface InvocationContext {
 
         @Override
         public <R extends OutboundRequest,
-                E extends Endpoint, P> E route(final OutboundInvocation<R> invocation,
-                                               final List<P> instances,
-                                               final Function<P, E> converter) {
+                E extends Endpoint, P> E route(final OutboundInvocation<R> invocation, final List<P> instances, final Function<P, E> converter) {
             return route(invocation, toList(instances, converter), (RouteFilter[]) null);
         }
 
@@ -1123,6 +1098,18 @@ public interface InvocationContext {
         public <R extends OutboundRequest,
                 E extends Endpoint> E route(final OutboundInvocation<R> invocation, final List<E> instances, final RouteFilter[] filters) {
             return delegate.route(invocation, instances, filters);
+        }
+
+        @Override
+        public <R extends OutboundRequest,
+                E extends Endpoint> List<E> routes(OutboundInvocation<R> invocation, ServiceRegistry system) {
+            return delegate.routes(invocation, system);
+        }
+
+        @Override
+        public <R extends OutboundRequest,
+                E extends Endpoint> List<E> routes(OutboundInvocation<R> invocation, List<E> instances, RouteFilter[] filters) {
+            return delegate.routes(invocation, instances, filters);
         }
 
         @Override

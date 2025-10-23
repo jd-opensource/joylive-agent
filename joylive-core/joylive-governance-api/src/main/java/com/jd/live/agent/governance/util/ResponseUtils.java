@@ -143,7 +143,7 @@ public class ResponseUtils {
                                     Function<Throwable, String> messageFunc,
                                     Predicate<Throwable> predicate,
                                     BiConsumer<String, String> consumer) {
-        describe(e, messageFunc, predicate == null ? ExceptionUtils::isNoneWrapped : predicate, (name, message) -> {
+        describe(e, messageFunc, predicate == null ? ExceptionUtils::isNotWrapped : predicate, (name, message) -> {
             if (name != null && !name.isEmpty()) {
                 consumer.accept(LABEL_EXCEPTION_NAMES, name);
             }

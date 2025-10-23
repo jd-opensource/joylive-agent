@@ -78,27 +78,15 @@ public interface SofaRpcRequest {
         }
 
         /**
-         * Converts an object to a SofaRpc Result.
-         * <p>
-         * This method checks if the object is already a SofaRpc Result, and if so, returns it directly.
-         * If the object is a Throwable, it creates a new SofaResponse with the Throwable wrapped in a DubboException.
-         * Otherwise, it creates a new SofaResponse with the object as the result.
-         * </p>
+         * Creates error response from throwable.
          *
-         * @param obj the object to convert to a SofaRpc Result.
-         * @return a SofaRpc Result representing the object.
+         * @param e The throwable to convert
+         * @return SofaResponse with wrapped exception
          */
-        public SofaResponse convert(Object obj) {
-            SofaResponse response;
-            if (obj instanceof SofaResponse) {
-                response = (SofaResponse) obj;
-            } else if (obj instanceof Throwable) {
-                response = new SofaResponse();
-                response.setAppResponse(THROWER.createException((Throwable) obj, this));
-            } else {
-                response = new SofaResponse();
-                response.setAppResponse(obj);
-            }
+        public SofaResponse recover(Throwable e) {
+            SofaResponse response = new SofaResponse();
+            // app response can be exception
+            response.setAppResponse(THROWER.createException(e, this));
             return response;
         }
     }

@@ -90,13 +90,23 @@ public class ExceptionUtils {
     }
 
     /**
+     * Checks if the throwable is a wrapper exception.
+     *
+     * @param e throwable to check
+     * @return true if it's a WrappedException, InvocationTargetException or ExecutionException
+     */
+    public static boolean isWrapped(Throwable e) {
+        return e instanceof WrappedException || e instanceof InvocationTargetException || e instanceof ExecutionException;
+    }
+
+    /**
      * Checks if the given throwable is not a wrapped exception.
      *
      * @param e The throwable to check.
      * @return {@code true} if the throwable is not a wrapped exception, {@code false} otherwise.
      */
-    public static boolean isNoneWrapped(Throwable e) {
-        return !(e instanceof WrappedException || e instanceof InvocationTargetException || e instanceof ExecutionException);
+    public static boolean isNotWrapped(Throwable e) {
+        return !isWrapped(e);
     }
 
     /**
@@ -106,13 +116,14 @@ public class ExceptionUtils {
      * @return the root cause if available, or the original throwable
      */
     public static Throwable getCause(Throwable e) {
-        Throwable cause = null;
-        if (e instanceof InvocationTargetException) {
-            cause = e.getCause();
-        } else if (e instanceof ExecutionException) {
-            cause = e.getCause();
+        if (e == null) {
+            return null;
         }
-        return cause == null ? e : cause;
+        Throwable cause = e;
+        while (cause.getCause() != null && isWrapped(cause)) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 
     /**
@@ -130,6 +141,24 @@ public class ExceptionUtils {
             e = e.getCause();
         }
         return cause;
+    }
+
+    /**
+     * Converts a Throwable to an Exception.
+     * Returns null if input is null, casts if already Exception,
+     * or wraps in RuntimeException.
+     *
+     * @param e The throwable to convert
+     * @return The converted Exception or null
+     */
+    public static Exception toException(Throwable e) {
+        if (e == null) {
+            return null;
+        } else if (e instanceof Exception) {
+            return (Exception) e;
+        } else {
+            return new RuntimeException(e.getMessage(), e);
+        }
     }
 
 }

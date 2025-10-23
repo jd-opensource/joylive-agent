@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.ExceptionUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.McpConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
@@ -78,13 +79,14 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
             ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, serviceConfig::isSystem, mcpConfig::isMcp, parser);
             if (!request.isSystem()) {
                 HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
-                return (ServerResponse) context.inward(
-                        invocation,
-                        () -> delegate.handle(req),
-                        e -> request.isMcp(),
-                        e -> {
-                            return ServerResponse.ok().body(JsonRpcResponse.createServerErrorResponse(request.getMcpRequestId(), e.getMessage()));
-                        });
+                try {
+                    return (ServerResponse) context.inward(invocation, () -> delegate.handle(req));
+                } catch (Throwable e) {
+                    if (request.isMcp()) {
+                        return ServerResponse.ok().body(JsonRpcResponse.createServerErrorResponse(request.getMcpRequestId(), e.getMessage()));
+                    }
+                    throw ExceptionUtils.toException(e);
+                }
             } else {
                 return delegate.handle(req);
             }

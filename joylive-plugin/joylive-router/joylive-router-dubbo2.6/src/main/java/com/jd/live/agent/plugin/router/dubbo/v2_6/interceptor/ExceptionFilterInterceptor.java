@@ -49,7 +49,7 @@ public class ExceptionFilterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Invocation invocation = (Invocation) mc.getArguments()[1];
         DubboInboundRequest request = new DubboInboundRequest(invocation);
-        Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::convert);
+        Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::recover);
         mc.skipWithResult(result);
     }
 

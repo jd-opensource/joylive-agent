@@ -60,8 +60,10 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
         ServletInboundRequest request = new ServletInboundRequest(servletRequest, handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
-            context.inward(invocation, mc::invokeOrigin, v -> mc.skipWithResult(v), e -> {
-                if (request.isMcp()) {
+            context.inward(invocation, mc::invokeOrigin, (v, e) -> {
+                if (e == null) {
+                    mc.skipWithResult(v);
+                } else if (request.isMcp()) {
                     mc.skipWithResult(JsonRpcResponse.createServerErrorResponse(request.getMcpRequestId(), e.getMessage()));
                 } else {
                     mc.skipWithThrowable(e);

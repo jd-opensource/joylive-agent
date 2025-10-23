@@ -51,7 +51,7 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
         Invocation invocation = (Invocation) arguments[1];
         DubboInboundRequest request = new DubboInboundRequest(invocation);
         if (!request.isSystem()) {
-            Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::convert);
+            Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::recover);
             mc.skipWithResult(result);
         }
     }

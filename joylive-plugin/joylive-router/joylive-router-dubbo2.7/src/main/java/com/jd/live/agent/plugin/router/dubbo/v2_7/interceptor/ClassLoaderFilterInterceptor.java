@@ -49,7 +49,7 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         DubboInboundRequest request = new DubboInboundRequest(mc.getArgument(1), mc.getArgument(0));
         if (!request.isSystem()) {
-            Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::convert);
+            Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::recover);
             mc.skipWithResult(result);
         }
     }
