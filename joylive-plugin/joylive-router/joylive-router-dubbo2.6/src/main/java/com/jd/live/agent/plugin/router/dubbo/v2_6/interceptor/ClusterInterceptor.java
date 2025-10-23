@@ -70,6 +70,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         if (!request.isSystem() && !request.isDisabled()) {
             DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
             DubboOutboundResponse response = cluster.request(invocation, instances);
+            // DubboOutboundResponse implement ResultProvider
             mc.skipWith(response);
         }
     }

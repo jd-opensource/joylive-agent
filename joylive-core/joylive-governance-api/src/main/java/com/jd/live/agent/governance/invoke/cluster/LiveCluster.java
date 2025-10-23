@@ -30,8 +30,9 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 
 /**
  * Defines the behavior of a live cluster capable of routing and invoking outbound requests.
@@ -96,8 +97,8 @@ public interface LiveCluster<R extends OutboundRequest,
             return invoke(invocation, instances).toCompletableFuture().get();
         } catch (InterruptedException e) {
             return createResponse(e, invocation.getRequest(), null);
-        } catch (ExecutionException e) {
-            return createResponse(e.getCause() != null ? e.getCause() : e, invocation.getRequest(), null);
+        } catch (Throwable e) {
+            return createResponse(getCause(e), invocation.getRequest(), null);
         }
     }
 

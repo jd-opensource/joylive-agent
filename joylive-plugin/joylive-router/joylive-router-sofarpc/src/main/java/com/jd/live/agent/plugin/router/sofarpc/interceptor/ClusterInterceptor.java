@@ -56,6 +56,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
         if (!request.isSystem() && !request.isDisabled()) {
             SofaRpcOutboundInvocation invocation = new SofaRpcOutboundInvocation(request, new SofaRpcInvocationContext(context));
             SofaRpcOutboundResponse response = cluster.request(invocation, null);
+            // SofaRpcOutboundResponse implement ResultProvider
             mc.skipWith(response);
         }
     }

@@ -59,6 +59,7 @@ public class BlockingCloudClientInterceptor extends InterceptorAdaptor {
                 cluster.getContext());
         HttpOutboundInvocation<BlockingCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         BlockingClusterResponse response = cluster.request(invocation);
+        // BlockingClusterResponse implement ResultProvider
         mc.skipWith(response);
     }
 }

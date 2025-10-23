@@ -51,6 +51,7 @@ public class FeignCloudClientInterceptor extends InterceptorAdaptor {
                 cluster.getContext());
         HttpOutboundInvocation<FeignCloudClusterRequest> invocation = new HttpOutboundInvocation<>(request, context);
         FeignClusterResponse response = cluster.request(invocation);
+        // FeignClusterResponse implement ResultProvider
         mc.skipWith(response);
     }
 }

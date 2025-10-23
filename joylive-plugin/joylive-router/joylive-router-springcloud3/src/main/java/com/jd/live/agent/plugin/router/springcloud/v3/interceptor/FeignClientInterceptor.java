@@ -115,6 +115,7 @@ public class FeignClientInterceptor extends InterceptorAdaptor {
                 mc.setArgument(0, createRequest(uri, req, endpoint)).invokeOrigin(IO_EXCEPTION_CONVERTER));
         try {
             FeignClusterResponse response = FeignClientCluster.INSTANCE.request(new HttpOutboundInvocation<>(fr, context));
+            // FeignClusterResponse implement ResultProvider
             mc.skipWith(response);
         } catch (Throwable e) {
             mc.skipWithThrowable(FeignThrower.INSTANCE.createException(e, fr));
