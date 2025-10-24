@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
 import java.lang.reflect.Method;
@@ -40,7 +39,7 @@ public abstract class ServletParameterFactory {
     protected static final Method METHOD_HTTP_METHOD_RESOLVE = getDeclaredMethod(HttpMethod.class, "resolve", new Class[]{String.class});
     protected static final Method METHOD_HTTP_METHOD_VALUE_OF = getDeclaredMethod(HttpMethod.class, "valueOf", new Class[]{String.class});
 
-    private static RequestAttributes getRequestContext() {
+    protected Object getRequestContext() {
         return RequestContextHolder.getRequestAttributes();
     }
 
@@ -53,16 +52,7 @@ public abstract class ServletParameterFactory {
      * @return the value of type T
      */
     protected <T> T get(Object obj, FieldAccessor accessor, Class<T> type) {
-        return accessor.get(obj, type);
-    }
-
-    /**
-     * Retrieves the current NativeWebRequest from RequestContextHolder.
-     *
-     * @return the current NativeWebRequest
-     */
-    protected Object getWebRequest() {
-        return get(getRequestContext(), ACCESSOR_REQUEST, Object.class);
+        return obj == null ? null : accessor.get(obj, type);
     }
 
     /**
@@ -73,15 +63,6 @@ public abstract class ServletParameterFactory {
      */
     protected <T> T getWebRequest(Class<T> type) {
         return get(getRequestContext(), ACCESSOR_REQUEST, type);
-    }
-
-    /**
-     * Retrieves the current web response from the request context.
-     *
-     * @return the native web response object
-     */
-    protected Object getWebResponse() {
-        return get(getRequestContext(), ACCESSOR_RESPONSE, Object.class);
     }
 
     /**
