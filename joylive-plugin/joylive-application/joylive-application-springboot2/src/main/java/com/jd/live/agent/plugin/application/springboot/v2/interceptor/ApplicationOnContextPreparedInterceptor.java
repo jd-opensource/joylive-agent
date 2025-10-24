@@ -24,7 +24,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.McpConfig;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.McpController;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.controller.web.WebMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -32,6 +32,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * Interceptor that handles context prepared events by notifying registered listeners
@@ -54,7 +55,7 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
     public void onSuccess(ExecutableContext ctx) {
         AppLifecycle.contextPrepared(() -> {
             McpConfig mcpConfig = config.getMcpConfig();
-            if (mcpConfig.isEnabled() && SpringUtils.isWebEnabled()) {
+            if (mcpConfig.isEnabled()) {
                 ContextPreparedListener listener = new ContextPreparedListener(converter);
                 supervisor.addFirst(listener);
                 try {
@@ -70,6 +71,7 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
 
     private static class ContextPreparedListener extends AppListenerAdapter {
 
+
         private final ObjectConverter converter;
 
         ContextPreparedListener(ObjectConverter converter) {
@@ -82,13 +84,17 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
                 return;
             }
             ConfigurableApplicationContext ctx = ((SpringAppContext) context).getContext();
+            ConfigurableEnvironment environment = ctx.getEnvironment();
             ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
             if (beanFactory instanceof BeanDefinitionRegistry) {
-                BeanDefinition definition = BeanDefinitionBuilder.genericBeanDefinition(McpController.class)
-                        .addPropertyValue("objectConverter", converter)
-                        .getBeanDefinition();
-                BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-                registry.registerBeanDefinition(McpController.NAME, definition);
+                if (SpringUtils.isWeb(environment)) {
+                    BeanDefinition definition = BeanDefinitionBuilder
+                            .genericBeanDefinition(WebMcpController.class)
+                            .addPropertyValue("objectConverter", converter)
+                            .getBeanDefinition();
+                    BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+                    registry.registerBeanDefinition(WebMcpController.NAME, definition);
+                }
             }
         }
     }

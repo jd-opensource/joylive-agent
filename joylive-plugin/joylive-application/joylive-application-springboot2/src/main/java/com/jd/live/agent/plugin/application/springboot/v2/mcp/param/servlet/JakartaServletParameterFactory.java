@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.param.servlet;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.mcp.ParameterParser;
 import com.jd.live.agent.governance.mcp.ParameterParser.DefaultParameterParser;
-import com.jd.live.agent.plugin.application.springboot.v2.util.param.SystemParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.SystemParameterFactory;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.CookieValue;

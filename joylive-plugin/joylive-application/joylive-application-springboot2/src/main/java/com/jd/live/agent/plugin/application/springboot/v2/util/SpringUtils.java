@@ -16,8 +16,6 @@
 package com.jd.live.agent.plugin.application.springboot.v2.util;
 
 import com.jd.live.agent.core.bootstrap.AppContext;
-import com.jd.live.agent.plugin.application.springboot.v2.util.param.CompositeSystemParameterFactory;
-import com.jd.live.agent.governance.mcp.ParameterParser;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
@@ -25,10 +23,6 @@ import com.jd.live.agent.plugin.application.springboot.v2.util.port.env.EnvPortD
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.jmx.JmxPortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.web.WebPortDetectorFactory;
 import org.springframework.core.io.ResourceLoader;
-import reactor.core.publisher.Mono;
-
-import java.lang.reflect.Parameter;
-import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
@@ -37,12 +31,11 @@ public class SpringUtils {
     private static final String TYPE_LIVE_RELOAD_SERVER = "org.springframework.boot.devtools.livereload.LiveReloadServer";
     private static final String THREAD_NAME = "restartedMain";
     private static final Class<?> CLASS_LIVE_RELOAD_SERVER = loadClass(TYPE_LIVE_RELOAD_SERVER, ResourceLoader.class.getClassLoader());
-    private static final String TYPE_REST_CONTROLLER = "org.springframework.web.bind.annotation.RestController";
-    private static final Class<?> CLASS_REST_CONTROLLER = loadClass(TYPE_REST_CONTROLLER, ResourceLoader.class.getClassLoader());
-    private static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
-    private static final Class<?> CLASS_DISPATCHER_SERVLET = loadClass(TYPE_DISPATCHER_SERVLET, ResourceLoader.class.getClassLoader());
-    private static final String TYPE_MONO = "reactor.core.publisher.Mono";
-    private static final Class<?> CLASS_MONO = loadClass(TYPE_MONO, ResourceLoader.class.getClassLoader());
+
+    private static final String TYPE_CONFIGURABLE_WEB_ENVIRONMENT = "org.springframework.web.context.ConfigurableWebEnvironment";
+    private static final Class<?> CLASS_CONFIGURABLE_WEB_ENVIRONMENT = loadClass(TYPE_CONFIGURABLE_WEB_ENVIRONMENT, ResourceLoader.class.getClassLoader());
+    private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT = "org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment";
+    private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT, ResourceLoader.class.getClassLoader());
 
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
     private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE, ResourceLoader.class.getClassLoader());
@@ -51,6 +44,7 @@ public class SpringUtils {
     private static final String SWAGGER2_CONTROLLER_WEB_MVC_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebMvc";
     private static final Class<?> SWAGGER2_CONTROLLER_WEB_MVC_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_MVC_TYPE, ResourceLoader.class.getClassLoader());
 
+
     /**
      * Checks if current thread is a development reload thread
      */
@@ -58,28 +52,12 @@ public class SpringUtils {
         return CLASS_LIVE_RELOAD_SERVER != null && THREAD_NAME.equals(Thread.currentThread().getName());
     }
 
-    /**
-     * Checks if Spring Web is enabled
-     */
-    public static boolean isWebEnabled() {
-        return CLASS_REST_CONTROLLER != null;
+    public static boolean isWeb(Object environment) {
+        return CLASS_CONFIGURABLE_WEB_ENVIRONMENT != null && CLASS_CONFIGURABLE_WEB_ENVIRONMENT.isInstance(environment);
     }
 
-    /**
-     * Checks if Spring MVC is enabled
-     */
-    public static boolean isWebMvcEnabled() {
-        return CLASS_DISPATCHER_SERVLET != null;
-    }
-
-    /**
-     * Gets converter function for Mono type
-     *
-     * @param type The class type to check
-     * @return Function to convert object to Mono, or null if not applicable
-     */
-    public static Function<Object, Object> getMonoConverter(Class<?> type) {
-        return type != null && type == CLASS_MONO ? obj -> Mono.just(obj) : null;
+    public static boolean isWebFlux(Object environment) {
+        return CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT != null && CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT.isInstance(environment);
     }
 
     /**
@@ -91,16 +69,6 @@ public class SpringUtils {
         return ERROR_CONTROLLER_CLASS != null && ERROR_CONTROLLER_CLASS.isInstance(controller)
                 || API_RESOURCE_CONTROLLER_CLASS != null && API_RESOURCE_CONTROLLER_CLASS.isInstance(controller)
                 || SWAGGER2_CONTROLLER_WEB_MVC_CLASS != null && SWAGGER2_CONTROLLER_WEB_MVC_CLASS.isInstance(controller);
-    }
-
-    /**
-     * Gets system parameter parser for given parameter
-     *
-     * @param parameter Method parameter to get supplier for
-     * @return Supplier for system objects like HttpServletRequest/Response
-     */
-    public static ParameterParser getParser(Parameter parameter) {
-        return CompositeSystemParameterFactory.INSTANCE.getParser(parameter);
     }
 
     /**

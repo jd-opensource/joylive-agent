@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.controller;
 
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolParameter;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.ParameterParser;
-import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.CompositeSystemParameterFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -38,11 +37,9 @@ import static com.jd.live.agent.core.util.StringUtils.url;
 
 /**
  * Default implementation of McpToolScanner.
- * Scans Spring MVC controllers and converts their methods to MCP tool methods.
+ * Scans Spring controllers and converts their methods to MCP tool methods.
  */
-public class DefaultMcpToolScanner implements McpToolScanner {
-
-    public static final McpToolScanner INSTANCE = new DefaultMcpToolScanner();
+public abstract class AbstractMcpToolScanner implements McpToolScanner {
 
     @Override
     public List<McpToolMethod> scan(Object controller) {
@@ -69,7 +66,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param fullPaths      set of API paths (unused)
      * @return combined tool name in format "controllerName.methodName"
      */
-    private String getToolName(String controllerName, Method method, Set<String> fullPaths) {
+    protected String getToolName(String controllerName, Method method, Set<String> fullPaths) {
         // TODO Get name from strategy by full path
         String tool = controllerName + "." + method.getName();
         return tool;
@@ -83,7 +80,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param paths sub paths to append
      * @return combined paths, or original paths if roots is empty
      */
-    private Set<String> appendPaths(String[] roots, String[] paths) {
+    protected Set<String> appendPaths(String[] roots, String[] paths) {
         int rootLength = roots == null ? 0 : roots.length;
         if (rootLength == 0) {
             return appendPaths(paths);
@@ -109,7 +106,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param paths array of paths to filter
      * @return set of non-empty unique paths
      */
-    private Set<String> appendPaths(String[] paths) {
+    protected Set<String> appendPaths(String[] paths) {
         if (paths == null) {
             return new LinkedHashSet<>();
         }
@@ -127,7 +124,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param getter annotation getter function
      * @return mapped paths or null if no mapping found
      */
-    private String[] getPaths(AnnotationGetter getter) {
+    protected String[] getPaths(AnnotationGetter getter) {
         RequestMapping requestMapping = getter.getAnnotation(RequestMapping.class);
         if (requestMapping != null) {
             return requestMapping.value().length > 0 ? requestMapping.value() : requestMapping.path();
@@ -161,7 +158,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param getter annotation getter to retrieve annotations
      * @return parameter name and required flag, or null if no supported annotation found
      */
-    private ParameterName getParam(AnnotationGetter getter) {
+    protected ParameterName getParam(AnnotationGetter getter) {
         RequestParam requestParam = getter.getAnnotation(RequestParam.class);
         if (requestParam != null) {
             return new ParameterName(!requestParam.value().isEmpty() ? requestParam.value() : requestParam.name(), requestParam.required());
@@ -184,7 +181,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param type the controller class
      * @return formatted controller name
      */
-    private String getControllerName(Class<?> type) {
+    protected String getControllerName(Class<?> type) {
         String className = type.getSimpleName();
         String prefix = className.replace("Controller", "");
         prefix = prefix.substring(0, 1).toLowerCase() + prefix.substring(1);
@@ -197,7 +194,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param method Method to get parameters from
      * @return Array of MCP tool parameters
      */
-    private McpToolParameter[] getParameters(Method method) {
+    protected McpToolParameter[] getParameters(Method method) {
         Parameter[] parameters = method.getParameters();
         if (parameters.length == 0) {
             return new McpToolParameter[0];
@@ -216,30 +213,54 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * @param index     Parameter index
      * @return MCP tool parameter
      */
-    private McpToolParameter build(Parameter parameter, int index) {
+    protected McpToolParameter build(Parameter parameter, int index) {
         ParameterName parameterName = getParam(new ParameterAnnotationGetter(parameter));
         boolean required = parameterName != null && parameterName.isRequired();
         String name = parameterName != null && !isEmpty(parameterName.getName()) ? parameterName.getName() : parameter.getName();
-        Class<?> type = parameter.getType();
-        Type genericType = parameter.getParameterizedType();
-        Function<Object, Object> mono = SpringUtils.getMonoConverter(type);
-        genericType = mono != null && genericType instanceof ParameterizedType
-                ? ((ParameterizedType) genericType).getActualTypeArguments()[0]
-                : genericType;
-        ParameterParser parser = required || mono != null ? null : SpringUtils.getParser(parameter);
-        return new McpToolParameter(name, index, type, genericType, required, mono, parser);
+        ParameterType type = getParameterType(parameter);
+        ParameterParser parser = parameterName != null ? null : CompositeSystemParameterFactory.INSTANCE.getParser(parameter);
+        return new McpToolParameter(name, index, type.getType(), type.genericType, required, type.converter, parser);
+    }
+
+    protected abstract ParameterType getParameterType(Parameter parameter);
+
+    public static class ParameterType {
+
+        private final Class<?> type;
+
+        private final Type genericType;
+
+        private final Function<Object, Object> converter;
+
+        public ParameterType(Class<?> type, Type genericType, Function<Object, Object> converter) {
+            this.type = type;
+            this.genericType = genericType;
+            this.converter = converter;
+        }
+
+        public Class<?> getType() {
+            return type;
+        }
+
+        public Type getGenericType() {
+            return genericType;
+        }
+
+        public Function<Object, Object> getConverter() {
+            return converter;
+        }
     }
 
     /**
      * Holds parameter name and required flag
      */
-    private static class ParameterName {
+    public static class ParameterName {
 
         private final String name;
 
         private final boolean required;
 
-        ParameterName(String name, boolean required) {
+        public ParameterName(String name, boolean required) {
             this.name = name;
             this.required = required;
         }
@@ -257,7 +278,7 @@ public class DefaultMcpToolScanner implements McpToolScanner {
      * Functional interface for retrieving annotations from different sources.
      */
     @FunctionalInterface
-    interface AnnotationGetter {
+    public interface AnnotationGetter {
         /**
          * Gets annotation of specified type from the source.
          *
@@ -270,10 +291,10 @@ public class DefaultMcpToolScanner implements McpToolScanner {
     /**
      * Implementation for getting annotations from a Class type.
      */
-    static class TypeAnnotationGetter implements AnnotationGetter {
+    public static class TypeAnnotationGetter implements AnnotationGetter {
         private final Class<?> type;
 
-        TypeAnnotationGetter(Class<?> type) {
+        public TypeAnnotationGetter(Class<?> type) {
             this.type = type;
         }
 
@@ -286,10 +307,10 @@ public class DefaultMcpToolScanner implements McpToolScanner {
     /**
      * Implementation for getting annotations from a Method.
      */
-    static class MethodAnnotationGetter implements AnnotationGetter {
+    public static class MethodAnnotationGetter implements AnnotationGetter {
         private final Method method;
 
-        MethodAnnotationGetter(Method method) {
+        public MethodAnnotationGetter(Method method) {
             this.method = method;
         }
 
@@ -302,11 +323,11 @@ public class DefaultMcpToolScanner implements McpToolScanner {
     /**
      * Implementation for getting annotations from a Parameter.
      */
-    static class ParameterAnnotationGetter implements AnnotationGetter {
+    public static class ParameterAnnotationGetter implements AnnotationGetter {
 
         private final Parameter parameter;
 
-        ParameterAnnotationGetter(Parameter parameter) {
+        public ParameterAnnotationGetter(Parameter parameter) {
             this.parameter = parameter;
         }
 

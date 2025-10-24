@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.util.param;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.param;
 
 import com.jd.live.agent.governance.mcp.ParameterParser;
-import com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet.JakartaServletParameterFactory;
-import com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet.JavaxServletParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.servlet.JakartaServletParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.servlet.JavaxServletParameterFactory;
 
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
