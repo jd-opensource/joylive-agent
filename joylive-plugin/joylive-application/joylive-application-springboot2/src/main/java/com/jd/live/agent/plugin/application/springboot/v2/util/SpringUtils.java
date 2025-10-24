@@ -16,14 +16,13 @@
 package com.jd.live.agent.plugin.application.springboot.v2.util;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.bootstrap.AppContext;
-import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
-import org.springframework.boot.web.context.WebServerApplicationContext;
-import org.springframework.boot.web.server.WebServer;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.env.EnvPortDetectorFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.jmx.JmxPortDetectorFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.web.WebPortDetectorFactory;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.web.context.request.RequestContextHolder;
 import reactor.core.publisher.Mono;
@@ -42,8 +41,6 @@ public class SpringUtils {
     private static final String TYPE_LIVE_RELOAD_SERVER = "org.springframework.boot.devtools.livereload.LiveReloadServer";
     private static final String THREAD_NAME = "restartedMain";
     private static final Class<?> CLASS_LIVE_RELOAD_SERVER = loadClass(TYPE_LIVE_RELOAD_SERVER, ResourceLoader.class.getClassLoader());
-    private static final String TYPE_WEB_SERVER = "org.springframework.boot.web.context.WebServerApplicationContext";
-    private static final Class<?> CLASS_WEB_SERVER_APPLICATION_CONTEXT = loadClass(TYPE_WEB_SERVER, ResourceLoader.class.getClassLoader());
     private static final String TYPE_REST_CONTROLLER = "org.springframework.web.bind.annotation.RestController";
     private static final Class<?> CLASS_REST_CONTROLLER = loadClass(TYPE_REST_CONTROLLER, ResourceLoader.class.getClassLoader());
     private static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
@@ -157,74 +154,20 @@ public class SpringUtils {
      * @return Validated port number
      */
     public static PortInfo getPort(AppContext context) {
-        if (context instanceof SpringAppContext) {
-            SpringAppContext springContext = (SpringAppContext) context;
-            if (CLASS_WEB_SERVER_APPLICATION_CONTEXT != null && CLASS_WEB_SERVER_APPLICATION_CONTEXT.isInstance(springContext.getContext())) {
-                return getPortBySpringWebServer(context);
+        PortDetectorFactory[] factories = new PortDetectorFactory[]{
+                new WebPortDetectorFactory(),
+                new JmxPortDetectorFactory(),
+                new EnvPortDetectorFactory(),
+        };
+        for (PortDetectorFactory factory : factories) {
+            PortDetector detector = factory.get(context);
+            if (detector != null) {
+                PortInfo portInfo = detector.getPort();
+                if (portInfo != null) {
+                    return portInfo;
+                }
             }
         }
-        PortInfo port = getPortByDetector(context);
-        if (port != null) {
-            return port;
-        }
-        return getPortByEnvironment(context);
-    }
-
-    /**
-     * Retrieves port directly from embedded WebServer instance (Servlet contexts only)
-     *
-     * @param context Web-enabled application context
-     * @return Actual bound port from web server
-     */
-    private static PortInfo getPortBySpringWebServer(AppContext context) {
-        WebServerApplicationContext wac = (WebServerApplicationContext) (((SpringAppContext) context).getContext());
-        WebServer webServer = wac.getWebServer();
-        int port = webServer.getPort();
-        boolean secure = false;
-        ClassLoader classLoader = wac.getClassLoader();
-        classLoader = classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader;
-        try {
-            Class<?> clazz = classLoader.loadClass("org.springframework.boot.autoconfigure.web.ServerProperties");
-            Object bean = wac.getBean(clazz);
-            secure = FieldAccessorFactory.getQuietly(bean, "ssl") != null;
-        } catch (Throwable ignored) {
-        }
-        return new PortInfo(port, secure);
-    }
-
-    /**
-     * Extracts port from environment properties with validation.
-     * Handles missing/invalid values by falling back to 8080.
-     *
-     * @param context Application context containing environment
-     * @return Validated port number from configuration
-     */
-    private static PortInfo getPortByEnvironment(AppContext context) {
-        String serverPort = context.getProperty("server.port");
-        serverPort = serverPort == null || serverPort.isEmpty() ? "8080" : serverPort;
-        int port;
-        try {
-            port = Integer.parseInt(serverPort);
-            port = port > 65535 || port <= 0 ? 8080 : port;
-        } catch (NumberFormatException e) {
-            port = 8080;
-        }
-        return new PortInfo(port, false);
-    }
-
-    /**
-     * Attempts port detection through plugin mechanism.
-     * Silently ignores detector failures to allow fallback strategies.
-     *
-     * @param context Application context for detector initialization
-     * @return Detected port or null if unavailable
-     */
-    private static PortInfo getPortByDetector(AppContext context) {
-        PortDetector detector = PortDetectorFactory.get(context);
-        try {
-            return detector.getPort();
-        } catch (Throwable e) {
-            return null;
-        }
+        return null;
     }
 }

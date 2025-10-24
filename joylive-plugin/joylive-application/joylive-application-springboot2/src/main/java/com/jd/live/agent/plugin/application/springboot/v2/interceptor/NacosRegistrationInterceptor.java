@@ -24,8 +24,8 @@ import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
-import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
+import com.jd.live.agent.plugin.application.springboot.v2.util.port.jmx.JmxPortDetectorFactory;
 
 /**
  * NacosRegistrationInterceptor
@@ -60,7 +60,8 @@ public class NacosRegistrationInterceptor extends InterceptorAdaptor {
         @Override
         public void onStarted(AppContext appContext) {
             if (registration.isAutoStartup() && !registration.isRunning()) {
-                PortDetector detector = PortDetectorFactory.get(appContext);
+                JmxPortDetectorFactory factory = new JmxPortDetectorFactory();
+                PortDetector detector = factory.get(appContext);
                 try {
                     PortInfo port = detector.getPort();
                     if (port != null) {

@@ -97,7 +97,7 @@ public class CloudUtils {
      * @param headers source headers
      * @return writable headers instance
      */
-    @SuppressWarnings({"deprecation", "removal",})
+    @SuppressWarnings({"deprecation", "removal"})
     public static HttpHeaders writable(HttpHeaders headers) {
         return HttpHeaders.writableHttpHeaders(headers);
     }
