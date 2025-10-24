@@ -15,8 +15,9 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.util.param;
 
+import com.jd.live.agent.governance.mcp.ParameterParser;
+
 import java.lang.reflect.Parameter;
-import java.util.function.Supplier;
 
 /**
  * Factory interface for creating suppliers of system-level parameters.
@@ -29,6 +30,6 @@ public interface SystemParameterFactory {
      * @param parameter the parameter to create a supplier for
      * @return a supplier that provides the parameter value
      */
-    Supplier<Object> getSupplier(Parameter parameter);
+    ParameterParser getParser(Parameter parameter);
 
 }

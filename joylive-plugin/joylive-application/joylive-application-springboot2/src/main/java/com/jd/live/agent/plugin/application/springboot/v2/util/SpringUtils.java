@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.application.springboot.v2.util;
 
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.util.param.CompositeSystemParameterFactory;
+import com.jd.live.agent.governance.mcp.ParameterParser;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.PortInfo;
@@ -28,7 +29,6 @@ import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Parameter;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
@@ -94,13 +94,13 @@ public class SpringUtils {
     }
 
     /**
-     * Gets system supplier for given parameter
+     * Gets system parameter parser for given parameter
      *
      * @param parameter Method parameter to get supplier for
      * @return Supplier for system objects like HttpServletRequest/Response
      */
-    public static Supplier<Object> getSystemSupplier(Parameter parameter) {
-        return CompositeSystemParameterFactory.INSTANCE.getSupplier(parameter);
+    public static ParameterParser getParser(Parameter parameter) {
+        return CompositeSystemParameterFactory.INSTANCE.getParser(parameter);
     }
 
     /**

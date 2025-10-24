@@ -20,10 +20,10 @@ import com.jd.live.agent.governance.jsonrpc.JsonRpcError;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcException;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Default implementation of McpParameterConverter that handles parameter conversion for JSON-RPC calls.
@@ -31,6 +31,26 @@ import java.util.function.BiFunction;
 public class DefaultMcpParameterConverter implements McpParameterConverter {
 
     public static final McpParameterConverter INSTANCE = new DefaultMcpParameterConverter();
+
+    private static final Set<Class<?>> SIMPLE_TYPES = new HashSet<>(Arrays.asList(
+            boolean.class,
+            char.class,
+            byte.class,
+            short.class,
+            int.class,
+            long.class,
+            float.class,
+            double.class,
+            Boolean.class,
+            Character.class,
+            Byte.class,
+            Short.class,
+            Integer.class,
+            Long.class,
+            Float.class,
+            Double.class,
+            String.class
+    ));
 
     @Override
     public Object[] convert(McpToolMethod method, Object params, ObjectConverter converter) {
@@ -87,26 +107,32 @@ public class DefaultMcpParameterConverter implements McpParameterConverter {
                            ObjectConverter converter) {
         Object[] args = new Object[parameters.length];
         if (parameters.length == 1) {
-            McpToolParameter parameter = parameters[0];
-            args[0] = parameter.isSystem()
-                    ? parameter.getValue()
-                    : parameter.convert(convert(params, parameter.getType(), parameter.getGenericType(), converter));
+            args[0] = parse(parameters[0], converter, p -> params);
         } else {
-            int counter = 0;
-            McpToolParameter parameter;
-            Object value;
+            AtomicInteger counter = new AtomicInteger(0);
             for (int i = 0; i < parameters.length; i++) {
-                parameter = parameters[i];
-                value = parameter.isSystem() ? parameter.getValue() : paramFunc.apply(parameter, counter++);
-                if (value == null && parameter.isRequired()) {
+                args[i] = parse(parameters[i], converter, p -> paramFunc.apply(p, counter.getAndIncrement()));
+                if (args[i] == null && parameters[i].isRequired()) {
                     throw new JsonRpcException("Required parameter at position " + i + " is missing", JsonRpcError.INVALID_PARAMS);
                 }
-                args[i] = parameter.isSystem()
-                        ? value
-                        : parameter.convert(convert(value, parameter.getType(), parameter.getGenericType(), converter));
             }
         }
         return args;
+    }
+
+    private Object parse(McpToolParameter parameter, ObjectConverter converter, Function<McpToolParameter, Object> func) {
+        ParameterParser parser = parameter.getParser();
+        if (parser != null) {
+            Object result = parser.parse();
+            if (result != null) {
+                return parser.isConvertable()
+                        ? parameter.convert(convert(result, parameter.getType(), parameter.getGenericType(), converter))
+                        : parameter.convert(result);
+            } else if (result == null && !parser.isOptional()) {
+                return parameter.convert(null);
+            }
+        }
+        return parameter.convert(convert(func.apply(parameter), parameter.getType(), parameter.getGenericType(), converter));
     }
 
     /**
@@ -123,6 +149,9 @@ public class DefaultMcpParameterConverter implements McpParameterConverter {
             return null;
         }
         try {
+            if (targetClass.isInstance(value) && (SIMPLE_TYPES.contains(targetClass) || targetClass.isEnum())) {
+                return value;
+            }
             return converter.convert(value, targetType);
         } catch (Exception e) {
             throw new JsonRpcException("Failed to convert value to " + targetClass.getName(), e, JsonRpcError.INVALID_PARAMS);

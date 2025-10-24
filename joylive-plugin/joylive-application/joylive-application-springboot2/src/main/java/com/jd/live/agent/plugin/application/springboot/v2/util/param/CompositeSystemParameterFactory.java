@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.util.param;
 
+import com.jd.live.agent.governance.mcp.ParameterParser;
 import com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet.JakartaServletParameterFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet.JavaxServletParameterFactory;
 
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * A composite factory that delegates to multiple SystemParameterFactory implementations.
@@ -35,11 +35,11 @@ public class CompositeSystemParameterFactory implements SystemParameterFactory {
             new JakartaServletParameterFactory());
 
     @Override
-    public Supplier<Object> getSupplier(Parameter parameter) {
+    public ParameterParser getParser(Parameter parameter) {
         for (SystemParameterFactory factory : factories) {
-            Supplier<Object> supplier = factory.getSupplier(parameter);
-            if (supplier != null) {
-                return supplier;
+            ParameterParser parser = factory.getParser(parameter);
+            if (parser != null) {
+                return parser;
             }
         }
         return null;

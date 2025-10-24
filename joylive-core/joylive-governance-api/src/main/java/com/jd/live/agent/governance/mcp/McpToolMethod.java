@@ -15,12 +15,16 @@
  */
 package com.jd.live.agent.governance.mcp;
 
+import lombok.Builder;
+import lombok.Getter;
+
 import java.lang.reflect.Method;
 import java.util.Set;
 
 /**
  * Represents a method definition for MCP tool.
  */
+@Getter
 public class McpToolMethod {
 
     public static Method HANDLE_METHOD;
@@ -35,6 +39,7 @@ public class McpToolMethod {
 
     private Set<String> paths;
 
+    @Builder
     public McpToolMethod(String name, Object controller, Method method, McpToolParameter[] parameters, Set<String> paths) {
         this.name = name;
         this.controller = controller;
@@ -42,25 +47,4 @@ public class McpToolMethod {
         this.parameters = parameters;
         this.paths = paths;
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public Object getController() {
-        return controller;
-    }
-
-    public Method getMethod() {
-        return method;
-    }
-
-    public McpToolParameter[] getParameters() {
-        return parameters;
-    }
-
-    public Set<String> getPaths() {
-        return paths;
-    }
-
 }

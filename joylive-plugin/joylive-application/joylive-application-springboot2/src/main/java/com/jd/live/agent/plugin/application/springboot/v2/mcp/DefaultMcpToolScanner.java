@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolParameter;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
+import com.jd.live.agent.governance.mcp.ParameterParser;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.StringUtils.url;
@@ -170,10 +170,6 @@ public class DefaultMcpToolScanner implements McpToolScanner {
         if (pathVariable != null) {
             return new ParameterName(!pathVariable.value().isEmpty() ? pathVariable.value() : pathVariable.name(), pathVariable.required());
         }
-        RequestHeader requestHeader = getter.getAnnotation(RequestHeader.class);
-        if (requestHeader != null) {
-            return new ParameterName(!requestHeader.value().isEmpty() ? requestHeader.value() : requestHeader.name(), requestHeader.required());
-        }
         RequestBody requestBody = getter.getAnnotation(RequestBody.class);
         if (requestBody != null) {
             return new ParameterName(null, requestBody.required());
@@ -230,8 +226,8 @@ public class DefaultMcpToolScanner implements McpToolScanner {
         genericType = mono != null && genericType instanceof ParameterizedType
                 ? ((ParameterizedType) genericType).getActualTypeArguments()[0]
                 : genericType;
-        Supplier<Object> supplier = required || mono != null ? null : SpringUtils.getSystemSupplier(parameter);
-        return new McpToolParameter(name, index, type, genericType, required, mono, supplier);
+        ParameterParser parser = required || mono != null ? null : SpringUtils.getParser(parameter);
+        return new McpToolParameter(name, index, type, genericType, required, mono, parser);
     }
 
     /**

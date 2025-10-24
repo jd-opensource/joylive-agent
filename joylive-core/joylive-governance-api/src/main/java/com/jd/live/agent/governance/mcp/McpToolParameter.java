@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.governance.mcp;
 
+import lombok.Builder;
+import lombok.Getter;
+
 import java.lang.reflect.Type;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Represents a parameter definition for MCP tool.
  */
+@Getter
 public class McpToolParameter {
 
     private final String name;
@@ -34,62 +37,25 @@ public class McpToolParameter {
 
     private final boolean required;
 
-    private final Supplier<Object> supplier;
+    private final ParameterParser parser;
 
     private final Function<Object, Object> converter;
 
-    public McpToolParameter(String name, int index, Class<?> type, Type genericType, boolean required) {
-        this(name, index, type, genericType, required, null, null);
-    }
-
-    public McpToolParameter(String name, int index, Class<?> type, Type genericType, boolean required, Supplier<Object> supplier) {
-        this(name, index, type, genericType, required, null, supplier);
-    }
-
-    public McpToolParameter(String name, int index, Class<?> type, Type genericType, boolean required, Function<Object, Object> converter, Supplier<Object> supplier) {
+    @Builder
+    public McpToolParameter(String name,
+                            int index,
+                            Class<?> type,
+                            Type genericType,
+                            boolean required,
+                            Function<Object, Object> converter,
+                            ParameterParser parser) {
         this.name = name;
         this.index = index;
         this.type = type;
         this.genericType = genericType;
         this.required = required;
         this.converter = converter;
-        this.supplier = supplier;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public Class<?> getType() {
-        return type;
-    }
-
-    public Type getGenericType() {
-        return genericType;
-    }
-
-    public boolean isRequired() {
-        return required;
-    }
-
-    public Function<Object, Object> getConverter() {
-        return converter;
-    }
-
-    public Supplier<Object> getSupplier() {
-        return supplier;
-    }
-
-    public boolean isSystem() {
-        return supplier != null;
-    }
-
-    public Object getValue() {
-        return supplier == null ? null : supplier.get();
+        this.parser = parser;
     }
 
     public Object convert(Object value) {

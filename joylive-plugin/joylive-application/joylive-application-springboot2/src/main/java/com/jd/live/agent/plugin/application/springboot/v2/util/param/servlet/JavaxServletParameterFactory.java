@@ -16,11 +16,14 @@
 package com.jd.live.agent.plugin.application.springboot.v2.util.param.servlet;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.governance.mcp.ParameterParser;
+import com.jd.live.agent.governance.mcp.ParameterParser.DefaultParameterParser;
 import com.jd.live.agent.plugin.application.springboot.v2.util.param.SystemParameterFactory;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.util.WebUtils;
@@ -29,7 +32,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.security.Principal;
 import java.util.Locale;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
@@ -53,46 +55,52 @@ public class JavaxServletParameterFactory extends ServletParameterFactory implem
     private static final Method METHOD_GET_SESSION = getDeclaredMethod(CLASS_JAVAX_HTTP_SERVLET_REQUEST, "getSession");
     private static final Method METHOD_GET_METHOD = getDeclaredMethod(CLASS_JAVAX_HTTP_SERVLET_REQUEST, "getMethod");
     private static final Method METHOD_GET_ATTRIBUTE = getDeclaredMethod(CLASS_JAVAX_HTTP_SERVLET_REQUEST, "getAttribute", new Class[]{String.class, int.class});
+    private static final Method METHOD_GET_HEADER = getDeclaredMethod(CLASS_JAVAX_HTTP_SERVLET_REQUEST, "getHeader", new Class[]{String.class});
     private static final Method METHOD_GET_USER_PRINCIPAL = getDeclaredMethod(CLASS_JAVAX_HTTP_SERVLET_REQUEST, "getUserPrincipal");
     private static final Method METHOD_GET_LOCALE = getDeclaredMethod(CLASS_JAVAX_HTTP_SERVLET_REQUEST, "getLocale");
     private static final Method METHOD_GET_COOKIE = CLASS_JAVAX_HTTP_SERVLET_REQUEST == null ? null : getDeclaredMethod(WebUtils.class, "getCookie", new Class[]{CLASS_JAVAX_HTTP_SERVLET_REQUEST, String.class});
 
     @Override
-    public Supplier<Object> getSupplier(Parameter parameter) {
+    public ParameterParser getParser(Parameter parameter) {
         if (CLASS_JAVAX_HTTP_SERVLET_REQUEST == null) {
             // disabled
             return null;
         }
         Class<?> type = parameter.getType();
         if (WebRequest.class.isAssignableFrom(type)) {
-            return () -> getWebRequest(type);
+            return new DefaultParameterParser(() -> getWebRequest(type));
         } else if (type == CLASS_JAVAX_HTTP_SERVLET_REQUEST) {
-            return () -> getRequest();
+            return new DefaultParameterParser(() -> getRequest());
         } else if (type == CLASS_JAVAX_HTTP_SERVLET_RESPONSE) {
-            return () -> getResponse();
+            return new DefaultParameterParser(() -> getResponse());
         } else if (type == CLASS_JAVAX_HTTP_SESSION) {
-            return () -> getSession();
+            return new DefaultParameterParser(() -> getSession());
         } else if (Principal.class.isAssignableFrom(type)) {
-            return () -> getPrincipal(type);
+            return new DefaultParameterParser(() -> getPrincipal(type));
         } else if (HttpMethod.class == type) {
-            return () -> getHttpMethod();
+            return new DefaultParameterParser(() -> getHttpMethod());
         } else if (Locale.class == type) {
-            return () -> getLocale();
+            return new DefaultParameterParser(() -> getLocale());
         } else {
             RequestAttribute requestAttribute = parameter.getAnnotation(RequestAttribute.class);
             if (requestAttribute != null) {
                 String name = requestAttribute.value().isEmpty() ? requestAttribute.name() : requestAttribute.value();
-                return () -> getAttribute(name, 0, type);
+                return new DefaultParameterParser(() -> getAttribute(name, 0, type));
             }
             SessionAttribute sessionAttribute = parameter.getAnnotation(SessionAttribute.class);
             if (sessionAttribute != null) {
                 String name = sessionAttribute.value().isEmpty() ? sessionAttribute.name() : sessionAttribute.value();
-                return () -> getAttribute(name, 1, type);
+                return new DefaultParameterParser(() -> getAttribute(name, 1, type));
             }
             CookieValue cookieValue = parameter.getAnnotation(CookieValue.class);
             if (cookieValue != null) {
                 String name = cookieValue.value().isEmpty() ? cookieValue.name() : cookieValue.value();
-                return () -> getCookieValue(name);
+                return new DefaultParameterParser(false, true, () -> getCookieValue(name));
+            }
+            RequestHeader requestHeader = parameter.getAnnotation(RequestHeader.class);
+            if (requestHeader != null) {
+                String name = requestHeader.value().isEmpty() ? requestHeader.name() : requestHeader.value();
+                return new DefaultParameterParser(false, true, () -> getHeader(name));
             }
         }
         return null;
@@ -178,6 +186,18 @@ public class JavaxServletParameterFactory extends ServletParameterFactory implem
             Object request = getRequest();
             Object cookie = request == null ? null : METHOD_GET_COOKIE.invoke(null, request, name);
             return cookie == null ? null : ACCESSOR_COOKE_VALUE.get(cookie);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    private Object getHeader(String name) {
+        if (METHOD_GET_COOKIE == null || ACCESSOR_COOKE_VALUE == null) {
+            return null;
+        }
+        try {
+            Object request = getRequest();
+            return request == null ? null : METHOD_GET_HEADER.invoke(request, name);
         } catch (Throwable e) {
             return null;
         }
