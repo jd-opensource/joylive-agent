@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.param.servlet;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.param.web;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import org.springframework.core.io.ResourceLoader;

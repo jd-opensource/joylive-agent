@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.param;
 
 import com.jd.live.agent.governance.mcp.ParameterParser;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.servlet.JakartaServletParameterFactory;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.servlet.JavaxServletParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.web.JakartaServletParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.web.JavaxServletParameterFactory;
 
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
