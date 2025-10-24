@@ -24,6 +24,9 @@ import com.jd.live.agent.plugin.application.springboot.v2.util.port.jmx.JmxPortD
 import com.jd.live.agent.plugin.application.springboot.v2.util.port.web.WebPortDetectorFactory;
 import org.springframework.core.io.ResourceLoader;
 
+import java.lang.reflect.Method;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 public class SpringUtils {
@@ -34,6 +37,8 @@ public class SpringUtils {
 
     private static final String TYPE_CONFIGURABLE_WEB_ENVIRONMENT = "org.springframework.web.context.ConfigurableWebEnvironment";
     private static final Class<?> CLASS_CONFIGURABLE_WEB_ENVIRONMENT = loadClass(TYPE_CONFIGURABLE_WEB_ENVIRONMENT, ResourceLoader.class.getClassLoader());
+    private static final Method METHOD_INIT_PROPERTY_SOURCES = getDeclaredMethod(CLASS_CONFIGURABLE_WEB_ENVIRONMENT, "initPropertySources");
+    private static final String TYPE_JAVAX_SERVLET_CONTEXT = "javax.servlet.ServletContext";
     private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT = "org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment";
     private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT, ResourceLoader.class.getClassLoader());
 
@@ -52,12 +57,33 @@ public class SpringUtils {
         return CLASS_LIVE_RELOAD_SERVER != null && THREAD_NAME.equals(Thread.currentThread().getName());
     }
 
+    /**
+     * Checks if the environment is a web environment.
+     *
+     * @param environment Environment to check
+     * @return true if web environment, false otherwise
+     */
     public static boolean isWeb(Object environment) {
         return CLASS_CONFIGURABLE_WEB_ENVIRONMENT != null && CLASS_CONFIGURABLE_WEB_ENVIRONMENT.isInstance(environment);
     }
 
+    /**
+     * Checks if the environment is a WebFlux environment.
+     *
+     * @param environment Environment to check
+     * @return true if WebFlux environment, false otherwise
+     */
     public static boolean isWebFlux(Object environment) {
         return CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT != null && CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT.isInstance(environment);
+    }
+
+    /**
+     * Checks if javax.servlet API is available.
+     *
+     * @return true if javax.servlet is available, false otherwise
+     */
+    public static boolean isJavaxServlet() {
+        return METHOD_INIT_PROPERTY_SOURCES != null && METHOD_INIT_PROPERTY_SOURCES.getParameterTypes()[0].getName().equals(TYPE_JAVAX_SERVLET_CONTEXT);
     }
 
     /**

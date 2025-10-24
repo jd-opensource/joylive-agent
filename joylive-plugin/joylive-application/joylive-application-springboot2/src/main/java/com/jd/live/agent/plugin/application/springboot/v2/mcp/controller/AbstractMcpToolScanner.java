@@ -19,7 +19,7 @@ import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolParameter;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.ParameterParser;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.CompositeSystemParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.SystemParameterFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.annotation.Annotation;
@@ -199,9 +199,10 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         if (parameters.length == 0) {
             return new McpToolParameter[0];
         }
+        SystemParameterFactory factory = getSystemParameterFactory();
         McpToolParameter[] result = new McpToolParameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
-            result[i] = build(parameters[i], i);
+            result[i] = build(parameters[i], i, factory);
         }
         return result;
     }
@@ -209,21 +210,38 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     /**
      * Builds MCP tool parameter from method parameter.
      *
-     * @param parameter Method parameter
-     * @param index     Parameter index
-     * @return MCP tool parameter
+     * @param parameter Method parameter to build from
+     * @param index Parameter index in method
+     * @param factory Factory for system parameter creation
+     * @return Built MCP tool parameter
      */
-    protected McpToolParameter build(Parameter parameter, int index) {
+    protected McpToolParameter build(Parameter parameter, int index, SystemParameterFactory factory) {
         ParameterName parameterName = getParam(new ParameterAnnotationGetter(parameter));
         boolean required = parameterName != null && parameterName.isRequired();
         String name = parameterName != null && !isEmpty(parameterName.getName()) ? parameterName.getName() : parameter.getName();
         ParameterType type = getParameterType(parameter);
-        ParameterParser parser = parameterName != null ? null : CompositeSystemParameterFactory.INSTANCE.getParser(parameter);
+        ParameterParser parser = parameterName != null ? null : factory.getParser(parameter);
         return new McpToolParameter(name, index, type.getType(), type.genericType, required, type.converter, parser);
     }
 
+    /**
+     * Gets the system parameter factory.
+     *
+     * @return SystemParameterFactory instance
+     */
+    protected abstract SystemParameterFactory getSystemParameterFactory();
+
+    /**
+     * Gets parameter type information.
+     *
+     * @param parameter Method parameter
+     * @return Parameter type details
+     */
     protected abstract ParameterType getParameterType(Parameter parameter);
 
+    /**
+     * Contains parameter type information including class type, generic type and converter.
+     */
     public static class ParameterType {
 
         private final Class<?> type;

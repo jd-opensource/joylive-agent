@@ -17,6 +17,10 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp.controller.web;
 
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.controller.AbstractMcpToolScanner;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.SystemParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.web.JakartaServletParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.web.JavaxServletParameterFactory;
+import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 
 import java.lang.reflect.Parameter;
 
@@ -26,6 +30,11 @@ import java.lang.reflect.Parameter;
 public class WebMcpToolScanner extends AbstractMcpToolScanner {
 
     public static final McpToolScanner INSTANCE = new WebMcpToolScanner();
+
+    @Override
+    protected SystemParameterFactory getSystemParameterFactory() {
+        return SpringUtils.isJavaxServlet() ? new JavaxServletParameterFactory() : new JakartaServletParameterFactory();
+    }
 
     @Override
     protected ParameterType getParameterType(Parameter parameter) {
