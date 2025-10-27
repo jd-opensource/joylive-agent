@@ -13,22 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.governance.mcp;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
-import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.governance.mcp.RequestContext;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.web.context.request.WebRequest;
 
-/**
- * Converter for MCP parameters.
- * Converts a single parameter object into an array of method parameters.
- */
-public interface McpParameterConverter {
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-    /**
-     * Converts input parameters into an array of method parameters.
-     *
-     * @param method the target method to invoke
-     * @param params the source parameters to convert
-     * @return array of converted parameters matching method signature
-     */
-    Object[] convert(McpToolMethod method, Object params, ObjectConverter converter);
+@Getter
+@AllArgsConstructor
+public class JakartaParserContext implements RequestContext {
+
+    private final WebRequest webRequest;
+
+    private final HttpServletRequest httpRequest;
+
+    private final HttpServletResponse httpResponse;
+
 }

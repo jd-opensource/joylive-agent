@@ -24,7 +24,9 @@ import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.McpConfig;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.controller.web.WebMcpController;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive.ReactiveMcpController;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta.JakartaWebMcpController;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax.JavaxWebMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.util.AppLifecycle;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -87,13 +89,27 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
             ConfigurableEnvironment environment = ctx.getEnvironment();
             ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
             if (beanFactory instanceof BeanDefinitionRegistry) {
+                Class<?> mcpType = null;
+                String beanName = null;
                 if (SpringUtils.isWeb(environment)) {
+                    if (SpringUtils.isJavaxServlet()) {
+                        mcpType = JavaxWebMcpController.class;
+                        beanName = JavaxWebMcpController.NAME;
+                    } else {
+                        mcpType = JakartaWebMcpController.class;
+                        beanName = JakartaWebMcpController.NAME;
+                    }
+                } else if (SpringUtils.isWebFlux(environment)) {
+                    mcpType = ReactiveMcpController.class;
+                    beanName = ReactiveMcpController.NAME;
+                }
+                if (mcpType != null) {
                     BeanDefinition definition = BeanDefinitionBuilder
-                            .genericBeanDefinition(WebMcpController.class)
+                            .genericBeanDefinition(mcpType)
                             .addPropertyValue("objectConverter", converter)
                             .getBeanDefinition();
                     BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-                    registry.registerBeanDefinition(WebMcpController.NAME, definition);
+                    registry.registerBeanDefinition(beanName, definition);
                 }
             }
         }

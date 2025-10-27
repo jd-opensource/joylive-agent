@@ -13,31 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.controller.web;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
-import com.jd.live.agent.governance.jsonrpc.JsonRpcException;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
-import com.jd.live.agent.governance.mcp.DefaultMcpParameterConverter;
+import com.jd.live.agent.governance.mcp.DefaultMcpParameterParser;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.controller.AbstractMcpController;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.WebRequest;
 
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
+
 @RestController
 @RequestMapping("${mcp.path:${CONFIG_MCP_PATH:/mcp}}")
-public class WebMcpController extends AbstractMcpController {
+public class JakartaWebMcpController extends AbstractMcpController {
 
     public static final String NAME = "webMcpController";
 
-    public WebMcpController() {
-        super(WebMcpToolScanner.INSTANCE, null, DefaultMcpParameterConverter.INSTANCE);
+    public JakartaWebMcpController() {
+        super(JakartaWebMcpToolScanner.INSTANCE, null, DefaultMcpParameterParser.INSTANCE);
     }
 
     @Override
@@ -46,24 +50,35 @@ public class WebMcpController extends AbstractMcpController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public JsonRpcResponse handle(@RequestBody JsonRpcRequest request) {
+    public JsonRpcResponse handle(@RequestBody JsonRpcRequest request,
+                                  WebRequest webRequest,
+                                  HttpServletRequest httpRequest,
+                                  HttpServletResponse httpResponse) {
         try {
             McpToolMethod method = methods.get(request.getMethod());
             if (method == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            Object result = invokeMethod(method, request.getParams());
+            Object result = invoke(method, request.getParams(), webRequest, httpRequest, httpResponse);
             return request.notification()
                     ? JsonRpcResponse.createNotificationResponse()
                     : JsonRpcResponse.createSuccessResponse(request.getId(), result);
-        } catch (JsonRpcException e) {
-            return JsonRpcResponse.createErrorResponse(request.getId(), e.getCode(), e.getMessage());
         } catch (Throwable e) {
-            return JsonRpcResponse.createServerErrorResponse(request.getId(), e.getMessage());
+            return JsonRpcResponse.createErrorResponse(request.getId(), e);
         }
     }
 
-    private Object invokeMethod(McpToolMethod method, Object params) throws Exception {
-        return method.getMethod().invoke(method.getController(), parameterConverter.convert(method, params, objectConverter));
+    private Object invoke(McpToolMethod method,
+                          Object params,
+                          WebRequest webRequest,
+                          HttpServletRequest httpRequest,
+                          HttpServletResponse httpResponse) throws Throwable {
+        try {
+            JakartaParserContext ctx = new JakartaParserContext(webRequest, httpRequest, httpResponse);
+            Object[] args = parameterParser.parse(method, params, objectConverter, ctx);
+            return method.getMethod().invoke(method.getController(), args);
+        } catch (Exception e) {
+            throw getCause(e);
+        }
     }
 }

@@ -35,4 +35,12 @@ public class JsonRpcException extends RuntimeException {
     public int getCode() {
         return code;
     }
+
+    public static class NotEnoughParameter extends JsonRpcException {
+
+        public NotEnoughParameter() {
+            super("Not enough parameters", JsonRpcError.INVALID_PARAMS);
+        }
+
+    }
 }

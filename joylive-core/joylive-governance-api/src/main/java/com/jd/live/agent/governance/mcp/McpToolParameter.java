@@ -15,17 +15,22 @@
  */
 package com.jd.live.agent.governance.mcp;
 
-import lombok.Builder;
+import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.core.util.converter.Converter;
 import lombok.Getter;
 
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.function.Function;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.SIMPLE_TYPES;
 
 /**
  * Represents a parameter definition for MCP tool.
  */
 @Getter
 public class McpToolParameter {
+
+    private final Parameter parameter;
 
     private final String name;
 
@@ -35,31 +40,219 @@ public class McpToolParameter {
 
     private final Type genericType;
 
+    private final String arg;
+
+    private final Type actualType;
+
     private final boolean required;
 
-    private final ParameterParser parser;
+    private final boolean optional;
 
-    private final Function<Object, Object> converter;
+    private final boolean convertable;
 
-    @Builder
-    public McpToolParameter(String name,
+    private final Converter<Object, ?> converter;
+
+    private final RequestParser parser;
+
+    public McpToolParameter(Parameter parameter,
                             int index,
-                            Class<?> type,
-                            Type genericType,
+                            Type actualType,
+                            String arg,
                             boolean required,
-                            Function<Object, Object> converter,
-                            ParameterParser parser) {
-        this.name = name;
+                            boolean optional,
+                            boolean convertable,
+                            Converter<Object, ?> converter,
+                            RequestParser parser) {
+        this.parameter = parameter;
+        this.name = parameter.getName();
+        this.arg = arg;
         this.index = index;
-        this.type = type;
-        this.genericType = genericType;
+        this.type = parameter.getType();
+        this.genericType = parameter.getParameterizedType();
+        this.actualType = actualType;
         this.required = required;
+        this.optional = optional;
+        this.convertable = convertable;
         this.converter = converter;
         this.parser = parser;
     }
 
+    public String getArg() {
+        if (arg == null || arg.isEmpty()) {
+            return name;
+        }
+        return arg;
+    }
+
+    public Class<?> getActualClass() {
+        return actualType instanceof Class ? (Class<?>) actualType : type;
+    }
+
+    public boolean isFramework() {
+        return parser != null;
+    }
+
+    public Object parse(RequestContext ctx, ObjectConverter converter) throws Exception {
+        if (parser == null) {
+            return convert(null);
+        }
+        Object result = parser.parse(ctx);
+        if (result != null && convertable) {
+            return convert(result, converter);
+        }
+        return convert(result);
+    }
+
+    public Object convert(Object result, ObjectConverter converter) {
+        Object converted = result;
+        if (result != null) {
+            Class<?> actualClass = getActualClass();
+            Class<?> resultClass = result.getClass();
+            if (actualClass.isInstance(result)) {
+                if (SIMPLE_TYPES.contains(resultClass) || resultClass.isEnum()) {
+                    return convert(result);
+                }
+            }
+            converted = converter.convert(result, actualType);
+        }
+
+        return convert(converted);
+    }
+
     public Object convert(Object value) {
-        return value == null || converter == null ? value : converter.apply(value);
+        return value == null || converter == null ? value : converter.convert(value);
+    }
+
+    public static McpToolParameterBuilder builder() {
+        return new McpToolParameterBuilder();
+    }
+
+    public static class McpToolParameterBuilder {
+        private Parameter parameter;
+        private String name;
+        private int index;
+        private Class<?> type;
+        private Type genericType;
+        private String arg;
+        private Type actualType;
+        private boolean required;
+        private boolean optional;
+        private boolean convertable;
+        private Converter<Object, ?> converter;
+        private RequestParser parser;
+
+        public McpToolParameterBuilder parameter(Parameter parameter) {
+            this.parameter = parameter;
+            this.name = parameter == null ? null : parameter.getName();
+            this.type = parameter == null ? null : parameter.getType();
+            this.genericType = parameter == null ? null : parameter.getParameterizedType();
+            this.actualType = genericType;
+            return this;
+        }
+
+        public McpToolParameterBuilder index(int index) {
+            this.index = index;
+            return this;
+        }
+
+        public McpToolParameterBuilder actualType(Type actualType) {
+            this.actualType = actualType;
+            return this;
+        }
+
+        public McpToolParameterBuilder arg(String arg) {
+            this.arg = arg;
+            return this;
+        }
+
+        public McpToolParameterBuilder required(boolean required) {
+            this.required = required;
+            return this;
+        }
+
+        public McpToolParameterBuilder optional(boolean optional) {
+            this.optional = optional;
+            return this;
+        }
+
+        public McpToolParameterBuilder convertable(boolean convertable) {
+            this.convertable = convertable;
+            return this;
+        }
+
+        public McpToolParameterBuilder converter(Converter<Object, ?> converter) {
+            this.converter = converter;
+            return this;
+        }
+
+        public McpToolParameterBuilder parser(RequestParser parser) {
+            this.parser = parser;
+            return this;
+        }
+
+        public Parameter parameter() {
+            return this.parameter;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public int index() {
+            return this.index;
+        }
+
+        public Class<?> type() {
+            return this.type;
+        }
+
+        public Type genericType() {
+            return this.genericType;
+        }
+
+        public Type actualType() {
+            return this.actualType;
+        }
+
+        public String arg() {
+            return this.arg;
+        }
+
+        public boolean required() {
+            return this.required;
+        }
+
+        public boolean optional() {
+            return this.optional;
+        }
+
+        public boolean convertable() {
+            return this.convertable;
+        }
+
+        public Converter<Object, ?> converter() {
+            return this.converter;
+        }
+
+        public RequestParser parser() {
+            return this.parser;
+        }
+
+        public Class<?> actualClass() {
+            return actualType instanceof Class ? (Class<?>) actualType : type;
+        }
+
+        public boolean isType(Class<?> targetClass) {
+            return type == targetClass || actualType == targetClass;
+        }
+
+        public boolean isAssignableTo(Class<?> targetClass) {
+            return targetClass.isAssignableFrom(type) || actualType instanceof Class<?> && ((Class<?>) actualType).isAssignableFrom(targetClass);
+        }
+
+        public McpToolParameter build() {
+            return new McpToolParameter(parameter, index, actualType, arg, required, optional, convertable, converter, parser);
+        }
     }
 
 }

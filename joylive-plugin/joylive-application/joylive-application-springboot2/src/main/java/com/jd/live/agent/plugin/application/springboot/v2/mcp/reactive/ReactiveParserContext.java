@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.converter;
-/**
- * Converts objects of type P to type V.
- *
- * @param <P> the source type to convert from
- * @param <V> the target type to convert to
- */
-@FunctionalInterface
-public interface Converter<P, V> {
-    /**
-     * Performs the conversion from source to target type.
-     *
-     * @param source the source object to convert
-     * @return the converted result
-     */
-    V convert(P source);
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
+
+import com.jd.live.agent.governance.mcp.RequestContext;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.web.server.ServerWebExchange;
+
+@Getter
+@AllArgsConstructor
+public class ReactiveParserContext implements RequestContext {
+
+    private final ServerWebExchange exchange;
+
 }

@@ -29,22 +29,30 @@ public class McpToolMethod {
 
     public static Method HANDLE_METHOD;
 
-    private String name;
+    private final String name;
 
-    private Object controller;
+    private final Object controller;
 
-    private Method method;
+    private final Method method;
 
-    private McpToolParameter[] parameters;
+    private final McpToolParameter[] parameters;
 
-    private Set<String> paths;
+    private final Set<String> paths;
 
     @Builder
-    public McpToolMethod(String name, Object controller, Method method, McpToolParameter[] parameters, Set<String> paths) {
+    public McpToolMethod(String name,
+                         Object controller,
+                         Method method,
+                         McpToolParameter[] parameters,
+                         Set<String> paths) {
         this.name = name;
         this.controller = controller;
         this.method = method;
         this.parameters = parameters;
         this.paths = paths;
+    }
+
+    public Object invoke(Object... args) throws Throwable {
+        return method.invoke(controller, args);
     }
 }

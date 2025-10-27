@@ -19,9 +19,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
@@ -40,6 +38,26 @@ public class ClassUtils {
     private final static Map<Class<?>, ClassDesc> CLASS_DESCS = new ConcurrentHashMap<>(5000);
 
     private static final Map<Class<?>, Object> PRIMITIVE_DEFAULTS = new HashMap<>(10);
+
+    public static final Set<Class<?>> SIMPLE_TYPES = new HashSet<>(Arrays.asList(
+            boolean.class,
+            char.class,
+            byte.class,
+            short.class,
+            int.class,
+            long.class,
+            float.class,
+            double.class,
+            Boolean.class,
+            Character.class,
+            Byte.class,
+            Short.class,
+            Integer.class,
+            Long.class,
+            Float.class,
+            Double.class,
+            String.class
+    ));
 
     static {
         // Mapping of primitive types to their corresponding wrapper classes.
@@ -297,7 +315,11 @@ public class ClassUtils {
      * @return the method if found, null otherwise
      */
     public static Method getDeclaredMethod(Class<?> type, Predicate<Method> predicate) {
-        return type == null ? null : getMethod(type.getDeclaredMethods(), predicate);
+        try {
+            return type == null ? null : getMethod(type.getDeclaredMethods(), predicate);
+        } catch (NoClassDefFoundError e) {
+            return null;
+        }
     }
 
     /**

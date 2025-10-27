@@ -152,6 +152,16 @@ public class JsonRpcResponse implements Serializable {
     }
 
     /**
+     * Create an server error response
+     */
+    public static JsonRpcResponse createErrorResponse(Object id, Throwable e) {
+        if (e instanceof JsonRpcException) {
+            createErrorResponse(id, new JsonRpcError(((JsonRpcException) e).getCode(), e.getMessage()));
+        }
+        return createErrorResponse(id, JsonRpcError.serverError(e.getMessage() == null ? e.getClass().getName() : e.getMessage()));
+    }
+
+    /**
      * Create a parse error response
      */
     public static JsonRpcResponse createParseErrorResponse() {
@@ -191,16 +201,6 @@ public class JsonRpcResponse implements Serializable {
      */
     public static JsonRpcResponse createServerErrorResponse(Object id, int errorCode, String errorMsg) {
         return createErrorResponse(id, JsonRpcError.serverError(errorCode, errorMsg));
-    }
-
-    /**
-     * Create an server error response
-     */
-    public static JsonRpcResponse createServerErrorResponse(Object id, Throwable e) {
-        if (e instanceof JsonRpcException) {
-            createErrorResponse(id, JsonRpcError.serverError(((JsonRpcException) e).getCode(), e.getMessage()));
-        }
-        return createErrorResponse(id, JsonRpcError.serverError(e.getMessage()));
     }
 
     @Override

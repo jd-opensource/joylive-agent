@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.converter;
-/**
- * Converts objects of type P to type V.
- *
- * @param <P> the source type to convert from
- * @param <V> the target type to convert to
- */
-@FunctionalInterface
-public interface Converter<P, V> {
-    /**
-     * Performs the conversion from source to target type.
-     *
-     * @param source the source object to convert
-     * @return the converted result
-     */
-    V convert(P source);
+package com.jd.live.agent.plugin.application.springboot.v2.mcp.converter;
+
+import com.jd.live.agent.core.util.converter.Converter;
+
+import java.util.Optional;
+
+public class OptionalConverter implements Converter<Object, Object> {
+
+    public static final OptionalConverter INSTANCE = new OptionalConverter();
+
+    @Override
+    public Object convert(Object source) {
+        if (source == null) {
+            return Optional.empty();
+        } else if (source instanceof Optional) {
+            return source;
+        }
+        return Optional.ofNullable(source);
+    }
 }

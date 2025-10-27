@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.controller;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
+import com.jd.live.agent.core.util.type.AnnotationGetter;
+import com.jd.live.agent.core.util.type.AnnotationGetter.ParameterAnnotationGetter;
+import com.jd.live.agent.core.util.type.AnnotationGetter.TypeAnnotationGetter;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolParameter;
+import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
+import com.jd.live.agent.governance.mcp.McpToolParameterConfigurator;
+import com.jd.live.agent.governance.mcp.McpToolParameterConfigurator.McpToolParameterConfiguratorChain;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
-import com.jd.live.agent.governance.mcp.ParameterParser;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.param.SystemParameterFactory;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.StringUtils.url;
@@ -43,19 +46,34 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
 
     @Override
     public List<McpToolMethod> scan(Object controller) {
+        // TODO handle ModelAttribute
+        // model name by org.springframework.core.Conventions#getVariableNameForParameter
         List<McpToolMethod> tools = new ArrayList<>();
         Class<?> controllerClass = controller.getClass();
         String controllerName = getControllerName(controllerClass);
         String[] typePaths = getPaths(new TypeAnnotationGetter(controllerClass));
-        for (Method method : controllerClass.getMethods()) {
-            String[] methodPaths = getPaths(new MethodAnnotationGetter(method));
-            if (methodPaths != null) {
-                Set<String> fullPaths = appendPaths(typePaths, methodPaths);
-                String toolName = getToolName(controllerName, method, fullPaths);
-                tools.add(new McpToolMethod(toolName, controller, method, getParameters(method), fullPaths));
+        for (Method method : controllerClass.getDeclaredMethods()) {
+            if (filter(method)) {
+                String[] methodPaths = getPaths(new AnnotationGetter.MethodAnnotationGetter(method));
+                if (methodPaths != null) {
+                    Set<String> fullPaths = appendPaths(typePaths, methodPaths);
+                    String toolName = getToolName(controllerName, method, fullPaths);
+                    tools.add(new McpToolMethod(toolName, controller, method, createParameters(method), fullPaths));
+                }
             }
         }
         return tools;
+    }
+
+    /**
+     * Filters which methods should be included as tools.
+     * Default implementation includes all methods.
+     *
+     * @param method The method to check
+     * @return true if method should be included, false otherwise
+     */
+    protected boolean filter(Method method) {
+        return true;
     }
 
     /**
@@ -153,28 +171,6 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     }
 
     /**
-     * Extracts parameter information from Spring annotations (RequestParam, PathVariable, RequestHeader, RequestBody).
-     *
-     * @param getter annotation getter to retrieve annotations
-     * @return parameter name and required flag, or null if no supported annotation found
-     */
-    protected ParameterName getParam(AnnotationGetter getter) {
-        RequestParam requestParam = getter.getAnnotation(RequestParam.class);
-        if (requestParam != null) {
-            return new ParameterName(!requestParam.value().isEmpty() ? requestParam.value() : requestParam.name(), requestParam.required());
-        }
-        PathVariable pathVariable = getter.getAnnotation(PathVariable.class);
-        if (pathVariable != null) {
-            return new ParameterName(!pathVariable.value().isEmpty() ? pathVariable.value() : pathVariable.name(), pathVariable.required());
-        }
-        RequestBody requestBody = getter.getAnnotation(RequestBody.class);
-        if (requestBody != null) {
-            return new ParameterName(null, requestBody.required());
-        }
-        return null;
-    }
-
-    /**
      * Converts controller class name to formatted name by removing "Controller" suffix
      * and converting first char to lowercase.
      *
@@ -194,15 +190,15 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @param method Method to get parameters from
      * @return Array of MCP tool parameters
      */
-    protected McpToolParameter[] getParameters(Method method) {
+    protected McpToolParameter[] createParameters(Method method) {
         Parameter[] parameters = method.getParameters();
         if (parameters.length == 0) {
             return new McpToolParameter[0];
         }
-        SystemParameterFactory factory = getSystemParameterFactory();
         McpToolParameter[] result = new McpToolParameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
-            result[i] = build(parameters[i], i, factory);
+            // TODO default value
+            result[i] = createParameter(parameters[i], i);
         }
         return result;
     }
@@ -212,147 +208,67 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      *
      * @param parameter Method parameter to build from
      * @param index Parameter index in method
-     * @param factory Factory for system parameter creation
      * @return Built MCP tool parameter
      */
-    protected McpToolParameter build(Parameter parameter, int index, SystemParameterFactory factory) {
-        ParameterName parameterName = getParam(new ParameterAnnotationGetter(parameter));
-        boolean required = parameterName != null && parameterName.isRequired();
-        String name = parameterName != null && !isEmpty(parameterName.getName()) ? parameterName.getName() : parameter.getName();
-        ParameterType type = getParameterType(parameter);
-        ParameterParser parser = parameterName != null ? null : factory.getParser(parameter);
-        return new McpToolParameter(name, index, type.getType(), type.genericType, required, type.converter, parser);
+    protected McpToolParameter createParameter(Parameter parameter, int index) {
+        McpToolParameterConfigurator chain = new McpToolParameterConfiguratorChain(
+                builder -> configureRequestParam(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureType(builder),
+                builder -> configureSystemParam(builder)
+        );
+        return chain.configure(McpToolParameter.builder().parameter(parameter).index(index).required(true)).build();
     }
 
     /**
-     * Gets the system parameter factory.
+     * Configures parameter name and requirements based on annotations.
+     * Supports @RequestParam, @PathVariable and @RequestBody.
      *
-     * @return SystemParameterFactory instance
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
      */
-    protected abstract SystemParameterFactory getSystemParameterFactory();
+    protected McpToolParameterBuilder configureRequestParam(McpToolParameterBuilder builder, AnnotationGetter getter) {
+        RequestParam requestParam = getter.getAnnotation(RequestParam.class);
+        if (requestParam != null) {
+            return builder.arg(requestParam.value()).required(requestParam.required());
+        }
+        PathVariable pathVariable = getter.getAnnotation(PathVariable.class);
+        if (pathVariable != null) {
+            return builder.arg(pathVariable.value()).required(pathVariable.required());
+        }
+        RequestBody requestBody = getter.getAnnotation(RequestBody.class);
+        if (requestBody != null) {
+            return builder.required(requestBody.required());
+        }
+        return builder;
+    }
 
     /**
-     * Gets parameter type information.
+     * Configures parameter type information.
      *
-     * @param parameter Method parameter
-     * @return Parameter type details
+     * @param builder the parameter builder to configure
+     * @return builder with type information configured
      */
-    protected abstract ParameterType getParameterType(Parameter parameter);
+    protected abstract McpToolParameterBuilder configureType(McpToolParameterBuilder builder);
 
     /**
-     * Contains parameter type information including class type, generic type and converter.
+     * Configures system-level parameters.
+     *
+     * @param builder the parameter builder to configure
+     * @return builder with system parameters configured
      */
-    public static class ParameterType {
-
-        private final Class<?> type;
-
-        private final Type genericType;
-
-        private final Function<Object, Object> converter;
-
-        public ParameterType(Class<?> type, Type genericType, Function<Object, Object> converter) {
-            this.type = type;
-            this.genericType = genericType;
-            this.converter = converter;
-        }
-
-        public Class<?> getType() {
-            return type;
-        }
-
-        public Type getGenericType() {
-            return genericType;
-        }
-
-        public Function<Object, Object> getConverter() {
-            return converter;
-        }
-    }
+    protected abstract McpToolParameterBuilder configureSystemParam(McpToolParameterBuilder builder);
 
     /**
-     * Holds parameter name and required flag
+     * Extracts actual type from generic type.
+     *
+     * @param genericType the generic type
+     * @return actual type, or original type if not parameterized
      */
-    public static class ParameterName {
-
-        private final String name;
-
-        private final boolean required;
-
-        public ParameterName(String name, boolean required) {
-            this.name = name;
-            this.required = required;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean isRequired() {
-            return required;
-        }
-    }
-
-    /**
-     * Functional interface for retrieving annotations from different sources.
-     */
-    @FunctionalInterface
-    public interface AnnotationGetter {
-        /**
-         * Gets annotation of specified type from the source.
-         *
-         * @param annotationClass the Class object of the annotation type
-         * @return the annotation if present, else null
-         */
-        <A extends Annotation> A getAnnotation(Class<A> annotationClass);
-    }
-
-    /**
-     * Implementation for getting annotations from a Class type.
-     */
-    public static class TypeAnnotationGetter implements AnnotationGetter {
-        private final Class<?> type;
-
-        public TypeAnnotationGetter(Class<?> type) {
-            this.type = type;
-        }
-
-        @Override
-        public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-            return type.getAnnotation(annotationClass);
-        }
-    }
-
-    /**
-     * Implementation for getting annotations from a Method.
-     */
-    public static class MethodAnnotationGetter implements AnnotationGetter {
-        private final Method method;
-
-        public MethodAnnotationGetter(Method method) {
-            this.method = method;
-        }
-
-        @Override
-        public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-            return method.getAnnotation(annotationClass);
-        }
-    }
-
-    /**
-     * Implementation for getting annotations from a Parameter.
-     */
-    public static class ParameterAnnotationGetter implements AnnotationGetter {
-
-        private final Parameter parameter;
-
-        public ParameterAnnotationGetter(Parameter parameter) {
-            this.parameter = parameter;
-        }
-
-        @Override
-        public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-            return parameter.getAnnotation(annotationClass);
-        }
+    protected Type getActualType(Type genericType) {
+        return genericType == ParameterizedType.class
+                ? ((ParameterizedType) genericType).getActualTypeArguments()[0]
+                : null;
     }
 
 }

@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.controller;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
 import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.governance.mcp.McpParameterConverter;
+import com.jd.live.agent.governance.mcp.McpParameterParser;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,16 +41,16 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
 
     protected ObjectConverter objectConverter;
 
-    protected McpParameterConverter parameterConverter;
+    protected McpParameterParser parameterParser;
 
     protected final Map<String, McpToolMethod> methods = new HashMap<>();
 
     public AbstractMcpController(McpToolScanner scanner,
                                  ObjectConverter objectConverter,
-                                 McpParameterConverter parameterConverter) {
+                                 McpParameterParser parameterParser) {
         this.scanner = scanner;
         this.objectConverter = objectConverter;
-        this.parameterConverter = parameterConverter;
+        this.parameterParser = parameterParser;
     }
 
     @Override
@@ -74,7 +75,9 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
      *
      * @return Map of controller beans
      */
-    protected abstract Map<String, Object> getControllers(ApplicationContext context);
+    protected Map<String, Object> getControllers(ApplicationContext context) {
+        return context.getBeansWithAnnotation(RestController.class);
+    }
 
     public void setObjectConverter(ObjectConverter objectConverter) {
         this.objectConverter = objectConverter;

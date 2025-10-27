@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.param;
-
-import com.jd.live.agent.governance.mcp.ParameterParser;
-
-import java.lang.reflect.Parameter;
+package com.jd.live.agent.governance.mcp;
 
 /**
- * Factory interface for creating suppliers of system-level parameters.
+ * Interface for parsing system parameters with support for optional values.
  */
-public interface SystemParameterFactory {
+@FunctionalInterface
+public interface RequestParser {
 
     /**
-     * Returns a supplier for the given parameter.
+     * Parses parameter from context.
      *
-     * @param parameter the parameter to create a supplier for
-     * @return a supplier that provides the parameter value
+     * @param ctx parser context
+     * @return parsed value
+     * @throws Exception if parsing fails
      */
-    ParameterParser getParser(Parameter parameter);
+    Object parse(RequestContext ctx) throws Exception;
 
 }

@@ -39,8 +39,13 @@ public class SpringUtils {
     private static final Class<?> CLASS_CONFIGURABLE_WEB_ENVIRONMENT = loadClass(TYPE_CONFIGURABLE_WEB_ENVIRONMENT, ResourceLoader.class.getClassLoader());
     private static final Method METHOD_INIT_PROPERTY_SOURCES = getDeclaredMethod(CLASS_CONFIGURABLE_WEB_ENVIRONMENT, "initPropertySources");
     private static final String TYPE_JAVAX_SERVLET_CONTEXT = "javax.servlet.ServletContext";
-    private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT = "org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment";
-    private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT, ResourceLoader.class.getClassLoader());
+
+    // spring boot 4.0
+    private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT4 = "org.springframework.boot.web.context.reactive.ConfigurableReactiveWebEnvironment";
+    private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT4 = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT4, ResourceLoader.class.getClassLoader());
+    // spring boot 2+/3+
+    private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 = "org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment";
+    private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3, ResourceLoader.class.getClassLoader());
 
     private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
     private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE, ResourceLoader.class.getClassLoader());
@@ -48,6 +53,8 @@ public class SpringUtils {
     private static final Class<?> API_RESOURCE_CONTROLLER_CLASS = loadClass(API_RESOURCE_CONTROLLER_TYPE, ResourceLoader.class.getClassLoader());
     private static final String SWAGGER2_CONTROLLER_WEB_MVC_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebMvc";
     private static final Class<?> SWAGGER2_CONTROLLER_WEB_MVC_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_MVC_TYPE, ResourceLoader.class.getClassLoader());
+    private static final String SWAGGER2_CONTROLLER_WEB_FLUX_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux";
+    private static final Class<?> SWAGGER2_CONTROLLER_WEB_FLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_FLUX_TYPE, ResourceLoader.class.getClassLoader());
 
 
     /**
@@ -74,7 +81,8 @@ public class SpringUtils {
      * @return true if WebFlux environment, false otherwise
      */
     public static boolean isWebFlux(Object environment) {
-        return CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT != null && CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT.isInstance(environment);
+        return CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT4 != null && CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT4.isInstance(environment)
+                || CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 != null && CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3.isInstance(environment);
     }
 
     /**
@@ -94,7 +102,8 @@ public class SpringUtils {
     public static boolean isSystemController(Object controller) {
         return ERROR_CONTROLLER_CLASS != null && ERROR_CONTROLLER_CLASS.isInstance(controller)
                 || API_RESOURCE_CONTROLLER_CLASS != null && API_RESOURCE_CONTROLLER_CLASS.isInstance(controller)
-                || SWAGGER2_CONTROLLER_WEB_MVC_CLASS != null && SWAGGER2_CONTROLLER_WEB_MVC_CLASS.isInstance(controller);
+                || SWAGGER2_CONTROLLER_WEB_MVC_CLASS != null && SWAGGER2_CONTROLLER_WEB_MVC_CLASS.isInstance(controller)
+                || SWAGGER2_CONTROLLER_WEB_FLUX_CLASS != null && SWAGGER2_CONTROLLER_WEB_FLUX_CLASS.isInstance(controller);
     }
 
     /**

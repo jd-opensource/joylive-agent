@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.util.converter;
+package com.jd.live.agent.governance.mcp;
+
+import com.jd.live.agent.core.parser.ObjectConverter;
+
 /**
- * Converts objects of type P to type V.
- *
- * @param <P> the source type to convert from
- * @param <V> the target type to convert to
+ * Parser for converting MCP parameters to method arguments.
  */
-@FunctionalInterface
-public interface Converter<P, V> {
+public interface McpParameterParser {
+
     /**
-     * Performs the conversion from source to target type.
+     * Parse input to method parameters.
      *
-     * @param source the source object to convert
-     * @return the converted result
+     * @param method Target method
+     * @param params Raw params
+     * @param converter Converter
+     * @param ctx Context
+     * @return Converted parameter array
+     * @throws Exception If parsing fails
      */
-    V convert(P source);
+    Object[] parse(McpToolMethod method, Object params, ObjectConverter converter, RequestContext ctx) throws Exception;
 }
