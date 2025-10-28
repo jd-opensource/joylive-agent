@@ -13,29 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
+package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
+import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
-import static com.jd.live.agent.plugin.router.springweb.v7.request.ReactiveInboundRequest.KEY_LIVE_EXCEPTION_HANDLED;
-import static com.jd.live.agent.plugin.router.springweb.v7.request.ReactiveInboundRequest.KEY_LIVE_REQUEST;
+import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_EXCEPTION_HANDLED;
+import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_REQUEST;
 
 /**
- * HandleResultInterceptor
+ * Interceptor for handling exception results and injecting exception headers.
+ *
+ * <p>This interceptor processes reactive response results, captures exceptions,
+ * and injects appropriate error headers into the HTTP response for proper
+ * exception handling in reactive web flows.
  */
-public class HandleResultInterceptor extends InterceptorAdaptor {
+public class DispatcherHandlerExceptionInterceptor extends InterceptorAdaptor {
 
     private final ServiceConfig config;
 
-    public HandleResultInterceptor(ServiceConfig config) {
+    public DispatcherHandlerExceptionInterceptor(ServiceConfig config) {
         this.config = config;
     }
 
@@ -43,7 +47,8 @@ public class HandleResultInterceptor extends InterceptorAdaptor {
     public void onSuccess(ExecutableContext ctx) {
         if (config.isResponseException()) {
             MethodContext mc = (MethodContext) ctx;
-            ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
+            ServerWebExchange exchange = mc.getArgument(0);
+            // Agent request
             Boolean live = (Boolean) exchange.getAttributes().remove(KEY_LIVE_REQUEST);
             if (live != null && live) {
                 Mono<Void> mono = mc.getResult();

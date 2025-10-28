@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractParserContext;
+import com.jd.live.agent.governance.mcp.Expression;
 import lombok.Getter;
-import org.springframework.web.server.ServerWebExchange;
 
 @Getter
-public class ReactiveParserContext extends AbstractParserContext {
+public class SpringExpression implements Expression {
 
-    private final ServerWebExchange exchange;
+    private String expression;
 
-    public ReactiveParserContext(ServerWebExchange exchange) {
-        this.exchange = exchange;
+    private boolean literal;
+
+    public SpringExpression(String expression) {
+        this.expression = expression;
+        this.literal = expression == null || !expression.contains("${") && !expression.contains("#{");
     }
+
+    public String toString() {
+        return expression;
+    }
+
 }

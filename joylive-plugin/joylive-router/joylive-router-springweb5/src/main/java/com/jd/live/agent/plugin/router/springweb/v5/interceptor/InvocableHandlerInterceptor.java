@@ -32,6 +32,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHan
 
 import javax.servlet.http.HttpServletRequest;
 
+import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
+
 /**
  * InvocableHandlerInterceptor
  */
@@ -65,7 +67,7 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
                 if (e == null) {
                     mc.skipWithResult(v);
                 } else if (request.isMcp()) {
-                    mc.skipWithResult(JsonRpcResponse.createServerErrorResponse(request.getMcpRequestId(), e.getMessage()));
+                    mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                 } else {
                     mc.skipWithThrowable(e);
                 }

@@ -25,20 +25,23 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.plugin.router.springweb.v5.condition.ConditionalOnSpringWeb5FlowControlEnabled;
-import com.jd.live.agent.plugin.router.springweb.v5.interceptor.ExceptionCarryingInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v5.interceptor.DispatcherServletExceptionInterceptor;
 
 /**
- * Plugin definition for capturing servlet exceptions and carrying them back via response headers.
- * Intercepts exception handling in Spring MVC's DispatcherServlet.
+ * Plugin definition for intercepting DispatcherServlet exceptions for processing.
+ *
+ * <p>This plugin targets Spring MVC DispatcherServlet and intercepts the
+ * processHandlerException method to handle and process exceptions that occur
+ * during request processing in servlet-based web applications.
  *
  * @author Axkea
  */
 @Injectable
 @Extension(value = "ExceptionCarryingDefinition_v5")
 @ConditionalOnSpringWeb5FlowControlEnabled
-@ConditionalOnClass(ExceptionCarryingDefinition.TYPE_DISPATCHER_SERVLET)
-@ConditionalOnClass(ExceptionCarryingDefinition.TYPE_HTTP_SERVLET)
-public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(DispatcherServletDefinition.TYPE_DISPATCHER_SERVLET)
+@ConditionalOnClass(DispatcherServletDefinition.TYPE_HTTP_SERVLET)
+public class DispatcherServletDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISPATCHER_SERVLET = "org.springframework.web.servlet.DispatcherServlet";
 
@@ -49,12 +52,12 @@ public class ExceptionCarryingDefinition extends PluginDefinitionAdapter {
     @Inject(ServiceConfig.COMPONENT_SERVICE_CONFIG)
     private ServiceConfig serviceConfig;
 
-    public ExceptionCarryingDefinition() {
+    public DispatcherServletDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_SERVLET);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD),
-                        () -> new ExceptionCarryingInterceptor(serviceConfig)
+                        () -> new DispatcherServletExceptionInterceptor(serviceConfig)
                 )
         };
     }

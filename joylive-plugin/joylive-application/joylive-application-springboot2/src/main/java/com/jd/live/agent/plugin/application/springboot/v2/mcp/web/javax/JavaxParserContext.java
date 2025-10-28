@@ -15,8 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
-import com.jd.live.agent.governance.mcp.RequestContext;
-import lombok.AllArgsConstructor;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractParserContext;
 import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
 
@@ -24,8 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Getter
-@AllArgsConstructor
-public class JavaxParserContext implements RequestContext {
+public class JavaxParserContext extends AbstractParserContext {
 
     private final WebRequest webRequest;
 
@@ -33,4 +31,11 @@ public class JavaxParserContext implements RequestContext {
 
     private final HttpServletResponse httpResponse;
 
+    public JavaxParserContext(WebRequest webRequest,
+                              HttpServletRequest httpRequest,
+                              HttpServletResponse httpResponse) {
+        this.webRequest = webRequest;
+        this.httpRequest = httpRequest;
+        this.httpResponse = httpResponse;
+    }
 }

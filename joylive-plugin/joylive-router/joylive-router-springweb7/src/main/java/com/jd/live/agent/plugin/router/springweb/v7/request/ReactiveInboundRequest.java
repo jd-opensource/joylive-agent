@@ -214,11 +214,11 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
      * @return Mono containing HandlerResult with JsonRpc error response
      */
     private Mono<HandlerResult> onMcpErrorResume(Throwable e) {
-        return getMcpRequestId().map(id -> {
-            JsonRpcResponse response = JsonRpcResponse.createServerErrorResponse(null, e.getMessage());
-            MethodParameter parameter = new MethodParameter(McpToolMethod.HANDLE_METHOD, -1);
-            return new HandlerResult(handler, response, parameter);
-        });
+        return getMcpRequestId().map(id ->
+                new HandlerResult(
+                        handler,
+                        JsonRpcResponse.createErrorResponse(id, e),
+                        new MethodParameter(McpToolMethod.HANDLE_METHOD, -1)));
     }
 
     /**
@@ -234,7 +234,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
                     DataBufferUtils.release(dataBuffer);
                     return new ByteArrayInputStream(bytes);
                 })
-                .map(is -> parser.read(is, JsonRpcRequest.JSON_PATH_ID))
+                .map(is -> parser.read(is, JsonRpcRequest.JSON_PATH_ID, null))
                 .onErrorResume(e -> null);
     }
 }

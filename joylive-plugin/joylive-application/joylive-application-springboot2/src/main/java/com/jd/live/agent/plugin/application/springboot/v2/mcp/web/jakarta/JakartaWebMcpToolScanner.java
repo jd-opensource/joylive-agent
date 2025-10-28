@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
+import com.jd.live.agent.governance.mcp.ExpressionFactory;
 import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
-import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.RequestContext;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.OptionalConverter;
@@ -47,7 +47,9 @@ import static com.jd.live.agent.core.util.StringUtils.choose;
  */
 public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
 
-    public static final McpToolScanner INSTANCE = new JakartaWebMcpToolScanner();
+    public JakartaWebMcpToolScanner(ExpressionFactory expressionFactory) {
+        super(expressionFactory);
+    }
 
     @Override
     protected McpToolParameterBuilder configureType(McpToolParameterBuilder builder) {
@@ -131,13 +133,21 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
     private McpToolParameterBuilder configureRequestHeader(McpToolParameterBuilder builder, RequestHeader requestHeader) {
         String arg = choose(requestHeader.value(), requestHeader.name());
         String name = choose(arg, builder.name());
-        return builder.convertable(true).arg(arg).parser(ctx -> getHeader(ctx, name, builder.actualClass()));
+        return builder
+                .convertable(true)
+                .arg(arg)
+                .parser(ctx -> getHeader(ctx, name, builder.actualClass()))
+                .defaultValueParser(createDefaultValueParser(requestHeader.defaultValue()));
     }
 
     private McpToolParameterBuilder configureCookieValue(McpToolParameterBuilder builder, CookieValue cookieValue) {
         String arg = choose(cookieValue.value(), cookieValue.name());
         String name = choose(arg, builder.name());
-        return builder.convertable(true).arg(arg).parser(ctx -> getCookieValue(ctx, name));
+        return builder
+                .convertable(true)
+                .arg(arg)
+                .parser(ctx -> getCookieValue(ctx, name))
+                .defaultValueParser(createDefaultValueParser(cookieValue.defaultValue()));
     }
 
     private McpToolParameterBuilder configureSessionAttribute(McpToolParameterBuilder builder, SessionAttribute sessionAttribute) {
@@ -195,7 +205,7 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
         }
     }
 
-    private static void processHeader(WebRequest webRequest, BiConsumer<String, String> consumer) {
+    private void processHeader(WebRequest webRequest, BiConsumer<String, String> consumer) {
         Iterator<String> headerNames = webRequest.getHeaderNames();
         while (headerNames.hasNext()) {
             String headerName = headerNames.next();

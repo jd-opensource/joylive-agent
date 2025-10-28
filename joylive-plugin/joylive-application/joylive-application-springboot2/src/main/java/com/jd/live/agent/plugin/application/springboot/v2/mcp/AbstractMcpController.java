@@ -21,8 +21,8 @@ import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -37,18 +37,17 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
  */
 public abstract class AbstractMcpController implements ApplicationListener<ApplicationStartedEvent> {
 
-    protected McpToolScanner scanner;
-
     protected ObjectConverter objectConverter;
 
     protected McpParameterParser parameterParser;
 
     protected final Map<String, McpToolMethod> methods = new HashMap<>();
 
-    public AbstractMcpController(McpToolScanner scanner,
-                                 ObjectConverter objectConverter,
-                                 McpParameterParser parameterParser) {
-        this.scanner = scanner;
+    public AbstractMcpController(McpParameterParser parameterParser) {
+        this(null, parameterParser);
+    }
+
+    public AbstractMcpController(ObjectConverter objectConverter, McpParameterParser parameterParser) {
         this.objectConverter = objectConverter;
         this.parameterParser = parameterParser;
     }
@@ -57,14 +56,17 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
     public void onApplicationEvent(ApplicationStartedEvent event) {
         Map<String, Object> controllers = getControllers(event.getApplicationContext());
         Class<?> thisClass = this.getClass();
-        for (Object controller : controllers.values()) {
-            if (thisClass.isInstance(controller)) {
-                // for flow control interceptor
-                McpToolMethod.HANDLE_METHOD = getDeclaredMethod(controller.getClass(), "handle");
-            } else if (!SpringUtils.isSystemController(controller)) {
-                List<McpToolMethod> values = scanner.scan(controller);
-                if (values != null) {
-                    values.forEach(m -> methods.put(m.getName(), m));
+        McpToolScanner scanner = createScanner(event.getApplicationContext());
+        if (controllers != null) {
+            for (Object controller : controllers.values()) {
+                if (thisClass.isInstance(controller)) {
+                    // for flow control interceptor
+                    McpToolMethod.HANDLE_METHOD = getDeclaredMethod(controller.getClass(), "handle");
+                } else if (!SpringUtils.isSystemController(controller)) {
+                    List<McpToolMethod> values = scanner.scan(controller);
+                    if (values != null) {
+                        values.forEach(m -> methods.put(m.getName(), m));
+                    }
                 }
             }
         }
@@ -75,11 +77,20 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
      *
      * @return Map of controller beans
      */
-    protected Map<String, Object> getControllers(ApplicationContext context) {
+    protected Map<String, Object> getControllers(ConfigurableApplicationContext context) {
         return context.getBeansWithAnnotation(RestController.class);
     }
 
+    /**
+     * Creates a scanner to detect MCP tools in the application context.
+     *
+     * @param context the Spring application context
+     * @return the MCP tool scanner instance
+     */
+    protected abstract McpToolScanner createScanner(ConfigurableApplicationContext context);
+
     public void setObjectConverter(ObjectConverter objectConverter) {
+        // for spring injection
         this.objectConverter = objectConverter;
     }
 

@@ -18,12 +18,9 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 import com.jd.live.agent.core.util.type.AnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.ParameterAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.TypeAnnotationGetter;
-import com.jd.live.agent.governance.mcp.McpToolMethod;
-import com.jd.live.agent.governance.mcp.McpToolParameter;
+import com.jd.live.agent.governance.mcp.*;
 import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
-import com.jd.live.agent.governance.mcp.McpToolParameterConfigurator;
 import com.jd.live.agent.governance.mcp.McpToolParameterConfigurator.McpToolParameterConfiguratorChain;
-import com.jd.live.agent.governance.mcp.McpToolScanner;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Method;
@@ -34,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.StringUtils.url;
@@ -43,6 +41,12 @@ import static com.jd.live.agent.core.util.StringUtils.url;
  * Scans Spring controllers and converts their methods to MCP tool methods.
  */
 public abstract class AbstractMcpToolScanner implements McpToolScanner {
+
+    protected final ExpressionFactory expressionFactory;
+
+    public AbstractMcpToolScanner(ExpressionFactory expressionFactory) {
+        this.expressionFactory = expressionFactory;
+    }
 
     @Override
     public List<McpToolMethod> scan(Object controller) {
@@ -230,7 +234,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     protected McpToolParameterBuilder configureRequestParam(McpToolParameterBuilder builder, AnnotationGetter getter) {
         RequestParam requestParam = getter.getAnnotation(RequestParam.class);
         if (requestParam != null) {
-            return builder.arg(requestParam.value()).required(requestParam.required());
+            return builder.arg(requestParam.value()).required(requestParam.required()).defaultValueParser(createDefaultValueParser(requestParam.defaultValue()));
         }
         PathVariable pathVariable = getter.getAnnotation(PathVariable.class);
         if (pathVariable != null) {
@@ -271,4 +275,32 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                 : null;
     }
 
+    /**
+     * Creates a parser for the default value if provided.
+     *
+     * @param defaultValue the default value to parse, may be null or empty
+     * @return the request parser, or null if defaultValue is empty
+     */
+    protected RequestParser createDefaultValueParser(String defaultValue) {
+        return createDefaultValueParser(defaultValue, null);
+    }
+
+    /**
+     * Creates a parser for the default value with optional transformation.
+     *
+     * @param defaultValue the default value to parse, may be null or empty
+     * @param function     optional transformation function to apply on parsed value
+     * @return the request parser, or null if defaultValue equals DEFAULT_NONE
+     */
+    protected RequestParser createDefaultValueParser(String defaultValue, Function<Object, Object> function) {
+        if (ValueConstants.DEFAULT_NONE.equals(defaultValue)) {
+            return null;
+        }
+        Expression expression = expressionFactory.parse(defaultValue);
+        if (function == null) {
+            return ctx -> expressionFactory.evaluate(expression);
+        } else {
+            return ctx -> function.apply(expressionFactory.evaluate(expression));
+        }
+    }
 }

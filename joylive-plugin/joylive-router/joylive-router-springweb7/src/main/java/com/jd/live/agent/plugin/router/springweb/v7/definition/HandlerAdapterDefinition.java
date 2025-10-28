@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springweb.v5.definition;
+package com.jd.live.agent.plugin.router.springweb.v7.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,31 +26,27 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springweb.v5.condition.ConditionalOnSpringWeb5GovernanceEnabled;
-import com.jd.live.agent.plugin.router.springweb.v5.interceptor.DispatcherHandlerInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v7.condition.ConditionalOnSpringWeb7GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springweb.v7.interceptor.HandlerAdapterInterceptor;
 
 /**
- * Plugin definition for intercepting reactive requests for traffic governance.
+ * Plugin definition for intercepting reactive request calls to perform traffic governance.
  *
- * <p>This plugin intercepts Spring WebFlux DispatcherHandler to:
- * <ul>
- *   <li>Apply traffic governance rules
- *   <li>Transform exceptions during request processing
- *   <li>Handle reactive request flows
- * </ul>
+ * <p>This plugin targets Spring WebFlux HandlerAdapter implementations and intercepts
+ * the handle method to apply traffic control policies on reactive web requests.
  */
 @Injectable
-@Extension(value = "DispatcherHandlerDefinition_v5")
-@ConditionalOnSpringWeb5GovernanceEnabled
+@Extension(value = "HandlerAdapterDefinition_v6")
+@ConditionalOnSpringWeb7GovernanceEnabled
 @ConditionalOnReactive
-@ConditionalOnClass(DispatcherHandlerDefinition.TYPE_DISPATCHER_HANDLER)
-public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(HandlerAdapterDefinition.TYPE_HANDLER_ADAPTER)
+public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_DISPATCHER_HANDLER = "org.springframework.web.reactive.DispatcherHandler";
+    protected static final String TYPE_HANDLER_ADAPTER = "org.springframework.web.reactive.HandlerAdapter";
 
-    private static final String METHOD_INVOKE_HANDLER = "invokeHandler";
+    private static final String METHOD = "handle";
 
-    private static final String[] ARGUMENT_HANDLE = new String[]{
+    private static final String[] ARGUMENT = new String[]{
             "org.springframework.web.server.ServerWebExchange",
             "java.lang.Object"
     };
@@ -61,13 +57,12 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
     @Inject
     private JsonPathParser parser;
 
-    public DispatcherHandlerDefinition() {
-        this.matcher = () -> MatcherBuilder.named(TYPE_DISPATCHER_HANDLER);
+    public HandlerAdapterDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE_HANDLER_ADAPTER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD_INVOKE_HANDLER).
-                                and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new DispatcherHandlerInterceptor(context, parser)
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
+                        () -> new HandlerAdapterInterceptor(context, parser)
                 )
         };
     }

@@ -1,5 +1,6 @@
 com.jd.live.agent.plugin.router.springweb.v7.definition.DispatcherHandlerDefinition
-com.jd.live.agent.plugin.router.springweb.v7.definition.ExceptionCarryingDefinition
+com.jd.live.agent.plugin.router.springweb.v7.definition.DispatcherServletDefinition
+com.jd.live.agent.plugin.router.springweb.v7.definition.HandlerAdapterDefinition
 com.jd.live.agent.plugin.router.springweb.v7.definition.HierarchicalUriComponentsDefinition
 com.jd.live.agent.plugin.router.springweb.v7.definition.InvocableHandlerDefinition
 com.jd.live.agent.plugin.router.springweb.v7.definition.RouterFunctionDefinition

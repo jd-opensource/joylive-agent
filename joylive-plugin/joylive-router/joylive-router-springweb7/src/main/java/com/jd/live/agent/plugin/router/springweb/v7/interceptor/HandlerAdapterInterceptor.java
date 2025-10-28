@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
+package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
@@ -26,27 +26,27 @@ import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest;
-import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
-import org.springframework.http.HttpHeaders;
+import com.jd.live.agent.plugin.router.springweb.v7.request.ReactiveInboundRequest;
 import org.springframework.web.reactive.HandlerResult;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
-import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_EXCEPTION_HANDLED;
-import static com.jd.live.agent.plugin.router.springweb.v6.request.ReactiveInboundRequest.KEY_LIVE_REQUEST;
+import static com.jd.live.agent.plugin.router.springweb.v7.request.ReactiveInboundRequest.KEY_LIVE_REQUEST;
 
 /**
- * DispatcherHandlerInterceptor
+ * Interceptor for reactive request calls to perform traffic governance and exception conversion.
+ *
+ * <p>This interceptor intercepts Spring WebFlux handler adapter calls, applies traffic control
+ * policies on inbound reactive requests, and handles exception conversion for proper error responses.
+ *
  */
-public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
+public class HandlerAdapterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
     private final JsonPathParser parser;
 
-    public DispatcherHandlerInterceptor(InvocationContext context, JsonPathParser parser) {
+    public HandlerAdapterInterceptor(InvocationContext context, JsonPathParser parser) {
         this.context = context;
         this.parser = parser;
     }
@@ -67,16 +67,8 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
+            // MCP exceptions have already been handled in the convert method
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
-            if (serviceConfig.isResponseException()) {
-                mono = mono.doOnError(ex -> {
-                    Boolean handled = (Boolean) exchange.getAttributes().remove(KEY_LIVE_EXCEPTION_HANDLED);
-                    if (handled == null || !handled) {
-                        HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
-                        labelHeaders(ex, headers::set);
-                    }
-                });
-            }
             mc.skipWithResult(mono);
         }
     }

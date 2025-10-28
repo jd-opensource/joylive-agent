@@ -24,22 +24,23 @@ import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v6.condition.ConditionalOnSpringWeb6GovernanceEnabled;
-import com.jd.live.agent.plugin.router.springweb.v6.interceptor.DispatcherHandlerInterceptor;
-import com.jd.live.agent.plugin.router.springweb.v6.interceptor.HandleResultInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v6.interceptor.DispatcherHandlerExceptionInterceptor;
 
 /**
- * DispatcherHandlerDefinition
+ * Plugin definition for handling reactive exceptions.
  *
- * @author Zhiguo.Chen
- * @since 1.0.0
+ * <p>This plugin targets Spring WebFlux DispatcherHandler and intercepts
+ * exception handling methods to process errors that occur during reactive
+ * request processing. Supports multiple Spring WebFlux versions (6.0.* and 6.1.*).
  */
 @Injectable
 @Extension(value = "DispatcherHandlerDefinition_v6")
 @ConditionalOnSpringWeb6GovernanceEnabled
+@ConditionalOnReactive
 @ConditionalOnClass(DispatcherHandlerDefinition.TYPE_DISPATCHER_HANDLER)
-@ConditionalOnClass(DispatcherHandlerDefinition.REACTOR_MONO)
 public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
 
     protected static final String TYPE_DISPATCHER_HANDLER = "org.springframework.web.reactive.DispatcherHandler";
@@ -62,8 +63,6 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
             "java.lang.String"
     };
 
-    protected static final String REACTOR_MONO = "reactor.core.publisher.Mono";
-
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
 
@@ -76,18 +75,18 @@ public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_HANDLE_REQUEST_WITH).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE)),
-                        () -> new DispatcherHandlerInterceptor(context, parser)
+                        () -> new DispatcherHandlerExceptionInterceptor(context.getGovernanceConfig().getServiceConfig())
                 ),
                 new InterceptorDefinitionAdapter(
                         // For spring web flux 6.1.*
                         MatcherBuilder.named(METHOD_HANDLE_RESULT).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
-                        () -> new HandleResultInterceptor(context.getGovernanceConfig().getServiceConfig())),
+                        () -> new DispatcherHandlerExceptionInterceptor(context.getGovernanceConfig().getServiceConfig())),
                 new InterceptorDefinitionAdapter(
                         // For spring web flux 6.0.*
                         MatcherBuilder.named(METHOD_DO_HANDLE_RESULT).
                                 and(MatcherBuilder.arguments(ARGUMENT_HANDLE_RESULT)),
-                        () -> new HandleResultInterceptor(context.getGovernanceConfig().getServiceConfig()))
+                        () -> new DispatcherHandlerExceptionInterceptor(context.getGovernanceConfig().getServiceConfig()))
         };
     }
 }

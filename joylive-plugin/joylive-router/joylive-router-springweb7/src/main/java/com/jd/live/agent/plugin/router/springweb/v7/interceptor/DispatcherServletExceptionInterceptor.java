@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
+package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
+import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import jakarta.servlet.http.HttpServletResponse;
 
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
- * Interceptor that captures exceptions from DispatcherServlet and carries them in response headers.
+ * Plugin definition for capturing servlet exceptions and carrying them back via response headers.
+ * Intercepts exception handling in Spring MVC's DispatcherServlet.
  *
  * @author Axkea
  */
-public class ExceptionCarryingInterceptor extends InterceptorAdaptor {
+public class DispatcherServletExceptionInterceptor extends InterceptorAdaptor {
 
     private final ServiceConfig config;
 
-    public ExceptionCarryingInterceptor(ServiceConfig config) {
+    public DispatcherServletExceptionInterceptor(ServiceConfig config) {
         this.config = config;
     }
 

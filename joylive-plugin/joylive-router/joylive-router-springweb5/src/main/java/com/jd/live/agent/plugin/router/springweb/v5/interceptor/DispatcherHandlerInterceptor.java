@@ -69,6 +69,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
+            // MCP exceptions have already been handled in the convert method
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
             if (serviceConfig.isResponseException()) {
                 mono = mono.doOnError(ex -> {

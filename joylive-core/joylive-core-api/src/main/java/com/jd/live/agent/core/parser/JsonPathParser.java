@@ -20,9 +20,7 @@ import com.jd.live.agent.core.extension.annotation.Extensible;
 import java.io.InputStream;
 
 /**
- * Defines the contract for parsers that can extract data from JSON documents based on JSONPath expressions.
- * This interface supports extensibility, allowing implementations to handle different JSON parsing libraries
- * or strategies.
+ * Parser for extracting data from JSON documents using JSONPath expressions.
  *
  * @since 1.0.0
  */
@@ -30,25 +28,58 @@ import java.io.InputStream;
 public interface JsonPathParser {
 
     /**
-     * Reads and extracts data from a JSON document based on the specified JSONPath expression.
-     * The method is generic, enabling it to return data of any type as specified by the caller.
+     * Reads data from JSON string using JSONPath.
      *
-     * @param <T>    The type of the data to be returned.
-     * @param reader The reader from which the JSON document is read.
-     * @param path   The JSONPath expression used to extract data from the JSON document.
-     * @return The extracted data of type {@code T}.
+     * @param <T>    return type
+     * @param reader JSON string
+     * @param path   JSONPath expression
+     * @return extracted data
      */
     <T> T read(String reader, String path);
 
     /**
-     * Reads and extracts data from a JSON document based on the specified JSONPath expression.
-     * The method is generic, enabling it to return data of any type as specified by the caller.
+     * Reads data from JSON string using JSONPath with default value.
      *
-     * @param <T>  The type of the data to be returned.
-     * @param in   The InputStream from which the JSON document is read.
-     * @param path The JSONPath expression used to extract data from the JSON document.
-     * @return The extracted data of type {@code T}.
+     * @param <T>          return type
+     * @param reader       JSON string
+     * @param path         JSONPath expression
+     * @param defaultValue default value if extraction fails
+     * @return extracted data or default value
+     */
+    default <T> T read(String reader, String path, T defaultValue) {
+        try {
+            T result = read(reader, path);
+            return result == null ? defaultValue : result;
+        } catch (Throwable e) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Reads data from JSON InputStream using JSONPath.
+     *
+     * @param <T>  return type
+     * @param in   JSON InputStream
+     * @param path JSONPath expression
+     * @return extracted data
      */
     <T> T read(InputStream in, String path);
 
+    /**
+     * Reads data from JSON InputStream using JSONPath with default value.
+     *
+     * @param <T>          return type
+     * @param in           JSON InputStream
+     * @param path         JSONPath expression
+     * @param defaultValue default value if extraction fails
+     * @return extracted data or default value
+     */
+    default <T> T read(InputStream in, String path, T defaultValue) {
+        try {
+            T result = read(in, path);
+            return result == null ? defaultValue : result;
+        } catch (Throwable e) {
+            return defaultValue;
+        }
+    }
 }

@@ -20,7 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.ExceptionUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.McpConfig;
 import com.jd.live.agent.governance.config.ServiceConfig;
@@ -33,6 +32,9 @@ import org.springframework.web.servlet.function.HandlerFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
 import java.util.Optional;
+
+import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
+import static com.jd.live.agent.core.util.ExceptionUtils.toException;
 
 /**
  * Interceptor for RouterFunction's HandlerFunction to provide service governance capabilities.
@@ -92,9 +94,9 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
                     return (ServerResponse) context.inward(invocation, () -> delegate.handle(req));
                 } catch (Throwable e) {
                     if (request.isMcp()) {
-                        return ServerResponse.ok().body(JsonRpcResponse.createServerErrorResponse(request.getMcpRequestId(), e.getMessage()));
+                        return ServerResponse.ok().body(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                     }
-                    throw ExceptionUtils.toException(e);
+                    throw toException(e);
                 }
             } else {
                 return delegate.handle(req);

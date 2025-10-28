@@ -19,8 +19,11 @@ import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
 import com.jd.live.agent.governance.mcp.DefaultMcpParameterParser;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
+import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
+import com.jd.live.agent.plugin.application.springboot.v2.mcp.SpringExpressionFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.MonoConverter;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,29 +41,34 @@ public class ReactiveMcpController extends AbstractMcpController {
     public static final String NAME = "reactiveMcpController";
 
     public ReactiveMcpController() {
-        super(ReactiveMcpToolScanner.INSTANCE, null, DefaultMcpParameterParser.INSTANCE);
+        super(DefaultMcpParameterParser.INSTANCE);
     }
 
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Override
+    protected McpToolScanner createScanner(ConfigurableApplicationContext context) {
+        return new ReactiveMcpToolScanner(new SpringExpressionFactory(context.getBeanFactory()));
+    }
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<JsonRpcResponse> handle(@RequestBody Mono<JsonRpcRequest> request, ServerWebExchange exchange) {
         return request.flatMap(req -> {
+            if (!req.validate()) {
+                return Mono.just(JsonRpcResponse.createInvalidRequestResponse(req.getId()));
+            }
             McpToolMethod method = methods.get(req.getMethod());
             if (method == null) {
                 return Mono.just(JsonRpcResponse.createMethodNotFoundResponse(req.getId()));
             }
-            return invoke(method, req.getParams(), exchange)
-                    .map(result -> req.notification() ? JsonRpcResponse.createNotificationResponse() : JsonRpcResponse.createSuccessResponse(req.getId(), result))
-                    .onErrorResume(e -> Mono.just(JsonRpcResponse.createErrorResponse(req.getId(), e)));
+            try {
+                Object[] args = parameterParser.parse(method, req.getParams(), objectConverter, new ReactiveParserContext(exchange));
+                Object result = method.invoke(args);
+                // Result may be a Mono object
+                return MonoConverter.INSTANCE.convert(result)
+                        .map(r -> req.notification() ? JsonRpcResponse.createNotificationResponse() : JsonRpcResponse.createSuccessResponse(req.getId(), r))
+                        .onErrorResume(e -> Mono.just(JsonRpcResponse.createErrorResponse(req.getId(), e)));
+            } catch (Throwable e) {
+                return Mono.just(JsonRpcResponse.createErrorResponse(req.getId(), getCause(e)));
+            }
         });
-    }
-
-    private Mono<Object> invoke(McpToolMethod method, Object params, ServerWebExchange exchange) {
-        try {
-            Object[] args = parameterParser.parse(method, params, objectConverter, new ReactiveParserContext(exchange));
-            Object result = method.invoke(args);
-            return MonoConverter.INSTANCE.convert(result);
-        } catch (Throwable e) {
-            return Mono.error(getCause(e));
-        }
     }
 }

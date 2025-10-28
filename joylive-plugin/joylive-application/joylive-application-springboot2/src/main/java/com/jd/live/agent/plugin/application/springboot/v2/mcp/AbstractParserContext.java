@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
+package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractParserContext;
-import lombok.Getter;
-import org.springframework.web.server.ServerWebExchange;
+import com.jd.live.agent.governance.mcp.RequestContext;
 
-@Getter
-public class ReactiveParserContext extends AbstractParserContext {
+public abstract class AbstractParserContext implements RequestContext {
 
-    private final ServerWebExchange exchange;
-
-    public ReactiveParserContext(ServerWebExchange exchange) {
-        this.exchange = exchange;
-    }
 }
