@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.governance.mcp;
 
-import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcError;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcException;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcException.NotEnoughParameter;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -32,43 +32,23 @@ public class DefaultMcpParameterParser implements McpParameterParser {
 
     public static final McpParameterParser INSTANCE = new DefaultMcpParameterParser();
 
-    private static final Set<Class<?>> SIMPLE_TYPES = new HashSet<>(Arrays.asList(
-            boolean.class,
-            char.class,
-            byte.class,
-            short.class,
-            int.class,
-            long.class,
-            float.class,
-            double.class,
-            Boolean.class,
-            Character.class,
-            Byte.class,
-            Short.class,
-            Integer.class,
-            Long.class,
-            Float.class,
-            Double.class,
-            String.class
-    ));
-
     @Override
-    public Object[] parse(McpToolMethod method, Object params, ObjectConverter converter, RequestContext ctx) throws Exception {
+    public Object[] parse(McpToolMethod method, Object params, RequestContext ctx) throws Exception {
         McpToolParameter[] parameters = method.getParameters();
         if (parameters.length == 0) {
             return new Object[0];
         } else if (parameters.length == 1) {
-            return parse(parameters, params, converter, ctx, (p, i) -> params);
+            return parse(parameters, params, ctx, (p, i) -> params);
         } else if (params instanceof Map) {
-            return parseMap(parameters, (Map<?, ?>) params, converter, ctx);
+            return parseMap(parameters, (Map<?, ?>) params, ctx);
         } else if (params instanceof List) {
-            return parseList(parameters, (List<?>) params, converter, ctx);
+            return parseList(parameters, (List<?>) params, ctx);
         } else if (params instanceof Object[]) {
-            return parseArray(parameters, (Object[]) params, converter, ctx);
+            return parseArray(parameters, (Object[]) params, ctx);
         } else if (params.getClass().isArray()) {
-            return parseArrayType(parameters, params, converter, ctx);
+            return parseArrayType(parameters, params, ctx);
         } else {
-            return parse(parameters, params, converter, ctx, (p, i) -> params);
+            return parse(parameters, params, ctx, (p, i) -> params);
         }
     }
 
@@ -77,13 +57,12 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      *
      * @param parameters Parameter definitions
      * @param params     Map of parameter name to value
-     * @param converter  Parameter type converter
      * @param ctx        Request context
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseMap(McpToolParameter[] parameters, Map<?, ?> params, ObjectConverter converter, RequestContext ctx) throws Exception {
-        return parse(parameters, params, converter, ctx, (p, i) -> params.get(p.getName()));
+    private Object[] parseMap(McpToolParameter[] parameters, Map<?, ?> params, RequestContext ctx) throws Exception {
+        return parse(parameters, params, ctx, (p, i) -> params.get(p.getName()));
     }
 
     /**
@@ -91,14 +70,13 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      *
      * @param parameters Parameter definitions
      * @param params Array object to parse
-     * @param converter Parameter type converter
      * @param ctx Request context
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseArrayType(McpToolParameter[] parameters, Object params, ObjectConverter converter, RequestContext ctx) throws Exception {
+    private Object[] parseArrayType(McpToolParameter[] parameters, Object params, RequestContext ctx) throws Exception {
         int length = Array.getLength(params);
-        return parse(parameters, params, converter, ctx, (p, i) -> {
+        return parse(parameters, params, ctx, (p, i) -> {
             if (i >= length) {
                 throw new NotEnoughParameter();
             }
@@ -111,13 +89,12 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      *
      * @param parameters Parameter definitions
      * @param params     Array of parameter values
-     * @param converter  Parameter type converter
      * @param ctx        Request context
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseArray(McpToolParameter[] parameters, Object[] params, ObjectConverter converter, RequestContext ctx) throws Exception {
-        return parse(parameters, params, converter, ctx, (p, i) -> {
+    private Object[] parseArray(McpToolParameter[] parameters, Object[] params, RequestContext ctx) throws Exception {
+        return parse(parameters, params, ctx, (p, i) -> {
             if (i >= params.length) {
                 throw new NotEnoughParameter();
             }
@@ -130,13 +107,12 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      *
      * @param parameters Parameter definitions
      * @param objects List of parameter values
-     * @param converter Parameter type converter
      * @param ctx Request context
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseList(McpToolParameter[] parameters, List<?> objects, ObjectConverter converter, RequestContext ctx) throws Exception {
-        return parse(parameters, objects, converter, ctx, (p, i) -> {
+    private Object[] parseList(McpToolParameter[] parameters, List<?> objects, RequestContext ctx) throws Exception {
+        return parse(parameters, objects, ctx, (p, i) -> {
             if (i >= objects.size()) {
                 throw new NotEnoughParameter();
             }
@@ -145,16 +121,21 @@ public class DefaultMcpParameterParser implements McpParameterParser {
     }
 
     /**
-     * Converts positional parameters from a list to method arguments.
+     * Parses MCP request parameters into method arguments.
      *
-     * @param parameters Method parameter definitions
-     * @param params     List of parameter values
-     * @param converter  Object converter to use
-     * @return Converted parameter array
+     * <p>Handles both single and multiple parameter cases. For multiple parameters,
+     * applies the paramFunc to extract individual values in sequence.
+     *
+     * @param parameters the parameter definitions to parse
+     * @param params the raw parameter values
+     * @param ctx the request context for conversion
+     * @param paramFunc function to extract parameter value at specific position
+     * @return array of parsed argument objects
+     * @throws JsonRpcException if a required parameter is missing
+     * @throws Exception if parsing fails
      */
     private Object[] parse(McpToolParameter[] parameters,
                            Object params,
-                           ObjectConverter converter,
                            RequestContext ctx,
                            BiFunction<McpToolParameter, Integer, Object> paramFunc) throws Exception {
         Object[] args = new Object[parameters.length];

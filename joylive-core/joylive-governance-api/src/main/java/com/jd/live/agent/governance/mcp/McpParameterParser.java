@@ -15,8 +15,6 @@
  */
 package com.jd.live.agent.governance.mcp;
 
-import com.jd.live.agent.core.parser.ObjectConverter;
-
 /**
  * Parser for converting MCP parameters to method arguments.
  */
@@ -27,10 +25,9 @@ public interface McpParameterParser {
      *
      * @param method Target method
      * @param params Raw params
-     * @param converter Converter
      * @param ctx Context
      * @return Converted parameter array
      * @throws Exception If parsing fails
      */
-    Object[] parse(McpToolMethod method, Object params, ObjectConverter converter, RequestContext ctx) throws Exception;
+    Object[] parse(McpToolMethod method, Object params, RequestContext ctx) throws Exception;
 }
