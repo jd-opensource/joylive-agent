@@ -37,6 +37,12 @@ public class CloudUtils {
 
     private static final FieldAccessor ACCESSOR_HANDLER = getAccessor(CLASS_HANDLER_METHOD, "bean");
 
+    private static final String TYPE_HANDLER_RESULT = "org.springframework.web.reactive.HandlerResult";
+
+    private static final Class<?> CLASS_HANDLER_RESULT = loadClass(TYPE_HANDLER_RESULT, HttpHeaders.class.getClassLoader());
+
+    private static final FieldAccessor ACCESSOR_EXCEPTION_HANDLER = getAccessor(CLASS_HANDLER_RESULT, "exceptionHandler");
+
     /**
      * Creates writable copy of HTTP headers.
      *
@@ -48,7 +54,11 @@ public class CloudUtils {
     }
 
     public static Object getHandler(Object handlerMethod) {
-        return handlerMethod != null && CLASS_HANDLER_METHOD.isInstance(handlerMethod) ? ACCESSOR_HANDLER.get(handlerMethod) : null;
+        return ACCESSOR_HANDLER != null && handlerMethod != null && CLASS_HANDLER_METHOD.isInstance(handlerMethod) ? ACCESSOR_HANDLER.get(handlerMethod) : null;
+    }
+
+    public static <T> T getExceptionHandler(Object handlerResult) {
+        return ACCESSOR_EXCEPTION_HANDLER != null && handlerResult != null && CLASS_HANDLER_RESULT.isInstance(handlerResult) ? (T) ACCESSOR_EXCEPTION_HANDLER.get(handlerResult) : null;
     }
 
     /**

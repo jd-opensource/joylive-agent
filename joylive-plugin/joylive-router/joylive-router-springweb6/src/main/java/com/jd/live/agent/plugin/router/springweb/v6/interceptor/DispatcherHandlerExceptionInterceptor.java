@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
 import org.springframework.http.HttpHeaders;
@@ -45,21 +46,26 @@ public class DispatcherHandlerExceptionInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        if (config.isResponseException()) {
-            MethodContext mc = (MethodContext) ctx;
-            ServerWebExchange exchange = mc.getArgument(0);
-            // Agent request
-            Boolean live = (Boolean) exchange.getAttributes().remove(KEY_LIVE_REQUEST);
-            if (live != null && live) {
-                Mono<Void> mono = mc.getResult();
-                mono = mono.onErrorResume(ex -> {
-                    exchange.getAttributes().put(KEY_LIVE_EXCEPTION_HANDLED, Boolean.TRUE);
-                    HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
-                    labelHeaders(ex, headers::set);
-                    return Mono.error(ex);
-                });
-                mc.setResult(mono);
-            }
+        if (!config.isResponseException()) {
+            // Without exception propagation
+            return;
         }
+        MethodContext mc = (MethodContext) ctx;
+        ServerWebExchange exchange = mc.getArgument(0);
+        boolean live = Converts.getBoolean(exchange.getAttribute(KEY_LIVE_REQUEST), Boolean.FALSE);
+        if (!live) {
+            // Agent request
+            return;
+        }
+        Mono<Void> mono = mc.getResult();
+        mono = mono.doOnError(ex -> {
+            boolean handled = Converts.getBoolean(exchange.getAttribute(KEY_LIVE_EXCEPTION_HANDLED), Boolean.FALSE);
+            if (!handled) {
+                exchange.getAttributes().put(KEY_LIVE_EXCEPTION_HANDLED, Boolean.TRUE);
+                HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
+                labelHeaders(ex, headers::set);
+            }
+        });
+        mc.setResult(mono);
     }
 }

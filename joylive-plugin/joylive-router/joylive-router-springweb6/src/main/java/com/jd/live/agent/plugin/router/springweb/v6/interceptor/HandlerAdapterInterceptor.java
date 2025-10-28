@@ -59,8 +59,8 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
         McpConfig mcpConfig = govnConfig.getMcpConfig();
         ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
-        ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
-        Object handler = mc.getArguments()[1];
+        ServerWebExchange exchange = mc.getArgument(0);
+        Object handler = mc.getArgument(1);
         ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
         if (!request.isSystem()) {
             exchange.getAttributes().put(KEY_LIVE_REQUEST, Boolean.TRUE);

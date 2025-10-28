@@ -35,15 +35,12 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
 import static com.jd.live.agent.governance.util.ResponseUtils.labelHeaders;
 
 /**
  * DispatcherHandlerInterceptor
  */
 public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
-
-    private static final String FIELD_EXCEPTION_HANDLER = "exceptionHandler";
 
     private final InvocationContext context;
 
@@ -62,8 +59,8 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
         McpConfig mcpConfig = govnConfig.getMcpConfig();
         ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
-        ServerWebExchange exchange = (ServerWebExchange) mc.getArguments()[0];
-        Object handler = mc.getArguments()[1];
+        ServerWebExchange exchange = mc.getArgument(0);
+        Object handler = mc.getArgument(1);
         ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
         if (!request.isSystem()) {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
@@ -77,7 +74,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
                     labelHeaders(ex, headers::set);
                 }).doOnSuccess(result -> {
                     if (result != null) {
-                        Function<Throwable, Mono<HandlerResult>> exceptionHandler = getQuietly(result, FIELD_EXCEPTION_HANDLER);
+                        Function<Throwable, Mono<HandlerResult>> exceptionHandler = CloudUtils.getExceptionHandler(result);
                         result.setExceptionHandler(ex -> {
                             HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                             labelHeaders(ex, headers::set);
