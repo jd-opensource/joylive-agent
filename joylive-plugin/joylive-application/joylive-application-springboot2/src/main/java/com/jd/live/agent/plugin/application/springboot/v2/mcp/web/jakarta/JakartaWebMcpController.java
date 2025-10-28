@@ -69,7 +69,7 @@ public class JakartaWebMcpController extends AbstractMcpController {
             if (method == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            JakartaParserContext ctx = new JakartaParserContext(webRequest, httpRequest, httpResponse);
+            JakartaRequestContext ctx = new JakartaRequestContext(objectConverter, webRequest, httpRequest, httpResponse);
             Object[] args = parameterParser.parse(method, request.getParams(), objectConverter, ctx);
             Object result = method.getMethod().invoke(method.getController(), args);
             return request.notification()

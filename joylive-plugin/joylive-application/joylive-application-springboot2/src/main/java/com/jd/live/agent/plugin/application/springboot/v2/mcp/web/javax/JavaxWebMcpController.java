@@ -69,7 +69,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
             if (method == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            JavaxParserContext ctx = new JavaxParserContext(webRequest, httpRequest, httpResponse);
+            JavaxRequestContext ctx = new JavaxRequestContext(objectConverter, webRequest, httpRequest, httpResponse);
             Object[] args = parameterParser.parse(method, request.getParams(), objectConverter, ctx);
             Object result = method.getMethod().invoke(method.getController(), args);
             return request.notification()

@@ -15,9 +15,34 @@
  */
 package com.jd.live.agent.governance.mcp;
 
+import com.jd.live.agent.core.parser.ObjectConverter;
+import lombok.Getter;
+
 /**
- * Context for parameter parsing.
+ * Context interface for MCP request parameter conversion.
+ *
+ * <p>Provides access to an ObjectConverter that transforms MCP request
+ * parameters into method argument types.
+ *
+ * @see ObjectConverter
  */
 public interface RequestContext {
 
+    /**
+     * Gets the converter for transforming request parameters.
+     *
+     * @return the object converter instance
+     */
+    ObjectConverter getConverter();
+
+    @Getter
+    abstract class AbstractRequestContext implements RequestContext {
+
+        private ObjectConverter converter;
+
+        public AbstractRequestContext(ObjectConverter converter) {
+            this.converter = converter;
+        }
+
+    }
 }

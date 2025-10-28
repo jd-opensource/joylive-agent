@@ -21,11 +21,9 @@ import com.jd.live.agent.governance.jsonrpc.JsonRpcException;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcException.NotEnoughParameter;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * Default implementation of McpParameterConverter that handles parameter conversion for JSON-RPC calls.
@@ -161,59 +159,16 @@ public class DefaultMcpParameterParser implements McpParameterParser {
                            BiFunction<McpToolParameter, Integer, Object> paramFunc) throws Exception {
         Object[] args = new Object[parameters.length];
         if (parameters.length == 1) {
-            args[0] = parse(parameters[0], converter, ctx, p -> params);
+            args[0] = parameters[0].parse(ctx, p -> params);
         } else {
             AtomicInteger counter = new AtomicInteger(0);
             for (int i = 0; i < parameters.length; i++) {
-                args[i] = parse(parameters[i], converter, ctx, p -> paramFunc.apply(p, counter.getAndIncrement()));
+                args[i] = parameters[i].parse(ctx, p -> paramFunc.apply(p, counter.getAndIncrement()));
                 if (args[i] == null && parameters[i].isRequired()) {
                     throw new JsonRpcException("Required parameter at position " + i + " is missing", JsonRpcError.INVALID_PARAMS);
                 }
             }
         }
         return args;
-    }
-
-    /**
-     * Parses and converts a single parameter value.
-     *
-     * @param parameter target parameter definition
-     * @param converter object converter
-     * @param ctx       parsing context
-     * @param valueFunc function to get parameter value
-     * @return parsed and converted parameter value
-     */
-    private Object parse(McpToolParameter parameter,
-                         ObjectConverter converter,
-                         RequestContext ctx,
-                         Function<McpToolParameter, Object> valueFunc) throws Exception {
-        if (parameter.isFramework()) {
-            // system parser
-            return parameter.parse(ctx, converter);
-        }
-        return parameter.convert(valueFunc.apply(parameter), converter);
-    }
-
-    /**
-     * Converts a single value to target type using converter.
-     *
-     * @param value       Value to convert
-     * @param targetClass Target class type
-     * @param targetType  Target generic type
-     * @param converter   Object converter to use
-     * @return Converted value
-     */
-    private Object convert(Object value, Class<?> targetClass, Type targetType, ObjectConverter converter) {
-        if (value == null) {
-            return null;
-        }
-        try {
-            if (targetClass.isInstance(value) && (SIMPLE_TYPES.contains(targetClass) || targetClass.isEnum())) {
-                return value;
-            }
-            return converter.convert(value, targetType);
-        } catch (Exception e) {
-            throw new JsonRpcException("Failed to convert value to " + targetClass.getName(), e, JsonRpcError.INVALID_PARAMS);
-        }
     }
 }

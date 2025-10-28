@@ -15,16 +15,18 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractParserContext;
+import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.governance.mcp.RequestContext.AbstractRequestContext;
 import lombok.Getter;
 import org.springframework.web.server.ServerWebExchange;
 
 @Getter
-public class ReactiveParserContext extends AbstractParserContext {
+public class ReactiveRequestContext extends AbstractRequestContext {
 
     private final ServerWebExchange exchange;
 
-    public ReactiveParserContext(ServerWebExchange exchange) {
+    public ReactiveRequestContext(ObjectConverter converter, ServerWebExchange exchange) {
+        super(converter);
         this.exchange = exchange;
     }
 }

@@ -145,7 +145,7 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
     }
 
     private ServerWebExchange getWebExchange(RequestContext ctx) {
-        return ((ReactiveParserContext) ctx).getExchange();
+        return ((ReactiveRequestContext) ctx).getExchange();
     }
 
     private ServerHttpRequest getRequest(RequestContext ctx) {

@@ -60,7 +60,7 @@ public class ReactiveMcpController extends AbstractMcpController {
                 return Mono.just(JsonRpcResponse.createMethodNotFoundResponse(req.getId()));
             }
             try {
-                Object[] args = parameterParser.parse(method, req.getParams(), objectConverter, new ReactiveParserContext(exchange));
+                Object[] args = parameterParser.parse(method, req.getParams(), objectConverter, new ReactiveRequestContext(objectConverter, exchange));
                 Object result = method.invoke(args);
                 // Result may be a Mono object
                 return MonoConverter.INSTANCE.convert(result)

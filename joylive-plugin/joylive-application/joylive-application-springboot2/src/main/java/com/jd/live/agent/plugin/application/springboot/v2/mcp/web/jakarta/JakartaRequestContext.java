@@ -15,14 +15,15 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractParserContext;
+import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.governance.mcp.RequestContext.AbstractRequestContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
 
 @Getter
-public class JakartaParserContext extends AbstractParserContext {
+public class JakartaRequestContext extends AbstractRequestContext {
 
     private final WebRequest webRequest;
 
@@ -30,9 +31,8 @@ public class JakartaParserContext extends AbstractParserContext {
 
     private final HttpServletResponse httpResponse;
 
-    public JakartaParserContext(WebRequest webRequest,
-                                HttpServletRequest httpRequest,
-                                HttpServletResponse httpResponse) {
+    public JakartaRequestContext(ObjectConverter converter, WebRequest webRequest, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+        super(converter);
         this.webRequest = webRequest;
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;

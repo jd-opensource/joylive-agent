@@ -24,14 +24,16 @@ import java.io.Serializable;
  */
 public class JsonRpcRequest implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public static final String JSON_PATH_ID = "$.id";
 
-    private static final long serialVersionUID = 1L;
+    public static final String DEFAULT_VERSION = "2.0";
 
     /**
      * A String specifying the version of the JSON-RPC protocol. MUST be exactly "2.0".
      */
-    private String jsonrpc = "2.0";
+    private String jsonrpc = DEFAULT_VERSION;
 
     /**
      * A String containing the name of the method to be invoked.
@@ -103,6 +105,10 @@ public class JsonRpcRequest implements Serializable {
      */
     public boolean notification() {
         return id == null;
+    }
+
+    public boolean validate() {
+        return DEFAULT_VERSION.equals(jsonrpc) && method != null && !method.isEmpty();
     }
 
     @Override

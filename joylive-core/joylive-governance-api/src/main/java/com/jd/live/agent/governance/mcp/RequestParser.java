@@ -30,4 +30,30 @@ public interface RequestParser {
      */
     Object parse(RequestContext ctx) throws Exception;
 
+    /**
+     * Combines multiple request parsers and executes them in sequence until a non-null result is found.
+     */
+    class CompositeRequestParser implements RequestParser {
+
+        private RequestParser[] parsers;
+
+        public CompositeRequestParser(RequestParser... parsers) {
+            this.parsers = parsers;
+        }
+
+        @Override
+        public Object parse(RequestContext ctx) throws Exception {
+            Object result = null;
+            if (parsers != null) {
+                for (RequestParser parser : parsers) {
+                    result = parser.parse(ctx);
+                    if (result != null) {
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
 }

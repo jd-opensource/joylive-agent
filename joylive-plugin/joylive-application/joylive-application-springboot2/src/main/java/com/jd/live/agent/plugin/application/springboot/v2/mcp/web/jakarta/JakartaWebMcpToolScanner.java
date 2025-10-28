@@ -102,15 +102,15 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
     }
 
     private WebRequest getWebRequest(RequestContext ctx) {
-        return ((JakartaParserContext) ctx).getWebRequest();
+        return ((JakartaRequestContext) ctx).getWebRequest();
     }
 
     private HttpServletRequest getHttpRequest(RequestContext ctx) {
-        return ((JakartaParserContext) ctx).getHttpRequest();
+        return ((JakartaRequestContext) ctx).getHttpRequest();
     }
 
     private HttpServletResponse getHttpResponse(RequestContext ctx) {
-        return ((JakartaParserContext) ctx).getHttpResponse();
+        return ((JakartaRequestContext) ctx).getHttpResponse();
     }
 
     private HttpSession getSession(RequestContext ctx) {

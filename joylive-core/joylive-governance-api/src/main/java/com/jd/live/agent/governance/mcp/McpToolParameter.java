@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.governance.mcp;
 
-import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.util.converter.Converter;
 import lombok.Getter;
 
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.SIMPLE_TYPES;
 
@@ -54,6 +54,8 @@ public class McpToolParameter {
 
     private final RequestParser parser;
 
+    private final RequestParser defaultValueParser;
+
     public McpToolParameter(Parameter parameter,
                             int index,
                             Type actualType,
@@ -62,7 +64,8 @@ public class McpToolParameter {
                             boolean optional,
                             boolean convertable,
                             Converter<Object, ?> converter,
-                            RequestParser parser) {
+                            RequestParser parser,
+                            RequestParser defaultValueParser) {
         this.parameter = parameter;
         this.name = parameter.getName();
         this.arg = arg;
@@ -75,6 +78,7 @@ public class McpToolParameter {
         this.convertable = convertable;
         this.converter = converter;
         this.parser = parser;
+        this.defaultValueParser = defaultValueParser;
     }
 
     public String getArg() {
@@ -92,34 +96,36 @@ public class McpToolParameter {
         return parser != null;
     }
 
-    public Object parse(RequestContext ctx, ObjectConverter converter) throws Exception {
-        if (parser == null) {
-            return convert(null);
+    public Object parse(RequestContext ctx, Function<McpToolParameter, Object> valueFunc) throws Exception {
+        Object result;
+        if (isFramework()) {
+            // system parser
+            result = parser.parse(ctx);
+            result = result == null && defaultValueParser != null ? defaultValueParser.parse(ctx) : result;
+            result = convertable ? convert(ctx, result) : result;
+        } else {
+            result = valueFunc.apply(this);
+            result = result == null && defaultValueParser != null ? defaultValueParser.parse(ctx) : result;
+            result = convert(ctx, result);
         }
-        Object result = parser.parse(ctx);
-        if (result != null && convertable) {
-            return convert(result, converter);
-        }
-        return convert(result);
+        return wrap(result);
     }
 
-    public Object convert(Object result, ObjectConverter converter) {
-        Object converted = result;
-        if (result != null) {
-            Class<?> actualClass = getActualClass();
-            Class<?> resultClass = result.getClass();
-            if (actualClass.isInstance(result)) {
-                if (SIMPLE_TYPES.contains(resultClass) || resultClass.isEnum()) {
-                    return convert(result);
-                }
+    private Object convert(RequestContext ctx, Object target) {
+        if (target == null) {
+            return null;
+        }
+        Class<?> resultClass = getActualClass();
+        Class<?> targetClass = target.getClass();
+        if (resultClass.isInstance(target)) {
+            if (SIMPLE_TYPES.contains(targetClass) || targetClass.isEnum()) {
+                return wrap(target);
             }
-            converted = converter.convert(result, actualType);
         }
-
-        return convert(converted);
+        return ctx.getConverter().convert(target, actualType);
     }
 
-    public Object convert(Object value) {
+    private Object wrap(Object value) {
         return value == null || converter == null ? value : converter.convert(value);
     }
 
@@ -140,6 +146,7 @@ public class McpToolParameter {
         private boolean convertable;
         private Converter<Object, ?> converter;
         private RequestParser parser;
+        private RequestParser defaultValueParser;
 
         public McpToolParameterBuilder parameter(Parameter parameter) {
             this.parameter = parameter;
@@ -187,6 +194,11 @@ public class McpToolParameter {
 
         public McpToolParameterBuilder parser(RequestParser parser) {
             this.parser = parser;
+            return this;
+        }
+
+        public McpToolParameterBuilder defaultValueParser(RequestParser defaultValueParser) {
+            this.defaultValueParser = defaultValueParser;
             return this;
         }
 
@@ -238,6 +250,10 @@ public class McpToolParameter {
             return this.parser;
         }
 
+        public RequestParser defaultValueParser() {
+            return this.defaultValueParser;
+        }
+
         public Class<?> actualClass() {
             return actualType instanceof Class ? (Class<?>) actualType : type;
         }
@@ -251,7 +267,7 @@ public class McpToolParameter {
         }
 
         public McpToolParameter build() {
-            return new McpToolParameter(parameter, index, actualType, arg, required, optional, convertable, converter, parser);
+            return new McpToolParameter(parameter, index, actualType, arg, required, optional, convertable, converter, parser, defaultValueParser);
         }
     }
 

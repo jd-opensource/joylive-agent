@@ -108,15 +108,15 @@ public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
     }
 
     private WebRequest getWebRequest(RequestContext ctx) {
-        return ((JavaxParserContext) ctx).getWebRequest();
+        return ((JavaxRequestContext) ctx).getWebRequest();
     }
 
     private HttpServletRequest getHttpRequest(RequestContext ctx) {
-        return ((JavaxParserContext) ctx).getHttpRequest();
+        return ((JavaxRequestContext) ctx).getHttpRequest();
     }
 
     private HttpServletResponse getHttpResponse(RequestContext ctx) {
-        return ((JavaxParserContext) ctx).getHttpResponse();
+        return ((JavaxRequestContext) ctx).getHttpResponse();
     }
 
     private Principal getPrincipal(RequestContext ctx, Class<?> type) {
