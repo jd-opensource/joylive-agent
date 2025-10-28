@@ -26,7 +26,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.router.springweb.v7.condition.ConditionalOnSpringWeb7GovernanceEnabled;
+import com.jd.live.agent.plugin.router.springweb.v7.condition.ConditionalOnSpringWeb7FlowControlEnabled;
 import com.jd.live.agent.plugin.router.springweb.v7.interceptor.DispatcherHandlerExceptionInterceptor;
 
 /**
@@ -38,7 +38,7 @@ import com.jd.live.agent.plugin.router.springweb.v7.interceptor.DispatcherHandle
  */
 @Injectable
 @Extension(value = "DispatcherHandlerDefinition_v7")
-@ConditionalOnSpringWeb7GovernanceEnabled
+@ConditionalOnSpringWeb7FlowControlEnabled
 @ConditionalOnReactive
 @ConditionalOnClass(DispatcherHandlerDefinition.TYPE_DISPATCHER_HANDLER)
 public class DispatcherHandlerDefinition extends PluginDefinitionAdapter {
