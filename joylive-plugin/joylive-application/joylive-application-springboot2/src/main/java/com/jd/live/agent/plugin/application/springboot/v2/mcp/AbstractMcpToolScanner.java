@@ -201,7 +201,6 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         }
         McpToolParameter[] result = new McpToolParameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
-            // TODO default value
             result[i] = createParameter(parameters[i], i);
         }
         return result;
