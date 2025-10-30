@@ -15,27 +15,30 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.policy.PolicyId;
-import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithId;
-import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.jd.live.agent.core.util.StringUtils.choose;
+import static java.util.Collections.sort;
 
 /**
  * Auth policy
  *
  * @since 1.2.0
  */
-public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPolicy>, PolicyInheritWithIdGen<AuthPolicy>, Serializable {
+public class AuthPolicy extends PolicyId implements Serializable {
 
-    public static final String DEFAULT_AUTH_TYPE = "token";
+    public static final String AUTH_TYPE_TOKEN = "token";
+
+    public static final String AUTH_TYPE_JWT = "jwt";
 
     @Getter
     @Setter
@@ -49,12 +52,14 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
     private String type;
 
     @Getter
+    private List<TokenPolicy> tokenPolicies;
+
+    @Getter
+    private List<JWTPolicy> jwtPolicies;
+
+    @Getter
     @Setter
     private Map<String, String> params;
-
-    private final transient LazyObject<TokenPolicy> tokenPolicyCache = new LazyObject<>(() -> new TokenPolicy(params));
-
-    private final transient LazyObject<JWTPolicy> jwtPolicyCache = new LazyObject<>(() -> new JWTPolicy(params));
 
     public AuthPolicy() {
     }
@@ -62,22 +67,6 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
     public AuthPolicy(String type, Map<String, String> params) {
         this.type = type;
         this.params = params;
-    }
-
-    @Override
-    public void supplement(AuthPolicy source) {
-        if (source == null) {
-            return;
-        }
-        if (type == null) {
-            type = source.type;
-        }
-        if (application == null) {
-            application = source.application;
-        }
-        if (params == null && source.params != null) {
-            params = new HashMap<>(source.params);
-        }
     }
 
     public String getParameter(String key) {
@@ -88,23 +77,101 @@ public class AuthPolicy extends PolicyId implements PolicyInheritWithId<AuthPoli
         return choose(getParameter(key), defaultValue);
     }
 
-    public TokenPolicy getTokenPolicy() {
-        return tokenPolicyCache.get();
+    /**
+     * Gets the best effective token policy at specified time.
+     *
+     * @return the latest effective token policy, or null if none found
+     */
+    public TokenPolicy getLatestEffectiveTokenPolicy() {
+        return getLatestEffectivePolicy(tokenPolicies);
     }
 
-    public JWTPolicy getJwtPolicy() {
-        return jwtPolicyCache.get();
+    /**
+     * Gets the best effective JWT policy at specified time.
+     *
+     * @return the latest effective JWT policy, or null if none found
+     */
+    public JWTPolicy getLatestEffectiveJwtPolicy() {
+        return getLatestEffectivePolicy(jwtPolicies);
     }
 
-    public String getTypeOrDefault(final String defaultValue) {
-        return type == null || type.isEmpty() ? defaultValue : type;
+    /**
+     * Gets the latest effective policy from a list of auth strategies.
+     *
+     * @param <T>      type of auth strategy
+     * @param policies list of policies to check
+     * @return first valid and effective policy found, or null if none found
+     */
+    protected <T extends AuthStrategy> T getLatestEffectivePolicy(List<T> policies) {
+        long time = System.currentTimeMillis();
+        int size = policies == null ? 0 : policies.size();
+        switch (size) {
+            case 0:
+                return null;
+            case 1:
+                T first = policies.get(0);
+                return first.isEffective(time) ? first : null;
+            default:
+                for (T policy : policies) {
+                    if (policy.isEffective(time)) {
+                        return policy;
+                    }
+                }
+                return null;
+        }
     }
 
-    public String getTypeOrDefault() {
-        return type == null || type.isEmpty() ? DEFAULT_AUTH_TYPE : type;
-    }
-
+    /**
+     * Checks if this strategy matches given application.
+     * Returns true if application is null/empty or equals to the given one.
+     *
+     * @param application application name to match
+     * @return true if matches, false otherwise
+     */
     public boolean match(String application) {
         return this.application == null || this.application.isEmpty() || this.application.equals(application);
+    }
+
+    public void cache() {
+        if ((tokenPolicies == null || tokenPolicies.isEmpty()) && AUTH_TYPE_TOKEN.equals(type)) {
+            tokenPolicies = Optional.of(new TokenPolicy(params))
+                    .filter(TokenPolicy::isValid)
+                    .map(Arrays::asList)
+                    .orElse(null);
+        }
+        if ((jwtPolicies == null || jwtPolicies.isEmpty()) && AUTH_TYPE_JWT.equals(type)) {
+            jwtPolicies = Optional.of(new JWTPolicy(params))
+                    .filter(JWTPolicy::isValid)
+                    .map(Arrays::asList)
+                    .orElse(null);
+        }
+        supplement();
+        if (tokenPolicies != null) {
+            tokenPolicies.forEach(TokenPolicy::cache);
+            sort(tokenPolicies, (o1, o2) -> Long.compare(o2.getStartTime(), o1.getStartTime()));
+        }
+        if (jwtPolicies != null) {
+            jwtPolicies.forEach(JWTPolicy::cache);
+            sort(jwtPolicies, (o1, o2) -> Long.compare(o2.getStartTime(), o1.getStartTime()));
+        }
+    }
+
+    protected void supplement() {
+        AtomicInteger counter = new AtomicInteger(0);
+        if (tokenPolicies != null) {
+            for (TokenPolicy tokenPolicy : tokenPolicies) {
+                tokenPolicy.supplement(() -> uri.parameter(KEY_TOKEN_POLICY_ID, String.valueOf(
+                        tokenPolicy.getId() == null ? counter.incrementAndGet() : tokenPolicy.getId()
+                )));
+            }
+        }
+        if (jwtPolicies != null) {
+            counter.set(0);
+            for (JWTPolicy jwtPolicy : jwtPolicies) {
+                jwtPolicy.supplement(() -> uri.parameter(KEY_JWT_POLICY_ID, String.valueOf(
+                        jwtPolicy.getId() == null ? counter.incrementAndGet() : jwtPolicy.getId()
+                )));
+            }
+        }
     }
 }

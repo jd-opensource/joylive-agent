@@ -70,6 +70,10 @@ public class PolicyId implements PolicyIdGen {
 
     public static final String KEY_SERVICE_ENDPOINT = "endpoint";
 
+    public static final String KEY_TOKEN_POLICY_ID = "tokenPolicyId";
+
+    public static final String KEY_JWT_POLICY_ID = "jwtPolicyId";
+
     /**
      * The unique identifier for the policy, generated based on the URI.
      */

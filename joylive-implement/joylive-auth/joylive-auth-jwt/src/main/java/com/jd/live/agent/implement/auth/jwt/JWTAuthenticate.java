@@ -25,15 +25,13 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.security.KeyStore;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.invoke.auth.Authenticate;
+import com.jd.live.agent.governance.invoke.auth.AbstractAuthenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.JWTAlgorithmContext;
 import com.jd.live.agent.governance.policy.service.auth.JWTAlgorithmRole;
 import com.jd.live.agent.governance.policy.service.auth.JWTPolicy;
-import com.jd.live.agent.governance.request.HttpRequest;
-import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import lombok.Getter;
@@ -42,13 +40,13 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.choose;
+import static com.jd.live.agent.governance.policy.service.auth.AuthPolicy.AUTH_TYPE_JWT;
 
 @Injectable
-@Extension("jwt")
-public class JWTAuthenticate implements Authenticate {
+@Extension(AUTH_TYPE_JWT)
+public class JWTAuthenticate extends AbstractAuthenticate {
 
     private static final Logger logger = LoggerFactory.getLogger(JWTAuthenticate.class);
 
@@ -66,59 +64,63 @@ public class JWTAuthenticate implements Authenticate {
 
     @Override
     public Permission authenticate(ServiceRequest request, AuthPolicy policy, String service, String consumer) {
-        String token = decode(request, policy);
+        return authenticate(policy.getJwtPolicies(), p -> authenticate(request, p, service, consumer));
+    }
+
+    @Override
+    public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
+        JWTPolicy jwtPolicy = policy.getLatestEffectiveJwtPolicy();
+        if (jwtPolicy == null) {
+            return;
+        }
+        String key = jwtPolicy.getKeyOrDefault(KEY_AUTH);
+        if (request.getHeader(key) != null) {
+            return;
+        }
         try {
-            JWTAlgorithm algorithm = getOrCreateAlgorithm(policy, () -> getVerifyContext(policy.getJwtPolicy()));
+            JWTAlgorithmContext context = getSignatureContext(jwtPolicy, consumer, service);
+            JWTToken jwtToken = getOrCreateToken(jwtPolicy, context);
+            if (jwtToken != null && jwtToken.validate()) {
+                String value = decorate(request, jwtPolicy, key, jwtToken.getToken(), null);
+                request.setHeader(key, value);
+            } else {
+                logger.warn("Failed to create jwt token for {}", jwtPolicy.getUri());
+            }
+        } catch (Exception e) {
+            // Invalid Signing configuration / Couldn't convert Claims.
+            logger.error("Failed to create jwt token for {}", jwtPolicy.getUri(), e);
+        }
+    }
+
+    /**
+     * Authenticates request using JWT token verification.
+     *
+     * @param request   service request to authenticate
+     * @param jwtPolicy JWT verification policy
+     * @param service   target service name
+     * @param consumer  consumer identity
+     * @return authentication result
+     */
+    private Permission authenticate(ServiceRequest request, JWTPolicy jwtPolicy, String service, String consumer) {
+        Token token = getToken(request, jwtPolicy);
+        String value = token == null ? "" : token.getToken();
+        try {
+            JWTAlgorithmContext context = getVerifyContext(jwtPolicy);
+            JWTAlgorithm algorithm = getOrCreateAlgorithm(jwtPolicy, context);
             if (algorithm == null) {
                 return Permission.success();
-            } else if (token == null || token.isEmpty()) {
+            } else if (value.isEmpty()) {
                 return Permission.failure("Failed to verify JWT token, the token is empty.");
             }
-            JWT.require(algorithm.getAlgorithm()).withIssuer(consumer).withAudience(service).build().verify(token);
+            JWT.require(algorithm.getAlgorithm()).withIssuer(consumer).withAudience(service).build().verify(value);
             return Permission.success();
         } catch (JWTVerificationException e) {
-            return Permission.failure("Failed to verify JWT token " + token);
+            return Permission.failure("Failed to verify JWT token " + value);
         } catch (Exception e) {
             // Invalid Signing configuration / Couldn't convert Claims.
             logger.error("Failed to create JWT token", e);
             return Permission.success();
         }
-    }
-
-    @Override
-    public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
-        try {
-            JWTPolicy jwtPolicy = policy.getJwtPolicy();
-            String key = jwtPolicy.getKeyOrDefault(KEY_AUTH);
-            if (request.getHeader(key) == null) {
-                JWTToken jwtToken = getOrCreateToken(policy, () -> getSignatureContext(jwtPolicy, consumer, service));
-                if (jwtToken != null && jwtToken.validate()) {
-                    request.setHeader(key, decorate(request, key, jwtToken.getToken()));
-                } else {
-                    logger.warn("Failed to create jwt token for {}", policy.getUri());
-                }
-            }
-        } catch (Exception e) {
-            // Invalid Signing configuration / Couldn't convert Claims.
-            logger.error("Failed to create jwt token for {}", policy.getUri(), e);
-        }
-    }
-
-    /**
-     * Retrieves a token from the specified service request using the given key.
-     *
-     * @param request the service request
-     * @param policy  the auth policy
-     * @return the token value, or null if not found
-     */
-    private String decode(ServiceRequest request, AuthPolicy policy) {
-        String key = policy.getJwtPolicy().getKeyOrDefault(KEY_AUTH);
-        String token = request.getHeader(key);
-        if (token != null && request instanceof HttpRequest && KEY_AUTH.equalsIgnoreCase(key) && token.startsWith(BEARER_PREFIX)) {
-            // bear auth
-            return token.substring(BEARER_PREFIX.length());
-        }
-        return token;
     }
 
     /**
@@ -172,18 +174,17 @@ public class JWTAuthenticate implements Authenticate {
     }
 
     /**
-     * Gets cached algorithm instance or creates new one if needed.
+     * Gets or creates JWT algorithm instance from cache.
      *
-     * @param policy   Authentication policy containing JWT configuration
-     * @param supplier Context factory for algorithm creation
-     * @return Initialized algorithm instance, or null if unsupported
-     * @throws Exception If algorithm initialization fails
+     * @param policy JWT configuration policy
+     * @param context Algorithm creation context
+     * @return JWT algorithm instance, or null if unsupported
+     * @throws Exception on algorithm initialization failure
      */
-    private JWTAlgorithm getOrCreateAlgorithm(AuthPolicy policy, Supplier<JWTAlgorithmContext> supplier) throws Exception {
-        JWTAlgorithmContext context = supplier.get();
+    private JWTAlgorithm getOrCreateAlgorithm(JWTPolicy policy, JWTAlgorithmContext context) throws Exception {
         JWTAlgorithm jwtAlgorithm = algorithms.get(policy.getId());
         if (jwtAlgorithm == null || jwtAlgorithm.getContext() != context) {
-            JWTAlgorithmBuilder factory = JWTAlgorithmBuilderFactory.getBuilder(policy.getJwtPolicy().getAlgorithm());
+            JWTAlgorithmBuilder factory = JWTAlgorithmBuilderFactory.getBuilder(policy.getAlgorithm());
             if (factory == null) {
                 return null;
             }
@@ -200,8 +201,8 @@ public class JWTAuthenticate implements Authenticate {
      * @return Valid JWT token, or null if algorithm creation fails
      * @throws Exception if token generation or cryptographic operations fail
      */
-    private JWTToken getOrCreateToken(AuthPolicy policy, Supplier<JWTAlgorithmContext> supplier) throws Exception {
-        JWTAlgorithm jwtAlgorithm = getOrCreateAlgorithm(policy, supplier);
+    private JWTToken getOrCreateToken(JWTPolicy policy, JWTAlgorithmContext context) throws Exception {
+        JWTAlgorithm jwtAlgorithm = getOrCreateAlgorithm(policy, context);
         if (jwtAlgorithm == null) {
             return null;
         }
@@ -233,21 +234,6 @@ public class JWTAuthenticate implements Authenticate {
                 addRefreshTask(token);
             }
         });
-    }
-
-    /**
-     * Decorates a token with 'Bearer' prefix when required for HTTP auth headers.
-     *
-     * @param request Target service request (checked for HTTP type)
-     * @param key     Header name (checked against auth constant)
-     * @param token   Original token value
-     * @return Original token or Bearer-prefixed token if auth header required
-     */
-    private String decorate(ServiceRequest request, String key, String token) {
-        if (request instanceof HttpOutboundRequest && key.equalsIgnoreCase(KEY_AUTH) && !token.startsWith(BEARER_PREFIX)) {
-            token = BEARER_PREFIX + token;
-        }
-        return token;
     }
 
     @Getter

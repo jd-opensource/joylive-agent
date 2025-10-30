@@ -188,7 +188,7 @@ public class Service extends PolicyOwner implements ServiceName {
     public AuthPolicy getAuthPolicy(String application) {
         // get consumer auth policy
         AuthPolicy result = authPolicyCache.get(application);
-        return result == null && authPolicy != null && authPolicy.match(application) ? authPolicy : null;
+        return result == null && authPolicy != null && authPolicy.match(application) ? authPolicy : result;
     }
 
     /**
@@ -199,6 +199,14 @@ public class Service extends PolicyOwner implements ServiceName {
             serviceType = ServiceType.HTTP;
         }
         supplement(() -> SERVICE_URI.host(name));
+        if (authPolicy != null) {
+            authPolicy.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, authPolicy.getApplication()));
+        }
+        if (authPolicies != null) {
+            for (AuthPolicy authPolicy : authPolicies) {
+                authPolicy.supplement(() -> uri.parameter(KEY_SERVICE_AUTH, authPolicy.getApplication()));
+            }
+        }
         if (groups != null) {
             for (ServiceGroup group : groups) {
                 group.setServiceType(serviceType);
@@ -229,6 +237,12 @@ public class Service extends PolicyOwner implements ServiceName {
             groups.forEach(ServiceGroup::cache);
         }
         groupCache.get("");
+        if (authPolicy != null) {
+            authPolicy.cache();
+        }
+        if (authPolicies != null) {
+            authPolicies.forEach(AuthPolicy::cache);
+        }
         authPolicyCache.get("");
     }
 

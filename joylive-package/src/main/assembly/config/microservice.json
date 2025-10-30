@@ -92,9 +92,14 @@
       {
         "application": "service-consumer",
         "type": "token",
-        "params": {
-          "token": "1234567890"
-        }
+        "tokenPolicies": [
+          {
+            "token": "123456789"
+          },
+          {
+            "token": "1234567890"
+          }
+        ]
       }
     ],
     "version": 0,

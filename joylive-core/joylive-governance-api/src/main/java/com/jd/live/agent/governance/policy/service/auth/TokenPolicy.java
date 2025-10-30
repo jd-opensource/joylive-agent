@@ -15,22 +15,24 @@
  */
 package com.jd.live.agent.governance.policy.service.auth;
 
-import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.option.MapOption;
 import com.jd.live.agent.core.util.option.Option;
 import com.jd.live.agent.governance.invoke.auth.Authenticate;
+import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
-public class TokenPolicy {
+public class TokenPolicy extends PolicyId implements AuthStrategy, Serializable {
 
-    public static final String KEY_TOKEN = "token";
-
-    public static final String KEY_TOKEN_KEY = "token.key";
+    private static final String KEY_TOKEN = "token";
+    private static final String KEY_TOKEN_KEY = "key";
+    private static final String KEY_TOKEN_START_TIME = "startTime";
+    private static final String KEY_TOKEN_END_TIME = "endTime";
 
     @Getter
     @Setter
@@ -40,9 +42,18 @@ public class TokenPolicy {
     @Setter
     private String token;
 
-    private final transient LazyObject<String> encodedCache = new LazyObject<>(() -> token == null || token.isEmpty()
-            ? ""
-            : new String(Base64.getEncoder().encode(token.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
+    @Getter
+    @Setter
+    private long startTime;
+
+    @Getter
+    @Setter
+    private long endTime;
+
+    @Getter
+    private transient boolean valid;
+
+    private transient String encoded;
 
     public TokenPolicy() {
     }
@@ -50,24 +61,40 @@ public class TokenPolicy {
     public TokenPolicy(String key, String token) {
         this.key = key;
         this.token = token;
+        cache();
     }
 
     public TokenPolicy(Map<String, String> map) {
         Option option = MapOption.of(map);
         this.key = option.getString(KEY_TOKEN_KEY, Authenticate.KEY_AUTH);
         this.token = option.getString(KEY_TOKEN);
-    }
-
-    public boolean isValid() {
-        return token != null && !token.isEmpty();
+        this.startTime = option.getLong(KEY_TOKEN_START_TIME, 0L);
+        this.endTime = option.getLong(KEY_TOKEN_END_TIME, Long.MAX_VALUE);
+        cache();
     }
 
     public String getBase64Token() {
-        return encodedCache.get();
+        return encoded;
     }
 
     public String getKeyOrDefault(final String defaultKey) {
         return key == null || key.isEmpty() ? defaultKey : key;
     }
 
+    @Override
+    public String getAuthScheme() {
+        return "Basic";
+    }
+
+    public boolean isEffective(long time) {
+        return valid && time >= startTime && time < endTime;
+    }
+
+    protected void cache() {
+        endTime = endTime <= 0 ? Long.MAX_VALUE : endTime;
+        valid = token != null && !token.isEmpty();
+        encoded = token == null || token.isEmpty()
+                ? ""
+                : new String(Base64.getEncoder().encode(token.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
+    }
 }

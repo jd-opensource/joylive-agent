@@ -16,88 +16,72 @@
 package com.jd.live.agent.governance.invoke.auth.token;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.invoke.auth.Authenticate;
+import com.jd.live.agent.governance.invoke.auth.AbstractAuthenticate;
 import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import com.jd.live.agent.governance.policy.service.auth.TokenPolicy;
-import com.jd.live.agent.governance.request.HttpRequest;
-import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Objects;
 
-@Extension("token")
-public class TokenAuthenticate implements Authenticate {
+import static com.jd.live.agent.governance.policy.service.auth.AuthPolicy.AUTH_TYPE_TOKEN;
+
+@Extension(AUTH_TYPE_TOKEN)
+public class TokenAuthenticate extends AbstractAuthenticate {
 
     @Override
     public Permission authenticate(ServiceRequest request, AuthPolicy policy, String service, String consumer) {
-        TokenPolicy tokenPolicy = policy.getTokenPolicy();
-        if (tokenPolicy != null && tokenPolicy.isValid() && !decodeAndCompare(request, tokenPolicy)) {
-            return Permission.failure("Token is not correct.");
-        }
-        return Permission.success();
+        return authenticate(policy.getTokenPolicies(), p -> authenticate(request, p));
     }
 
     @Override
     public void inject(OutboundRequest request, AuthPolicy policy, String service, String consumer) {
-        TokenPolicy tokenPolicy = policy.getTokenPolicy();
-        if (tokenPolicy != null && tokenPolicy.isValid()) {
-            String key = tokenPolicy.getKeyOrDefault(KEY_AUTH);
-            if (request.getHeader(key) == null) {
-                request.setHeader(key, encode(request, tokenPolicy, key));
-            }
+        TokenPolicy tokenPolicy = policy.getLatestEffectiveTokenPolicy();
+        if (tokenPolicy == null) {
+            return;
         }
+        String key = tokenPolicy.getKeyOrDefault(KEY_AUTH);
+        if (request.getHeader(key) != null) {
+            return;
+        }
+        String token = decorate(request, tokenPolicy, key, tokenPolicy.getToken(), () -> tokenPolicy.getBase64Token());
+        request.setHeader(key, token);
     }
 
     /**
-     * encode a token before injecting it into the specified HTTP outbound request.
+     * Authenticates a service request against a token policy.
+     * Supports both Basic Auth and simple token authentication.
      *
-     * @param request the HTTP outbound request
-     * @param policy  the token policy
-     * @param key     the token ken
-     * @return the decorated token value
+     * @param request the service request to authenticate
+     * @param policy  the token policy to validate against
+     * @return success permission if authenticated, failure permission otherwise
      */
-    private String encode(OutboundRequest request, TokenPolicy policy, String key) {
-        String token = policy.getToken();
-        if (request instanceof HttpOutboundRequest && key.equalsIgnoreCase(KEY_AUTH) && !token.startsWith(BASIC_PREFIX)) {
-            token = BASIC_PREFIX + policy.getBase64Token();
+    private Permission authenticate(ServiceRequest request, TokenPolicy policy) {
+        Token token = getToken(request, policy);
+        if (token == null || !token.isValid()) {
+            return Permission.failure("Missing token");
         }
-        return token;
-    }
-
-    /**
-     * Retrieves a token from the specified service request using the given key.
-     *
-     * @param request the service request
-     * @param policy  the token policy
-     * @return the token value, or null if not found
-     */
-    private boolean decodeAndCompare(ServiceRequest request, TokenPolicy policy) {
-        String key = policy.getKeyOrDefault(KEY_AUTH);
-        String token = request.getHeader(key);
-        if (token != null
-                && request instanceof HttpRequest
-                && KEY_AUTH.equalsIgnoreCase(key)
-                && token.startsWith(BASIC_PREFIX)) {
-            // basic auth
-            token = token.substring(BASIC_PREFIX.length());
-            if (Objects.equals(policy.getBase64Token(), token)) {
+        String value = token.getToken();
+        if (token.isAuthorization()) {
+            if (value.equals(policy.getBase64Token())) {
                 // base64 encoded,improve performance.
-                return true;
-            } else {
+                return Permission.success();
+            } else if (value.length() > policy.getToken().length()) {
+                // base64 will add more chars
                 try {
-                    token = new String(Base64.getDecoder().decode(token), StandardCharsets.UTF_8);
-                    int pos = token.indexOf(":");
+                    value = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
+                    int pos = value.indexOf(":");
                     if (pos != -1) {
-                        token = token.substring(pos + 1);
+                        value = value.substring(pos + 1);
                     }
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    return Permission.failure("Invalid token encoding");
                 }
             }
         }
-        return Objects.equals(policy.getToken(), token);
+        return value.equals(policy.getToken()) ? Permission.success() : Permission.failure("Token is not correct.");
     }
+
 }

@@ -28,10 +28,6 @@ public interface Authenticate {
 
     String KEY_AUTH = "Authorization";
 
-    String BASIC_PREFIX = "Basic ";
-
-    String BEARER_PREFIX = "Bearer ";
-
     /**
      * Authenticates a request using given policy.
      *
