@@ -22,6 +22,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.time.Timer.getRetryInterval;
 
@@ -209,16 +210,18 @@ public class TimeScheduler implements AutoCloseable, Timer {
     }
 
     @Override
-    public void schedule(String name, long interval, long random, Runnable runnable) {
+    public void schedule(String name, long interval, long random, Runnable runnable, Supplier<Boolean> condition) {
         if (runnable == null) {
             return;
         }
         delay(name, getRetryInterval(interval, random), () -> {
-            try {
-                runnable.run();
-            } finally {
-                if (started.get()) {
-                    schedule(name, interval, random, runnable);
+            if (condition == null || condition.get()) {
+                try {
+                    runnable.run();
+                } finally {
+                    if (started.get()) {
+                        schedule(name, interval, random, runnable);
+                    }
                 }
             }
         });

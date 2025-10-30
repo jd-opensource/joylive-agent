@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.util.time;
 
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
 /**
  * The Timer interface defines the contract for a timing mechanism that can schedule tasks
@@ -62,7 +63,7 @@ public interface Timer {
      * @param runnable task to execute
      */
     default void schedule(String name, long interval, Runnable runnable) {
-        schedule(name, interval, 0, runnable);
+        schedule(name, interval, 0, runnable, null);
     }
 
     /**
@@ -73,7 +74,20 @@ public interface Timer {
      * @param random   additional random delay in milliseconds
      * @param runnable task to execute
      */
-    void schedule(String name, long interval, long random, Runnable runnable);
+    default void schedule(String name, long interval, long random, Runnable runnable) {
+        schedule(name, interval, random, runnable, null);
+    }
+
+    /**
+     * Schedules a task with interval and random delay.
+     *
+     * @param name      task identifier
+     * @param interval  base delay (ms)
+     * @param random    max random delay (ms)
+     * @param runnable  task to run
+     * @param condition execution condition
+     */
+    void schedule(String name, long interval, long random, Runnable runnable, Supplier<Boolean> condition);
 
     /**
      * Calculates actual retry interval with optional random jitter.
