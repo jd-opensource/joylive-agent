@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.registry.polaris.v2.registry;
 
-import com.jd.live.agent.core.util.ExecutorServiceAdaptor;
+import com.jd.live.agent.core.thread.ExecutorServiceAdaptor;
 import com.jd.live.agent.governance.registry.RegistryService;
 
 import java.util.concurrent.ExecutorService;
