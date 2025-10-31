@@ -20,13 +20,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.jd.live.agent.core.util.StringUtils.choose;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static java.util.Collections.sort;
 
 /**
@@ -59,22 +57,9 @@ public class AuthPolicy extends PolicyId implements Serializable {
 
     @Getter
     @Setter
-    private Map<String, String> params;
+    private List<Map<String, String>> params;
 
     public AuthPolicy() {
-    }
-
-    public AuthPolicy(String type, Map<String, String> params) {
-        this.type = type;
-        this.params = params;
-    }
-
-    public String getParameter(String key) {
-        return params == null || key == null ? null : params.get(key);
-    }
-
-    public String getParameter(String key, String defaultValue) {
-        return choose(getParameter(key), defaultValue);
     }
 
     /**
@@ -133,17 +118,17 @@ public class AuthPolicy extends PolicyId implements Serializable {
     }
 
     public void cache() {
-        if ((tokenPolicies == null || tokenPolicies.isEmpty()) && AUTH_TYPE_TOKEN.equals(type)) {
-            tokenPolicies = Optional.of(new TokenPolicy(params))
-                    .filter(TokenPolicy::isValid)
-                    .map(Arrays::asList)
-                    .orElse(null);
+        if ((tokenPolicies == null || tokenPolicies.isEmpty()) && AUTH_TYPE_TOKEN.equals(type) && params != null && !params.isEmpty()) {
+            tokenPolicies = toList(params, p -> {
+                TokenPolicy tokenPolicy = new TokenPolicy(p);
+                return tokenPolicy.isValid() ? tokenPolicy : null;
+            });
         }
-        if ((jwtPolicies == null || jwtPolicies.isEmpty()) && AUTH_TYPE_JWT.equals(type)) {
-            jwtPolicies = Optional.of(new JWTPolicy(params))
-                    .filter(JWTPolicy::isValid)
-                    .map(Arrays::asList)
-                    .orElse(null);
+        if ((jwtPolicies == null || jwtPolicies.isEmpty()) && AUTH_TYPE_JWT.equals(type) && params != null && !params.isEmpty()) {
+            jwtPolicies = toList(params, p -> {
+                JWTPolicy jwtPolicy = new JWTPolicy(p);
+                return jwtPolicy.isValid() ? jwtPolicy : null;
+            });
         }
         supplement();
         if (tokenPolicies != null) {

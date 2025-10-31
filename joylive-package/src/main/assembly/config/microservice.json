@@ -84,9 +84,11 @@
     "authorized": false,
     "authPolicy": {
       "type": "token",
-      "params": {
+      "params": [
+        {
         "token": "1234567890"
-      }
+        }
+      ]
     },
     "authPolicies": [
       {
