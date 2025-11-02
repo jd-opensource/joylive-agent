@@ -39,6 +39,10 @@ public class McpToolMethod {
 
     private final Set<String> paths;
 
+    // TODO String[] params()
+    // TODO String[] headers()
+    // TODO String version() 1.7/1.7+
+
     @Builder
     public McpToolMethod(String name,
                          Object controller,
