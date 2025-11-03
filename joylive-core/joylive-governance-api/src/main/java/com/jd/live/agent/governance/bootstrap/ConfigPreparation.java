@@ -66,8 +66,10 @@ public class ConfigPreparation extends AppListenerAdapter {
 
     @Override
     public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
-        env.ifPresentRemotes(remotes -> environment.addFirst(new MapSource("LiveAgent.http", remotes)));
+        // add to last
+        env.ifPresentRemotes(remotes -> environment.addLast(new MapSource("LiveAgent.http", remotes)));
         if (configCenter != null) {
+            // add to first
             configCenter.ifPresent(configurator -> environment.addFirst(new ConfiguratorSource(configurator)));
         }
     }
