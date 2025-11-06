@@ -69,6 +69,15 @@ public class ServiceError {
         return throwable != null;
     }
 
+    public String getErrorMessage() {
+        if (error != null) {
+            return error;
+        } else if (throwable != null) {
+            return throwable.getMessage();
+        }
+        return null;
+    }
+
     /**
      * Builds a ServiceError object from the given function.
      *
