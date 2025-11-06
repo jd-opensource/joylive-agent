@@ -45,7 +45,7 @@ public class NodeEnvSupplier implements EnvSupplier {
                 ));
         zoneToNodesMap.forEach((zone, nodeNames) -> {
             if (nodeNames.contains(nodeName)) {
-                env.putIfAbsent("NODE_CELL", zone);
+                env.putIfAbsent("NODE_ZONE", zone);
             }
         });
     }
