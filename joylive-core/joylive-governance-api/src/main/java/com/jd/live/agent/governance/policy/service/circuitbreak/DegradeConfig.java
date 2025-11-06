@@ -82,6 +82,7 @@ public class DegradeConfig {
         this.contentType = contentType;
         this.attributes = attributes;
         this.responseBody = responseBody;
+        cache();
     }
 
     public DegradeConfig(DegradeConfig config) {
@@ -90,6 +91,7 @@ public class DegradeConfig {
         this.contentType = config.contentType;
         this.attributes = config.attributes == null ? null : new HashMap<>(config.attributes);
         this.responseBody = config.responseBody;
+        cache();
     }
 
     public String getContentType() {
