@@ -158,13 +158,14 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
         double lack = permits - available;
         long waitTimeMicros = waitForStorePermits(storedPermits, available) + (long) (lack * permitIntervalMicros);
         long momentAvailable = saturatedAdd(this.nextPermitMicros, waitTimeMicros);
-        long microsToWait = max(momentAvailable - startTimeMicros, 0);
-        if (microsToWait > timeoutMicros) {
+
+        long microsToSleep = max(0L, momentAvailable - nowMicros);
+        if (microsToSleep > timeoutMicros) {
             return TIMEOUT;
         }
         this.nextPermitMicros = momentAvailable;
         storedPermits -= available;
-        return microsToWait;
+        return microsToSleep;
     }
 
     /**
