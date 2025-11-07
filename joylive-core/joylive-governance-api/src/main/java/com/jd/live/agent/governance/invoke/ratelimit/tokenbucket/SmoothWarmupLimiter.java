@@ -16,7 +16,6 @@ package com.jd.live.agent.governance.invoke.ratelimit.tokenbucket;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.policy.service.limit.SlidingWindow;
 
-import static java.lang.Math.min;
 
 /**
  * SmoothWarmupLimiter
@@ -84,26 +83,8 @@ public class SmoothWarmupLimiter extends TokenBucketLimiter {
     }
 
     @Override
-    protected long waitForStorePermits(double storedPermits, double targetPermits) {
-        double availablePermitsAboveThreshold = storedPermits - thresholdPermits;
-        long micros = 0;
-        // measuring the integral on the right part of the function (the climbing line)
-        if (availablePermitsAboveThreshold > 0.0) {
-            double permitsAboveThresholdToTake = min(availablePermitsAboveThreshold, targetPermits);
-            double length =
-                    permitsToTime(availablePermitsAboveThreshold)
-                            + permitsToTime(availablePermitsAboveThreshold - permitsAboveThresholdToTake);
-            micros = (long) (permitsAboveThresholdToTake * length / 2.0);
-            targetPermits -= permitsAboveThresholdToTake;
-        }
-        // measuring the integral on the left part of the function (the horizontal line)
-        micros += (long) (permitIntervalMicros * targetPermits);
-        return micros;
-    }
-
-    @Override
     protected double coolDownIntervalMicros() {
-        return warmupMicros / maxStoredPermits;
+        return storedPermits > thresholdPermits ? coldIntervalMicros : permitIntervalMicros;
     }
 
     private double permitsToTime(double permits) {
