@@ -48,5 +48,9 @@ public class RegistryConfig {
     public boolean isRegisterAppServiceEnabled() {
         return registerAppServiceEnabled && enabled;
     }
+
+    public boolean isEmpty() {
+        return clusters == null || clusters.isEmpty();
+    }
 }
 

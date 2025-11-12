@@ -112,8 +112,12 @@ public class LiveRegistry extends AbstractService
     // fix for eureka
     private final Map<String, Subscription> subscriptions = new CaseInsensitiveConcurrentMap<>();
 
+    private final Map<ServiceId, Optional<Consumer<RegistryEvent>>> pendings = new ConcurrentHashMap<>();
+
     // add listener to warmup for spring cloud
     private final Set<Consumer<List<ServiceId>>> listeners = new CopyOnWriteArraySet<>();
+
+    private final AtomicBoolean prepare = new AtomicBoolean(false);
 
     private final AtomicBoolean ready = new AtomicBoolean(false);
 
@@ -396,10 +400,14 @@ public class LiveRegistry extends AbstractService
      * @see RegistryEvent
      */
     private void doSubscribe(ServiceId serviceId, Consumer<RegistryEvent> consumer) {
-        // CaseInsensitiveConcurrentHashMap
-        Subscription subscription = subscriptions.computeIfAbsent(serviceId.getUniqueName(), s -> createSubscription(serviceId));
-        subscription.addConsumer(consumer);
-        subscription.subscribe();
+        if (!prepare.get()) {
+            pendings.put(serviceId, Optional.ofNullable(consumer));
+        } else {
+            // CaseInsensitiveConcurrentHashMap
+            Subscription subscription = subscriptions.computeIfAbsent(serviceId.getUniqueName(), s -> createSubscription(serviceId));
+            subscription.addConsumer(consumer);
+            subscription.subscribe();
+        }
     }
 
     /**
@@ -426,39 +434,57 @@ public class LiveRegistry extends AbstractService
      */
     private void onAppEnvironmentPrepared(AppEnvironment environment) {
         // start registries in environment prepared event
+        try {
+            registries = createRegistry(environment);
+            prepare.set(true);
+            pendings.forEach((id, optional) -> {
+                doSubscribe(id, optional.orElse(null));
+            });
+            pendings.clear();
+        } catch (Throwable e) {
+            registries = new ArrayList<>();
+            publisher.offer(AgentEvent.onAgentFailure("Failed to start registry cluster.", e));
+        }
+    }
+
+    /**
+     * Creates registry service instances based on configuration.
+     *
+     * @param environment The application environment containing configuration properties
+     * @return A list of initialized registry service instances
+     * @throws Exception If any error occurs during registry creation or initialization
+     */
+    private List<RegistryService> createRegistry(AppEnvironment environment) throws Exception {
+        List<RegistryService> result = new ArrayList<>();
+        if (!registryConfig.isEnabled() || registryConfig.isEmpty()) {
+            return result;
+        }
+        // source config
+        List<Map<String, Object>> maps = option.getObject(GovernanceConfig.CONFIG_REGISTRY_CLUSTERS);
+        AppEnvironmentOption env = new AppEnvironmentOption(environment);
         List<RegistryClusterConfig> clusters = registryConfig.getClusters();
-        List<RegistryService> registries = new ArrayList<>();
-        if (registryConfig.isEnabled() && clusters != null) {
-            try {
-                // source config
-                List<Map<String, Object>> maps = option.getObject(GovernanceConfig.CONFIG_REGISTRY_CLUSTERS);
-                AppEnvironmentOption env = new AppEnvironmentOption(environment);
-                for (int i = 0; i < clusters.size(); i++) {
-                    // reinject config by app envrionment
-                    RegistryClusterConfig cluster = clusters.get(i);
-                    cluster.supplement(MapOption.of(maps.get(i)), env);
-                    // validate
-                    if (cluster.validate()) {
-                        // create registry service
-                        RegistryFactory factory = factories.get(cluster.getType());
-                        if (factory == null) {
-                            throw new RegistryException("registry type " + cluster.getType() + " is not supported");
-                        }
-                        registries.add(factory.create(cluster));
-                    }
+        for (int i = 0; i < clusters.size(); i++) {
+            // reinject config by app envrionment
+            RegistryClusterConfig cluster = clusters.get(i);
+            cluster.supplement(MapOption.of(maps.get(i)), env);
+            // validate
+            if (cluster.validate()) {
+                // create registry service
+                RegistryFactory factory = factories.get(cluster.getType());
+                if (factory == null) {
+                    throw new RegistryException("registry type " + cluster.getType() + " is not supported");
                 }
-                if (!registries.isEmpty()) {
-                    for (RegistryService registry : registries) {
-                        startCluster(registry);
-                    }
-                } else {
-                    logger.warn("No registry cluster is configured.");
-                }
-            } catch (Throwable e) {
-                publisher.offer(AgentEvent.onAgentFailure("Failed to start registry cluster.", e));
+                result.add(factory.create(cluster));
             }
         }
-        this.registries = registries;
+        if (!result.isEmpty()) {
+            for (RegistryService registry : result) {
+                startCluster(registry);
+            }
+        } else {
+            logger.warn("No registry cluster is configured.");
+        }
+        return result;
     }
 
     /**
