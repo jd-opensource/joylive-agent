@@ -87,6 +87,8 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     private static final Class<?> SWAGGER_WELCOME_COMMON_CLASS = loadClass(SWAGGER_WELCOME_COMMON_TYPE, HttpServletRequest.class.getClassLoader());
 
+    private final Object[] arguments;
+
     private final Object handler;
 
     private final Predicate<String> systemPredicate;
@@ -96,11 +98,13 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     private final JsonPathParser parser;
 
     public ServletInboundRequest(HttpServletRequest request,
+                                 Object[] arguments,
                                  Object handler,
                                  Predicate<String> systemPredicate,
                                  Predicate<String> mcpPredicate,
                                  JsonPathParser parser) {
         super(request);
+        this.arguments = arguments;
         this.handler = handler;
         this.systemPredicate = systemPredicate;
         this.mcpPredicate = mcpPredicate;
@@ -147,6 +151,12 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
                 }
             } else if (ACTUATOR_SERVLET_CLASS != null && ACTUATOR_SERVLET_CLASS.isInstance(handler)) {
                 return true;
+            } else if (arguments != null && arguments.length == 3 && arguments[2] instanceof Object[]) {
+                // ExceptionHandlerExceptionResolver for global @ExceptionHandler(Exception.class)
+                Object[] args = (Object[]) arguments[2];
+                if (args.length > 1 && args[0] instanceof Throwable && args[args.length - 1] instanceof HandlerMethod) {
+                    return true;
+                }
             }
         }
         if (systemPredicate != null && systemPredicate.test(getPath())) {

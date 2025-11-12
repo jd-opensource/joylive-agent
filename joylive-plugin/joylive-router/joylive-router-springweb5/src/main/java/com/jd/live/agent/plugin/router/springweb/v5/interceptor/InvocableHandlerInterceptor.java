@@ -33,6 +33,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHan
 import javax.servlet.http.HttpServletRequest;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
+import static com.jd.live.agent.plugin.router.springweb.v5.exception.SpringInboundThrower.THROWER;
 
 /**
  * InvocableHandlerInterceptor
@@ -53,6 +54,7 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
         if (!(ctx.getTarget() instanceof ServletInvocableHandlerMethod)) {
             return;
         }
+
         GovernanceConfig govnConfig = context.getGovernanceConfig();
         McpConfig mcpConfig = govnConfig.getMcpConfig();
         ServiceConfig serviceConfig = govnConfig.getServiceConfig();
@@ -60,7 +62,7 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
         NativeWebRequest webRequest = ctx.getArgument(0);
         HttpServletRequest servletRequest = (HttpServletRequest) webRequest.getNativeRequest();
         Object handler = CloudUtils.getHandler(ctx.getTarget());
-        ServletInboundRequest request = new ServletInboundRequest(servletRequest, handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
+        ServletInboundRequest request = new ServletInboundRequest(servletRequest, ctx.getArguments(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
             context.inward(invocation, mc::invokeOrigin, (v, e) -> {
@@ -69,7 +71,7 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
                 } else if (request.isMcp()) {
                     mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                 } else {
-                    mc.skipWithThrowable(e);
+                    mc.skipWithThrowable(THROWER.createException(e, request));
                 }
             });
         }

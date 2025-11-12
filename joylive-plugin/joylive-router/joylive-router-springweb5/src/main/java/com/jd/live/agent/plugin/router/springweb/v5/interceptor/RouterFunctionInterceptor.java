@@ -34,6 +34,7 @@ import java.util.Optional;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.core.util.ExceptionUtils.toException;
+import static com.jd.live.agent.plugin.router.springweb.v5.exception.SpringInboundThrower.THROWER;
 
 /**
  * Interceptor for RouterFunction's HandlerFunction to provide service governance capabilities.
@@ -85,7 +86,7 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
             GovernanceConfig govnConfig = context.getGovernanceConfig();
             McpConfig mcpConfig = govnConfig.getMcpConfig();
             ServiceConfig serviceConfig = govnConfig.getServiceConfig();
-            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, serviceConfig::isSystem, mcpConfig::isMcp, parser);
+            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, null, serviceConfig::isSystem, mcpConfig::isMcp, parser);
             if (!request.isSystem()) {
                 HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
                 try {
@@ -94,7 +95,7 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
                     if (request.isMcp()) {
                         return ServerResponse.ok().body(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                     }
-                    throw toException(e);
+                    throw toException(THROWER.createException(e, request));
                 }
             } else {
                 return delegate.handle(req);
