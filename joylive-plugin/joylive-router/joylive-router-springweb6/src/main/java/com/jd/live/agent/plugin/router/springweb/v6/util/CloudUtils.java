@@ -67,11 +67,11 @@ public class CloudUtils {
     private static final String SWAGGER_WELCOME_COMMON_TYPE = "org.springdoc.webmvc.ui.SwaggerWelcomeCommon";
     private static final Class<?> SWAGGER_WELCOME_COMMON_CLASS = loadClass(SWAGGER_WELCOME_COMMON_TYPE, CLASS_LOADER);
     private static final String ACTUATOR_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
-    private static final Class<?> ACTUATOR_CLASS = loadClass(ACTUATOR_TYPE, ServerWebExchange.class.getClassLoader());
+    private static final Class<?> ACTUATOR_CLASS = loadClass(ACTUATOR_TYPE, CLASS_LOADER);
     private static final String RESOURCE_WEB_HANDLER_TYPE = "org.springframework.web.reactive.resource.ResourceWebHandler";
-    private static final Class<?> RESOURCE_WEB_HANDLER_CLASS = loadClass(RESOURCE_WEB_HANDLER_TYPE, ServerWebExchange.class.getClassLoader());
+    private static final Class<?> RESOURCE_WEB_HANDLER_CLASS = loadClass(RESOURCE_WEB_HANDLER_TYPE, CLASS_LOADER);
     private static final String SWAGGER2_CONTROLLER_WEBFLUX_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux";
-    private static final Class<?> SWAGGER2_CONTROLLER_WEBFLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEBFLUX_TYPE, ServerWebExchange.class.getClassLoader());
+    private static final Class<?> SWAGGER2_CONTROLLER_WEBFLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEBFLUX_TYPE, CLASS_LOADER);
 
     private static final List<Class<?>> SYSTEM_HANDLERS = Arrays.asList(
             CONTROLLER_CLASS,
