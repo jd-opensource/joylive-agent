@@ -29,6 +29,11 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.HandlerResult;
+import org.springframework.web.reactive.function.server.HandlerFilterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
@@ -52,17 +57,19 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     public static final String KEY_LIVE_EXCEPTION_HANDLED = "x-live-exception-handled";
 
+    private final ServerWebExchange exchange;
     private final Object handler;
     private final Predicate<Class<?>> systemHanderPredicate;
     private final Predicate<String> systemPathPredicate;
     private final Predicate<String> mcpPathPredicate;
     private final JsonPathParser parser;
 
-    public ReactiveInboundRequest(ServerHttpRequest request,
+    public ReactiveInboundRequest(ServerWebExchange exchange,
                                   Object handler,
                                   GovernanceConfig config,
                                   JsonPathParser parser) {
-        super(request);
+        super(exchange.getRequest());
+        this.exchange = exchange;
         this.handler = handler;
         this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
         this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
@@ -115,7 +122,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     public String getQuery(String key) {
-        return key == null || key.isEmpty() ? null : request.getQueryParams().getFirst(key);
+        return key == null ? null : request.getQueryParams().getFirst(key);
     }
 
     @Override
@@ -145,10 +152,25 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
      * @return a Mono that represents the completion of the stage.
      */
     public Mono<HandlerResult> convert(CompletionStage<Object> stage) {
-        if (isMcp()) {
-            return Mono.fromCompletionStage(stage).cast(HandlerResult.class).onErrorResume(this::onMcpErrorResume);
-        }
-        return Mono.fromCompletionStage(stage).cast(HandlerResult.class).onErrorMap(e -> THROWER.createException(e, this));
+        return Mono.fromCompletionStage(stage).cast(HandlerResult.class).onErrorResume(e -> {
+            if (isMcp()) {
+                return onMcpErrorResume(e);
+            } else if (CloudUtils.isReactiveRouterFunction(handler)) {
+                Object target = CloudUtils.getReactiveFilterFunction(handler);
+                target = target == null ? handler : target;
+                HandlerFilterFunction<ServerResponse, ServerResponse> errorFunction = CloudUtils.getErrorFunction(target);
+                if (errorFunction != null) {
+                    // Apply the error function to handle the exception
+                    ServerRequest request = exchange.getRequiredAttribute(RouterFunctions.REQUEST_ATTRIBUTE);
+                    return errorFunction
+                            .filter(request, r -> Mono.error(THROWER.createException(e, this)))
+                            .map(response -> new HandlerResult(
+                                    handler, response, new MethodParameter(CloudUtils.METHOD_HANDLE, -1)));
+                }
+                return Mono.error(THROWER.createException(e, this));
+            }
+            return Mono.error(THROWER.createException(e, this));
+        });
     }
 
     /**

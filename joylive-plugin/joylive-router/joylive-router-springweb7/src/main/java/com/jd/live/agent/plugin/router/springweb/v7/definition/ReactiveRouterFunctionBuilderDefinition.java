@@ -18,51 +18,42 @@ package com.jd.live.agent.plugin.router.springweb.v7.definition;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnReactive;
-import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v7.condition.ConditionalOnSpringWeb7GovernanceEnabled;
-import com.jd.live.agent.plugin.router.springweb.v7.interceptor.HandlerAdapterInterceptor;
+import com.jd.live.agent.plugin.router.springweb.v7.interceptor.ReactiveRouterFunctionBuilderInterceptor;
 
 /**
- * Plugin definition for intercepting reactive request calls to perform traffic governance.
+ * Plugin for intercepting Spring Web RouterFunctionBuilder's build method.
+ * <p>
+ * This plugin captures error handlers configured in RouterFunctions and caches them
+ * for subsequent processing. It enables access to the original exception handling
+ * logic when the RouterFunction is wrapped by custom logic.
+ * <p>
+ * The interceptor is activated only when Spring Web 5 Governance is enabled and
+ * the RouterFunctionBuilder class is available on the classpath.
  *
- * <p>This plugin targets Spring WebFlux HandlerAdapter implementations and intercepts
- * the handle method to apply traffic control policies on reactive web requests.
+ * @since 1.9.0
  */
 @Injectable
-@Extension(value = "HandlerAdapterDefinition_v7")
+@Extension(value = "RouterFunctionBuilderDefinition_v7")
 @ConditionalOnSpringWeb7GovernanceEnabled
 @ConditionalOnReactive
-@ConditionalOnClass(HandlerAdapterDefinition.TYPE_HANDLER_ADAPTER)
-public class HandlerAdapterDefinition extends PluginDefinitionAdapter {
+@ConditionalOnClass(ReactiveRouterFunctionBuilderDefinition.TYPE)
+public class ReactiveRouterFunctionBuilderDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_HANDLER_ADAPTER = "org.springframework.web.reactive.HandlerAdapter";
+    protected static final String TYPE = "org.springframework.web.reactive.function.server.RouterFunctionBuilder";
 
-    private static final String METHOD = "handle";
+    private static final String METHOD = "build";
 
-    private static final String[] ARGUMENT = new String[]{
-            "org.springframework.web.server.ServerWebExchange",
-            "java.lang.Object"
-    };
-
-    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
-    private InvocationContext context;
-
-    @Inject
-    private JsonPathParser parser;
-
-    public HandlerAdapterDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_HANDLER_ADAPTER);
+    public ReactiveRouterFunctionBuilderDefinition() {
+        this.matcher = () -> MatcherBuilder.isImplement(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENT)),
-                        () -> new HandlerAdapterInterceptor(context, parser)
+                        MatcherBuilder.named(METHOD), () -> new ReactiveRouterFunctionBuilderInterceptor()
                 )
         };
     }

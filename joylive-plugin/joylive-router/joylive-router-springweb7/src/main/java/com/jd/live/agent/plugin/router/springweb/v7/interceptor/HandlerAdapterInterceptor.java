@@ -55,7 +55,7 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = mc.getArgument(0);
         Object handler = mc.getArgument(1);
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, context.getGovernanceConfig(), parser);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, context.getGovernanceConfig(), parser);
         if (!request.isSystem()) {
             exchange.getAttributes().put(KEY_LIVE_REQUEST, Boolean.TRUE);
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()

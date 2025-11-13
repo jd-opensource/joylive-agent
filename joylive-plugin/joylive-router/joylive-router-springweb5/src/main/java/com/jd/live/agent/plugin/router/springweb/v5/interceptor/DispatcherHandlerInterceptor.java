@@ -57,7 +57,7 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
         ServerWebExchange exchange = mc.getArgument(0);
         Object handler = mc.getArgument(1);
         GovernanceConfig config = context.getGovernanceConfig();
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, config, parser);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, config, parser);
         if (!request.isSystem()) {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
