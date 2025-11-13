@@ -20,8 +20,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.McpConfig;
-import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
@@ -55,20 +53,18 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         // private Mono<HandlerResult> invokeHandler(ServerWebExchange exchange, Object handler)
-        GovernanceConfig govnConfig = context.getGovernanceConfig();
-        McpConfig mcpConfig = govnConfig.getMcpConfig();
-        ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = mc.getArgument(0);
         Object handler = mc.getArgument(1);
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
+        GovernanceConfig config = context.getGovernanceConfig();
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, config, parser);
         if (!request.isSystem()) {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
             // MCP exceptions have already been handled in the convert method
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
-            if (serviceConfig.isResponseException()) {
+            if (config.getServiceConfig().isResponseException()) {
                 mono = mono.doOnError(ex -> {
                     HttpHeaders headers = CloudUtils.writable(exchange.getResponse().getHeaders());
                     labelHeaders(ex, headers::set);

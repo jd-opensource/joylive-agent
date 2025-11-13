@@ -19,9 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.McpConfig;
-import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
@@ -55,13 +52,10 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         // private Mono<Void> handleRequestWith(ServerWebExchange exchange, Object handler)
-        GovernanceConfig govnConfig = context.getGovernanceConfig();
-        McpConfig mcpConfig = govnConfig.getMcpConfig();
-        ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = mc.getArgument(0);
         Object handler = mc.getArgument(1);
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange.getRequest(), handler, context.getGovernanceConfig(), parser);
         if (!request.isSystem()) {
             exchange.getAttributes().put(KEY_LIVE_REQUEST, Boolean.TRUE);
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()

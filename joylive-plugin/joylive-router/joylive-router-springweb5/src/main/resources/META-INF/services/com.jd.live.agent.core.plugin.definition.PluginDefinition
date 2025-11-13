@@ -1,5 +1,6 @@
 com.jd.live.agent.plugin.router.springweb.v5.definition.DispatcherHandlerDefinition
 com.jd.live.agent.plugin.router.springweb.v5.definition.DispatcherServletDefinition
-com.jd.live.agent.plugin.router.springweb.v5.definition.RouterFunctionDefinition
 com.jd.live.agent.plugin.router.springweb.v5.definition.HierarchicalUriComponentsDefinition
 com.jd.live.agent.plugin.router.springweb.v5.definition.InvocableHandlerDefinition
+com.jd.live.agent.plugin.router.springweb.v5.definition.RouterFunctionBuilderDefinition
+com.jd.live.agent.plugin.router.springweb.v5.definition.RouterFunctionDefinition

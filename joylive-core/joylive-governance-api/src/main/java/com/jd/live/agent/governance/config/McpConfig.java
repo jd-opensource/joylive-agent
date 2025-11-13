@@ -27,7 +27,7 @@ public class McpConfig {
 
     private String path = "/mcp";
 
-    public boolean isMcp(String path) {
+    public boolean isMcpPath(String path) {
         return enabled && URI.isSubPath(path, this.path);
     }
 

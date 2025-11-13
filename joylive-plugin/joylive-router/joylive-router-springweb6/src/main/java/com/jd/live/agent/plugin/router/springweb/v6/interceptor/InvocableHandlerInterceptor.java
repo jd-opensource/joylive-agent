@@ -19,9 +19,6 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.McpConfig;
-import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
@@ -53,14 +50,15 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
         if (!(ctx.getTarget() instanceof ServletInvocableHandlerMethod)) {
             return;
         }
-        GovernanceConfig govnConfig = context.getGovernanceConfig();
-        McpConfig mcpConfig = govnConfig.getMcpConfig();
-        ServiceConfig serviceConfig = govnConfig.getServiceConfig();
         MethodContext mc = (MethodContext) ctx;
         NativeWebRequest webRequest = ctx.getArgument(0);
         HttpServletRequest servletRequest = (HttpServletRequest) webRequest.getNativeRequest();
-        Object handler = CloudUtils.getHandler(ctx.getTarget());
-        ServletInboundRequest request = new ServletInboundRequest(servletRequest, ctx.getArguments(), handler, serviceConfig::isSystem, mcpConfig::isMcp, parser);
+        ServletInboundRequest request = new ServletInboundRequest(
+                servletRequest,
+                ctx.getArguments(),
+                CloudUtils.getHandler(ctx.getTarget()),
+                context.getGovernanceConfig(),
+                parser);
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
             context.inward(invocation, mc::invokeOrigin, (v, e) -> {

@@ -19,9 +19,9 @@ import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
@@ -31,65 +31,27 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  */
 public class CloudUtils {
 
-    private static final String TYPE_WEB_CLIENT_RESPONSE_EXCEPTION = "org.springframework.web.reactive.function.client.WebClientResponseException";
-
     private static final ClassLoader CLASS_LOADER = HttpHeaders.class.getClassLoader();
 
+    private static final String TYPE_WEB_CLIENT_RESPONSE_EXCEPTION = "org.springframework.web.reactive.function.client.WebClientResponseException";
     private static final Class<?> CLASS_WEB_CLIENT_RESPONSE_EXCEPTION = loadClass(TYPE_WEB_CLIENT_RESPONSE_EXCEPTION, CLASS_LOADER);
 
     private static final String TYPE_HANDLER_METHOD = "org.springframework.web.method.HandlerMethod";
-
     private static final Class<?> CLASS_HANDLER_METHOD = loadClass(TYPE_HANDLER_METHOD, CLASS_LOADER);
-
     private static final FieldAccessor ACCESSOR_HANDLER = getAccessor(CLASS_HANDLER_METHOD, "bean");
 
     private static final Class<?> CLASS_READ_ONLY_HTTP_HEADERS = loadClass("org.springframework.http.ReadOnlyHttpHeaders", CLASS_LOADER);
 
-    private static final String CONTROLLER_TYPE = "org.springframework.web.servlet.mvc.Controller";
-    private static final Class<?> CONTROLLER_CLASS = loadClass(CONTROLLER_TYPE, CLASS_LOADER);
-    private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
-    private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE, CLASS_LOADER);
-    private static final String RESOURCE_HANDLER_TYPE = "org.springframework.web.servlet.resource.ResourceHttpRequestHandler";
-    private static final Class<?> RESOURCE_HANDLER_CLASS = loadClass(RESOURCE_HANDLER_TYPE, CLASS_LOADER);
-    private static final String ACTUATOR_SERVLET_TYPE = "org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$WebMvcEndpointHandlerMethod";
-    private static final Class<?> ACTUATOR_SERVLET_CLASS = loadClass(ACTUATOR_SERVLET_TYPE, CLASS_LOADER);
-    private static final String API_RESOURCE_CONTROLLER_TYPE = "springfox.documentation.swagger.web.ApiResourceController";
-    private static final Class<?> API_RESOURCE_CONTROLLER_CLASS = loadClass(API_RESOURCE_CONTROLLER_TYPE, CLASS_LOADER);
-    private static final String SWAGGER2_CONTROLLER_WEB_MVC_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebMvc";
-    private static final Class<?> SWAGGER2_CONTROLLER_WEB_MVC_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_MVC_TYPE, CLASS_LOADER);
-    private static final String OPEN_API_RESOURCE_TYPE = "org.springdoc.webmvc.api.OpenApiResource";
-    private static final Class<?> OPEN_API_RESOURCE_CLASS = loadClass(OPEN_API_RESOURCE_TYPE, CLASS_LOADER);
-    private static final String MULTIPLE_OPEN_API_RESOURCE_TYPE = "org.springdoc.webmvc.api.MultipleOpenApiResource";
-    private static final Class<?> MULTIPLE_OPEN_API_RESOURCE_CLASS = loadClass(MULTIPLE_OPEN_API_RESOURCE_TYPE, CLASS_LOADER);
-    private static final String SWAGGER_CONFIG_RESOURCE_TYPE = "org.springdoc.webmvc.ui.SwaggerConfigResource";
-    private static final Class<?> SWAGGER_CONFIG_RESOURCE_CLASS = loadClass(SWAGGER_CONFIG_RESOURCE_TYPE, CLASS_LOADER);
-    private static final String SWAGGER_UI_HOME_TYPE = "org.springdoc.webmvc.ui.SwaggerUiHome";
-    private static final Class<?> SWAGGER_UI_HOME_CLASS = loadClass(SWAGGER_UI_HOME_TYPE, CLASS_LOADER);
-    private static final String SWAGGER_WELCOME_COMMON_TYPE = "org.springdoc.webmvc.ui.SwaggerWelcomeCommon";
-    private static final Class<?> SWAGGER_WELCOME_COMMON_CLASS = loadClass(SWAGGER_WELCOME_COMMON_TYPE, CLASS_LOADER);
-    private static final String ACTUATOR_TYPE = "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod";
-    private static final Class<?> ACTUATOR_CLASS = loadClass(ACTUATOR_TYPE, CLASS_LOADER);
-    private static final String RESOURCE_WEB_HANDLER_TYPE = "org.springframework.web.reactive.resource.ResourceWebHandler";
-    private static final Class<?> RESOURCE_WEB_HANDLER_CLASS = loadClass(RESOURCE_WEB_HANDLER_TYPE, CLASS_LOADER);
-    private static final String SWAGGER2_CONTROLLER_WEBFLUX_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux";
-    private static final Class<?> SWAGGER2_CONTROLLER_WEBFLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEBFLUX_TYPE, CLASS_LOADER);
+    private static final String TYPE_ROUTER_FUNCTION_BUILDER = "org.springframework.web.servlet.function.RouterFunctionBuilder";
+    private static final Class<?> CLASS_ROUTER_FUNCTION_BUILDER = loadClass(TYPE_ROUTER_FUNCTION_BUILDER, CLASS_LOADER);
+    private static final FieldAccessor ACCESSOR_ERROR_HANDLERS = getAccessor(CLASS_ROUTER_FUNCTION_BUILDER, "errorHandlers");
+    private static final Map<Object, Object> ROUTER_FUNCTION_ERRORS = new ConcurrentHashMap<>();
 
-    private static final List<Class<?>> SYSTEM_HANDLERS = Arrays.asList(
-            CONTROLLER_CLASS,
-            RESOURCE_HANDLER_CLASS,
-            RESOURCE_WEB_HANDLER_CLASS,
-            ERROR_CONTROLLER_CLASS,
-            API_RESOURCE_CONTROLLER_CLASS,
-            ACTUATOR_CLASS,
-            OPEN_API_RESOURCE_CLASS,
-            MULTIPLE_OPEN_API_RESOURCE_CLASS,
-            SWAGGER_CONFIG_RESOURCE_CLASS,
-            SWAGGER_UI_HOME_CLASS,
-            SWAGGER_WELCOME_COMMON_CLASS,
-            SWAGGER2_CONTROLLER_WEB_MVC_CLASS,
-            SWAGGER2_CONTROLLER_WEBFLUX_CLASS,
-            ACTUATOR_SERVLET_CLASS
-    ).stream().filter(v -> v != null).collect(Collectors.toList());
+    private static final String TYPE_HANDLER_FUNCTION = "org.springframework.web.servlet.function.HandlerFunction";
+    private static final Class<?> CLASS_HANDLER_FUNCTION = loadClass(TYPE_HANDLER_FUNCTION, CLASS_LOADER);
+    private static final String TYPE_RESOURCE_HANDLER_FUNCTION = "org.springframework.web.servlet.function.ResourceHandlerFunction";
+    private static final Class<?> CLASS_RESOURCE_HANDLER_FUNCTION = loadClass(TYPE_RESOURCE_HANDLER_FUNCTION, CLASS_LOADER);
+    private static final Map<Object, Boolean> RESOURCE_HANDLERS = new ConcurrentHashMap<>();
 
     /**
      * Creates writable copy of HTTP headers.
@@ -102,19 +64,9 @@ public class CloudUtils {
     }
 
     public static Object getHandler(Object handlerMethod) {
-        return handlerMethod != null && CLASS_HANDLER_METHOD.isInstance(handlerMethod) ? ACCESSOR_HANDLER.get(handlerMethod) : null;
-    }
-
-    public static boolean isSystemHandler(Object handler) {
-        if (handler != null) {
-            for (Class<?> clazz : SYSTEM_HANDLERS) {
-                if (clazz.isInstance(handler)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return handlerMethod != null && CLASS_HANDLER_METHOD != null && CLASS_HANDLER_METHOD.isInstance(handlerMethod)
+                ? ACCESSOR_HANDLER.get(handlerMethod)
+                : handlerMethod;
     }
 
     /**
@@ -130,5 +82,64 @@ public class CloudUtils {
             return webError.getResponseBodyAsString();
         }
         return e.getMessage();
+    }
+
+    /**
+     * Associates an error function with a router function for error handling.
+     *
+     * @param routerFunction The router function to associate with an error handler
+     * @param errorFunction  The error handling function to be associated
+     */
+    public static void putErrorFunction(Object routerFunction, Object errorFunction) {
+        if (routerFunction != null && errorFunction != null) {
+            ROUTER_FUNCTION_ERRORS.put(routerFunction, errorFunction);
+        }
+    }
+
+    /**
+     * Retrieves the error function associated with a router function.
+     *
+     * @param routerFunction The router function whose error handler is requested
+     * @param <T>            The expected type of the error function
+     * @return The associated error function or null if none exists
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getErrorFunction(Object routerFunction) {
+        return routerFunction == null ? null : (T) ROUTER_FUNCTION_ERRORS.get(routerFunction);
+    }
+
+    /**
+     * Retrieves error handlers associated with a builder object.
+     *
+     * @param builder The builder object containing error handlers
+     * @param <T>     The expected type of the error handlers
+     * @return The error handlers associated with the builder
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getErrorHandlers(Object builder) {
+        return (T) ACCESSOR_ERROR_HANDLERS.get(builder);
+    }
+
+    /**
+     * Determines if a handler function is a resource handler function.
+     * Uses reflection to inspect the handler's internal structure.
+     *
+     * @param handler The handler function to check
+     * @return true if the handler is a resource handler function, false otherwise
+     */
+    public static boolean isResourceHandlerFunction(Object handler) {
+        if (CLASS_HANDLER_FUNCTION == null || CLASS_RESOURCE_HANDLER_FUNCTION == null || !CLASS_HANDLER_FUNCTION.isInstance(handler)) {
+            return false;
+        }
+        return RESOURCE_HANDLERS.computeIfAbsent(handler, k -> {
+            try {
+                Field field = k.getClass().getDeclaredField("arg$2");
+                field.setAccessible(true);
+                Object arg2 = field.get(k);
+                return CLASS_RESOURCE_HANDLER_FUNCTION.isInstance(arg2);
+            } catch (Throwable e) {
+                return false;
+            }
+        });
     }
 }

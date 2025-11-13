@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v5.request;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
@@ -47,25 +48,21 @@ import static com.jd.live.agent.plugin.router.springweb.v5.exception.SpringInbou
  */
 public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHttpRequest> {
 
-
-
-    private final Predicate<String> systemPredicate;
-
-    private final Predicate<String> mcpPredicate;
-
     private final Object handler;
-
+    private final Predicate<Class<?>> systemHanderPredicate;
+    private final Predicate<String> systemPathPredicate;
+    private final Predicate<String> mcpPathPredicate;
     private final JsonPathParser parser;
 
     public ReactiveInboundRequest(ServerHttpRequest request,
                                   Object handler,
-                                  Predicate<String> systemPredicate,
-                                  Predicate<String> mcpPredicate,
+                                  GovernanceConfig config,
                                   JsonPathParser parser) {
         super(request);
         this.handler = handler;
-        this.systemPredicate = systemPredicate;
-        this.mcpPredicate = mcpPredicate;
+        this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
+        this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
+        this.mcpPathPredicate = config.getMcpConfig()::isMcpPath;
         this.parser = parser;
         this.uri = request.getURI();
     }
@@ -82,17 +79,17 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     public boolean isSystem() {
-        if (CloudUtils.isSystemHandler(handler)) {
+        if (handler != null && systemHanderPredicate != null && systemHanderPredicate.test(handler.getClass())) {
             return true;
         }
-        if (systemPredicate != null && systemPredicate.test(getPath())) {
+        if (systemPathPredicate != null && systemPathPredicate.test(getPath())) {
             return true;
         }
         return super.isSystem();
     }
 
     public boolean isMcp() {
-        return McpToolMethod.HANDLE_METHOD != null && mcpPredicate != null && mcpPredicate.test(getPath());
+        return McpToolMethod.HANDLE_METHOD != null && mcpPathPredicate != null && mcpPathPredicate.test(getPath());
     }
 
     @Override

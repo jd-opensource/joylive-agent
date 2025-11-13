@@ -229,7 +229,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 throw FaultType.CIRCUIT_BREAK.reject("The traffic circuit break policy rejected the request.");
             } else {
                 ServiceConfig serviceConfig = invocation.getContext().getGovernanceConfig().getServiceConfig();
-                config.setContentClassFunc(serviceConfig::getGenericResultClass);
+                config.setDefaultContentTypeFunc(serviceConfig::getDefaultResultClass);
                 throw FaultType.CIRCUIT_BREAK.degrade("The circuit break policy triggers a degrade response.", config);
             }
         });

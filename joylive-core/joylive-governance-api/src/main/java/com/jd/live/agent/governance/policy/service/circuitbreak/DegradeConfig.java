@@ -68,9 +68,9 @@ public class DegradeConfig {
     private transient boolean text;
 
     @Setter
-    private transient Function<ClassLoader, Class<?>> contentClassFunc;
+    private transient Function<ClassLoader, Class<?>> defaultContentTypeFunc;
 
-    private transient LazyObject<Class<?>> contentClassCache = new LazyObject<>(null);
+    private transient LazyObject<Class<?>> contentTypeCache = new LazyObject<>(null);
 
     public DegradeConfig() {
     }
@@ -122,13 +122,13 @@ public class DegradeConfig {
         return responseBody == null ? 0 : responseBody.length();
     }
 
-    public Class<?> getContentClass(ClassLoader classLoader) {
+    public Class<?> getContentType(ClassLoader classLoader) {
         if (!isEmpty(contentType)) {
             // cache
-            return contentClassCache.get(() -> loadClass(contentType, classLoader, false));
+            return contentTypeCache.get(() -> loadClass(contentType, classLoader, false));
         }
         // not cache
-        return contentClassFunc == null ? null : contentClassFunc.apply(classLoader);
+        return defaultContentTypeFunc == null ? null : defaultContentTypeFunc.apply(classLoader);
     }
 
     protected void cache() {

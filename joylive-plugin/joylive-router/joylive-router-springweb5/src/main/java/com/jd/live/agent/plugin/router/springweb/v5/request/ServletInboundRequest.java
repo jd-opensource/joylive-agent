@@ -18,11 +18,11 @@ package com.jd.live.agent.plugin.router.springweb.v5.request;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.governance.request.HeaderProvider;
-import com.jd.live.agent.plugin.router.springweb.v5.util.CloudUtils;
 import org.springframework.web.method.HandlerMethod;
 
 import javax.servlet.http.Cookie;
@@ -43,26 +43,23 @@ import java.util.function.Predicate;
 public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServletRequest> {
 
     private final Object[] arguments;
-
     private final Object handler;
-
-    private final Predicate<String> systemPredicate;
-
-    private final Predicate<String> mcpPredicate;
-
+    private final Predicate<Class<?>> systemHanderPredicate;
+    private final Predicate<String> systemPathPredicate;
+    private final Predicate<String> mcpPathPredicate;
     private final JsonPathParser parser;
 
     public ServletInboundRequest(HttpServletRequest request,
                                  Object[] arguments,
                                  Object handler,
-                                 Predicate<String> systemPredicate,
-                                 Predicate<String> mcpPredicate,
+                                 GovernanceConfig config,
                                  JsonPathParser parser) {
         super(request);
         this.arguments = arguments;
         this.handler = handler;
-        this.systemPredicate = systemPredicate;
-        this.mcpPredicate = mcpPredicate;
+        this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
+        this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
+        this.mcpPathPredicate = config.getMcpConfig()::isMcpPath;
         this.parser = parser;
         URI u = null;
         try {
@@ -86,25 +83,24 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     @Override
     public boolean isSystem() {
         // handler is unwrapped from HandlerMethod
-        if (handler != null) {
-            if (CloudUtils.isSystemHandler(handler)) {
+        if (handler != null && systemHanderPredicate != null && systemHanderPredicate.test(handler.getClass())) {
+            return true;
+        }
+        if (handler != null && arguments != null && arguments.length == 3 && arguments[2] instanceof Object[]) {
+            // ExceptionHandlerExceptionResolver for global @ExceptionHandler(Exception.class)
+            Object[] args = (Object[]) arguments[2];
+            if (args.length > 1 && args[0] instanceof Throwable && args[args.length - 1] instanceof HandlerMethod) {
                 return true;
-            } else if (arguments != null && arguments.length == 3 && arguments[2] instanceof Object[]) {
-                // ExceptionHandlerExceptionResolver for global @ExceptionHandler(Exception.class)
-                Object[] args = (Object[]) arguments[2];
-                if (args.length > 1 && args[0] instanceof Throwable && args[args.length - 1] instanceof HandlerMethod) {
-                    return true;
-                }
             }
         }
-        if (systemPredicate != null && systemPredicate.test(getPath())) {
+        if (systemPathPredicate != null && systemPathPredicate.test(getPath())) {
             return true;
         }
         return super.isSystem();
     }
 
     public boolean isMcp() {
-        return McpToolMethod.HANDLE_METHOD != null && mcpPredicate != null && mcpPredicate.test(getPath());
+        return McpToolMethod.HANDLE_METHOD != null && mcpPathPredicate != null && mcpPathPredicate.test(getPath());
     }
 
     public Object getMcpRequestId() {

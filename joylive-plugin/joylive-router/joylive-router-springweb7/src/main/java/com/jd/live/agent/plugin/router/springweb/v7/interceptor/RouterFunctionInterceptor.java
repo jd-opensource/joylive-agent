@@ -20,14 +20,12 @@ import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.McpConfig;
-import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ServletInboundRequest;
-import jakarta.servlet.http.HttpServletRequest;
+import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
+import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.HandlerFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
@@ -39,12 +37,10 @@ import static com.jd.live.agent.plugin.router.springweb.v7.exception.SpringInbou
 
 /**
  * Interceptor for RouterFunction's HandlerFunction to provide service governance capabilities.
- *
  * This interceptor wraps the original HandlerFunction to:
  * 1. Handle system and MCP requests differently
  * 2. Apply governance policies for non-system requests
  * 3. Process errors according to MCP protocol if needed
- *
  * The interception happens in a thread-safe manner using locks.
  */
 public class RouterFunctionInterceptor extends InterceptorAdaptor {
@@ -68,7 +64,13 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
     @Override
     public void onSuccess(ExecutableContext ctx) {
         if (ctx.isLocked()) {
-            delegate((MethodContext) ctx);
+            MethodContext mc = (MethodContext) ctx;
+            Optional<HandlerFunction<? extends ServerResponse>> optional = mc.getResult();
+            HandlerFunction<? extends ServerResponse> handler = optional.orElse(null);
+            if (handler == null || CloudUtils.isResourceHandlerFunction(handler)) {
+                return;
+            }
+            mc.skipWithResult(Optional.of(wrap(ctx.getTarget(), handler)));
         }
     }
 
@@ -77,31 +79,40 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
         ctx.unlock();
     }
 
-    private void delegate(MethodContext ctx) {
-        Optional<HandlerFunction<? extends ServerResponse>> optional = ctx.getResult();
-        HandlerFunction<? extends ServerResponse> delegate = optional.orElse(null);
-        if (delegate == null) {
-            return;
-        }
-        ctx.skipWithResult(Optional.of((HandlerFunction) req -> {
-            GovernanceConfig govnConfig = context.getGovernanceConfig();
-            McpConfig mcpConfig = govnConfig.getMcpConfig();
-            ServiceConfig serviceConfig = govnConfig.getServiceConfig();
-            HttpServletRequest servletRequest = req.servletRequest();
-            ServletInboundRequest request = new ServletInboundRequest(servletRequest, ctx.getArguments(), null, serviceConfig::isSystem, mcpConfig::isMcp, parser);
+    /**
+     * Wraps a handler function with middleware for request processing and error handling.
+     *
+     * @param target  The target object that may contain error handling capabilities
+     * @param handler The original handler function to be wrapped
+     * @return A wrapped handler function with enhanced request processing and error handling
+     */
+    @SuppressWarnings("rawtypes")
+    private HandlerFunction wrap(Object target, HandlerFunction handler) {
+        return req -> {
+            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, null, context.getGovernanceConfig(), parser);
             if (!request.isSystem()) {
                 HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
                 try {
-                    return (ServerResponse) context.inward(invocation, () -> delegate.handle(req));
+                    return (ServerResponse) context.inward(invocation, () -> handler.handle(req));
                 } catch (Throwable e) {
                     if (request.isMcp()) {
                         return ServerResponse.ok().body(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                     }
-                    throw toException(THROWER.createException(e, request));
+                    Exception exception = toException(THROWER.createException(e, request));
+                    HandlerFilterFunction<ServerResponse, ServerResponse> errorFunction = CloudUtils.getErrorFunction(target);
+                    if (errorFunction != null) {
+                        // Apply the error function to handle the exception
+                        return errorFunction.filter(req, r -> {
+                            throw exception;
+                        });
+                    } else {
+                        // If no error function is available, throw the exception directly
+                        throw exception;
+                    }
                 }
             } else {
-                return delegate.handle(req);
+                return handler.handle(req);
             }
-        }));
+        };
     }
 }

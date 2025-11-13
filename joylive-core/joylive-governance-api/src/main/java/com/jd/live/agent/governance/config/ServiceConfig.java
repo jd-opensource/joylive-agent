@@ -22,10 +22,8 @@ import com.jd.live.agent.core.util.trie.PathMatcherTrie;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
@@ -35,6 +33,23 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  * including failover thresholds and warmup configurations.
  */
 public class ServiceConfig {
+
+    private static final String[] SPRING_SYSTEM_HANDLERS = new String[]{
+            "org.springframework.web.servlet.mvc.Controller",
+            "org.springframework.boot.web.servlet.error.ErrorController",
+            "org.springframework.web.servlet.resource.ResourceHttpRequestHandler",
+            "org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping$WebMvcEndpointHandlerMethod",
+            "springfox.documentation.swagger.web.ApiResourceController",
+            "springfox.documentation.swagger2.web.Swagger2ControllerWebMvc",
+            "org.springdoc.webmvc.api.OpenApiResource",
+            "org.springdoc.webmvc.api.MultipleOpenApiResource",
+            "org.springdoc.webmvc.ui.SwaggerConfigResource",
+            "org.springdoc.webmvc.ui.SwaggerUiHome",
+            "org.springdoc.webmvc.ui.SwaggerWelcomeCommon",
+            "org.springframework.boot.actuate.endpoint.web.reactive.AbstractWebFluxEndpointHandlerMapping$WebFluxEndpointHandlerMethod",
+            "org.springframework.web.reactive.resource.ResourceWebHandler",
+            "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux"
+    };
 
     /**
      * The name used to identify the service configuration component.
@@ -114,6 +129,10 @@ public class ServiceConfig {
     @Setter
     private Set<String> systemPaths;
 
+    @Getter
+    @Setter
+    private Set<String> systemHandlers;
+
     /**
      * Define the grouping matching relationship for calls between services.
      * <p>k:v = service:group</p>
@@ -135,10 +154,10 @@ public class ServiceConfig {
 
     @Getter
     @Setter
-    private String genericResultType;
+    private String defaultResultType;
 
     @Getter
-    private transient LazyObject<Class<?>> genericResultTypeCache = new LazyObject<>(null);
+    private transient final LazyObject<Class<?>> defaultResultTypeCache = new LazyObject<>(null);
 
     private transient final PathMatcherTrie<PrefixPath> systemPathTrie = new PathMatcherTrie<>(() -> {
         List<PrefixPath> result = new ArrayList<>();
@@ -147,6 +166,8 @@ public class ServiceConfig {
         }
         return result;
     });
+
+    private transient final Map<Class, Boolean> systemHandlerCache = new ConcurrentHashMap<>();
 
     /**
      * Retrieves the failover threshold for a given unit.
@@ -169,17 +190,6 @@ public class ServiceConfig {
     }
 
     /**
-     * Determines if the given path is system path.
-     *
-     * @param path the path to check.
-     * @return {@code true} if the path is system path; {@code false} otherwise.
-     */
-    public boolean isSystem(String path) {
-        return path != null && systemPaths != null && !systemPaths.isEmpty()
-                && systemPathTrie.match(path, PathMatchType.PREFIX) != null;
-    }
-
-    /**
      * Returns the group associated with the specified service.
      *
      * @param service the name of the service
@@ -195,16 +205,62 @@ public class ServiceConfig {
      * @param classLoader the class loader to use for loading the class
      * @return the generic result class, or null if not available
      */
-    public Class<?> getGenericResultClass(ClassLoader classLoader) {
-        if (classLoader != null && !isEmpty(genericResultType)) {
+    public Class<?> getDefaultResultClass(ClassLoader classLoader) {
+        if (classLoader != null && !isEmpty(defaultResultType)) {
             // load class by application classloader.
-            return genericResultTypeCache.get(() -> loadClass(genericResultType, classLoader, false));
+            return defaultResultTypeCache.get(() -> loadClass(defaultResultType, classLoader, false));
         }
         return null;
     }
 
+    /**
+     * Determines if the given path is system path.
+     *
+     * @param path the path to check.
+     * @return {@code true} if the path is system path; {@code false} otherwise.
+     */
+    public boolean isSystemPath(String path) {
+        return path != null && systemPaths != null && !systemPaths.isEmpty()
+                && systemPathTrie.match(path, PathMatchType.PREFIX) != null;
+    }
+
+    /**
+     * Checks if the given type is a system handler class or inherits from one.
+     *
+     * @param type the class to check
+     * @return true if the class is a system handler or inherits from one, false otherwise
+     */
+    public boolean isSystemHandler(Class<?> type) {
+        if (type == null || systemHandlers == null || systemHandlers.isEmpty()) {
+            return false;
+        }
+        return systemHandlerCache.computeIfAbsent(type, c -> {
+            Queue<Class<?>> queue = new LinkedList<>();
+            queue.add(c);
+            Class<?> current;
+            while (!queue.isEmpty()) {
+                current = queue.poll();
+                if (systemHandlers.contains(current.getName())) {
+                    return true;
+                }
+                for (Class<?> intfType : current.getInterfaces()) {
+                    queue.add(intfType);
+                }
+                Class<?> parent = current.getSuperclass();
+                if (parent != null && parent != Object.class) {
+                    queue.add(parent);
+                }
+            }
+            return false;
+        });
+    }
+
     protected void initialize() {
         loadLimiter.initialize();
+        if (systemHandlers == null) {
+            systemHandlers = new HashSet<>();
+        }
+        systemHandlers.addAll(Arrays.asList(SPRING_SYSTEM_HANDLERS));
     }
 }
 

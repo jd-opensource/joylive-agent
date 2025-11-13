@@ -41,10 +41,10 @@ public class McpConfigTest {
         mcpConfig.setEnabled(false);
         mcpConfig.setPath("/mcp");
 
-        Assertions.assertFalse(mcpConfig.isMcp("/mcp"));
-        Assertions.assertFalse(mcpConfig.isMcp("/mcp/test"));
-        Assertions.assertFalse(mcpConfig.isMcp("/mcp/api/v1"));
-        Assertions.assertFalse(mcpConfig.isMcp("/other"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/mcp"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/mcp/test"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/mcp/api/v1"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/other"));
     }
 
     @Test
@@ -53,18 +53,18 @@ public class McpConfigTest {
         mcpConfig.setPath("/mcp");
 
         // Test exact match
-        Assertions.assertTrue(mcpConfig.isMcp("/mcp"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/mcp"));
 
         // Test sub-paths
-        Assertions.assertTrue(mcpConfig.isMcp("/mcp/test"));
-        Assertions.assertTrue(mcpConfig.isMcp("/mcp/api/v1"));
-        Assertions.assertTrue(mcpConfig.isMcp("/mcp/service/health"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/mcp/test"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/mcp/api/v1"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/mcp/service/health"));
 
         // Test non-matching paths
-        Assertions.assertFalse(mcpConfig.isMcp("/api"));
-        Assertions.assertFalse(mcpConfig.isMcp("/health"));
-        Assertions.assertFalse(mcpConfig.isMcp("/mcpx"));
-        Assertions.assertFalse(mcpConfig.isMcp("/other/mcp"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/api"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/health"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/mcpx"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/other/mcp"));
     }
 
     @Test
@@ -73,16 +73,16 @@ public class McpConfigTest {
         mcpConfig.setPath("/api/mcp");
 
         // Test exact match
-        Assertions.assertTrue(mcpConfig.isMcp("/api/mcp"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/api/mcp"));
 
         // Test sub-paths
-        Assertions.assertTrue(mcpConfig.isMcp("/api/mcp/test"));
-        Assertions.assertTrue(mcpConfig.isMcp("/api/mcp/v1/service"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/api/mcp/test"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/api/mcp/v1/service"));
 
         // Test non-matching paths
-        Assertions.assertFalse(mcpConfig.isMcp("/api"));
-        Assertions.assertFalse(mcpConfig.isMcp("/mcp"));
-        Assertions.assertFalse(mcpConfig.isMcp("/api/other"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/api"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/mcp"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/api/other"));
     }
 
     @Test
@@ -120,8 +120,8 @@ public class McpConfigTest {
         Assertions.assertEquals("/custom/mcp", mcpConfig.getPath());
 
         // Test isMcp functionality after initialization
-        Assertions.assertTrue(mcpConfig.isMcp("/custom/mcp"));
-        Assertions.assertTrue(mcpConfig.isMcp("/custom/mcp/test"));
-        Assertions.assertFalse(mcpConfig.isMcp("/other"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/custom/mcp"));
+        Assertions.assertTrue(mcpConfig.isMcpPath("/custom/mcp/test"));
+        Assertions.assertFalse(mcpConfig.isMcpPath("/other"));
     }
 }

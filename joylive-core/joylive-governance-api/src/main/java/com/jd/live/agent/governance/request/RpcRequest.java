@@ -180,7 +180,7 @@ public interface RpcRequest extends ServiceRequest {
             Class<?> returnClass = type.getReturnClass();
             Type returnType = type.getReturnType();
             if (type.isGeneric() && returnClass == null) {
-                returnClass = degradeConfig.getContentClass(type.getClassLoader());
+                returnClass = degradeConfig.getContentType(type.getClassLoader());
                 returnType = returnClass;
                 if (returnClass == null) {
                     throw new ConfigException("The content type of degrade degradeConfig is not configured.");
