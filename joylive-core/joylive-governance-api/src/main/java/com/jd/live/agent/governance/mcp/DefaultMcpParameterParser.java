@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.governance.mcp;
 
-import com.jd.live.agent.governance.jsonrpc.JsonRpcError;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcException;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcException.NotEnoughParameter;
+import com.jd.live.agent.governance.mcp.spec.ErrorCodes;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcException;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcException.NotEnoughParameter;
 
 import java.lang.reflect.Array;
 import java.util.List;
@@ -33,7 +33,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
     public static final McpParameterParser INSTANCE = new DefaultMcpParameterParser();
 
     @Override
-    public Object[] parse(McpToolMethod method, Object params, RequestContext ctx) throws Exception {
+    public Object[] parse(McpToolMethod method, Object params, McpRequestContext ctx) throws Exception {
         McpToolParameter[] parameters = method.getParameters();
         if (parameters.length == 0) {
             return new Object[0];
@@ -61,7 +61,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseMap(McpToolParameter[] parameters, Map<?, ?> params, RequestContext ctx) throws Exception {
+    private Object[] parseMap(McpToolParameter[] parameters, Map<?, ?> params, McpRequestContext ctx) throws Exception {
         return parse(parameters, params, ctx, (p, i) -> params.get(p.getName()));
     }
 
@@ -74,7 +74,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseArrayType(McpToolParameter[] parameters, Object params, RequestContext ctx) throws Exception {
+    private Object[] parseArrayType(McpToolParameter[] parameters, Object params, McpRequestContext ctx) throws Exception {
         int length = Array.getLength(params);
         return parse(parameters, params, ctx, (p, i) -> {
             if (i >= length) {
@@ -93,7 +93,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseArray(McpToolParameter[] parameters, Object[] params, RequestContext ctx) throws Exception {
+    private Object[] parseArray(McpToolParameter[] parameters, Object[] params, McpRequestContext ctx) throws Exception {
         return parse(parameters, params, ctx, (p, i) -> {
             if (i >= params.length) {
                 throw new NotEnoughParameter();
@@ -111,7 +111,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      * @return Parsed parameter array
      * @throws Exception if parsing fails
      */
-    private Object[] parseList(McpToolParameter[] parameters, List<?> objects, RequestContext ctx) throws Exception {
+    private Object[] parseList(McpToolParameter[] parameters, List<?> objects, McpRequestContext ctx) throws Exception {
         return parse(parameters, objects, ctx, (p, i) -> {
             if (i >= objects.size()) {
                 throw new NotEnoughParameter();
@@ -136,7 +136,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
      */
     private Object[] parse(McpToolParameter[] parameters,
                            Object params,
-                           RequestContext ctx,
+                           McpRequestContext ctx,
                            BiFunction<McpToolParameter, Integer, Object> paramFunc) throws Exception {
         Object[] args = new Object[parameters.length];
         if (parameters.length == 1) {
@@ -146,7 +146,7 @@ public class DefaultMcpParameterParser implements McpParameterParser {
             for (int i = 0; i < parameters.length; i++) {
                 args[i] = parameters[i].parse(ctx, p -> paramFunc.apply(p, counter.getAndIncrement()));
                 if (args[i] == null && parameters[i].isRequired()) {
-                    throw new JsonRpcException("Required parameter at position " + i + " is missing", JsonRpcError.INVALID_PARAMS);
+                    throw new JsonRpcException("Required parameter at position " + i + " is missing", ErrorCodes.INVALID_PARAMS);
                 }
             }
         }

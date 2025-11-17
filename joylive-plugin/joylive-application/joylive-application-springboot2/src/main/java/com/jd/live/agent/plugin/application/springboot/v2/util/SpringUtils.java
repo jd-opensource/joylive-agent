@@ -47,16 +47,6 @@ public class SpringUtils {
     private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 = "org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment";
     private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3, ResourceLoader.class.getClassLoader());
 
-    private static final String ERROR_CONTROLLER_TYPE = "org.springframework.boot.web.servlet.error.ErrorController";
-    private static final Class<?> ERROR_CONTROLLER_CLASS = loadClass(ERROR_CONTROLLER_TYPE, ResourceLoader.class.getClassLoader());
-    private static final String API_RESOURCE_CONTROLLER_TYPE = "springfox.documentation.swagger.web.ApiResourceController";
-    private static final Class<?> API_RESOURCE_CONTROLLER_CLASS = loadClass(API_RESOURCE_CONTROLLER_TYPE, ResourceLoader.class.getClassLoader());
-    private static final String SWAGGER2_CONTROLLER_WEB_MVC_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebMvc";
-    private static final Class<?> SWAGGER2_CONTROLLER_WEB_MVC_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_MVC_TYPE, ResourceLoader.class.getClassLoader());
-    private static final String SWAGGER2_CONTROLLER_WEB_FLUX_TYPE = "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux";
-    private static final Class<?> SWAGGER2_CONTROLLER_WEB_FLUX_CLASS = loadClass(SWAGGER2_CONTROLLER_WEB_FLUX_TYPE, ResourceLoader.class.getClassLoader());
-
-
     /**
      * Checks if current thread is a development reload thread
      */
@@ -92,18 +82,6 @@ public class SpringUtils {
      */
     public static boolean isJavaxServlet() {
         return METHOD_INIT_PROPERTY_SOURCES != null && METHOD_INIT_PROPERTY_SOURCES.getParameterTypes()[0].getName().equals(TYPE_JAVAX_SERVLET_CONTEXT);
-    }
-
-    /**
-     * Checks if controller is a system-level controller
-     *
-     * @param controller The controller instance to check
-     */
-    public static boolean isSystemController(Object controller) {
-        return ERROR_CONTROLLER_CLASS != null && ERROR_CONTROLLER_CLASS.isInstance(controller)
-                || API_RESOURCE_CONTROLLER_CLASS != null && API_RESOURCE_CONTROLLER_CLASS.isInstance(controller)
-                || SWAGGER2_CONTROLLER_WEB_MVC_CLASS != null && SWAGGER2_CONTROLLER_WEB_MVC_CLASS.isInstance(controller)
-                || SWAGGER2_CONTROLLER_WEB_FLUX_CLASS != null && SWAGGER2_CONTROLLER_WEB_FLUX_CLASS.isInstance(controller);
     }
 
     /**

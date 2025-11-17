@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.converter;
 
 import com.jd.live.agent.core.util.converter.Converter;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -35,8 +36,19 @@ public class MonoConverter implements Converter<Object, Mono<Object>> {
             return Mono.from((Publisher<Object>) source);
         } else if (source instanceof CompletionStage) {
             return Mono.fromCompletionStage((CompletionStage<Object>) source);
-        } else {
-            return Mono.just(source);
+        } else if (source instanceof JsonRpcResponse) {
+            JsonRpcResponse response = (JsonRpcResponse) source;
+            if (response.isSuccess()) {
+                Object result = response.getResult();
+                if (result instanceof Mono) {
+                    return (Mono<Object>) result;
+                } else if (result instanceof Publisher) {
+                    return Mono.from((Publisher<Object>) result);
+                } else if (result instanceof CompletionStage) {
+                    return Mono.fromCompletionStage((CompletionStage<Object>) result);
+                }
+            }
         }
+        return Mono.just(source);
     }
 }

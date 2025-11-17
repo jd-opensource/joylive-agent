@@ -446,6 +446,46 @@ public class CollectionUtils {
     }
 
     /**
+     * Transforms a map by applying a function to each value while keeping the keys unchanged.
+     *
+     * @param <K>           The type of the map keys
+     * @param <V1>          The type of the input map values
+     * @param <V2>          The type of the output map values
+     * @param map           The input map to transform
+     * @param valueFunction The function to apply to each value
+     * @return A new map with the same keys but transformed values, or null if the input map is null
+     */
+    public static <K, V1, V2> Map<K, V2> toMap(Map<K, V1> map, Function<V1, V2> valueFunction) {
+        if (map == null) {
+            return null;
+        }
+        Map<K, V2> result = new HashMap<>(map.size());
+        map.forEach((k, v) -> result.put(k, valueFunction.apply(v)));
+        return result;
+    }
+
+    /**
+     * Transforms a map by applying functions to both keys and values.
+     *
+     * @param <K1>          The type of the input map keys
+     * @param <V1>          The type of the input map values
+     * @param <K2>          The type of the output map keys
+     * @param <V2>          The type of the output map values
+     * @param map           The input map to transform
+     * @param keyFunction   The function to apply to each key
+     * @param valueFunction The function to apply to each value
+     * @return A new map with transformed keys and values, or null if the input map is null
+     */
+    public static <K1, V1, K2, V2> Map<K2, V2> toMap(Map<K1, V1> map, Function<K1, K2> keyFunction, Function<V1, V2> valueFunction) {
+        if (map == null) {
+            return null;
+        }
+        Map<K2, V2> result = new HashMap<>(map.size());
+        map.forEach((k, v) -> result.put(keyFunction.apply(k), valueFunction.apply(v)));
+        return result;
+    }
+
+    /**
      * Converts an iterator of elements into a map using specified key and value functions.
      * If the provided iterator is null, the method returns null.
      * The method applies a predicate to filter elements before converting them to map entries.
@@ -469,6 +509,92 @@ public class CollectionUtils {
         T t;
         while (iterator.hasNext()) {
             t = iterator.next();
+            if (predicate == null || predicate.test(t)) {
+                result.put(keyFunction.apply(t), valueFunction.apply(t));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Transforms a map by applying a function to each value while keeping the keys unchanged.
+     *
+     * @param <K>           The type of the map keys
+     * @param <V1>          The type of the input map values
+     * @param <V2>          The type of the output map values
+     * @param map           The input map to transform
+     * @param valueFunction The function to apply to each value
+     * @return A new link map with the same keys but transformed values, or null if the input map is null
+     */
+    public static <K, V1, V2> Map<K, V2> toLinkMap(Map<K, V1> map, Function<V1, V2> valueFunction) {
+        if (map == null) {
+            return null;
+        }
+        Map<K, V2> result = new LinkedHashMap<>(map.size());
+        map.forEach((k, v) -> result.put(k, valueFunction.apply(v)));
+        return result;
+    }
+
+    /**
+     * Transforms a map by applying functions to both keys and values.
+     *
+     * @param <K1>          The type of the input map keys
+     * @param <V1>          The type of the input map values
+     * @param <K2>          The type of the output map keys
+     * @param <V2>          The type of the output map values
+     * @param map           The input map to transform
+     * @param keyFunction   The function to apply to each key
+     * @param valueFunction The function to apply to each value
+     * @return A new link map with transformed keys and values, or null if the input map is null
+     */
+    public static <K1, V1, K2, V2> Map<K2, V2> toLinkMap(Map<K1, V1> map, Function<K1, K2> keyFunction, Function<V1, V2> valueFunction) {
+        if (map == null) {
+            return null;
+        }
+        Map<K2, V2> result = new LinkedHashMap<>(map.size());
+        map.forEach((k, v) -> result.put(keyFunction.apply(k), valueFunction.apply(v)));
+        return result;
+    }
+
+    /**
+     * Converts an iterable of elements into a map using specified key and value functions.
+     * If the provided iterable is null, the method returns null.
+     *
+     * @param <T>           the type of elements in the iterable
+     * @param <K>           the type of keys in the resulting map
+     * @param <V>           the type of values in the resulting map
+     * @param iterator      the iterable of elements to convert
+     * @param keyFunction   the function to extract the key from each element
+     * @param valueFunction the function to extract the value from each element
+     * @return a map where each entry's key is the result of applying the keyFunction to an element,
+     * and each entry's value is the result of applying the valueFunction to the same element
+     */
+    public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterator, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        return toLinkMap(iterator, null, keyFunction, valueFunction);
+    }
+
+    /**
+     * Converts an iterable of elements into a map using specified key and value functions.
+     * If the provided iterable is null, the method returns null.
+     * The method applies a predicate to filter elements before converting them to map entries.
+     * Entries with a null key are not added to the map.
+     *
+     * @param <T>           the type of elements in the iterable
+     * @param <K>           the type of keys in the resulting map
+     * @param <V>           the type of values in the resulting map
+     * @param iterator      the iterable of elements to convert
+     * @param predicate     the predicate to test each element; if null, all elements are included
+     * @param keyFunction   the function to extract the key from each element
+     * @param valueFunction the function to extract the value from each element
+     * @return a map where each entry's key is the result of applying the keyFunction to an element,
+     * and each entry's value is the result of applying the valueFunction to the same element
+     */
+    public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterator, Predicate<T> predicate, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        if (iterator == null) {
+            return null;
+        }
+        Map<K, V> result = new LinkedHashMap<>();
+        for (T t : iterator) {
             if (predicate == null || predicate.test(t)) {
                 result.put(keyFunction.apply(t), valueFunction.apply(t));
             }

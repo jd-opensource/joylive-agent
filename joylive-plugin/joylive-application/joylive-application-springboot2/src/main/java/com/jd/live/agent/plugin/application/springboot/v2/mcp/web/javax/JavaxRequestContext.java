@@ -15,13 +15,22 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
+import com.jd.live.agent.core.parser.JsonSchemaParser;
 import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.governance.mcp.RequestContext.AbstractRequestContext;
+import com.jd.live.agent.governance.mcp.McpParameterParser;
+import com.jd.live.agent.governance.mcp.McpRequestContext.AbstractRequestContext;
+import com.jd.live.agent.governance.mcp.McpToolMethod;
+import com.jd.live.agent.governance.mcp.McpVersion;
+import lombok.Builder;
 import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
+
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 @Getter
 public class JavaxRequestContext extends AbstractRequestContext {
@@ -32,10 +41,31 @@ public class JavaxRequestContext extends AbstractRequestContext {
 
     private final HttpServletResponse httpResponse;
 
-    public JavaxRequestContext(ObjectConverter converter, WebRequest webRequest, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        super(converter);
+    @Builder
+    public JavaxRequestContext(Map<String, McpToolMethod> methods,
+                               Map<String, McpToolMethod> paths,
+                               ObjectConverter converter,
+                               McpParameterParser parameterParser,
+                               JsonSchemaParser jsonSchemaParser,
+                               McpVersion version,
+                               WebRequest webRequest,
+                               HttpServletRequest httpRequest,
+                               HttpServletResponse httpResponse) {
+        super(methods, paths, converter, parameterParser, jsonSchemaParser, version);
         this.webRequest = webRequest;
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;
+    }
+
+    @Override
+    public String getHeader(String name) {
+        return name == null ? null : httpRequest.getHeader(name);
+    }
+
+    @Override
+    public void addCookie(String name, String value) {
+        if (!isEmpty(name) && !isEmpty(value)) {
+            httpResponse.addCookie(new Cookie(name, value));
+        }
     }
 }

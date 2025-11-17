@@ -29,5 +29,5 @@ public interface McpParameterParser {
      * @return Converted parameter array
      * @throws Exception If parsing fails
      */
-    Object[] parse(McpToolMethod method, Object params, RequestContext ctx) throws Exception;
+    Object[] parse(McpToolMethod method, Object params, McpRequestContext ctx) throws Exception;
 }

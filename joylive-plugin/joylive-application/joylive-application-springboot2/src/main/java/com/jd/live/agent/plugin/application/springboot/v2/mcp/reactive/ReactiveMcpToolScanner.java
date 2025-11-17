@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
 import com.jd.live.agent.governance.mcp.ExpressionFactory;
+import com.jd.live.agent.governance.mcp.McpRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
-import com.jd.live.agent.governance.mcp.RequestContext;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.MonoConverter;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.OptionalConverter;
@@ -144,31 +144,31 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
         return true;
     }
 
-    private ServerWebExchange getWebExchange(RequestContext ctx) {
+    private ServerWebExchange getWebExchange(McpRequestContext ctx) {
         return ((ReactiveRequestContext) ctx).getExchange();
     }
 
-    private ServerHttpRequest getRequest(RequestContext ctx) {
+    private ServerHttpRequest getRequest(McpRequestContext ctx) {
         return getWebExchange(ctx).getRequest();
     }
 
-    private ServerHttpResponse getResponse(RequestContext ctx) {
+    private ServerHttpResponse getResponse(McpRequestContext ctx) {
         return getWebExchange(ctx).getResponse();
     }
 
-    private HttpHeaders getHeaders(RequestContext ctx) {
+    private HttpHeaders getHeaders(McpRequestContext ctx) {
         return getRequest(ctx).getHeaders();
     }
 
-    private Mono<WebSession> getSession(RequestContext ctx) {
+    private Mono<WebSession> getSession(McpRequestContext ctx) {
         return getWebExchange(ctx).getSession();
     }
 
-    private Object getRequestAttribute(RequestContext ctx, String name) {
+    private Object getRequestAttribute(McpRequestContext ctx, String name) {
         return getWebExchange(ctx).getAttribute(name);
     }
 
-    private Object getSessionAttribute(RequestContext ctx, String name) {
+    private Object getSessionAttribute(McpRequestContext ctx, String name) {
         Mono<WebSession> mono = getSession(ctx);
         if (mono == null) {
             return null;
@@ -177,19 +177,19 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
         return session == null ? null : session.getAttribute(name);
     }
 
-    private HttpMethod getHttpMethod(RequestContext ctx) {
+    private HttpMethod getHttpMethod(McpRequestContext ctx) {
         return getRequest(ctx).getMethod();
     }
 
-    private Mono<Principal> getPrincipal(RequestContext ctx) {
+    private Mono<Principal> getPrincipal(McpRequestContext ctx) {
         return getWebExchange(ctx).getPrincipal();
     }
 
-    private Locale getLocale(RequestContext ctx) {
+    private Locale getLocale(McpRequestContext ctx) {
         return getWebExchange(ctx).getLocaleContext().getLocale();
     }
 
-    private TimeZone getTimeZone(RequestContext ctx) {
+    private TimeZone getTimeZone(McpRequestContext ctx) {
         TimeZone timeZone = null;
         ServerWebExchange exchange = getWebExchange(ctx);
         if (exchange != null) {
@@ -201,12 +201,12 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
         return timeZone != null ? timeZone : TimeZone.getDefault();
     }
 
-    private ZoneId getZoneId(RequestContext ctx) {
+    private ZoneId getZoneId(McpRequestContext ctx) {
         TimeZone timeZone = getTimeZone(ctx);
         return timeZone != null ? timeZone.toZoneId() : ZoneId.systemDefault();
     }
 
-    private UriComponentsBuilder getUriComponentsBuilder(RequestContext ctx) {
+    private UriComponentsBuilder getUriComponentsBuilder(McpRequestContext ctx) {
         ServerHttpRequest request = getRequest(ctx);
         return request == null
                 ? UriComponentsBuilder.newInstance()
@@ -246,7 +246,7 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
         return builder.arg(arg).parser(ctx -> getRequestAttribute(ctx, name));
     }
 
-    private Object getCookieValue(RequestContext ctx, String name, Class<?> type) {
+    private Object getCookieValue(McpRequestContext ctx, String name, Class<?> type) {
         ServerHttpRequest request = getRequest(ctx);
         if (request != null) {
             HttpCookie cookie = request.getCookies().getFirst(name);
@@ -257,7 +257,7 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
         return null;
     }
 
-    private Object getHeader(RequestContext ctx, String name, Class<?> type) {
+    private Object getHeader(McpRequestContext ctx, String name, Class<?> type) {
         HttpHeaders headers = getHeaders(ctx);
         if (headers != null) {
             if (Map.class.isAssignableFrom(type)) {

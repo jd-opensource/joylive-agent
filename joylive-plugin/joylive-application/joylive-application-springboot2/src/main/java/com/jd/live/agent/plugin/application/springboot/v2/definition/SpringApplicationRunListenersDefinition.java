@@ -31,11 +31,15 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.doc.DocumentRegistry;
+import com.jd.live.agent.governance.mcp.McpVersion;
+import com.jd.live.agent.governance.mcp.handler.McpHandler;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnContextPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnEnvironmentPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnReadyInterceptor;
 import com.jd.live.agent.plugin.application.springboot.v2.interceptor.ApplicationOnStartedInterceptor;
+
+import java.util.Map;
 
 @Injectable
 @Extension(value = "SpringApplicationRunListenersDefinition_v5", order = PluginDefinition.ORDER_APPLICATION)
@@ -76,7 +80,16 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
     private Application application;
 
     @Inject
+    private Map<String, McpHandler> handlers;
+
+    @Inject
     private ObjectConverter converter;
+
+    @Inject
+    private Map<String, McpVersion> versions;
+
+    @Inject
+    private McpVersion defaultVersion;
 
     public SpringApplicationRunListenersDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
@@ -86,7 +99,7 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
                         () -> new ApplicationOnStartedInterceptor(supervisor, docRegistry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_CONTEXT_PREPARED),
-                        () -> new ApplicationOnContextPreparedInterceptor(supervisor, config, converter)),
+                        () -> new ApplicationOnContextPreparedInterceptor(supervisor, config, handlers, converter, versions, defaultVersion)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING, METHOD_FINISHED),
                         () -> new ApplicationOnReadyInterceptor(supervisor, config, registry, application)),
         };

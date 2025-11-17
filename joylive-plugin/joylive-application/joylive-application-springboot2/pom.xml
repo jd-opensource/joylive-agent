@@ -20,6 +20,9 @@
         <sofa-boot.version>4.3.0</sofa-boot.version>
         <tomcat-embed-core.version>10.1.41</tomcat-embed-core.version>
         <spring-web.version>6.2.8</spring-web.version>
+        <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+        <swagger3.version>2.2.40</swagger3.version>
+        <swagger.version>1.6.16</swagger.version>
     </properties>
 
     <dependencies>
@@ -67,9 +70,21 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-models</artifactId>
+            <version>${swagger3.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-models</artifactId>
+            <version>${swagger.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>4.0.1</version>
+            <version>${javax.servlet-api.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

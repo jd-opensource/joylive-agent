@@ -19,6 +19,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Set;
 
 /**
@@ -58,5 +59,13 @@ public class McpToolMethod {
 
     public Object invoke(Object... args) throws Throwable {
         return method.invoke(controller, args);
+    }
+
+    public Class<?> getReturnType() {
+        return method.getReturnType();
+    }
+
+    public Type getGenericReturnType() {
+        return method.getGenericReturnType();
     }
 }

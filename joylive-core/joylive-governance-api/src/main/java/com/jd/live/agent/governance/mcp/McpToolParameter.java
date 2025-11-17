@@ -52,9 +52,9 @@ public class McpToolParameter {
 
     private final Converter<Object, ?> converter;
 
-    private final RequestParser parser;
+    private final McpRequestParser parser;
 
-    private final RequestParser defaultValueParser;
+    private final McpRequestParser defaultValueParser;
 
     public McpToolParameter(Parameter parameter,
                             int index,
@@ -64,8 +64,8 @@ public class McpToolParameter {
                             boolean optional,
                             boolean convertable,
                             Converter<Object, ?> converter,
-                            RequestParser parser,
-                            RequestParser defaultValueParser) {
+                            McpRequestParser parser,
+                            McpRequestParser defaultValueParser) {
         this.parameter = parameter;
         this.name = parameter.getName();
         this.arg = arg;
@@ -96,7 +96,7 @@ public class McpToolParameter {
         return parser != null;
     }
 
-    public Object parse(RequestContext ctx, Function<McpToolParameter, Object> valueFunc) throws Exception {
+    public Object parse(McpRequestContext ctx, Function<McpToolParameter, Object> valueFunc) throws Exception {
         Object result;
         if (isFramework()) {
             // system parser
@@ -111,7 +111,7 @@ public class McpToolParameter {
         return wrap(result);
     }
 
-    private Object convert(RequestContext ctx, Object target) {
+    private Object convert(McpRequestContext ctx, Object target) {
         if (target == null) {
             return null;
         }
@@ -145,8 +145,8 @@ public class McpToolParameter {
         private boolean optional;
         private boolean convertable;
         private Converter<Object, ?> converter;
-        private RequestParser parser;
-        private RequestParser defaultValueParser;
+        private McpRequestParser parser;
+        private McpRequestParser defaultValueParser;
 
         public McpToolParameterBuilder parameter(Parameter parameter) {
             this.parameter = parameter;
@@ -192,12 +192,12 @@ public class McpToolParameter {
             return this;
         }
 
-        public McpToolParameterBuilder parser(RequestParser parser) {
+        public McpToolParameterBuilder parser(McpRequestParser parser) {
             this.parser = parser;
             return this;
         }
 
-        public McpToolParameterBuilder defaultValueParser(RequestParser defaultValueParser) {
+        public McpToolParameterBuilder defaultValueParser(McpRequestParser defaultValueParser) {
             this.defaultValueParser = defaultValueParser;
             return this;
         }
@@ -246,11 +246,11 @@ public class McpToolParameter {
             return this.converter;
         }
 
-        public RequestParser parser() {
+        public McpRequestParser parser() {
             return this.parser;
         }
 
-        public RequestParser defaultValueParser() {
+        public McpRequestParser defaultValueParser() {
             return this.defaultValueParser;
         }
 

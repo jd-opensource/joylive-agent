@@ -15,13 +15,16 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
-import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
+import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
 import com.jd.live.agent.governance.mcp.DefaultMcpParameterParser;
-import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
+import com.jd.live.agent.governance.mcp.handler.McpHandler;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
+import com.jd.live.agent.governance.mcp.spec.Request;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.SpringExpressionFactory;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -65,16 +68,31 @@ public class JakartaWebMcpController extends AbstractMcpController {
             if (!request.validate()) {
                 return JsonRpcResponse.createInvalidRequestResponse(request.getId());
             }
-            McpToolMethod method = methods.get(request.getMethod());
-            if (method == null) {
+            McpHandler handler = handlers.get(request.getMethod());
+            if (handler == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            JakartaRequestContext ctx = new JakartaRequestContext(objectConverter, webRequest, httpRequest, httpResponse);
-            Object[] args = parameterParser.parse(method, request.getParams(), ctx);
-            Object result = method.getMethod().invoke(method.getController(), args);
-            return request.notification()
-                    ? JsonRpcResponse.createNotificationResponse()
-                    : JsonRpcResponse.createSuccessResponse(request.getId(), result);
+            String version = null;
+            Cookie[] cookies = httpRequest.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (cookie.getName().equalsIgnoreCase(Request.KEY_VERSION)) {
+                        version = cookie.getValue();
+                    }
+                }
+            }
+            JakartaRequestContext ctx = JakartaRequestContext.builder()
+                    .methods(methods)
+                    .paths(paths)
+                    .converter(objectConverter)
+                    .parameterParser(parameterParser)
+                    .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
+                    .version(getVersion(version))
+                    .webRequest(webRequest)
+                    .httpRequest(httpRequest)
+                    .httpResponse(httpResponse)
+                    .build();
+            return handler.handle(request, ctx);
         } catch (Throwable e) {
             return JsonRpcResponse.createErrorResponse(request.getId(), getCause(e));
         }

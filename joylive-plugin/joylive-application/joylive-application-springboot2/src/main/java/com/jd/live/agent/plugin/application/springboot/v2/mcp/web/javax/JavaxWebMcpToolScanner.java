@@ -16,8 +16,8 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
 import com.jd.live.agent.governance.mcp.ExpressionFactory;
+import com.jd.live.agent.governance.mcp.McpRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
-import com.jd.live.agent.governance.mcp.RequestContext;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.OptionalConverter;
 import org.springframework.http.HttpHeaders;
@@ -107,32 +107,32 @@ public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
         return builder.arg(arg).parser(ctx -> getRequestAttribute(ctx, name));
     }
 
-    private WebRequest getWebRequest(RequestContext ctx) {
+    private WebRequest getWebRequest(McpRequestContext ctx) {
         return ((JavaxRequestContext) ctx).getWebRequest();
     }
 
-    private HttpServletRequest getHttpRequest(RequestContext ctx) {
+    private HttpServletRequest getHttpRequest(McpRequestContext ctx) {
         return ((JavaxRequestContext) ctx).getHttpRequest();
     }
 
-    private HttpServletResponse getHttpResponse(RequestContext ctx) {
+    private HttpServletResponse getHttpResponse(McpRequestContext ctx) {
         return ((JavaxRequestContext) ctx).getHttpResponse();
     }
 
-    private Principal getPrincipal(RequestContext ctx, Class<?> type) {
+    private Principal getPrincipal(McpRequestContext ctx, Class<?> type) {
         Principal principal = getHttpRequest(ctx).getUserPrincipal();
         return principal == null || !type.isInstance(principal) ? null : principal;
     }
 
-    private HttpSession getSession(RequestContext ctx) {
+    private HttpSession getSession(McpRequestContext ctx) {
         return getHttpRequest(ctx).getSession();
     }
 
-    private Locale getLocale(RequestContext ctx) {
+    private Locale getLocale(McpRequestContext ctx) {
         return getHttpRequest(ctx).getLocale();
     }
 
-    private Object getHttpMethod(RequestContext ctx) {
+    private Object getHttpMethod(McpRequestContext ctx) {
         return getHttpRequest(ctx).getMethod();
     }
 
@@ -162,15 +162,15 @@ public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
         return builder.arg(arg).parser(ctx -> getSessionAttribute(ctx, name));
     }
 
-    private Object getRequestAttribute(RequestContext ctx, String name) {
+    private Object getRequestAttribute(McpRequestContext ctx, String name) {
         return getHttpRequest(ctx).getAttribute(name);
     }
 
-    private Object getSessionAttribute(RequestContext ctx, String name) {
+    private Object getSessionAttribute(McpRequestContext ctx, String name) {
         return getSession(ctx).getAttribute(name);
     }
 
-    private String getCookieValue(RequestContext ctx, String name) {
+    private String getCookieValue(McpRequestContext ctx, String name) {
         Cookie[] cookies = getHttpRequest(ctx).getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
@@ -182,7 +182,7 @@ public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
         return null;
     }
 
-    private Object getHeader(RequestContext ctx, String name, Class<?> type) {
+    private Object getHeader(McpRequestContext ctx, String name, Class<?> type) {
         WebRequest webRequest = getWebRequest(ctx);
         if (HttpHeaders.class == type) {
             HttpHeaders headers = new HttpHeaders();

@@ -280,7 +280,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @param defaultValue the default value to parse, may be null or empty
      * @return the request parser, or null if defaultValue is empty
      */
-    protected RequestParser createDefaultValueParser(String defaultValue) {
+    protected McpRequestParser createDefaultValueParser(String defaultValue) {
         return createDefaultValueParser(defaultValue, null);
     }
 
@@ -291,7 +291,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @param function     optional transformation function to apply on parsed value
      * @return the request parser, or null if defaultValue equals DEFAULT_NONE
      */
-    protected RequestParser createDefaultValueParser(String defaultValue, Function<Object, Object> function) {
+    protected McpRequestParser createDefaultValueParser(String defaultValue, Function<Object, Object> function) {
         if (ValueConstants.DEFAULT_NONE.equals(defaultValue)) {
             return null;
         }

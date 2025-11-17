@@ -15,11 +15,13 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
-import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
+import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
 import com.jd.live.agent.governance.mcp.DefaultMcpParameterParser;
-import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
+import com.jd.live.agent.governance.mcp.handler.McpHandler;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
+import com.jd.live.agent.governance.mcp.spec.Request;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.SpringExpressionFactory;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
@@ -65,16 +68,31 @@ public class JavaxWebMcpController extends AbstractMcpController {
             if (!request.validate()) {
                 return JsonRpcResponse.createInvalidRequestResponse(request.getId());
             }
-            McpToolMethod method = methods.get(request.getMethod());
-            if (method == null) {
+            McpHandler handler = handlers.get(request.getMethod());
+            if (handler == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            JavaxRequestContext ctx = new JavaxRequestContext(objectConverter, webRequest, httpRequest, httpResponse);
-            Object[] args = parameterParser.parse(method, request.getParams(), ctx);
-            Object result = method.getMethod().invoke(method.getController(), args);
-            return request.notification()
-                    ? JsonRpcResponse.createNotificationResponse()
-                    : JsonRpcResponse.createSuccessResponse(request.getId(), result);
+            String version = null;
+            Cookie[] cookies = httpRequest.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (cookie.getName().equalsIgnoreCase(Request.KEY_VERSION)) {
+                        version = cookie.getValue();
+                    }
+                }
+            }
+            JavaxRequestContext ctx = JavaxRequestContext.builder()
+                    .methods(methods)
+                    .paths(paths)
+                    .converter(objectConverter)
+                    .parameterParser(parameterParser)
+                    .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
+                    .version(getVersion(version))
+                    .webRequest(webRequest)
+                    .httpRequest(httpRequest)
+                    .httpResponse(httpResponse)
+                    .build();
+            return handler.handle(request, ctx);
         } catch (Throwable e) {
             return JsonRpcResponse.createErrorResponse(request.getId(), getCause(e));
         }
