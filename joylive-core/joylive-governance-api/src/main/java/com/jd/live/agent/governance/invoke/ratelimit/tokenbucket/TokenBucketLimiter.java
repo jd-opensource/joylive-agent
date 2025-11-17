@@ -154,16 +154,26 @@ public abstract class TokenBucketLimiter extends AbstractRateLimiter {
     protected long waitForRequiredPermits(long permits, long startTimeMicros, long timeoutMicros) {
         long nowMicros = stopwatch.readMicros();
         refresh(nowMicros);
-        double available = min(permits, storedPermits);
-        double lack = permits - available;
-        long waitTimeMicros = waitForStorePermits(storedPermits, available) + (long) (lack * permitIntervalMicros);
-        long momentAvailable = saturatedAdd(this.nextPermitMicros, waitTimeMicros);
 
-        long microsToSleep = max(0L, momentAvailable - nowMicros);
+        // 1. First, calculate the time needed to wait for the current request itself.
+        //    If the current time has already exceeded nextPermitMicros, there is no need to wait (wait = 0).
+        //    If the current time has not yet reached nextPermitMicros (which is a hole left by the previous request), then a wait is required.
+        long microsToSleep = max(0L, this.nextPermitMicros - nowMicros);
+
+        // 2. Check if there is a timeout
+        //    Only when the "debt of the ancestors" is too heavy, and the time I need to wait exceeds my Timeout, do I give up.
         if (microsToSleep > timeoutMicros) {
             return TIMEOUT;
         }
-        this.nextPermitMicros = momentAvailable;
+
+        // 3. Calculate the additional time cost of consuming the token for this request (this is the pit I'm leaving for posterity)
+        double available = min(permits, storedPermits);
+        double lack = permits - available;
+        long waitTimeMicros = waitForStorePermits(storedPermits, available) + (long) (lack * permitIntervalMicros);
+
+        // 4.Time to update next token available = current next time + cost incurred this time
+        this.nextPermitMicros = saturatedAdd(this.nextPermitMicros, waitTimeMicros);
+
         storedPermits -= available;
         return microsToSleep;
     }
