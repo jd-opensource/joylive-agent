@@ -118,6 +118,7 @@ public abstract class AbstractMcpController {
 
     @EventListener
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        SpringUtils.addOpenApiHiddenControllers(this.getClass());
         openApi = LazyObject.of(SpringUtils.getOpenApi(new SpringAppContext(event.getApplicationContext())));
     }
 

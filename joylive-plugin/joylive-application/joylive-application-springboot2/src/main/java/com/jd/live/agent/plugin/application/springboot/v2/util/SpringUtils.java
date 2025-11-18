@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.util;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.governance.openapi.OpenApi;
 import com.jd.live.agent.plugin.application.springboot.v2.openapi.OpenApiFactory;
@@ -30,9 +31,12 @@ import com.jd.live.agent.plugin.application.springboot.v2.util.port.web.WebPortD
 import org.springframework.core.io.ResourceLoader;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Supplier;
 
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
@@ -72,8 +76,7 @@ public class SpringUtils {
     private static final Class<?> CLASS_DOCUMENTATION = loadClass(TYPE_DOCUMENTATION, CLASS_LOADER);
     private static final Method METHOD_DOCUMENTATION_BY_GROUP = getDeclaredMethod(CLASS_DOCUMENTATION_CACHE, "documentationByGroup", new Class[]{String.class});
     private static final Method METHOD_MAP_DOCUMENTATION = getDeclaredMethod(CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER, "mapDocumentation", new Class[]{CLASS_DOCUMENTATION});
-
-
+    private static final FieldAccessor ACCESSOR_HIDDEN_REST_CONTROLLERS = getAccessor(CLASS_OPEN_API_RESOURCE, "HIDDEN_REST_CONTROLLERS");
 
     /**
      * Checks if current thread is a development reload thread
@@ -140,26 +143,51 @@ public class SpringUtils {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    public static void addOpenApiHiddenControllers(Class<?>... types) {
+        if (ACCESSOR_HIDDEN_REST_CONTROLLERS != null) {
+            try {
+                Set<Class<?>> set = ACCESSOR_HIDDEN_REST_CONTROLLERS.get(null, Set.class);
+                Collections.addAll(set, types);
+            } catch (Throwable ignore) {
+            }
+        }
+    }
+
     public static Supplier<OpenApi> getOpenApi(AppContext context) {
         if (CLASS_OPEN_API_RESOURCE != null && METHOD_GET_OPEN_API != null) {
             try {
                 Object bean = context.getBean(CLASS_OPEN_API_RESOURCE);
-                Object openAPI = METHOD_GET_OPEN_API.invoke(bean, Locale.getDefault());
                 OpenApiFactory factory = CLASS_OPEN_API_V31 != null ? new OpenApi31Factory() : new OpenApi30Factory();
-                return () -> factory.create(openAPI);
-            } catch (Throwable e) {
+                return () -> {
+                    try {
+                        Object object = METHOD_GET_OPEN_API.invoke(bean, Locale.getDefault());
+                        return factory.create(object);
+                    } catch (Throwable e) {
+                        return null;
+                    }
+                };
+            } catch (Throwable ignore) {
             }
         } else if (CLASS_DOCUMENTATION_CACHE != null && CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER != null) {
             try {
                 Object documentCache = context.getBean(CLASS_DOCUMENTATION_CACHE);
                 Object mapper = context.getBean(CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER);
-                Object document = METHOD_DOCUMENTATION_BY_GROUP.invoke(documentCache, "default");
-                if (document != null) {
-                    Object swagger = METHOD_MAP_DOCUMENTATION.invoke(mapper, document);
-                    OpenApi2Factory factory = new OpenApi2Factory();
-                    return () -> factory.create(swagger);
+                if (documentCache != null && mapper != null) {
+                    return () -> {
+                        try {
+                            Object document = METHOD_DOCUMENTATION_BY_GROUP.invoke(documentCache, "default");
+                            if (document != null) {
+                                Object swagger = METHOD_MAP_DOCUMENTATION.invoke(mapper, document);
+                                OpenApi2Factory factory = new OpenApi2Factory();
+                                return factory.create(swagger);
+                            }
+                        } catch (Throwable ignore) {
+                        }
+                        return null;
+                    };
                 }
-            } catch (Throwable e) {
+            } catch (Throwable ignore) {
             }
 
         }

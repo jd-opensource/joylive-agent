@@ -23,6 +23,7 @@ import com.jd.live.agent.governance.mcp.spec.JsonRpcMessage;
 import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
 import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
 import com.jd.live.agent.governance.mcp.spec.ListToolsResult;
+import com.jd.live.agent.governance.openapi.OpenApi;
 
 @Extension(JsonRpcMessage.METHOD_TOOLS_LIST)
 public class ListToolsHandler implements McpHandler {
@@ -30,7 +31,8 @@ public class ListToolsHandler implements McpHandler {
     @Override
     public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
         ListToolsResult result;
-        if (ctx.getOpenApi() != null) {
+        OpenApi openApi = ctx.getOpenApi().get();
+        if (openApi != null) {
             result = OpenApiListToolsBuilder.INSTANCE.create(ctx);
         } else {
             result = ReflectionListToolsBuilder.INSTANCE.create(ctx);
