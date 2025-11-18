@@ -73,6 +73,7 @@ public class ReactiveMcpController extends AbstractMcpController {
                         .parameterParser(parameterParser)
                         .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                         .version(getVersion(version))
+                        .openApi(openApi)
                         .exchange(exchange)
                         .build();
                 return MonoConverter.INSTANCE.convert(handler.handle(req, ctx))

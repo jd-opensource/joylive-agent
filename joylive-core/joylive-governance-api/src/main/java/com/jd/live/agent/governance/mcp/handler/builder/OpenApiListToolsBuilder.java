@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.mcp.McpTypes.TypeFormat;
 import com.jd.live.agent.governance.mcp.spec.JsonSchema;
 import com.jd.live.agent.governance.mcp.spec.ListToolsResult;
 import com.jd.live.agent.governance.mcp.spec.Tool;
+import com.jd.live.agent.governance.openapi.OpenApi;
 import com.jd.live.agent.governance.openapi.Operation;
 import com.jd.live.agent.governance.openapi.PathItem;
 import com.jd.live.agent.governance.openapi.media.Schema;
@@ -49,7 +50,8 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
     public ListToolsResult create(McpRequestContext ctx) {
         if (cache == null) {
             ListToolsResult result = new ListToolsResult();
-            Map<String, PathItem> paths = ctx.getOpenApi().getPaths();
+            OpenApi openApi = ctx.getOpenApi().get();
+            Map<String, PathItem> paths = openApi.getPaths();
             if (paths == null || paths.isEmpty()) {
                 return result;
             }
@@ -101,7 +103,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
         List<Parameter> parameters = op.getParameters();
         if (parameters != null) {
             for (Parameter p : parameters) {
-                if (p.isRequired()) {
+                if (p.getRequired() != null && p.getRequired()) {
                     required.add(p.getName());
                 }
                 Schema schema = p.getSchema();
@@ -110,7 +112,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
         }
         required = required.isEmpty() ? null : required;
 
-        if (parameters.isEmpty()) {
+        if (parameters == null || parameters.isEmpty()) {
             return null;
         }
         return JsonSchema.builder().type(TYPE_OBJECT).required(required).properties(properties).build();

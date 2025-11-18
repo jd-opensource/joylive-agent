@@ -16,7 +16,7 @@ package com.jd.live.agent.governance.openapi;
 import com.jd.live.agent.governance.openapi.callbacks.Callback;
 import com.jd.live.agent.governance.openapi.parameters.Parameter;
 import com.jd.live.agent.governance.openapi.parameters.RequestBody;
-import com.jd.live.agent.governance.openapi.responses.ApiResponse;
+import com.jd.live.agent.governance.openapi.responses.ApiResponses;
 import com.jd.live.agent.governance.openapi.security.SecurityRequirement;
 import com.jd.live.agent.governance.openapi.servers.Server;
 import lombok.*;
@@ -76,7 +76,7 @@ public class Operation {
      * The list of possible responses as they are returned from executing this operation.
      * Key is the status code, value is the response definition.
      */
-    private Map<String, ApiResponse> responses;
+    private ApiResponses responses;
 
     /**
      * Map of possible out-of-band callbacks related to the parent operation.
@@ -99,7 +99,7 @@ public class Operation {
     /**
      * Additional external documentation for this operation.
      */
-    private ExternalDocumentation externalDocs;
+    private ExternalDoc externalDocs;
 
     /**
      * An alternative server array to service this operation.

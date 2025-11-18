@@ -13,7 +13,7 @@
 
 package com.jd.live.agent.governance.openapi.tags;
 
-import com.jd.live.agent.governance.openapi.ExternalDocumentation;
+import com.jd.live.agent.governance.openapi.ExternalDoc;
 import lombok.*;
 
 import java.util.Map;
@@ -42,7 +42,7 @@ public class Tag {
     /**
      * Additional external documentation for this tag
      */
-    private ExternalDocumentation externalDocs;
+    private ExternalDoc externalDocs;
 
     private Map<String, Object> extensions;
 }

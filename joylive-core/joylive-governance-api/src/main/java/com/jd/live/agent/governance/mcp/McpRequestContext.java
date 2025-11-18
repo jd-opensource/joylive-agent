@@ -22,6 +22,7 @@ import lombok.Getter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Context interface for MCP request parameter conversion.
@@ -118,7 +119,7 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
      *
      * @return open api insance
      */
-    default OpenApi getOpenApi() {
+    default Supplier<OpenApi> getOpenApi() {
         return null;
     }
 
@@ -152,18 +153,22 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
 
         private final McpVersion version;
 
+        private final Supplier<OpenApi> openApi;
+
         public AbstractRequestContext(Map<String, McpToolMethod> methods,
                                       Map<String, McpToolMethod> paths,
                                       ObjectConverter converter,
                                       McpParameterParser parameterParser,
                                       JsonSchemaParser jsonSchemaParser,
-                                      McpVersion version) {
+                                      McpVersion version,
+                                      Supplier<OpenApi> openApi) {
             this.methods = methods;
             this.paths = paths;
             this.converter = converter;
             this.parameterParser = parameterParser;
             this.jsonSchemaParser = jsonSchemaParser;
             this.version = version;
+            this.openApi = openApi;
         }
     }
 }

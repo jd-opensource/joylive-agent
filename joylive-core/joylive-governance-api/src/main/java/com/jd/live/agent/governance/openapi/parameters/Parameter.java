@@ -13,6 +13,7 @@
 
 package com.jd.live.agent.governance.openapi.parameters;
 
+import com.jd.live.agent.core.parser.json.JsonField;
 import com.jd.live.agent.governance.openapi.examples.Example;
 import com.jd.live.agent.governance.openapi.media.MediaType;
 import com.jd.live.agent.governance.openapi.media.Schema;
@@ -32,6 +33,10 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class Parameter {
+
+    @JsonField("$ref")
+    private String ref;
+
     /**
      * The name of the parameter. Required.
      */
@@ -64,6 +69,10 @@ public class Parameter {
      * This is valid only for query parameters and allows sending a parameter with an empty value.
      */
     private Boolean allowEmptyValue;
+
+    private String style;
+
+    private Boolean explode;
 
     /**
      * The schema defining the type used for the parameter.

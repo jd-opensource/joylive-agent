@@ -16,15 +16,20 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
 import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.mcp.McpParameterParser;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.McpVersion;
 import com.jd.live.agent.governance.mcp.handler.McpHandler;
+import com.jd.live.agent.governance.openapi.OpenApi;
+import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
+import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.event.EventListener;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -37,7 +42,7 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
  * Base controller for MCP (Method Call Protocol) implementation.
  * Scans and registers methods from Spring controllers during application startup.
  */
-public abstract class AbstractMcpController implements ApplicationListener<ApplicationStartedEvent> {
+public abstract class AbstractMcpController {
 
     protected Map<String, McpHandler> handlers;
 
@@ -48,6 +53,8 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
     protected Map<String, McpVersion> versions;
 
     protected McpVersion defaultVersion;
+
+    protected LazyObject<OpenApi> openApi;
 
     protected final McpParameterParser parameterParser;
 
@@ -84,7 +91,7 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
         return result == null ? defaultVersion : result;
     }
 
-    @Override
+    @EventListener
     public void onApplicationEvent(ApplicationStartedEvent event) {
         Map<String, Object> controllers = getControllers(event.getApplicationContext());
         Class<?> thisClass = this.getClass();
@@ -108,6 +115,12 @@ public abstract class AbstractMcpController implements ApplicationListener<Appli
             }
         }
     }
+
+    @EventListener
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        openApi = LazyObject.of(SpringUtils.getOpenApi(new SpringAppContext(event.getApplicationContext())));
+    }
+
 
     /**
      * Gets all Spring controllers to be scanned.

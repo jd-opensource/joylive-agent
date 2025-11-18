@@ -22,10 +22,8 @@ import com.jd.live.agent.plugin.application.springboot.v2.openapi.v31.OpenApi31F
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toLinkMap;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 
 /**
  * Factory implementation for creating OpenApi objects from OpenAPI 3.1 specifications.
@@ -44,7 +42,7 @@ public class OpenApi30Factory extends OpenApi31Factory {
                 .components(buildComponents(openApi.getComponents()))
                 .security(toList(openApi.getSecurity(), item -> toLinkMap(item, v -> new ArrayList<>(v))))
                 .specVersion(openApi.getSpecVersion().name())
-                .extensions(openApi.getExtensions() == null ? null : new HashMap<>(openApi.getExtensions()))
+                .extensions(copy(openApi.getExtensions()))
                 .build();
     }
 
@@ -57,7 +55,7 @@ public class OpenApi30Factory extends OpenApi31Factory {
                 .version(info.getVersion())
                 .contact(buildContact(info.getContact()))
                 .license(buildLicense(info.getLicense()))
-                .extensions(info.getExtensions() == null ? null : new HashMap<>(info.getExtensions()))
+                .extensions(copy(info.getExtensions()))
                 .build();
     }
 
@@ -66,7 +64,7 @@ public class OpenApi30Factory extends OpenApi31Factory {
         return License.builder()
                 .name(license.getName())
                 .url(license.getUrl())
-                .extensions(license.getExtensions() == null ? null : new HashMap<>(license.getExtensions()))
+                .extensions(copy(license.getExtensions()))
                 .build();
     }
 

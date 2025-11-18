@@ -10,33 +10,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.jd.live.agent.governance.openapi.responses;
 
-package com.jd.live.agent.governance.openapi;
+import lombok.Getter;
 
-import lombok.*;
-
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * External documentation for the exposed API.
- * Includes description, UR.
- */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ExternalDocumentation {
-    /**
-     * Document description
-     */
-    private String description;
+public class ApiResponses extends LinkedHashMap<String, ApiResponse> {
+
+    public static final String DEFAULT = "default";
 
     /**
-     * Document URL
+     * Custom specification extensions that start with "x-".
      */
-    private String url;
-
     private Map<String, Object> extensions;
 
+    public ApiResponses(Map<? extends String, ? extends ApiResponse> m) {
+        super(m);
+    }
+
+    public ApiResponses(Map<? extends String, ? extends ApiResponse> m, Map<String, Object> extensions) {
+        super(m);
+        this.extensions = extensions;
+    }
 }

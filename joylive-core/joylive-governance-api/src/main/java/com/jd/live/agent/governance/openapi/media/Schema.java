@@ -14,9 +14,10 @@
 package com.jd.live.agent.governance.openapi.media;
 
 import com.jd.live.agent.core.parser.json.JsonField;
-import com.jd.live.agent.governance.openapi.ExternalDocumentation;
+import com.jd.live.agent.governance.openapi.ExternalDoc;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,12 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class Schema {
+
+    /**
+     * Reference to another schema definition
+     */
+    @JsonField("$ref")
+    private String ref;
 
     /**
      * Name of the schema
@@ -47,6 +54,11 @@ public class Schema {
     private String description;
 
     /**
+     * External documentation
+     */
+    private ExternalDoc externalDocs;
+
+    /**
      * Data type (e.g., string, integer, object)
      */
     private String type;
@@ -62,8 +74,14 @@ public class Schema {
     private Object defaultValue;
 
     /**
+     * when set, this represents a boolean schema value
+     */
+    private Boolean booleanSchemaValue;
+
+    /**
      * Schema properties if type is object
      */
+    @Singular(ignoreNullCollections = true)
     private Map<String, Schema> properties;
 
     /**
@@ -72,14 +90,74 @@ public class Schema {
     private Schema items;
 
     /**
-     * Reference to another schema definition
+     * Numeric value must be a multiple of this value
      */
-    @JsonField("$ref")
-    private String ref;
+    private BigDecimal multipleOf;
+
+    /**
+     * Maximum value constraint
+     */
+    private BigDecimal maximum;
+
+    /**
+     * Whether maximum value is exclusive
+     */
+    private Boolean exclusiveMaximum;
+
+    /**
+     * Minimum value constraint
+     */
+    private BigDecimal minimum;
+
+    /**
+     * Whether minimum value is exclusive
+     */
+    private Boolean exclusiveMinimum;
+
+    /**
+     * Maximum string length constraint
+     */
+    private Integer maxLength;
+
+    /**
+     * Minimum string length constraint
+     */
+    private Integer minLength;
+
+    /**
+     * Regular expression pattern constraint
+     */
+    private String pattern;
+
+    /**
+     * Maximum number of array items constraint
+     */
+    private Integer maxItems;
+
+    /**
+     * Minimum number of array items constraint
+     */
+    private Integer minItems;
+
+    /**
+     * Whether array items must be unique
+     */
+    private Boolean uniqueItems;
+
+    /**
+     * Maximum number of object properties constraint
+     */
+    private Integer maxProperties;
+
+    /**
+     * Minimum number of object properties constraint
+     */
+    private Integer minProperties;
 
     /**
      * List of required property names
      */
+    @Singular(value = "required", ignoreNullCollections = true)
     private List<String> required;
 
     /**
@@ -103,17 +181,26 @@ public class Schema {
     private Boolean deprecated;
 
     /**
-     * External documentation
-     */
-    private ExternalDocumentation externalDocs;
-
-    /**
      * Additional properties for schemas that allow them
      */
     private Object additionalProperties;
+
+    private Discriminator discriminator;
+
+    protected Object example;
+
+    private List<Object> examples;
+
+    private List<String> enums;
+
+    private List<Schema> prefixItems;
+    private List<Schema> allOf;
+    private List<Schema> anyOf;
+    private List<Schema> oneOf;
 
     /**
      * Vendor extensions
      */
     private Map<String, Object> extensions;
+
 }

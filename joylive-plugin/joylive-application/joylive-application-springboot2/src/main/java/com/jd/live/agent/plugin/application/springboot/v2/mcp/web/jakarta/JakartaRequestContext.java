@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.mcp.McpParameterParser;
 import com.jd.live.agent.governance.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpVersion;
+import com.jd.live.agent.governance.openapi.OpenApi;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +30,7 @@ import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
@@ -48,10 +50,11 @@ public class JakartaRequestContext extends AbstractRequestContext {
                                  McpParameterParser parameterParser,
                                  JsonSchemaParser jsonSchemaParser,
                                  McpVersion version,
+                                 Supplier<OpenApi> openApi,
                                  WebRequest webRequest,
                                  HttpServletRequest httpRequest,
                                  HttpServletResponse httpResponse) {
-        super(methods, paths, converter, parameterParser, jsonSchemaParser, version);
+        super(methods, paths, converter, parameterParser, jsonSchemaParser, version, openApi);
         this.webRequest = webRequest;
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;

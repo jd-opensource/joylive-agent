@@ -29,6 +29,7 @@ import com.jd.live.agent.governance.openapi.media.Schema;
 import com.jd.live.agent.governance.openapi.parameters.Parameter;
 import com.jd.live.agent.governance.openapi.parameters.RequestBody;
 import com.jd.live.agent.governance.openapi.responses.ApiResponse;
+import com.jd.live.agent.governance.openapi.responses.ApiResponses;
 import com.jd.live.agent.governance.openapi.security.OAuthFlow;
 import com.jd.live.agent.governance.openapi.security.OAuthFlows;
 import com.jd.live.agent.governance.openapi.security.SecurityRequirement;
@@ -41,8 +42,7 @@ import com.jd.live.agent.plugin.application.springboot.v2.openapi.OpenApiFactory
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toLinkMap;
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.core.util.CollectionUtils.*;
 
 /**
  * Factory implementation for creating OpenApi objects from OpenAPI 3.1 specifications.
@@ -91,7 +91,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .jsonSchemaDialect(openApi.getJsonSchemaDialect())
                 .specVersion(openApi.getSpecVersion() == null ? null : openApi.getSpecVersion().name())
                 .webhooks(toLinkMap(openApi.getWebhooks(), this::buildPathItem))
-                .extensions(openApi.getExtensions() == null ? null : new HashMap<>(openApi.getExtensions()))
+                .extensions(copy(openApi.getExtensions()))
                 .build();
     }
 
@@ -113,7 +113,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .version(info.getVersion())
                 .contact(buildContact(info.getContact()))
                 .license(buildLicense(info.getLicense()))
-                .extensions(info.getExtensions() == null ? null : new HashMap<>(info.getExtensions()))
+                .extensions(copy(info.getExtensions()))
                 .build();
     }
 
@@ -131,7 +131,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .name(contact.getName())
                 .url(contact.getUrl())
                 .email(contact.getEmail())
-                .extensions(contact.getExtensions() == null ? null : new HashMap<>(contact.getExtensions()))
+                .extensions(copy(contact.getExtensions()))
                 .build();
     }
 
@@ -149,7 +149,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .name(license.getName())
                 .url(license.getUrl())
                 .identifier(license.getIdentifier())
-                .extensions(license.getExtensions() == null ? null : new HashMap<>(license.getExtensions()))
+                .extensions(copy(license.getExtensions()))
                 .build();
     }
 
@@ -159,14 +159,14 @@ public class OpenApi31Factory implements OpenApiFactory {
      * @param doc The OpenAPI ExternalDocumentation object
      * @return The internal ExternalDocumentation representation
      */
-    protected ExternalDocumentation buildExternalDoc(io.swagger.v3.oas.models.ExternalDocumentation doc) {
+    protected ExternalDoc buildExternalDoc(io.swagger.v3.oas.models.ExternalDocumentation doc) {
         if (doc == null) {
             return null;
         }
-        return ExternalDocumentation.builder()
+        return ExternalDoc.builder()
                 .description(doc.getDescription())
                 .url(doc.getUrl())
-                .extensions(doc.getExtensions() == null ? null : new HashMap<>(doc.getExtensions()))
+                .extensions(copy(doc.getExtensions()))
                 .build();
     }
 
@@ -184,7 +184,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .url(server.getUrl())
                 .description(server.getDescription())
                 .variables(toLinkMap(server.getVariables(), this::buildServerVariable))
-                .extensions(server.getExtensions() == null ? null : new HashMap<>(server.getExtensions()))
+                .extensions(copy(server.getExtensions()))
                 .build();
     }
 
@@ -202,7 +202,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .name(tag.getName())
                 .description(tag.getDescription())
                 .externalDocs(buildExternalDoc(tag.getExternalDocs()))
-                .extensions(tag.getExtensions() == null ? null : new HashMap<>(tag.getExtensions()))
+                .extensions(copy(tag.getExtensions()))
                 .build();
     }
 
@@ -220,7 +220,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .enumValues(variable.getEnum() == null ? null : new ArrayList<>(variable.getEnum()))
                 .defaultValue(variable.getDefault())
                 .description(variable.getDescription())
-                .extensions(variable.getExtensions() == null ? null : new HashMap<>(variable.getExtensions()))
+                .extensions(copy(variable.getExtensions()))
                 .build();
     }
 
@@ -240,7 +240,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .description(pathItem.getDescription())
                 .parameters(toList(pathItem.getParameters(), this::buildParameter))
                 .operations(toLinkMap(pathItem.readOperationsMap(), m -> m.name().toLowerCase(), this::buildOperation))
-                .extensions(pathItem.getExtensions() == null ? null : new HashMap<>(pathItem.getExtensions()))
+                .extensions(copy(pathItem.getExtensions()))
                 .build();
     }
 
@@ -255,6 +255,7 @@ public class OpenApi31Factory implements OpenApiFactory {
             return null;
         }
         return Parameter.builder()
+                .ref(parameter.get$ref())
                 .name(parameter.getName())
                 .in(parameter.getIn())
                 .description(parameter.getDescription())
@@ -265,7 +266,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .examples(toLinkMap(parameter.getExamples(), this::buildExample))
                 .example(parameter.getExample())
                 .content(toLinkMap(parameter.getContent(), this::buildMediaType))
-                .extensions(parameter.getExtensions() == null ? null : new HashMap<>(parameter.getExtensions()))
+                .extensions(copy(parameter.getExtensions()))
                 .build();
     }
 
@@ -297,7 +298,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .description(schema.getDescription())
                 .additionalProperties(schema.getAdditionalProperties())
                 .externalDocs(buildExternalDoc(schema.getExternalDocs()))
-                .extensions(schema.getExtensions() == null ? null : new HashMap<>(schema.getExtensions()))
+                .extensions(copy(schema.getExtensions()))
                 .build();
     }
 
@@ -311,6 +312,11 @@ public class OpenApi31Factory implements OpenApiFactory {
         if (operation == null) {
             return null;
         }
+        io.swagger.v3.oas.models.responses.ApiResponses responses = operation.getResponses();
+        ApiResponses apiResponses = null;
+        if (responses != null) {
+            apiResponses = new ApiResponses(toLinkMap(responses, this::buildApiResponse), copy(responses.getExtensions()));
+        }
         return Operation.builder()
                 .operationId(operation.getOperationId())
                 .summary(operation.getSummary())
@@ -319,13 +325,13 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .tags(toList(operation.getTags(), v -> v))
                 .parameters(toList(operation.getParameters(), this::buildParameter))
                 .requestBody(buildRequestBody(operation.getRequestBody()))
-                .responses(toLinkMap(operation.getResponses(), this::buildApiResponse))
+                .responses(apiResponses)
                 .callbacks(toLinkMap(operation.getCallbacks(), this::buildCallback))
                 .security(toList(operation.getSecurity(),
                         v -> new SecurityRequirement(toLinkMap(v, k -> new ArrayList(k)))))
                 .deprecated(operation.getDeprecated())
                 .servers(toList(operation.getServers(), this::buildServer))
-                .extensions(operation.getExtensions() == null ? null : new HashMap<>(operation.getExtensions()))
+                .extensions(copy(operation.getExtensions()))
                 .build();
     }
 
@@ -345,7 +351,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .content(toLinkMap(response.getContent(), this::buildMediaType))
                 .headers(toLinkMap(response.getHeaders(), this::buildHeader))
                 .links(toLinkMap(response.getLinks(), this::buildLink))
-                .extensions(response.getExtensions() == null ? null : new HashMap<>(response.getExtensions()))
+                .extensions(copy(response.getExtensions()))
                 .build();
     }
 
@@ -370,7 +376,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .example(toLinkMap(header.getExamples(), this::buildExample))
                 .example(header.getExample())
                 .content(toLinkMap(header.getContent(), this::buildMediaType))
-                .extensions(header.getExtensions() == null ? null : new HashMap<>(header.getExtensions()))
+                .extensions(copy(header.getExtensions()))
                 .build();
     }
 
@@ -396,7 +402,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .examples(toLinkMap(components.getExamples(), this::buildExample))
                 .links(toLinkMap(components.getLinks(), this::buildLink))
                 .securitySchemes(toLinkMap(components.getSecuritySchemes(), this::buildSecurityScheme))
-                .extensions(components.getExtensions() == null ? null : new HashMap<>(components.getExtensions()))
+                .extensions(copy(components.getExtensions()))
                 .build();
     }
 
@@ -420,7 +426,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .bearerFormat(securityScheme.getBearerFormat())
                 .flows(buildOAuthFlows(securityScheme.getFlows()))
                 .openIdConnectUrl(securityScheme.getOpenIdConnectUrl())
-                .extensions(securityScheme.getExtensions() == null ? null : new HashMap<>(securityScheme.getExtensions()))
+                .extensions(copy(securityScheme.getExtensions()))
                 .build();
     }
 
@@ -439,7 +445,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .password(buildOAuthFlow(oAuthFlows.getPassword()))
                 .clientCredentials(buildOAuthFlow(oAuthFlows.getClientCredentials()))
                 .authorizationCode(buildOAuthFlow(oAuthFlows.getAuthorizationCode()))
-                .extensions(oAuthFlows.getExtensions() == null ? null : new HashMap<>(oAuthFlows.getExtensions()))
+                .extensions(copy(oAuthFlows.getExtensions()))
                 .build();
     }
 
@@ -458,7 +464,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .tokenUrl(oauthFlow.getTokenUrl())
                 .refreshUrl(oauthFlow.getRefreshUrl())
                 .scopes(oauthFlow.getScopes() == null ? null : new HashMap<>(oauthFlow.getScopes()))
-                .extensions(oauthFlow.getExtensions() == null ? null : new HashMap<>(oauthFlow.getExtensions()))
+                .extensions(copy(oauthFlow.getExtensions()))
                 .build();
     }
 
@@ -478,7 +484,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .examples(toLinkMap(mediaType.getExamples(), this::buildExample))
                 .example(mediaType.getExample())
                 .exampleSetFlag(mediaType.getExampleSetFlag())
-                .extensions(mediaType.getExtensions() == null ? null : new HashMap<>(mediaType.getExtensions()))
+                .extensions(copy(mediaType.getExtensions()))
                 .build();
     }
 
@@ -498,7 +504,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .style(encoding.getStyle() == null ? null : encoding.getStyle().name())
                 .explode(encoding.getExplode())
                 .allowReserved(encoding.getAllowReserved())
-                .extensions(encoding.getExtensions() == null ? null : new HashMap<>(encoding.getExtensions()))
+                .extensions(copy(encoding.getExtensions()))
                 .build();
     }
 
@@ -519,7 +525,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .value(example.getValue())
                 .externalValue(example.getExternalValue())
                 .valueSetFlag(example.getValueSetFlag())
-                .extensions(example.getExtensions() == null ? null : new HashMap<>(example.getExtensions()))
+                .extensions(copy(example.getExtensions()))
                 .build();
     }
 
@@ -538,7 +544,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .description(requestBody.getDescription())
                 .content(toLinkMap(requestBody.getContent(), this::buildMediaType))
                 .required(requestBody.getRequired())
-                .extensions(requestBody.getExtensions() == null ? null : new HashMap<>(requestBody.getExtensions()))
+                .extensions(copy(requestBody.getExtensions()))
                 .build();
     }
 
@@ -555,7 +561,7 @@ public class OpenApi31Factory implements OpenApiFactory {
         return Callback.builder()
                 .ref(callback.get$ref())
                 .m(toLinkMap(callback, this::buildPathItem))
-                .extensions(callback.getExtensions() == null ? null : new HashMap<>(callback.getExtensions()))
+                .extensions(copy(callback.getExtensions()))
                 .build();
     }
 
@@ -578,7 +584,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .requestBody(link.getRequestBody())
                 .headers(toLinkMap(link.getHeaders(), this::buildHeader))
                 .server(buildServer(link.getServer()))
-                .extensions(link.getExtensions() == null ? null : new HashMap<>(link.getExtensions()))
+                .extensions(copy(link.getExtensions()))
                 .build();
     }
 }

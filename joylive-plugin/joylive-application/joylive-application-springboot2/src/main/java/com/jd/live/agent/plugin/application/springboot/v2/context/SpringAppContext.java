@@ -48,6 +48,11 @@ public class SpringAppContext implements ConfigurableAppContext {
     }
 
     @Override
+    public <T> T getBean(Class<T> type) {
+        return context.getBean(type);
+    }
+
+    @Override
     public void subscribe(ConfigCenter configCenter) {
         refresher.subscribe(configCenter);
     }

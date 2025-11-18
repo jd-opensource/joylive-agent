@@ -406,14 +406,14 @@ public class CollectionUtils {
      * @param <T>           the type of elements in the iterable
      * @param <K>           the type of keys in the resulting map
      * @param <V>           the type of values in the resulting map
-     * @param iterator      the iterable of elements to convert
+     * @param iterable      the iterable of elements to convert
      * @param keyFunction   the function to extract the key from each element
      * @param valueFunction the function to extract the value from each element
      * @return a map where each entry's key is the result of applying the keyFunction to an element,
      * and each entry's value is the result of applying the valueFunction to the same element
      */
-    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterator, Function<T, K> keyFunction, Function<T, V> valueFunction) {
-        return toMap(iterator, null, keyFunction, valueFunction);
+    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterable, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        return toMap(iterable, null, keyFunction, valueFunction, HashMap::new);
     }
 
     /**
@@ -425,64 +425,18 @@ public class CollectionUtils {
      * @param <T>           the type of elements in the iterable
      * @param <K>           the type of keys in the resulting map
      * @param <V>           the type of values in the resulting map
-     * @param iterator      the iterable of elements to convert
+     * @param iterable      the iterable of elements to convert
      * @param predicate     the predicate to test each element; if null, all elements are included
      * @param keyFunction   the function to extract the key from each element
      * @param valueFunction the function to extract the value from each element
      * @return a map where each entry's key is the result of applying the keyFunction to an element,
      * and each entry's value is the result of applying the valueFunction to the same element
      */
-    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterator, Predicate<T> predicate, Function<T, K> keyFunction, Function<T, V> valueFunction) {
-        if (iterator == null) {
-            return null;
-        }
-        Map<K, V> result = new HashMap<>();
-        for (T t : iterator) {
-            if (predicate == null || predicate.test(t)) {
-                result.put(keyFunction.apply(t), valueFunction.apply(t));
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Transforms a map by applying a function to each value while keeping the keys unchanged.
-     *
-     * @param <K>           The type of the map keys
-     * @param <V1>          The type of the input map values
-     * @param <V2>          The type of the output map values
-     * @param map           The input map to transform
-     * @param valueFunction The function to apply to each value
-     * @return A new map with the same keys but transformed values, or null if the input map is null
-     */
-    public static <K, V1, V2> Map<K, V2> toMap(Map<K, V1> map, Function<V1, V2> valueFunction) {
-        if (map == null) {
-            return null;
-        }
-        Map<K, V2> result = new HashMap<>(map.size());
-        map.forEach((k, v) -> result.put(k, valueFunction.apply(v)));
-        return result;
-    }
-
-    /**
-     * Transforms a map by applying functions to both keys and values.
-     *
-     * @param <K1>          The type of the input map keys
-     * @param <V1>          The type of the input map values
-     * @param <K2>          The type of the output map keys
-     * @param <V2>          The type of the output map values
-     * @param map           The input map to transform
-     * @param keyFunction   The function to apply to each key
-     * @param valueFunction The function to apply to each value
-     * @return A new map with transformed keys and values, or null if the input map is null
-     */
-    public static <K1, V1, K2, V2> Map<K2, V2> toMap(Map<K1, V1> map, Function<K1, K2> keyFunction, Function<V1, V2> valueFunction) {
-        if (map == null) {
-            return null;
-        }
-        Map<K2, V2> result = new HashMap<>(map.size());
-        map.forEach((k, v) -> result.put(keyFunction.apply(k), valueFunction.apply(v)));
-        return result;
+    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterable,
+                                            Predicate<T> predicate,
+                                            Function<T, K> keyFunction,
+                                            Function<T, V> valueFunction) {
+        return toMap(iterable, predicate, keyFunction, valueFunction, HashMap::new);
     }
 
     /**
@@ -501,7 +455,10 @@ public class CollectionUtils {
      * @return a map where each entry's key is the result of applying the keyFunction to an element,
      * and each entry's value is the result of applying the valueFunction to the same element
      */
-    public static <T, K, V> Map<K, V> toMap(Iterator<T> iterator, Predicate<T> predicate, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+    public static <T, K, V> Map<K, V> toMap(Iterator<T> iterator,
+                                            Predicate<T> predicate,
+                                            Function<T, K> keyFunction,
+                                            Function<T, V> valueFunction) {
         if (iterator == null) {
             return null;
         }
@@ -517,6 +474,91 @@ public class CollectionUtils {
     }
 
     /**
+     * Converts an iterable to a map using key and value extraction functions.
+     *
+     * @param <T>           the element type in the iterable
+     * @param <K>           the key type in the resulting map
+     * @param <V>           the value type in the resulting map
+     * @param iterable      the iterable to convert
+     * @param predicate     filter for elements (null means include all)
+     * @param keyFunction   function to extract keys
+     * @param valueFunction function to extract values
+     * @param mapSupplier   supplier for the map implementation (defaults to HashMap if null)
+     * @return a map containing the converted elements, or null if iterator is null
+     */
+    public static <T, K, V> Map<K, V> toMap(Iterable<T> iterable,
+                                            Predicate<T> predicate,
+                                            Function<T, K> keyFunction,
+                                            Function<T, V> valueFunction,
+                                            Supplier<Map<K, V>> mapSupplier) {
+        if (iterable == null) {
+            return null;
+        }
+        Map<K, V> result = mapSupplier == null ? new HashMap<>() : mapSupplier.get();
+        for (T t : iterable) {
+            if (predicate == null || predicate.test(t)) {
+                result.put(keyFunction.apply(t), valueFunction.apply(t));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Transforms a map by applying a function to each value while keeping the keys unchanged.
+     *
+     * @param <K>           The type of the map keys
+     * @param <V1>          The type of the input map values
+     * @param <V2>          The type of the output map values
+     * @param map           The input map to transform
+     * @param valueFunction The function to apply to each value
+     * @return A new map with the same keys but transformed values, or null if the input map is null
+     */
+    public static <K, V1, V2> Map<K, V2> toMap(Map<K, V1> map, Function<V1, V2> valueFunction) {
+        return toMap(map, k -> k, valueFunction, HashMap::new);
+    }
+
+    /**
+     * Transforms a map by applying functions to both keys and values.
+     *
+     * @param <K1>          The type of the input map keys
+     * @param <V1>          The type of the input map values
+     * @param <K2>          The type of the output map keys
+     * @param <V2>          The type of the output map values
+     * @param map           The input map to transform
+     * @param keyFunction   The function to apply to each key
+     * @param valueFunction The function to apply to each value
+     * @return A new map with transformed keys and values, or null if the input map is null
+     */
+    public static <K1, V1, K2, V2> Map<K2, V2> toMap(Map<K1, V1> map, Function<K1, K2> keyFunction, Function<V1, V2> valueFunction) {
+        return toMap(map, keyFunction, valueFunction, HashMap::new);
+    }
+
+    /**
+     * Transforms a map by applying functions to its keys and values.
+     *
+     * @param <K1>          input map key type
+     * @param <V1>          input map value type
+     * @param <K2>          output map key type
+     * @param <V2>          output map value type
+     * @param map           the map to transform
+     * @param keyFunction   function to transform keys
+     * @param valueFunction function to transform values
+     * @param mapFunction   factory function for the result map (defaults to HashMap if null)
+     * @return a new map with transformed entries, or null if input map is null
+     */
+    public static <K1, V1, K2, V2> Map<K2, V2> toMap(Map<K1, V1> map,
+                                                     Function<K1, K2> keyFunction,
+                                                     Function<V1, V2> valueFunction,
+                                                     Function<Integer, Map<K2, V2>> mapFunction) {
+        if (map == null) {
+            return null;
+        }
+        Map<K2, V2> result = mapFunction == null ? new HashMap<>(map.size()) : mapFunction.apply(map.size());
+        map.forEach((k, v) -> result.put(keyFunction.apply(k), valueFunction.apply(v)));
+        return result;
+    }
+
+    /**
      * Transforms a map by applying a function to each value while keeping the keys unchanged.
      *
      * @param <K>           The type of the map keys
@@ -527,12 +569,7 @@ public class CollectionUtils {
      * @return A new link map with the same keys but transformed values, or null if the input map is null
      */
     public static <K, V1, V2> Map<K, V2> toLinkMap(Map<K, V1> map, Function<V1, V2> valueFunction) {
-        if (map == null) {
-            return null;
-        }
-        Map<K, V2> result = new LinkedHashMap<>(map.size());
-        map.forEach((k, v) -> result.put(k, valueFunction.apply(v)));
-        return result;
+        return toMap(map, k -> k, valueFunction, LinkedHashMap::new);
     }
 
     /**
@@ -548,12 +585,7 @@ public class CollectionUtils {
      * @return A new link map with transformed keys and values, or null if the input map is null
      */
     public static <K1, V1, K2, V2> Map<K2, V2> toLinkMap(Map<K1, V1> map, Function<K1, K2> keyFunction, Function<V1, V2> valueFunction) {
-        if (map == null) {
-            return null;
-        }
-        Map<K2, V2> result = new LinkedHashMap<>(map.size());
-        map.forEach((k, v) -> result.put(keyFunction.apply(k), valueFunction.apply(v)));
-        return result;
+        return toMap(map, keyFunction, valueFunction, HashMap::new);
     }
 
     /**
@@ -563,14 +595,14 @@ public class CollectionUtils {
      * @param <T>           the type of elements in the iterable
      * @param <K>           the type of keys in the resulting map
      * @param <V>           the type of values in the resulting map
-     * @param iterator      the iterable of elements to convert
+     * @param iterable      the iterable of elements to convert
      * @param keyFunction   the function to extract the key from each element
      * @param valueFunction the function to extract the value from each element
      * @return a map where each entry's key is the result of applying the keyFunction to an element,
      * and each entry's value is the result of applying the valueFunction to the same element
      */
-    public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterator, Function<T, K> keyFunction, Function<T, V> valueFunction) {
-        return toLinkMap(iterator, null, keyFunction, valueFunction);
+    public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterable, Function<T, K> keyFunction, Function<T, V> valueFunction) {
+        return toMap(iterable, null, keyFunction, valueFunction, LinkedHashMap::new);
     }
 
     /**
@@ -582,24 +614,18 @@ public class CollectionUtils {
      * @param <T>           the type of elements in the iterable
      * @param <K>           the type of keys in the resulting map
      * @param <V>           the type of values in the resulting map
-     * @param iterator      the iterable of elements to convert
+     * @param iterable      the iterable of elements to convert
      * @param predicate     the predicate to test each element; if null, all elements are included
      * @param keyFunction   the function to extract the key from each element
      * @param valueFunction the function to extract the value from each element
      * @return a map where each entry's key is the result of applying the keyFunction to an element,
      * and each entry's value is the result of applying the valueFunction to the same element
      */
-    public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterator, Predicate<T> predicate, Function<T, K> keyFunction, Function<T, V> valueFunction) {
-        if (iterator == null) {
-            return null;
-        }
-        Map<K, V> result = new LinkedHashMap<>();
-        for (T t : iterator) {
-            if (predicate == null || predicate.test(t)) {
-                result.put(keyFunction.apply(t), valueFunction.apply(t));
-            }
-        }
-        return result;
+    public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterable,
+                                                Predicate<T> predicate,
+                                                Function<T, K> keyFunction,
+                                                Function<T, V> valueFunction) {
+        return toMap(iterable, predicate, keyFunction, valueFunction, LinkedHashMap::new);
     }
 
     /**
@@ -630,6 +656,85 @@ public class CollectionUtils {
                 }
             });
         }
+        return result;
+    }
+
+    /**
+     * Creates a copy of the source map using HashMap.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param src source map to copy
+     * @return a new HashMap containing all entries from the source map, or null if source is null
+     */
+    public static <K, V> Map<K, V> copy(Map<K, V> src) {
+        return copy(src, null, HashMap::new);
+    }
+
+    /**
+     * Creates a copy of the source map using the provided map factory.
+     *
+     * @param <K>         key type
+     * @param <V>         value type
+     * @param src         source map to copy
+     * @param mapFunction factory function for creating the result map (defaults to HashMap if null)
+     * @return a new map containing all entries from the source map, or null if source is null
+     */
+    public static <K, V> Map<K, V> copy(Map<K, V> src, Function<Integer, Map<K, V>> mapFunction) {
+        return copy(src, null, mapFunction);
+    }
+
+    /**
+     * Creates a copy of the source list.
+     *
+     * @param src source list to copy
+     * @return new ArrayList containing all elements, or null if source is null
+     */
+    public static <T> List<T> copy(List<T> src) {
+        if (src == null) {
+            return null;
+        }
+        return new ArrayList<>(src);
+    }
+
+    /**
+     * Creates a filtered copy of the source map using the provided map factory.
+     *
+     * @param <K>       key type
+     * @param <V>       value type
+     * @param src       source map to copy
+     * @param predicate filter to determine which keys to include (all keys if null)
+     * @return a new map containing filtered entries from the source map, or null if source is null
+     */
+    public static <K, V> Map<K, V> copy(Map<K, V> src, Predicate<K> predicate) {
+        return copy(src, predicate, null);
+    }
+
+    /**
+     * Creates a filtered copy of the source map using the provided map factory.
+     *
+     * @param <K>         key type
+     * @param <V>         value type
+     * @param src         source map to copy
+     * @param predicate   filter to determine which keys to include (all keys if null)
+     * @param mapFunction factory function for creating the result map (defaults to HashMap if null)
+     * @return a new map containing filtered entries from the source map, or null if source is null
+     */
+    public static <K, V> Map<K, V> copy(Map<K, V> src, Predicate<K> predicate, Function<Integer, Map<K, V>> mapFunction) {
+        if (src == null) {
+            return null;
+        }
+        Map<K, V> result = mapFunction == null ? new HashMap<>(src.size()) : mapFunction.apply(src.size());
+        if (predicate == null) {
+            result.putAll(src);
+        } else {
+            for (Map.Entry<K, V> entry : src.entrySet()) {
+                if (predicate.test(entry.getKey())) {
+                    result.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
         return result;
     }
 

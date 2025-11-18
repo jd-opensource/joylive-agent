@@ -88,6 +88,7 @@ public class JakartaWebMcpController extends AbstractMcpController {
                     .parameterParser(parameterParser)
                     .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                     .version(getVersion(version))
+                    .openApi(openApi)
                     .webRequest(webRequest)
                     .httpRequest(httpRequest)
                     .httpResponse(httpResponse)

@@ -42,7 +42,7 @@ public class OpenApi {
     /**
      * API external documentation
      */
-    private ExternalDocumentation externalDocs;
+    private ExternalDoc externalDocs;
 
     /**
      * List of servers hosting the API
@@ -85,5 +85,6 @@ public class OpenApi {
      */
     private Map<String, PathItem> webhooks;
 
+    @Singular(ignoreNullCollections = true)
     private Map<String, Object> extensions;
 }

@@ -10,7 +10,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.jd.live.agent.governance.openapi.links;
 
 import com.jd.live.agent.core.parser.json.JsonField;
