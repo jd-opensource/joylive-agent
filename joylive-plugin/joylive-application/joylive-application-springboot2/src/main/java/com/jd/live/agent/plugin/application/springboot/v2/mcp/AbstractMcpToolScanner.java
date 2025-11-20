@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
-import com.jd.live.agent.core.util.converter.Converter;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.core.util.type.AnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.MethodAnnotationGetter;
@@ -360,57 +359,20 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      */
     @SuppressWarnings("unchecked")
     protected McpToolParameterBuilder configureRequestHeader(McpToolParameterBuilder builder, AnnotationGetter getter) {
+        if (builder.isType(HttpHeaders.class)) {
+            return builder.location(Location.SYSTEM).systemParser(createMultiValueHeaderParser());
+        }
         RequestHeader requestHeader = getter.getAnnotation(RequestHeader.class);
-        if (requestHeader != null || builder.isType(HttpHeaders.class)) {
-            Converter<Object, Object> converter = null;
-            if (requestHeader == null || builder.isAssignableTo(MultiValueMap.class)) {
-                converter = v -> {
-                    if (v instanceof HttpHeaders) {
-                        return (HttpHeaders) v;
-                    }
-                    HttpHeaders headers = new HttpHeaders();
-                    if (v instanceof MultiMap) {
-                        headers.putAll((MultiMap) v);
-                    } else if (v instanceof Map) {
-                        ((Map<?, ?>) v).forEach((key, value) -> {
-                            String k = key.toString();
-                            if (value instanceof List) {
-                                ((List<?>) value).forEach(item -> headers.add(k, item.toString()));
-                            } else {
-                                headers.add(k, value.toString());
-                            }
-                        });
-                    }
-                    return headers;
-                };
-                return builder.location(Location.HEADER).converter(converter);
+        if (requestHeader != null) {
+            if (builder.isAssignableTo(MultiValueMap.class)) {
+                return builder.location(Location.SYSTEM).convertable(false).systemParser(createMultiValueHeaderParser());
             } else if (builder.isAssignableTo(Map.class)) {
-                converter = v -> {
-                    if (v instanceof HttpHeaders) {
-                        return ((HttpHeaders) v).toSingleValueMap();
-                    } else if (v instanceof MultiMap) {
-                        return ((MultiMap<String, String>) v).toSingleValueMap();
-                    } else if (v instanceof Map) {
-                        Map<String, String> result = new LinkedHashMap<>();
-                        ((Map<?, ?>) v).forEach((key, value) -> {
-                            if (value instanceof List) {
-                                List<?> list = (List<?>) value;
-                                result.put(key.toString(), list.isEmpty() ? "" : ((List<?>) value).get(0).toString());
-                            } else {
-                                result.put(key.toString(), value.toString());
-                            }
-                        });
-                        return result;
-                    }
-                    return new LinkedHashMap<>();
-                };
-                return builder.location(Location.HEADER).converter(converter);
+                return builder.location(Location.SYSTEM).convertable(false).systemParser(createSingleValueHeaderParser());
             }
             String arg = resolveName(choose(requestHeader.value(), requestHeader.name()));
             return builder
                     .arg(arg)
                     .location(Location.HEADER)
-                    .converter(converter)
                     .defaultValueParser(createDefaultValueParser(requestHeader.defaultValue()));
         }
         return builder;
@@ -565,6 +527,66 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         return genericType == ParameterizedType.class
                 ? ((ParameterizedType) genericType).getActualTypeArguments()[0]
                 : null;
+    }
+
+    /**
+     * Creates a parser that extracts single-value headers from request.
+     * Handles various header map implementations and converts multi-value headers
+     * to single values by taking the first entry.
+     *
+     * @return Parser for single-value header extraction
+     */
+    protected McpRequestParser createSingleValueHeaderParser() {
+        return (req, ctx) -> {
+            Map<String, ? extends Object> values = req.getHeaders();
+            if (values instanceof HttpHeaders) {
+                return ((HttpHeaders) values).toSingleValueMap();
+            } else if (values instanceof MultiMap) {
+                return ((MultiMap<String, String>) values).toSingleValueMap();
+            } else if (values instanceof Map) {
+                Map<String, String> result = new LinkedHashMap<>();
+                values.forEach((key, value) -> {
+                    if (value instanceof List) {
+                        List<?> list = (List<?>) value;
+                        result.put(key.toString(), list.isEmpty() ? "" : ((List<?>) value).get(0).toString());
+                    } else {
+                        result.put(key.toString(), value.toString());
+                    }
+                });
+                return result;
+            }
+            return new LinkedHashMap<>();
+        };
+    }
+
+    /**
+     * Creates a parser that extracts multi-value headers from request.
+     * Preserves all header values and normalizes different map implementations
+     * to Spring's HttpHeaders format.
+     *
+     * @return Parser for multi-value header extraction
+     */
+    protected McpRequestParser createMultiValueHeaderParser() {
+        return (req, ctx) -> {
+            Map<String, ? extends Object> values = req.getHeaders();
+            if (values instanceof HttpHeaders) {
+                return values;
+            }
+            HttpHeaders headers = new HttpHeaders();
+            if (values instanceof MultiMap) {
+                headers.putAll((MultiMap) values);
+            } else if (values instanceof Map) {
+                values.forEach((key, value) -> {
+                    String k = key.toString();
+                    if (value instanceof List) {
+                        ((List<?>) value).forEach(item -> headers.add(k, item.toString()));
+                    } else {
+                        headers.add(k, value.toString());
+                    }
+                });
+            }
+            return headers;
+        };
     }
 
     /**

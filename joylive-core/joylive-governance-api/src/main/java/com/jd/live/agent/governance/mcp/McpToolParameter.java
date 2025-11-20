@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.type.ClassUtils.*;
 
 /**
@@ -108,7 +107,7 @@ public class McpToolParameter {
         Object result = getValue(request, ctx);
         boolean empty = result == null || result instanceof CharSequence && ((CharSequence) result).length() == 0;
         result = empty && defaultValueParser != null ? defaultValueParser.parse(request, ctx) : result;
-        result = result == null || !convertable ? request : convert(ctx, result);
+        result = result == null || !convertable ? result : convert(ctx, result);
         if (result == null && required) {
             throw new MissingParameterException(name);
         }
@@ -119,9 +118,9 @@ public class McpToolParameter {
         String key = getKey();
         switch (location) {
             case QUERY:
-                return isEmpty(arg) ? request.getQueries() : unary(request.getQuery(key), false);
+                return unary(request.getQuery(key), false);
             case HEADER:
-                return isMapType() ? request.getHeaders() : unary(request.getHeader(key), false);
+                return unary(request.getHeader(key), false);
             case COOKIE:
                 return unary(request.getCookie(key), true);
             case PATH:
