@@ -161,7 +161,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
             if (format.isObject()) {
                 properties = createProperties(definitions, components, s.getProperties());
             } else if (format.isArray()) {
-                items = createJsonSchema(s.getItems(), definitions, components, true);
+                items = createJsonSchema(s.getItems(), definitions, components, false);
             }
             List<String> required = s.getRequired();
             required = required == null || required.isEmpty() ? null : required;
