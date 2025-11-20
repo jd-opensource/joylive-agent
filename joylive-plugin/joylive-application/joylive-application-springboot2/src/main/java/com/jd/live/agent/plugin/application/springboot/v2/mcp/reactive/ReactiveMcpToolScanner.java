@@ -68,18 +68,18 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
     }
 
     @Override
-    protected McpToolParameterBuilder configureType(McpToolParameterBuilder builder) {
+    protected McpToolParameterBuilder configureWrapper(McpToolParameterBuilder builder) {
         // convert optional
         Class<?> type = builder.type();
         if (type == Optional.class) {
             Type actualType = getActualType(builder.genericType());
             if (actualType != null) {
-                return builder.actualType(actualType).converter(OptionalConverter.INSTANCE);
+                return builder.actualType(actualType).wrapper(OptionalConverter.INSTANCE);
             }
         } else if (type == Mono.class) {
             Type actualType = getActualType(builder.genericType());
             if (actualType != null) {
-                return builder.actualType(actualType).converter(MonoConverter.INSTANCE);
+                return builder.actualType(actualType).wrapper(MonoConverter.INSTANCE);
             }
         }
         return builder;
@@ -88,25 +88,25 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
     @Override
     protected McpToolParameterBuilder configureSystemParam(McpToolParameterBuilder builder) {
         if (builder.isType(ServerWebExchange.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getWebExchange);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getWebExchange);
         } else if (builder.isType(ServerHttpRequest.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getRequest);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getRequest);
         } else if (builder.isType(ServerHttpResponse.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getResponse);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getResponse);
         } else if (builder.isType(WebSession.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getSession);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getSession);
         } else if (builder.isType(Principal.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getPrincipal);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getPrincipal);
         } else if (builder.isType(HttpMethod.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getHttpMethod);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getHttpMethod);
         } else if (builder.isType(Locale.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getLocale);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getLocale);
         } else if (builder.isType(TimeZone.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getTimeZone);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getTimeZone);
         } else if (builder.isType(ZoneId.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getZoneId);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getZoneId);
         } else if (builder.isType(UriComponentsBuilder.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getUriComponentsBuilder);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getUriComponentsBuilder);
         }
         return builder;
     }

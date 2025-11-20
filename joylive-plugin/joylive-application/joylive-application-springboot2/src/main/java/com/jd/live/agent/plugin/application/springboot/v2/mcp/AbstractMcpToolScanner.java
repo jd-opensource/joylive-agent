@@ -239,11 +239,11 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                 builder -> configureRequestHeader(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureCookieValue(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureRequestBody(builder, new ParameterAnnotationGetter(parameter)),
-                builder -> configureType(builder),
                 builder -> configureRequestAttribute(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureSessionAttribute(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureSystemParam(builder),
-                builder -> configureDefault(builder)
+                builder -> configureDefault(builder),
+                builder -> configureWrapper(builder)
         );
         return chain.configure(McpToolParameter.builder().parameter(parameter).name(name).index(index).required(true)).build();
     }
@@ -388,7 +388,6 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
             }
             String arg = resolveName(choose(requestHeader.value(), requestHeader.name()));
             return builder
-                    .convertable(true)
                     .arg(arg)
                     .location(Location.HEADER)
                     .converter(converter)
@@ -412,7 +411,6 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                 builder.converter(o -> new HttpCookie(builder.key(), o.toString()));
             }
             return builder
-                    .convertable(true)
                     .arg(arg)
                     .location(Location.COOKIE)
                     .defaultValueParser(createDefaultValueParser(cookieValue.defaultValue()));
@@ -447,7 +445,11 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         if (sessionAttribute != null) {
             String arg = resolveName(choose(sessionAttribute.value(), sessionAttribute.name()));
             String name = choose(arg, builder.name());
-            return builder.arg(arg).location(Location.SYSTEM).systemParser((req, ctx) -> ctx.getSessionAttribute(name));
+            return builder
+                    .arg(arg)
+                    .location(Location.SYSTEM)
+                    .convertable(false)
+                    .systemParser((req, ctx) -> ctx.getSessionAttribute(name));
         }
         return builder;
     }
@@ -464,7 +466,11 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         if (requestAttribute != null) {
             String arg = resolveName(choose(requestAttribute.value(), requestAttribute.name()));
             String name = choose(arg, builder.name());
-            return builder.arg(arg).location(Location.SYSTEM).systemParser((req, ctx) -> ctx.getRequestAttribute(name));
+            return builder
+                    .arg(arg)
+                    .location(Location.SYSTEM)
+                    .convertable(false)
+                    .systemParser((req, ctx) -> ctx.getRequestAttribute(name));
         }
         return builder;
     }
@@ -475,7 +481,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @param builder the parameter builder to configure
      * @return builder with type information configured
      */
-    protected abstract McpToolParameterBuilder configureType(McpToolParameterBuilder builder);
+    protected abstract McpToolParameterBuilder configureWrapper(McpToolParameterBuilder builder);
 
     /**
      * Configures system-level parameters.
@@ -513,18 +519,20 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @return builder with system parameters configured
      */
     protected McpToolParameterBuilder configureModelAttribute(McpToolParameterBuilder builder, String arg, Location location) {
-        return builder.arg(arg).location(Location.SYSTEM).systemParser(((request, ctx) -> {
-            if (location == Location.BODY) {
-                Object value = request.getBody();
-                if (!isEmpty(arg)) {
-                    value = value instanceof Map ? cascadeAndGet((Map<String, Object>) value, arg, HashMap::new) : null;
-                }
-                return ctx.getConverter().convert(value, builder.actualType());
-            } else {
-                Object value = isEmpty(arg) ? request.getBody() : cascadeAndGet(request.getQueries(), arg, HashMap::new);
-                return ctx.getConverter().convert(value, builder.actualType());
-            }
-        }));
+        return builder
+                .arg(arg)
+                .location(Location.SYSTEM)
+                .systemParser(((req, ctx) -> {
+                    if (location == Location.BODY) {
+                        Object value = req.getBody();
+                        if (!isEmpty(arg)) {
+                            value = value instanceof Map ? cascadeAndGet((Map<String, Object>) value, arg, HashMap::new) : null;
+                        }
+                        return value;
+                    } else {
+                        return isEmpty(arg) ? req.getQueries() : cascadeAndGet(req.getQueries(), arg, HashMap::new);
+                    }
+                }));
     }
 
     /**

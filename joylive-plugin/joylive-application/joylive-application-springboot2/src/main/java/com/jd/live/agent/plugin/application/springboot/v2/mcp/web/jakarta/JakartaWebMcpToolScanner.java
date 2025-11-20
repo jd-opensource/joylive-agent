@@ -43,12 +43,12 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
     }
 
     @Override
-    protected McpToolParameterBuilder configureType(McpToolParameterBuilder builder) {
+    protected McpToolParameterBuilder configureWrapper(McpToolParameterBuilder builder) {
         // convert optional
         if (builder.type() == Optional.class) {
             Type actualType = getActualType(builder.genericType());
             if (actualType != null) {
-                return builder.actualType(actualType).converter(OptionalConverter.INSTANCE);
+                return builder.actualType(actualType).wrapper(OptionalConverter.INSTANCE);
             }
         }
         return builder;
@@ -57,19 +57,19 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
     @Override
     protected McpToolParameterBuilder configureSystemParam(McpToolParameterBuilder builder) {
         if (builder.isAssignableTo(WebRequest.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getWebRequest);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getWebRequest);
         } else if (builder.isType(HttpServletRequest.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getHttpRequest);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getHttpRequest);
         } else if (builder.isType(HttpServletResponse.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getHttpResponse);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getHttpResponse);
         } else if (builder.isType(HttpSession.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getSession);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getSession);
         } else if (builder.isAssignableTo(Principal.class)) {
-            return builder.location(Location.SYSTEM).systemParser((req, ctx) -> getPrincipal(ctx, builder.actualClass()));
+            return builder.location(Location.SYSTEM).convertable(false).systemParser((req, ctx) -> getPrincipal(ctx, builder.actualClass()));
         } else if (builder.isType(HttpMethod.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getHttpMethod);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getHttpMethod);
         } else if (builder.isType(Locale.class)) {
-            return builder.location(Location.SYSTEM).systemParser(this::getLocale);
+            return builder.location(Location.SYSTEM).convertable(false).systemParser(this::getLocale);
         }
         return builder;
     }

@@ -52,11 +52,13 @@ public class McpToolParameter {
 
     private final boolean optional;
 
-    private final boolean convertable;
-
     private final Location location;
 
+    private final boolean convertable;
+
     private final Converter<Object, Object> converter;
+
+    private final Converter<Object, Object> wrapper;
 
     private final McpRequestParser systemParser;
 
@@ -68,9 +70,10 @@ public class McpToolParameter {
                             String arg,
                             boolean required,
                             boolean optional,
-                            boolean convertable,
                             Location location,
+                            boolean convertable,
                             Converter<Object, Object> converter,
+                            Converter<Object, Object> wrapper,
                             McpRequestParser systemParser,
                             McpRequestParser defaultValueParser) {
         this.parameter = parameter;
@@ -82,9 +85,10 @@ public class McpToolParameter {
         this.actualType = actualType;
         this.required = required;
         this.optional = optional;
-        this.convertable = convertable;
         this.location = location;
+        this.convertable = convertable;
         this.converter = converter;
+        this.wrapper = wrapper;
         this.systemParser = systemParser;
         this.defaultValueParser = defaultValueParser;
     }
@@ -104,11 +108,11 @@ public class McpToolParameter {
         Object result = getValue(request, ctx);
         boolean empty = result == null || result instanceof CharSequence && ((CharSequence) result).length() == 0;
         result = empty && defaultValueParser != null ? defaultValueParser.parse(request, ctx) : result;
-        result = convert(ctx, result);
+        result = result == null || !convertable ? request : convert(ctx, result);
         if (result == null && required) {
             throw new MissingParameterException(name);
         }
-        return wrap(result);
+        return wrapper == null ? result : wrapper.convert(result);
     }
 
     private Object getValue(McpRequest request, McpRequestContext ctx) throws Exception {
@@ -148,14 +152,16 @@ public class McpToolParameter {
     }
 
     private Object convert(McpRequestContext ctx, Object target) {
-        if (target == null) {
-            return null;
+        if (converter != null) {
+            // custom converter
+            return converter.convert(target);
         }
+        // default converter
         Class<?> resultClass = getActualClass();
         Class<?> targetClass = target.getClass();
         if (resultClass.isInstance(target)) {
             if (isSimpleType(targetClass)) {
-                return wrap(target);
+                return target;
             }
         }
         return ctx.getConverter().convert(target, actualType);
@@ -167,10 +173,6 @@ public class McpToolParameter {
 
     private boolean isSimpleType(Class<?> type) {
         return SIMPLE_TYPES.contains(type) || type.isEnum();
-    }
-
-    private Object wrap(Object value) {
-        return value == null || converter == null ? value : converter.convert(value);
     }
 
     public static McpToolParameterBuilder builder() {
@@ -187,9 +189,10 @@ public class McpToolParameter {
         private Type actualType;
         private boolean required;
         private boolean optional;
-        private boolean convertable;
         private Location location;
+        private boolean convertable = true;
         private Converter<Object, Object> converter;
+        private Converter<Object, Object> wrapper;
         private McpRequestParser systemParser;
         private McpRequestParser defaultValueParser;
 
@@ -240,6 +243,13 @@ public class McpToolParameter {
         public McpToolParameterBuilder converter(Converter<Object, Object> converter) {
             if (converter != null) {
                 this.converter = this.converter == null ? converter : this.converter.then(converter);
+            }
+            return this;
+        }
+
+        public McpToolParameterBuilder wrapper(Converter<Object, Object> wrapper) {
+            if (wrapper != null) {
+                this.wrapper = this.wrapper == null ? wrapper : this.wrapper.then(wrapper);
             }
             return this;
         }
@@ -302,16 +312,20 @@ public class McpToolParameter {
             return this.optional;
         }
 
-        public boolean convertable() {
-            return this.convertable;
-        }
-
         public Location location() {
             return this.location;
         }
 
+        public boolean isConvertable() {
+            return convertable;
+        }
+
         public Converter<Object, Object> converter() {
             return this.converter;
+        }
+
+        public Converter<Object, Object> wrapper() {
+            return this.wrapper;
         }
 
         public McpRequestParser systemParser() {
@@ -343,7 +357,8 @@ public class McpToolParameter {
         }
 
         public McpToolParameter build() {
-            return new McpToolParameter(parameter, index, actualType, arg, required, optional, convertable, location, converter, systemParser, defaultValueParser);
+            return new McpToolParameter(parameter, index, actualType, arg, required, optional, location,
+                    convertable, converter, wrapper, systemParser, defaultValueParser);
         }
     }
 
