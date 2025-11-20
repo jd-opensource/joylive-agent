@@ -357,8 +357,8 @@ public class OpenApi2Factory implements OpenApiFactory {
         }
         if (response instanceof RefResponse) {
             String ref = ((RefResponse) response).get$ref();
-            if (ref.indexOf("#/responses") == 0) {
-                ref = "#/components/responses" + ref.substring("#/responses".length());
+            if (ref.indexOf("#/responses/") == 0) {
+                ref = Components.COMPONENTS_RESPONSES_REF + ref.substring("#/responses/".length());
             }
             return ApiResponse.builder().ref(ref).build();
         }
@@ -542,8 +542,8 @@ public class OpenApi2Factory implements OpenApiFactory {
             return null;
         }
         String ref = parameter.get$ref();
-        if (ref.indexOf("#/parameters") == 0) {
-            ref = "#/components/requestBodies" + ref.substring("#/parameters".length());
+        if (ref.indexOf("#/parameters/") == 0) {
+            ref = Components.COMPONENTS_REQUEST_BODIES_REF + ref.substring("#/parameters/".length());
         }
         return RequestBody.builder().name(parameter.getName()).ref(ref).build();
     }
@@ -621,7 +621,7 @@ public class OpenApi2Factory implements OpenApiFactory {
         String ref = model.get$ref();
         // Convert from #/definitions/Model to #/components/schemas/Model
         if (ref.startsWith("#/definitions/")) {
-            ref = "#/components/schemas/" + ref.substring("#/definitions/".length());
+            ref = Components.COMPONENTS_SCHEMAS_REF + ref.substring("#/definitions/".length());
         }
         return Schema.builder().ref(ref).build();
     }
@@ -863,8 +863,8 @@ public class OpenApi2Factory implements OpenApiFactory {
     protected Schema buildSchema(RefProperty property) {
         RefProperty refProperty = property;
         String ref = refProperty.get$ref();
-        if (ref.indexOf("#/definitions") == 0) {
-            ref = "#/components/schemas" + ref.substring("#/definitions".length());
+        if (ref.indexOf("#/definitions/") == 0) {
+            ref = Components.COMPONENTS_SCHEMAS_REF + ref.substring("#/definitions/".length());
         }
         return Schema.builder().type(refProperty.getType()).ref(ref).build();
     }
@@ -927,14 +927,15 @@ public class OpenApi2Factory implements OpenApiFactory {
     protected String getRef(Swagger swagger, io.swagger.models.parameters.RefParameter parameter) {
         io.swagger.models.parameters.Parameter target = swagger == null ? null : swagger.getParameter(parameter.getSimpleRef());
         String ref = parameter.get$ref();
-        if (ref.indexOf("#/parameters") == 0) {
-            String id = ref.substring("#/parameters".length());
+        if (ref.indexOf("#/parameters/") == 0) {
+            String id = ref.substring("#/parameters/".length());
             if (target instanceof BodyParameter) {
-                ref = "#/components/requestBodies" + id;
+                ref = Components.COMPONENTS_REQUEST_BODIES_REF + id;
             } else if (target instanceof FormParameter) {
-                ref = "#/components/schemas" + id;
+                // TODO form parameter
+                ref = Components.COMPONENTS_PARAMETERS_REF + id;
             } else {
-                ref = "#/components/parameters" + id;
+                ref = Components.COMPONENTS_PARAMETERS_REF + id;
             }
         }
         return ref;

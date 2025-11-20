@@ -44,6 +44,15 @@ public class Components {
      * The base reference path for schemas defined in the components section.
      */
     public static final String COMPONENTS_SCHEMAS_REF = "#/components/schemas/";
+    public static final String COMPONENTS_PARAMETERS_REF = "#/components/parameters/";
+    public static final String COMPONENTS_REQUEST_BODIES_REF = "#/components/requestBodies/";
+    public static final String COMPONENTS_PATH_ITEMS_REF = "#/components/pathItems/";
+    public static final String COMPONENTS_HEADERS_REF = "#/components/headers/";
+    public static final String COMPONENTS_RESPONSES_REF = "#/components/responses/";
+    public static final String COMPONENTS_CALLBACKS_REF = "#/components/callbacks/";
+    public static final String COMPONENTS_SECURITY_SCHEMES_REF = "#/components/securitySchemes/";
+    public static final String COMPONENTS_EXAMPLES_REF = "#/components/examples/";
+    public static final String COMPONENTS_LINKS_REF = "#/components/links/";
 
     /**
      * Map of reusable Schema objects keyed by schema name.
@@ -106,7 +115,11 @@ public class Components {
     private Map<String, Object> extensions;
 
     public Schema getSchema(String ref) {
-        return ref == null || schemas == null ? null : schemas.get(ref);
+        if (schemas == null || schemas.isEmpty()) {
+            return null;
+        }
+        String name = getName(ref, COMPONENTS_SCHEMAS_REF);
+        return name == null ? null : schemas.get(name);
     }
 
     public Schema getSchema(Schema schema) {
@@ -117,7 +130,11 @@ public class Components {
     }
 
     public PathItem getPathItem(String ref) {
-        return ref == null || pathItems == null ? null : pathItems.get(ref);
+        if (pathItems == null || pathItems.isEmpty()) {
+            return null;
+        }
+        String name = getName(ref, COMPONENTS_PATH_ITEMS_REF);
+        return name == null ? null : pathItems.get(name);
     }
 
     public PathItem getPathItem(PathItem item) {
@@ -128,7 +145,11 @@ public class Components {
     }
 
     public Parameter getParameter(String ref) {
-        return ref == null || parameters == null ? null : parameters.get(ref);
+        if (parameters == null || parameters.isEmpty()) {
+            return null;
+        }
+        String name = getName(ref, COMPONENTS_PARAMETERS_REF);
+        return name == null ? null : parameters.get(name);
     }
 
     public Parameter getParameter(Parameter parameter) {
@@ -139,7 +160,11 @@ public class Components {
     }
 
     public RequestBody getRequestBody(String ref) {
-        return ref == null || requestBodies == null ? null : requestBodies.get(ref);
+        if (requestBodies == null || requestBodies.isEmpty()) {
+            return null;
+        }
+        String name = getName(ref, COMPONENTS_REQUEST_BODIES_REF);
+        return name == null ? null : requestBodies.get(name);
     }
 
     public RequestBody getRequestBody(RequestBody body) {
@@ -150,7 +175,11 @@ public class Components {
     }
 
     public ApiResponse getApiResponse(String ref) {
-        return ref == null || responses == null ? null : responses.get(ref);
+        if (responses == null || responses.isEmpty()) {
+            return null;
+        }
+        String name = getName(ref, COMPONENTS_RESPONSES_REF);
+        return name == null ? null : responses.get(name);
     }
 
     public ApiResponse getApiResponse(ApiResponse response) {
@@ -158,6 +187,10 @@ public class Components {
             return null;
         }
         return !isEmpty(response.getRef()) ? getApiResponse(response.getRef()) : response;
+    }
+
+    private String getName(String ref, String prefix) {
+        return ref == null || ref.length() <= prefix.length() ? null : ref.substring(prefix.length());
     }
 
 }

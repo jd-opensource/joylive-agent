@@ -122,7 +122,10 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
                     if (p.required()) {
                         required.add(p.getName());
                     }
-                    properties.put(p.getName(), createJsonSchema(p.getSchema(), definitions, components, true));
+                    JsonSchema schema = createJsonSchema(p.getSchema(), definitions, components, true);
+                    if (schema != null) {
+                        properties.put(p.getName(), schema);
+                    }
                 }
             }
         }
@@ -133,7 +136,10 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
                 if (body.required()) {
                     required.add(body.getName());
                 }
-                properties.put(body.getName(), createJsonSchema(body, definitions, components));
+                JsonSchema schema = createJsonSchema(body, definitions, components);
+                if (schema != null) {
+                    properties.put(body.getName(), schema);
+                }
             }
         }
         required = required.isEmpty() ? null : required;
@@ -147,23 +153,42 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
      * @return JsonSchema representation
      */
     private JsonSchema createJsonSchema(Schema schema, McpToolDefinitions definitions, Components components, boolean refed) {
-        schema = !refed ? components.getSchema(schema) : schema;
-        return definitions.create(schema, s -> s.getName(), s -> {
+        Schema target = !refed ? components.getSchema(schema) : schema;
+        return target == null ? null : definitions.create(target, s -> s.getName(), s -> {
             Map<String, JsonSchema> properties = null;
             JsonSchema items = null;
             TypeFormat format = McpTypes.getTypeFormat(s.getType(), s.getFormat());
             if (format.isObject()) {
-                properties = new LinkedHashMap<>();
-                if (s.getProperties() != null) {
-                    for (Map.Entry<String, Schema> entry : s.getProperties().entrySet()) {
-                        properties.put(entry.getKey(), createJsonSchema(entry.getValue(), definitions, components, false));
-                    }
-                }
+                properties = createProperties(definitions, components, s.getProperties());
             } else if (format.isArray()) {
                 items = createJsonSchema(s.getItems(), definitions, components, true);
             }
-            return JsonSchema.builder().type(format.getType()).properties(properties).items(items).required(s.getRequired()).build();
+            List<String> required = s.getRequired();
+            required = required == null || required.isEmpty() ? null : required;
+            return JsonSchema.builder().type(format.getType()).properties(properties).items(items).required(required).build();
         }).getSchema();
+    }
+
+    /**
+     * Converts OpenAPI schema properties to JsonSchema properties.
+     *
+     * @param definitions Schema definitions registry
+     * @param components  OpenAPI components containing reusable schemas
+     * @param properties  Map of property names to schema objects
+     * @return Map of property names to JsonSchema objects, or null if input is empty
+     */
+    private Map<String, JsonSchema> createProperties(McpToolDefinitions definitions, Components components, Map<String, Schema> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return null;
+        }
+        Map<String, JsonSchema> result = new LinkedHashMap<>();
+        properties.forEach((name, schema) -> {
+            JsonSchema value = createJsonSchema(schema, definitions, components, false);
+            if (value != null) {
+                result.put(name, value);
+            }
+        });
+        return result;
     }
 
     /**
