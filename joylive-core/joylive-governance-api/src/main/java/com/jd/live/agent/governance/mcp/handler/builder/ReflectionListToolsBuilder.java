@@ -27,10 +27,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jd.live.agent.governance.mcp.McpTypes.*;
 
@@ -41,6 +38,8 @@ import static com.jd.live.agent.governance.mcp.McpTypes.*;
 public class ReflectionListToolsBuilder implements ListToolsBuilder {
 
     public static final ListToolsBuilder INSTANCE = new ReflectionListToolsBuilder();
+
+    private final Map<String, Class> names = new HashMap<>();
 
     private ListToolsResult cache;
 
@@ -199,12 +198,30 @@ public class ReflectionListToolsBuilder implements ListToolsBuilder {
                                     String type,
                                     Map<String, JsonSchema> properties,
                                     JsonSchema items) {
-        JsonSchemaRef ref = definitions.create(cls, c ->
-                JsonSchema.builder().type(type).properties(properties).items(items).build());
+        JsonSchemaRef ref = definitions.create(cls, this::getName,
+                c -> JsonSchema.builder().type(type).properties(properties).items(items).build());
         if (ref.addReference() > 1) {
             ref.ref();
         }
         return ref.getSchema();
+    }
+
+    /**
+     * Gets a unique name for the class, using simple name when possible.
+     * Falls back to fully qualified name to resolve conflicts.
+     *
+     * @param cls Class to get name for
+     * @return Unique name for the class
+     */
+    private String getName(Class<?> cls) {
+        String name = cls.getSimpleName();
+        Class old = names.putIfAbsent(name, cls);
+        if (old == null || old == cls) {
+            return name;
+        }
+        name = cls.getName();
+        names.putIfAbsent(name, cls);
+        return name;
     }
 
 }

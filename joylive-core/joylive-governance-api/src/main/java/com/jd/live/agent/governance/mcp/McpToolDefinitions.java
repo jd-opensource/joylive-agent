@@ -28,13 +28,14 @@ import java.util.function.Function;
 public interface McpToolDefinitions {
 
     /**
-     * Retrieves an existing schema for the given class or creates a new one.
+     * Creates or retrieves a schema with the specified key.
      *
-     * @param cls      the class to get or create a schema for
-     * @param function the function to create a new schema if one doesn't exist
-     * @return a reference wrapper containing the schema with reference tracking
+     * @param key The key to identify the schema
+     * @param nameFunc Function to generate schema name
+     * @param schemaFunc Function to create schema if not found
+     * @return Schema reference with tracking information
      */
-    JsonSchemaRef create(Class<?> cls, Function<Class<?>, JsonSchema> function);
+    <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc);
 
     /**
      * Extracts reusable schema definitions based on reference counts.

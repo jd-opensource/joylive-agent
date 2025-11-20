@@ -22,6 +22,8 @@ public class ApiResponses extends LinkedHashMap<String, ApiResponse> {
 
     public static final String DEFAULT = "default";
 
+    public static final String STATUS_OK = "200";
+
     /**
      * Custom specification extensions that start with "x-".
      */

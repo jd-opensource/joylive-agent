@@ -56,15 +56,13 @@ public class McpVersion2 implements McpVersion {
         /**
          * Maps Java classes to their corresponding JSON schemas.
          */
-        private final Map<Class<?>, JsonSchemaRef> schemas = new HashMap<>();
-
-        private final Map<String, Class> names = new HashMap<>();
+        private final Map<Object, JsonSchemaRef> schemas = new HashMap<>();
 
         @Override
-        public JsonSchemaRef create(Class<?> cls, Function<Class<?>, JsonSchema> function) {
-            JsonSchemaRef result = schemas.computeIfAbsent(cls, c -> {
-                String name = getName(cls);
-                return new JsonSchemaRef(name, function.apply(c), "#/$defs/" + name);
+        public <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
+            JsonSchemaRef result = schemas.computeIfAbsent(key, c -> {
+                String name = nameFunc.apply(key);
+                return new JsonSchemaRef(name, schemaFunc.apply(key), "#/$defs/" + name);
             });
             return result.hasReference() ? new JsonSchemaRef(result) : result;
         }
@@ -72,24 +70,13 @@ public class McpVersion2 implements McpVersion {
         @Override
         public Map<String, JsonSchema> getDefinitions() {
             Map<String, JsonSchema> result = new HashMap<>(schemas.size());
-            for (Map.Entry<Class<?>, JsonSchemaRef> entry : schemas.entrySet()) {
+            for (Map.Entry<Object, JsonSchemaRef> entry : schemas.entrySet()) {
                 JsonSchemaRef ref = entry.getValue();
                 if (ref.getReference() > 1) {
                     result.put(ref.getName(), ref.getSchema());
                 }
             }
             return result.isEmpty() ? null : result;
-        }
-
-        private String getName(Class<?> cls) {
-            String name = cls.getSimpleName();
-            Class old = names.putIfAbsent(name, cls);
-            if (old == null || old == cls) {
-                return name;
-            }
-            name = cls.getName();
-            names.putIfAbsent(name, cls);
-            return name;
         }
     }
 }

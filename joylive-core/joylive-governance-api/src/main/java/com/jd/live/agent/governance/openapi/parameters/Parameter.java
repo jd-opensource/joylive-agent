@@ -100,4 +100,8 @@ public class Parameter {
      * Custom specification extensions that start with "x-".
      */
     private Map<String, Object> extensions;
+
+    public boolean required() {
+        return this.required != null && this.required;
+    }
 }

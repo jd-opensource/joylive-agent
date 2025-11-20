@@ -77,8 +77,8 @@ public class McpVersion1 implements McpVersion {
     private static class McpToolDefinitionsV1 implements McpToolDefinitions {
 
         @Override
-        public JsonSchemaRef create(Class<?> cls, Function<Class<?>, JsonSchema> function) {
-            return new JsonSchemaRef(cls.getName(), function.apply(cls), null);
+        public <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
+            return new JsonSchemaRef(nameFunc.apply(key), schemaFunc.apply(key), null);
         }
 
         @Override

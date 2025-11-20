@@ -87,4 +87,5 @@ public class OpenApi {
 
     @Singular(ignoreNullCollections = true)
     private Map<String, Object> extensions;
+
 }

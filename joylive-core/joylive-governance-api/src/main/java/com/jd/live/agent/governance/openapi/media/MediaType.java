@@ -34,6 +34,8 @@ public class MediaType {
 
     public static final String APPLICATION_JSON = "application/json";
 
+    public static final String ALL = "*/*";
+
     /**
      * The schema defining the structure and validation constraints of the content.
      * Describes the data format for this media type.

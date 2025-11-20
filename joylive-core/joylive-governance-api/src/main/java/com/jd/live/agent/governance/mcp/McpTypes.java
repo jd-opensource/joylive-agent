@@ -125,5 +125,13 @@ public class McpTypes {
     public static class TypeFormat {
         private final String type;
         private final String format;
+
+        public boolean isArray() {
+            return TYPE_ARRAY.equals(type);
+        }
+
+        public boolean isObject() {
+            return TYPE_OBJECT.equals(type);
+        }
     }
 }

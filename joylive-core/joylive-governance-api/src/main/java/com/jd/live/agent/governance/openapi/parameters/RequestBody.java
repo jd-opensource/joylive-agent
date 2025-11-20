@@ -61,4 +61,12 @@ public class RequestBody {
      * Custom specification extensions that start with "x-".
      */
     private Map<String, Object> extensions;
+
+    public String getName() {
+        return name == null || name.isEmpty() ? "body" : name;
+    }
+
+    public boolean required() {
+        return this.required != null && this.required;
+    }
 }

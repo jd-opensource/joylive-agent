@@ -24,9 +24,12 @@ import com.jd.live.agent.governance.openapi.Components;
 import com.jd.live.agent.governance.openapi.OpenApi;
 import com.jd.live.agent.governance.openapi.Operation;
 import com.jd.live.agent.governance.openapi.PathItem;
+import com.jd.live.agent.governance.openapi.media.MediaType;
 import com.jd.live.agent.governance.openapi.media.Schema;
 import com.jd.live.agent.governance.openapi.parameters.Parameter;
 import com.jd.live.agent.governance.openapi.parameters.RequestBody;
+import com.jd.live.agent.governance.openapi.responses.ApiResponse;
+import com.jd.live.agent.governance.openapi.responses.ApiResponses;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.StringUtils.choose;
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.governance.mcp.McpTypes.TYPE_OBJECT;
 
 /**
@@ -65,21 +67,19 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
         ListToolsResult result = new ListToolsResult();
         OpenApi openApi = ctx.getOpenApi().get();
         McpVersion version = ctx.getVersion();
-        Components components = openApi.getComponents();
+        Components components = openApi.getComponents() == null ? new Components() : openApi.getComponents();
         Map<String, PathItem> paths = openApi.getPaths();
         if (paths == null || paths.isEmpty()) {
             return result;
         }
         paths.forEach((path, item) -> {
-            if (!isEmpty(item.getRef())) {
-                item = components == null ? null : components.getPathItem(item.getRef());
-            }
+            item = components.getPathItem(item);
             McpToolMethod method = ctx.getToolMethodByPath(path);
             Map<String, Operation> operations = item == null || method == null ? null : item.getOperations();
             if (operations == null || operations.isEmpty()) {
                 return;
             }
-            operations.forEach((name, op) -> result.addTool(createTool(version, components, op, method)));
+            operations.forEach((name, op) -> result.addTool(createTool(op, version, components)));
         });
         return result;
     }
@@ -87,67 +87,57 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
     /**
      * Creates MCP tool from OpenAPI operation.
      *
+     * @param op         OpenAPI operation
      * @param version    MCP version
      * @param components OpenAPI components
-     * @param op         OpenAPI operation
-     * @param method     MCP tool method
      * @return MCP tool
      */
-    private Tool createTool(McpVersion version, Components components, Operation op, McpToolMethod method) {
+    private Tool createTool(Operation op, McpVersion version, Components components) {
         McpToolDefinitions definitions = version.createDefinitions();
         return Tool.builder()
                 .name(op.getOperationId())
                 .title(op.getSummary())
                 .description(choose(op.getDescription(), op.getSummary()))
-                .inputSchema(createInputSchema(version, components, op, method))
-                .outputSchema(createOutputSchema(version, components, op))
+                .inputSchema(createInputSchema(op, definitions, components))
+                .outputSchema(createOutputSchema(op, definitions, components, version))
                 .defs(definitions.getDefinitions())
                 .build();
     }
 
     /**
      * Creates input schema for a method based on OpenAPI operation parameters.
-     * @param version    MCP version
-     * @param components OpenAPI components
-     * @param op         The OpenAPI operation
-     * @param method     The MCP tool method
+     * @param op          The OpenAPI operation
+     * @param definitions The mcp schema definitions
+     * @param components  OpenAPI components
      * @return JsonSchema representing the input parameters
      */
-    private JsonSchema createInputSchema(McpVersion version, Components components, Operation op, McpToolMethod method) {
+    private JsonSchema createInputSchema(Operation op, McpToolDefinitions definitions, Components components) {
         Map<String, JsonSchema> properties = new LinkedHashMap<>();
         List<String> required = new ArrayList<>();
         List<Parameter> parameters = op.getParameters();
         if (parameters != null) {
             for (Parameter p : parameters) {
-                if (!isEmpty(p.getRef())) {
-                    p = components == null ? null : components.getParameter(p.getRef());
-                }
+                p = components.getParameter(p);
                 if (p != null) {
-                    if (p.getRequired() != null && p.getRequired()) {
+                    if (p.required()) {
                         required.add(p.getName());
                     }
-                    Schema schema = p.getSchema();
-                    properties.put(p.getName(), createJsonSchema(schema));
+                    properties.put(p.getName(), createJsonSchema(p.getSchema(), definitions, components, true));
                 }
             }
         }
         RequestBody body = op.getRequestBody();
         if (body != null) {
-            if (!isEmpty(body.getRef())) {
-                body = components == null ? null : components.getRequestBody(body.getRef());
-            }
+            body = components.getRequestBody(body);
             if (body != null) {
-                String key = isEmpty(body.getName()) ? "body" : body.getName();
-
-                properties.put(key, createJsonSchema(body));
+                if (body.required()) {
+                    required.add(body.getName());
+                }
+                properties.put(body.getName(), createJsonSchema(body, definitions, components));
             }
         }
         required = required.isEmpty() ? null : required;
-        // TODO request body
-        if (parameters == null || parameters.isEmpty()) {
-            return null;
-        }
-        return JsonSchema.builder().type(TYPE_OBJECT).required(required).properties(properties).build();
+        return properties.isEmpty() ? null : JsonSchema.builder().type(TYPE_OBJECT).required(required).properties(properties).build();
     }
 
     /**
@@ -156,33 +146,102 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
      * @param schema The OpenAPI Schema to convert
      * @return JsonSchema representation
      */
-    private JsonSchema createJsonSchema(Schema schema) {
-        Map<String, Object> properties = null;
-        TypeFormat format = McpTypes.getTypeFormat(schema.getType(), schema.getFormat());
-        // TODO array
-        if (TYPE_OBJECT.equals(format.getType())) {
-            properties = new LinkedHashMap<>();
-            if (schema.getProperties() != null) {
-                for (Map.Entry<String, Schema> entry : schema.getProperties().entrySet()) {
-                    properties.put(entry.getKey(), createJsonSchema(entry.getValue()));
+    private JsonSchema createJsonSchema(Schema schema, McpToolDefinitions definitions, Components components, boolean refed) {
+        schema = !refed ? components.getSchema(schema) : schema;
+        return definitions.create(schema, s -> s.getName(), s -> {
+            Map<String, JsonSchema> properties = null;
+            JsonSchema items = null;
+            TypeFormat format = McpTypes.getTypeFormat(s.getType(), s.getFormat());
+            if (format.isObject()) {
+                properties = new LinkedHashMap<>();
+                if (s.getProperties() != null) {
+                    for (Map.Entry<String, Schema> entry : s.getProperties().entrySet()) {
+                        properties.put(entry.getKey(), createJsonSchema(entry.getValue(), definitions, components, false));
+                    }
                 }
+            } else if (format.isArray()) {
+                items = createJsonSchema(s.getItems(), definitions, components, true);
             }
-        }
-        return JsonSchema.builder().type(format.getType()).build();
+            return JsonSchema.builder().type(format.getType()).properties(properties).items(items).required(s.getRequired()).build();
+        }).getSchema();
     }
 
-    private JsonSchema createJsonSchema(RequestBody body) {
-        return null;
+    /**
+     * Converts RequestBody to JsonSchema by extracting schema from its media type.
+     *
+     * @param body        Request body to extract schema from
+     * @param definitions Schema definitions registry
+     * @param components  OpenAPI components containing reusable schemas
+     * @return JsonSchema for the request body, or null if no suitable media type found
+     */
+    private JsonSchema createJsonSchema(RequestBody body, McpToolDefinitions definitions, Components components) {
+        MediaType mediaType = getMediaType(body.getContent());
+        if (mediaType == null) {
+            return null;
+        }
+        return createJsonSchema(mediaType.getSchema(), definitions, components, false);
     }
 
     /**
      * Creates output schema for an operation.
      *
-     * @param op The OpenAPI operation
+     * @param op          The OpenAPI operation
+     * @param definitions The mcp schema definitions
+     * @param components  OpenAPI components
+     * @param version     MCP version
      * @return Map representing the output schema
      */
-    private JsonSchema createOutputSchema(McpVersion version, Components components, Operation op) {
-        return null;
+    private JsonSchema createOutputSchema(Operation op, McpToolDefinitions definitions, Components components, McpVersion version) {
+        ApiResponses responses = op.getResponses();
+        ApiResponse response = getApiResponse(responses);
+        response = responses == null ? null : components.getApiResponse(response);
+        MediaType mediaType = response == null ? null : getMediaType(response.getContent());
+        if (mediaType == null) {
+            return null;
+        }
+        JsonSchema result = createJsonSchema(mediaType.getSchema(), definitions, components, false);
+        return version.output(result);
+    }
+
+    /**
+     * Selects appropriate MediaType from a map, prioritizing APPLICATION_JSON and ALL.
+     *
+     * @param mediaTypes Map of media type identifiers to MediaType objects
+     * @return Selected MediaType or null if map is empty
+     */
+    private MediaType getMediaType(Map<String, MediaType> mediaTypes) {
+        int size = mediaTypes == null ? 0 : mediaTypes.size();
+        if (size == 0) {
+            return null;
+        } else if (size == 1) {
+            return mediaTypes.values().iterator().next();
+        }
+        MediaType result = mediaTypes.get(MediaType.APPLICATION_JSON);
+        if (result == null) {
+            result = mediaTypes.get(MediaType.ALL);
+        }
+        return result != null ? result : mediaTypes.values().iterator().next();
+
+    }
+
+    /**
+     * Selects appropriate ApiResponse from a map, prioritizing DEFAULT and STATUS_OK.
+     *
+     * @param responses Map of response identifiers to ApiResponse objects
+     * @return Selected ApiResponse or null if map is empty
+     */
+    public ApiResponse getApiResponse(Map<String, ApiResponse> responses) {
+        int size = responses == null ? 0 : responses.size();
+        if (size == 0) {
+            return null;
+        } else if (size == 1) {
+            return responses.entrySet().iterator().next().getValue();
+        }
+        ApiResponse result = responses.get(ApiResponses.DEFAULT);
+        if (result == null) {
+            result = responses.get(ApiResponses.STATUS_OK);
+        }
+        return result != null ? result : responses.entrySet().iterator().next().getValue();
     }
 
 }

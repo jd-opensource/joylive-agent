@@ -26,6 +26,8 @@ import lombok.*;
 
 import java.util.Map;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+
 /**
  * Represents the OpenAPI Components object that holds reusable elements for an API specification.
  * <p>
@@ -103,15 +105,59 @@ public class Components {
      */
     private Map<String, Object> extensions;
 
+    public Schema getSchema(String ref) {
+        return ref == null || schemas == null ? null : schemas.get(ref);
+    }
+
+    public Schema getSchema(Schema schema) {
+        if (schema == null) {
+            return null;
+        }
+        return !isEmpty(schema.getRef()) ? getSchema(schema.getRef()) : schema;
+    }
+
     public PathItem getPathItem(String ref) {
         return ref == null || pathItems == null ? null : pathItems.get(ref);
+    }
+
+    public PathItem getPathItem(PathItem item) {
+        if (item == null) {
+            return null;
+        }
+        return !isEmpty(item.getRef()) ? getPathItem(item.getRef()) : item;
     }
 
     public Parameter getParameter(String ref) {
         return ref == null || parameters == null ? null : parameters.get(ref);
     }
 
+    public Parameter getParameter(Parameter parameter) {
+        if (parameter == null) {
+            return null;
+        }
+        return !isEmpty(parameter.getRef()) ? getParameter(parameter.getRef()) : parameter;
+    }
+
     public RequestBody getRequestBody(String ref) {
         return ref == null || requestBodies == null ? null : requestBodies.get(ref);
     }
+
+    public RequestBody getRequestBody(RequestBody body) {
+        if (body == null) {
+            return null;
+        }
+        return !isEmpty(body.getRef()) ? getRequestBody(body.getRef()) : body;
+    }
+
+    public ApiResponse getApiResponse(String ref) {
+        return ref == null || responses == null ? null : responses.get(ref);
+    }
+
+    public ApiResponse getApiResponse(ApiResponse response) {
+        if (response == null) {
+            return null;
+        }
+        return !isEmpty(response.getRef()) ? getApiResponse(response.getRef()) : response;
+    }
+
 }
