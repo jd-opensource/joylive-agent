@@ -15,7 +15,10 @@
  */
 package com.jd.live.agent.governance.mcp;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.CollectionUtils.cascadeAndGet;
 
 /**
  * Represents a Model Context Protocol (MCP) request, providing access to various
@@ -54,6 +57,17 @@ public interface McpRequest {
      * @return a map of header names to their values
      */
     Map<String, ? extends Object> getHeaders();
+
+    /**
+     * Retrieves a map of query parameters that start with the specified prefix.
+     * The prefix is removed from the parameter names in the returned map.
+     *
+     * @param prefix the prefix to filter query parameters by
+     * @return the constructed object with properties extracted from the request query
+     */
+    default Object getNestedQuery(String prefix) {
+        return cascadeAndGet(getQueries(), prefix, LinkedHashMap::new);
+    }
 
     /**
      * Returns a specific HTTP header value by name.
@@ -118,4 +132,29 @@ public interface McpRequest {
      * @return the value of the specified body parameter, or null if not present
      */
     Object getBody(String name);
+
+    /**
+     * Returns a specific value from the request body.
+     *
+     * @return the value of the specified body parameter, or null if not present
+     */
+    Object getBody();
+
+    /**
+     * Retrieves a nested object from the request body based on the specified prefix.
+     * Creates a hierarchical object structure from body parameters that start with the given prefix.
+     *
+     * @param prefix the prefix to identify the nested object in the request body
+     * @return the constructed object with properties extracted from the request body
+     */
+    default Object getNestedBody(String prefix) {
+        Object body = getBody();
+        if (prefix == null || prefix.isEmpty()) {
+            return body;
+        } else if (!(body instanceof Map)) {
+            return null;
+        } else {
+            return cascadeAndGet((Map<String, Object>) body, prefix, LinkedHashMap::new);
+        }
+    }
 }

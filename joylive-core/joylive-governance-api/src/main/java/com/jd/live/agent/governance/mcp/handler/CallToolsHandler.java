@@ -82,6 +82,12 @@ public class CallToolsHandler implements McpHandler {
                 // TODO fix name
                 return arguments == null ? null : arguments.get("body");
             }
+
+            @Override
+            public Object getBody() {
+                // TODO fix name
+                return arguments == null ? null : arguments.get("body");
+            }
         };
     }
 

@@ -42,8 +42,6 @@ import java.util.*;
 import java.util.function.Function;
 
 import static com.jd.live.agent.core.util.StringUtils.*;
-import static com.jd.live.agent.core.util.type.ClassUtils.isEntity;
-import static com.jd.live.agent.core.util.type.ClassUtils.isSimpleValueType;
 
 /**
  * Default implementation of McpToolScanner.
@@ -286,14 +284,13 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                                                               AnnotationGetter methodGetter) {
         ModelAttribute modelAttribute = parameterGetter.getAnnotation(ModelAttribute.class);
         if (modelAttribute != null) {
-            // TODO system parser
+            Location location = Location.QUERY;
             String arg = resolveName(choose(modelAttribute.value(), modelAttribute.name()));
-            if (methodGetter.getAnnotation(PostMapping.class) != null) {
-                return builder.arg(arg).location(Location.BODY);
-            } else if (methodGetter.getAnnotation(PutMapping.class) != null) {
-                return builder.arg(arg).location(Location.BODY);
+            if (methodGetter.getAnnotation(PostMapping.class) != null
+                    || methodGetter.getAnnotation(PutMapping.class) != null) {
+                location = Location.BODY;
             }
-            return builder.arg(arg).location(Location.QUERY);
+            return configureModelAttribute(builder, arg, location);
         }
         return builder;
     }
@@ -306,12 +303,12 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      */
     protected McpToolParameterBuilder configureDefault(McpToolParameterBuilder builder) {
         if (builder.location() == null) {
-            if (isSimpleValueType(builder.type())) {
+            if (builder.isSimpleType()) {
                 // as RequestParam
                 return builder.location(Location.QUERY);
-            } else if (isEntity(builder.type())) {
+            } else if (builder.isEntityType()) {
                 // as ModelAttribute
-                return builder.location(Location.QUERY);
+                return configureModelAttribute(builder, null, Location.QUERY);
             }
         }
         return builder;
@@ -504,6 +501,26 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         } else {
             return (req, ctx) -> function.apply(expressionFactory.evaluate(expression));
         }
+    }
+
+    /**
+     * Configures @ModelAttribute parameters.
+     *
+     * @param builder  the parameter builder to configure
+     * @param arg      the arg name
+     * @param location the location of arg
+     * @return builder with system parameters configured
+     */
+    protected McpToolParameterBuilder configureModelAttribute(McpToolParameterBuilder builder, String arg, Location location) {
+        return builder.arg(arg).location(Location.SYSTEM).systemParser(((request, ctx) -> {
+            if (location == Location.BODY) {
+                return ctx.getConverter().convert(
+                        isEmpty(arg) ? request.getBody() : request.getNestedBody(arg), builder.actualType());
+            } else {
+                return ctx.getConverter().convert(
+                        isEmpty(arg) ? request.getHeaders() : request.getNestedQuery(arg), builder.actualType());
+            }
+        }));
     }
 
     /**

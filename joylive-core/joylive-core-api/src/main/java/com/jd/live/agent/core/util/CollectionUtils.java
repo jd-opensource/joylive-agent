@@ -748,16 +748,64 @@ public class CollectionUtils {
      * For example, `{"a": {"b": {"c": "value", "0": "list_value"}}}`.
      * Returns `null` if the input `flatMap` is `null`.
      */
+    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap) {
+        return cascade(flatMap, (Predicate<String>) null, HashMap::new);
+    }
+
+    /**
+     * Converts a flat map with dot-notation keys into a nested structure.
+     *
+     * @param flatMap the source map with dot-separated keys
+     * @param mapFunc factory function to create map instances
+     * @return a nested map structure containing only keys with the specified prefix
+     */
+    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap,
+                                              Function<Integer, Map<String, Object>> mapFunc) {
+        return cascade(flatMap, (Predicate<String>) null, mapFunc);
+    }
+
+    /**
+     * Converts a flat map with dot-notation keys into a nested structure, filtering by prefix.
+     *
+     * @param flatMap the source map with dot-separated keys
+     * @param prefix  the prefix to filter keys (only keys starting with this prefix are processed)
+     * @param mapFunc factory function to create map instances
+     * @return a nested map structure containing only keys with the specified prefix
+     */
+    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap,
+                                              String prefix,
+                                              Function<Integer, Map<String, Object>> mapFunc) {
+        Predicate<String> predicate = prefix == null || prefix.isEmpty()
+                ? null
+                : key -> key.startsWith(prefix) && (key.length() == prefix.length() || key.charAt(prefix.length()) == '.');
+        return cascade(flatMap, predicate, mapFunc);
+    }
+
+    /**
+     * Converts a flat map with dot-notation keys into a nested structure with support for array indices.
+     *
+     * @param flatMap   the source map with dot-separated keys (e.g., "user.addresses[0].city")
+     * @param predicate optional filter to include only specific keys
+     * @param mapFunc   factory function to create map instances; defaults to HashMap::new
+     * @return a nested map structure where dot-notation and array indices are converted to proper
+     * hierarchical objects and lists
+     */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> cascade(Map<String, Object> flatMap) {
+    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap,
+                                              Predicate<String> predicate,
+                                              Function<Integer, Map<String, Object>> mapFunc) {
         if (flatMap == null) {
             return null;
         }
-        Map<String, Object> result = new HashMap<>(flatMap.size());
+        mapFunc = mapFunc == null ? HashMap::new : mapFunc;
+        Map<String, Object> result = mapFunc.apply(flatMap.size() / 2);
         Map<String, Object> parent;
-        for (Map.Entry<String, Object> entry : flatMap.entrySet()) {
+        for (Map.Entry<String, ? extends Object> entry : flatMap.entrySet()) {
             parent = result;
             String key = entry.getKey();
+            if (predicate != null && !predicate.test(key)) {
+                continue;
+            }
             Object value = entry.getValue();
             List<String> parts = splitList(key, c -> c == CHAR_DOT);
             int size = parts.size();
@@ -797,7 +845,7 @@ public class CollectionUtils {
                     if (i == size - 1) {
                         list.set(index, value);
                     } else {
-                        parent = new HashMap<>();
+                        parent = mapFunc.apply(0);
                         list.set(index, parent);
                     }
                 } else if (i == size - 1) {
@@ -805,7 +853,7 @@ public class CollectionUtils {
                 } else {
                     v = parent.get(part);
                     if (!(v instanceof Map)) {
-                        v = new HashMap<>();
+                        v = mapFunc.apply(0);
                         parent.put(part, v);
                     }
                     parent = (Map<String, Object>) v;
@@ -814,6 +862,46 @@ public class CollectionUtils {
             }
         }
         return result;
+    }
+
+    /**
+     * Converts a flat map with dot-notation keys into a nested structure, filtering by prefix.
+     *
+     * @param flatMap the source map with dot-separated keys
+     * @param prefix  the prefix to filter keys (only keys starting with this prefix are processed)
+     * @param mapFunc factory function to create map instances
+     * @return a nested map structure containing only keys with the specified prefix
+     */
+    public static Object cascadeAndGet(Map<String, ? extends Object> flatMap,
+                                       String prefix,
+                                       Function<Integer, Map<String, Object>> mapFunc) {
+        Map<String, Object> cascaded = cascade(flatMap, prefix, mapFunc);
+        if (cascaded == null || prefix == null || prefix.isEmpty()) {
+            return cascaded;
+        } else if (cascaded.isEmpty()) {
+            return null;
+        }
+        List<String> parts = splitList(prefix, c -> c == CHAR_DOT);
+        int size = parts.size();
+        if (size == 1) {
+            return cascaded.get(parts.get(0));
+        }
+        Object result;
+        int i = 0;
+        Map<String, Object> parent = cascaded;
+        for (String part : parts) {
+            result = parent.get(part);
+            if (i == size - 1) {
+                return result;
+            } else if (result == null) {
+                return null;
+            } else if (result instanceof Map) {
+                parent = (Map<String, Object>) result;
+            } else {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**

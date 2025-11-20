@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
-import static com.jd.live.agent.core.util.type.ClassUtils.SIMPLE_TYPES;
+import static com.jd.live.agent.core.util.type.ClassUtils.*;
 
 /**
  * Represents a parameter definition for MCP tool.
@@ -332,6 +332,14 @@ public class McpToolParameter {
 
         public boolean isAssignableTo(Class<?> targetClass) {
             return targetClass.isAssignableFrom(type) || actualType instanceof Class<?> && ((Class<?>) actualType).isAssignableFrom(targetClass);
+        }
+
+        public boolean isSimpleType() {
+            return isSimpleValueType(actualClass());
+        }
+
+        public boolean isEntityType() {
+            return isEntity(actualClass());
         }
 
         public McpToolParameter build() {
