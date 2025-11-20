@@ -41,6 +41,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 
+import static com.jd.live.agent.core.util.CollectionUtils.cascadeAndGet;
 import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
@@ -514,11 +515,14 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     protected McpToolParameterBuilder configureModelAttribute(McpToolParameterBuilder builder, String arg, Location location) {
         return builder.arg(arg).location(Location.SYSTEM).systemParser(((request, ctx) -> {
             if (location == Location.BODY) {
-                return ctx.getConverter().convert(
-                        isEmpty(arg) ? request.getBody() : request.getNestedBody(arg), builder.actualType());
+                Object value = request.getBody();
+                if (!isEmpty(arg)) {
+                    value = value instanceof Map ? cascadeAndGet((Map<String, Object>) value, arg, HashMap::new) : null;
+                }
+                return ctx.getConverter().convert(value, builder.actualType());
             } else {
-                return ctx.getConverter().convert(
-                        isEmpty(arg) ? request.getHeaders() : request.getNestedQuery(arg), builder.actualType());
+                Object value = isEmpty(arg) ? request.getBody() : cascadeAndGet(request.getQueries(), arg, HashMap::new);
+                return ctx.getConverter().convert(value, builder.actualType());
             }
         }));
     }
