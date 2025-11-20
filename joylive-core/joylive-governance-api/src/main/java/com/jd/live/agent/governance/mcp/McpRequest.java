@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.mcp;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.cascadeAndGet;
@@ -66,7 +66,7 @@ public interface McpRequest {
      * @return the constructed object with properties extracted from the request query
      */
     default Object getNestedQuery(String prefix) {
-        return cascadeAndGet(getQueries(), prefix, LinkedHashMap::new);
+        return cascadeAndGet(getQueries(), prefix, HashMap::new);
     }
 
     /**
@@ -154,7 +154,7 @@ public interface McpRequest {
         } else if (!(body instanceof Map)) {
             return null;
         } else {
-            return cascadeAndGet((Map<String, Object>) body, prefix, LinkedHashMap::new);
+            return cascadeAndGet((Map<String, Object>) body, prefix, HashMap::new);
         }
     }
 }
