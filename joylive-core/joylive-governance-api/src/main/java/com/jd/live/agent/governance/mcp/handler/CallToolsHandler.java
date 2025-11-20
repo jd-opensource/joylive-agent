@@ -16,6 +16,8 @@
 package com.jd.live.agent.governance.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.util.ExceptionUtils;
+import com.jd.live.agent.governance.exception.InvokeException;
 import com.jd.live.agent.governance.mcp.McpRequest;
 import com.jd.live.agent.governance.mcp.McpRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
@@ -36,10 +38,18 @@ public class CallToolsHandler implements McpHandler {
         }
 
         Object[] args = parseArgs(method, createRequest(method, req, ctx), ctx);
-        Object result = method.getMethod().invoke(method.getController(), args);
+        Object result = invoke(method, args);
         result = ctx.getVersion().output(result);
         CallToolResult response = CallToolResult.builder().isError(false).structuredContent(result).build();
         return JsonRpcResponse.createSuccessResponse(request.getId(), response);
+    }
+
+    private Object invoke(McpToolMethod method, Object[] args) throws InvokeException {
+        try {
+            return method.getMethod().invoke(method.getController(), args);
+        } catch (Throwable e) {
+            throw new InvokeException(ExceptionUtils.getCause(e));
+        }
     }
 
     private McpRequest createRequest(McpToolMethod method, CallToolRequest request, McpRequestContext ctx) {

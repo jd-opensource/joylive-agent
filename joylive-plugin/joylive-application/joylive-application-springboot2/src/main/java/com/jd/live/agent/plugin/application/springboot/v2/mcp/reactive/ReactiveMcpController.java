@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
 import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
+import com.jd.live.agent.governance.exception.InvokeException;
+import com.jd.live.agent.governance.mcp.McpRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.handler.McpHandler;
 import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
@@ -23,6 +25,8 @@ import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
 import com.jd.live.agent.governance.mcp.spec.Request;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.MonoConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.MediaType;
@@ -42,6 +46,8 @@ import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 @RestController
 @RequestMapping("${mcp.path:${CONFIG_MCP_PATH:/mcp}}")
 public class ReactiveMcpController extends AbstractMcpController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReactiveMcpController.class);
 
     /**
      * Bean name for this controller
@@ -68,7 +74,6 @@ public class ReactiveMcpController extends AbstractMcpController {
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<JsonRpcResponse> handle(@RequestBody Mono<JsonRpcRequest> request, ServerWebExchange exchange) {
-
         return request.flatMap(req -> {
             try {
                 if (!req.validate()) {
@@ -78,17 +83,7 @@ public class ReactiveMcpController extends AbstractMcpController {
                 if (handler == null) {
                     return Mono.just(JsonRpcResponse.createMethodNotFoundResponse(req.getId()));
                 }
-                HttpCookie cookie = exchange.getRequest().getCookies().getFirst(Request.KEY_VERSION);
-                String version = cookie != null ? cookie.getValue() : null;
-                ReactiveRequestContext ctx = ReactiveRequestContext.builder()
-                        .methods(methods)
-                        .paths(paths)
-                        .converter(objectConverter)
-                        .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
-                        .version(getVersion(version))
-                        .openApi(openApi)
-                        .exchange(exchange)
-                        .build();
+                McpRequestContext ctx = createRequestContext(exchange);
                 return MonoConverter.INSTANCE.convert(handler.handle(req, ctx))
                         .map(r -> {
                             if (req.notification()) {
@@ -99,9 +94,41 @@ public class ReactiveMcpController extends AbstractMcpController {
                             return JsonRpcResponse.createSuccessResponse(req.getId(), r);
                         })
                         .onErrorResume(e -> Mono.just(JsonRpcResponse.createErrorResponse(req.getId(), e)));
+            } catch (InvokeException e) {
+                return Mono.just(JsonRpcResponse.createErrorResponse(req.getId(), e.getCause()));
             } catch (Throwable e) {
+                logger.error(e.getMessage(), e);
                 return Mono.just(JsonRpcResponse.createErrorResponse(req.getId(), getCause(e)));
             }
         });
+    }
+
+    /**
+     * Creates a reactive request context from server exchange.
+     *
+     * @param exchange WebFlux server exchange
+     * @return Configured request context for reactive processing
+     */
+    private McpRequestContext createRequestContext(ServerWebExchange exchange) {
+        return ReactiveRequestContext.builder()
+                .methods(methods)
+                .paths(paths)
+                .converter(objectConverter)
+                .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
+                .version(getVersion(getMcpVersion(exchange)))
+                .openApi(openApi)
+                .exchange(exchange)
+                .build();
+    }
+
+    /**
+     * Extracts MCP version from request cookies.
+     *
+     * @param exchange The server web exchange containing request/response information
+     * @return Version string if found in cookies, null otherwise
+     */
+    private static String getMcpVersion(ServerWebExchange exchange) {
+        HttpCookie cookie = exchange.getRequest().getCookies().getFirst(Request.KEY_VERSION);
+        return cookie != null ? cookie.getValue() : null;
     }
 }

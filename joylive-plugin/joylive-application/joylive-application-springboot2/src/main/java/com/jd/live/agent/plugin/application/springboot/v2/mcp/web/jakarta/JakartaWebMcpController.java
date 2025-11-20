@@ -16,6 +16,8 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
 import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
+import com.jd.live.agent.governance.exception.InvokeException;
+import com.jd.live.agent.governance.mcp.McpRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.handler.McpHandler;
 import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
@@ -94,29 +96,54 @@ public class JakartaWebMcpController extends AbstractMcpController {
             if (handler == null) {
                 return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
             }
-            String version = null;
-            Cookie[] cookies = httpRequest.getCookies();
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if (cookie.getName().equalsIgnoreCase(Request.KEY_VERSION)) {
-                        version = cookie.getValue();
-                    }
-                }
-            }
-            JakartaRequestContext ctx = JakartaRequestContext.builder()
-                    .methods(methods)
-                    .paths(paths)
-                    .converter(objectConverter)
-                    .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
-                    .version(getVersion(version))
-                    .openApi(openApi)
-                    .webRequest(webRequest)
-                    .httpRequest(httpRequest)
-                    .httpResponse(httpResponse)
-                    .build();
+            McpRequestContext ctx = createRequestContext(webRequest, httpRequest, httpResponse);
             return handler.handle(request, ctx);
+        } catch (InvokeException e) {
+            return JsonRpcResponse.createErrorResponse(request.getId(), e.getCause());
         } catch (Throwable e) {
             return JsonRpcResponse.createErrorResponse(request.getId(), getCause(e));
         }
+    }
+
+    /**
+     * Creates a request context for handling MCP requests.
+     *
+     * @param webRequest Spring web request
+     * @param request    HTTP servlet request
+     * @param response   HTTP servlet response
+     * @return Configured JavaxRequestContext instance
+     */
+    private McpRequestContext createRequestContext(WebRequest webRequest,
+                                                   HttpServletRequest request,
+                                                   HttpServletResponse response) {
+        return JakartaRequestContext.builder()
+                .methods(methods)
+                .paths(paths)
+                .converter(objectConverter)
+                .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
+                .version(getVersion(getMcpVersion(request)))
+                .openApi(openApi)
+                .webRequest(webRequest)
+                .httpRequest(request)
+                .httpResponse(response)
+                .build();
+    }
+
+    /**
+     * Extracts MCP version from request cookies.
+     *
+     * @param request The HTTP servlet request
+     * @return Version string if found in cookies, null otherwise
+     */
+    private String getMcpVersion(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equalsIgnoreCase(Request.KEY_VERSION)) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 }
