@@ -22,10 +22,31 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletionStage;
 
+/**
+ * Converter that transforms various types of objects into Mono instances.
+ * Handles reactive types, completion stages, and JsonRpcResponse objects.
+ */
 public class MonoConverter implements Converter<Object, Object> {
 
+    /**
+     * Singleton instance of the converter
+     */
     public static final MonoConverter INSTANCE = new MonoConverter();
 
+    /**
+     * Converts an object to a Mono instance based on its type.
+     * <ul>
+     *   <li>null → Mono.empty()</li>
+     *   <li>Mono → returns as is</li>
+     *   <li>Publisher → Mono.from(publisher)</li>
+     *   <li>CompletionStage → Mono.fromCompletionStage(stage)</li>
+     *   <li>JsonRpcResponse → extracts result and converts if reactive</li>
+     *   <li>Other objects → Mono.just(object)</li>
+     * </ul>
+     *
+     * @param source The object to convert to a Mono
+     * @return A Mono containing the source object or its result
+     */
     @Override
     public Mono<Object> convert(Object source) {
         if (source == null) {

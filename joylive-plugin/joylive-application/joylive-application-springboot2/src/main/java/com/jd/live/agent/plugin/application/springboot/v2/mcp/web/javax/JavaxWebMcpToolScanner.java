@@ -34,14 +34,26 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Default scanner for MCP tools based on Spring MVC controllers.
+ * MCP tool scanner implementation for Javax Servlet API, used to scan MCP tools based on Spring MVC controllers.
+ * Handles request context and parameter resolution related to Javax Servlet API.
  */
 public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
 
+    /**
+     * Creates a new JavaxWebMcpToolScanner instance
+     *
+     * @param beanFactory Spring Bean factory for dependency resolution
+     */
     public JavaxWebMcpToolScanner(ConfigurableListableBeanFactory beanFactory) {
         super(beanFactory);
     }
 
+    /**
+     * Configures parameter wrapper, handling Optional type parameters
+     *
+     * @param builder Parameter builder
+     * @return Configured parameter builder
+     */
     @Override
     protected McpToolParameterBuilder configureWrapper(McpToolParameterBuilder builder) {
         // convert optional
@@ -54,6 +66,13 @@ public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
         return builder;
     }
 
+    /**
+     * Configures system parameters, marking Spring Web and Javax Servlet API related parameters as system parameters
+     * and setting appropriate parsers
+     *
+     * @param builder Parameter builder
+     * @return Configured parameter builder
+     */
     @Override
     protected McpToolParameterBuilder configureSystemParam(McpToolParameterBuilder builder) {
         if (builder.isAssignableTo(WebRequest.class)) {
@@ -74,43 +93,110 @@ public class JavaxWebMcpToolScanner extends AbstractMcpToolScanner {
         return builder;
     }
 
+    /**
+     * Gets WebRequest object from request context
+     *
+     * @param ctx Request context
+     * @return WebRequest object
+     */
     private WebRequest getWebRequest(McpRequestContext ctx) {
         return ((JavaxRequestContext) ctx).getWebRequest();
     }
 
+    /**
+     * Gets WebRequest object from request and context
+     *
+     * @param request MCP request
+     * @param ctx     Request context
+     * @return WebRequest object
+     */
     private WebRequest getWebRequest(McpRequest request, McpRequestContext ctx) {
         return getWebRequest(ctx);
     }
 
+    /**
+     * Gets HttpServletRequest object from request context
+     *
+     * @param ctx Request context
+     * @return HttpServletRequest object
+     */
     private HttpServletRequest getHttpRequest(McpRequestContext ctx) {
         return ((JavaxRequestContext) ctx).getHttpRequest();
     }
 
+    /**
+     * Gets HttpServletRequest object from request and context
+     *
+     * @param request MCP request
+     * @param ctx Request context
+     * @return HttpServletRequest object
+     */
     private HttpServletRequest getHttpRequest(McpRequest request, McpRequestContext ctx) {
         return getHttpRequest(ctx);
     }
 
+    /**
+     * Gets HttpServletResponse object from request and context
+     *
+     * @param request MCP request
+     * @param ctx Request context
+     * @return HttpServletResponse object
+     */
     private HttpServletResponse getHttpResponse(McpRequest request, McpRequestContext ctx) {
         return ((JavaxRequestContext) ctx).getHttpResponse();
     }
 
+    /**
+     * Gets Principal object of specified type
+     *
+     * @param ctx Request context
+     * @param type Target type of Principal
+     * @return Principal if instance matches specified type, otherwise null
+     */
     private Principal getPrincipal(McpRequestContext ctx, Class<?> type) {
         Principal principal = getHttpRequest(ctx).getUserPrincipal();
         return !type.isInstance(principal) ? null : principal;
     }
 
+    /**
+     * Gets HttpSession object from request context
+     *
+     * @param ctx Request context
+     * @return HttpSession object
+     */
     private HttpSession getSession(McpRequestContext ctx) {
         return getHttpRequest(ctx).getSession();
     }
 
+    /**
+     * Gets HttpSession object from request and context
+     *
+     * @param request MCP request
+     * @param ctx Request context
+     * @return HttpSession object
+     */
     private HttpSession getSession(McpRequest request, McpRequestContext ctx) {
         return getSession(ctx);
     }
 
+    /**
+     * Gets Locale object from request
+     *
+     * @param request MCP request
+     * @param ctx Request context
+     * @return Locale object
+     */
     private Locale getLocale(McpRequest request, McpRequestContext ctx) {
         return getHttpRequest(ctx).getLocale();
     }
 
+    /**
+     * Gets HTTP request method
+     *
+     * @param request MCP request
+     * @param ctx Request context
+     * @return HTTP method string
+     */
     private Object getHttpMethod(McpRequest request, McpRequestContext ctx) {
         return getHttpRequest(ctx).getMethod();
     }

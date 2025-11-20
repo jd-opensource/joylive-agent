@@ -37,22 +37,50 @@ import java.util.Map;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 
+/**
+ * Javax Servlet API implementation of MCP controller.
+ * Handles JSON-RPC requests using Javax Servlet API.
+ */
 @RestController
 @RequestMapping("${mcp.path:${CONFIG_MCP_PATH:/mcp}}")
 public class JavaxWebMcpController extends AbstractMcpController {
 
+    /**
+     * Bean name for this controller
+     */
     public static final String NAME = "webMcpController";
 
+    /**
+     * Gets all Spring REST controllers from the application context
+     *
+     * @param context The Spring application context
+     * @return Map of controller bean names to controller instances
+     */
     @Override
     protected Map<String, Object> getControllers(ConfigurableApplicationContext context) {
         return context.getBeansWithAnnotation(RestController.class);
     }
 
+    /**
+     * Creates a Javax MCP tool scanner for this controller
+     *
+     * @param context The Spring application context
+     * @return A new JavaxWebMcpToolScanner instance
+     */
     @Override
     protected McpToolScanner createScanner(ConfigurableApplicationContext context) {
         return new JavaxWebMcpToolScanner(context.getBeanFactory());
     }
 
+    /**
+     * Handles incoming JSON-RPC requests
+     *
+     * @param request      The JSON-RPC request
+     * @param webRequest   The Spring web request
+     * @param httpRequest  The Javax HTTP servlet request
+     * @param httpResponse The Javax HTTP servlet response
+     * @return The JSON-RPC response
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public JsonRpcResponse handle(@RequestBody JsonRpcRequest request,
                                   WebRequest webRequest,

@@ -50,18 +50,38 @@ import static com.jd.live.agent.core.util.StringUtils.*;
  */
 public abstract class AbstractMcpToolScanner implements McpToolScanner {
 
+    /**
+     * Spring bean factory for accessing application context
+     */
     protected final ConfigurableBeanFactory beanFactory;
 
+    /**
+     * Factory for creating and evaluating expressions
+     */
     protected final ExpressionFactory expressionFactory;
 
+    /**
+     * Discovers parameter names from compiled code
+     */
     protected final ParameterNameDiscoverer nameDiscoverer;
 
+    /**
+     * Creates a new scanner with the specified bean factory
+     *
+     * @param beanFactory Spring bean factory for accessing application context
+     */
     public AbstractMcpToolScanner(ConfigurableListableBeanFactory beanFactory) {
         this.beanFactory = beanFactory;
         this.expressionFactory = new SpringExpressionFactory(beanFactory);
         this.nameDiscoverer = SpringUtils.getParameterNameDiscoverer(beanFactory);
     }
 
+    /**
+     * Scans a controller object and converts its methods to MCP tool methods
+     *
+     * @param controller The controller object to scan
+     * @return List of MCP tool methods found in the controller
+     */
     @Override
     public List<McpToolMethod> scan(Object controller) {
         // model name by org.springframework.core.Conventions#getVariableNameForParameter
@@ -557,6 +577,12 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         return createDefaultValueParser(defaultValue, null);
     }
 
+    /**
+     * Resolves a name by evaluating it as an expression if it's not empty
+     *
+     * @param name The name to resolve
+     * @return Resolved name or original name if empty
+     */
     protected String resolveName(String name) {
         return name == null || name.isEmpty() ? name : expressionFactory.evaluate(expressionFactory.parse(name)).toString();
     }

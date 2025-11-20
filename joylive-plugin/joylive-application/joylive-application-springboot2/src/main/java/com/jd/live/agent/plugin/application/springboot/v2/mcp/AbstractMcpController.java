@@ -43,47 +43,107 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
  */
 public abstract class AbstractMcpController {
 
+    /**
+     * MCP handler mapping, keyed by method name
+     */
     protected Map<String, McpHandler> handlers;
 
+    /**
+     * Object converter for request and response transformation
+     */
     protected ObjectConverter objectConverter;
 
+    /**
+     * Governance configuration
+     */
     protected GovernanceConfig config;
 
+    /**
+     * MCP version mapping, keyed by version identifier
+     */
     protected Map<String, McpVersion> versions;
 
+    /**
+     * Default MCP version
+     */
     protected McpVersion defaultVersion;
 
+    /**
+     * Lazy-loaded OpenAPI object
+     */
     protected LazyObject<OpenApi> openApi;
 
+    /**
+     * Method mapping, keyed by method name
+     */
     protected final Map<String, McpToolMethod> methods = new HashMap<>();
 
+    /**
+     * Path mapping, keyed by URL path
+     */
     protected final Map<String, McpToolMethod> paths = new HashMap<>();
 
+    /**
+     * Sets MCP handler mapping
+     *
+     * @param handlers handler mapping
+     */
     public void setHandlers(Map<String, McpHandler> handlers) {
         this.handlers = handlers;
     }
 
+    /**
+     * Sets object converter
+     *
+     * @param objectConverter object converter
+     */
     public void setObjectConverter(ObjectConverter objectConverter) {
         this.objectConverter = objectConverter;
     }
 
+    /**
+     * Sets governance configuration
+     *
+     * @param config governance configuration
+     */
     public void setConfig(GovernanceConfig config) {
         this.config = config;
     }
 
+    /**
+     * Sets MCP version mapping
+     *
+     * @param versions version mapping
+     */
     public void setVersions(Map<String, McpVersion> versions) {
         this.versions = versions;
     }
 
+    /**
+     * Sets default MCP version
+     *
+     * @param defaultVersion default version
+     */
     public void setDefaultVersion(McpVersion defaultVersion) {
         this.defaultVersion = defaultVersion;
     }
 
+    /**
+     * Gets specified version or returns default if not found
+     *
+     * @param version version identifier
+     * @return MCP version
+     */
     public McpVersion getVersion(String version) {
         McpVersion result = version == null ? null : versions.get(version);
         return result == null ? defaultVersion : result;
     }
 
+    /**
+     * Application start event handler, scans and registers controller methods
+     *
+     * @param event application started event
+     */
     @EventListener
     public void onApplicationEvent(ApplicationStartedEvent event) {
         Map<String, Object> controllers = getControllers(event.getApplicationContext());
@@ -109,6 +169,11 @@ public abstract class AbstractMcpController {
         }
     }
 
+    /**
+     * Application ready event handler, initializes OpenAPI
+     *
+     * @param event application ready event
+     */
     @EventListener
     public void onApplicationEvent(ApplicationReadyEvent event) {
         SpringUtils.addOpenApiHiddenControllers(this.getClass());

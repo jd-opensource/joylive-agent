@@ -27,18 +27,38 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
  */
 public class SpringExpressionFactory implements ExpressionFactory {
 
+    /**
+     * Spring bean factory for resolving expressions
+     */
     protected final ConfigurableBeanFactory beanFactory;
 
+    /**
+     * Expression resolver from Spring
+     */
     protected final BeanExpressionResolver exprResolver;
 
+    /**
+     * Bean expression context for evaluation
+     */
     protected final BeanExpressionContext context;
 
+    /**
+     * Creates a new expression factory with the specified bean factory
+     *
+     * @param beanFactory Spring bean factory for resolving expressions
+     */
     public SpringExpressionFactory(ConfigurableBeanFactory beanFactory) {
         this.beanFactory = beanFactory;
         this.exprResolver = beanFactory == null ? null : beanFactory.getBeanExpressionResolver();
         this.context = new BeanExpressionContext(beanFactory, null);
     }
 
+    /**
+     * Parses an expression string into a Spring expression object
+     *
+     * @param expression The expression string to parse
+     * @return A new SpringExpression object, or null if expression or beanFactory is null
+     */
     @Override
     public Expression parse(String expression) {
         if (expression != null && beanFactory != null) {
@@ -47,6 +67,12 @@ public class SpringExpressionFactory implements ExpressionFactory {
         return null;
     }
 
+    /**
+     * Evaluates an expression and returns its value
+     *
+     * @param expression The expression to evaluate
+     * @return The evaluated value, or null if expression or exprResolver is null
+     */
     @Override
     public Object evaluate(Expression expression) {
         if (exprResolver != null && expression != null) {

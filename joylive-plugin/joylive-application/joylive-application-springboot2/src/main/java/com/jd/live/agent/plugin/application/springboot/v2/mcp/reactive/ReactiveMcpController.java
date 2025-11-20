@@ -35,17 +35,37 @@ import reactor.core.publisher.Mono;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 
+/**
+ * Reactive implementation of MCP controller for handling JSON-RPC requests.
+ * Uses Spring WebFlux for non-blocking request processing.
+ */
 @RestController
 @RequestMapping("${mcp.path:${CONFIG_MCP_PATH:/mcp}}")
 public class ReactiveMcpController extends AbstractMcpController {
 
+    /**
+     * Bean name for this controller
+     */
     public static final String NAME = "reactiveMcpController";
 
+    /**
+     * Creates a reactive MCP tool scanner for this controller
+     *
+     * @param context The Spring application context
+     * @return A new ReactiveMcpToolScanner instance
+     */
     @Override
     protected McpToolScanner createScanner(ConfigurableApplicationContext context) {
         return new ReactiveMcpToolScanner(context.getBeanFactory());
     }
 
+    /**
+     * Handles incoming JSON-RPC requests in a reactive manner
+     *
+     * @param request  The JSON-RPC request as a Mono
+     * @param exchange The server web exchange containing request/response information
+     * @return A Mono containing the JSON-RPC response
+     */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<JsonRpcResponse> handle(@RequestBody Mono<JsonRpcRequest> request, ServerWebExchange exchange) {
 

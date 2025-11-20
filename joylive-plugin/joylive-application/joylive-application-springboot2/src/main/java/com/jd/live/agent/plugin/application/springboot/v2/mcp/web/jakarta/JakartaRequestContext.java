@@ -37,19 +37,51 @@ import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
 import static com.jd.live.agent.core.util.http.HttpUtils.parseHeader;
 
+/**
+ * Jakarta Servlet API implementation of MCP request context.
+ * Provides access to request/response information through Jakarta Servlet API.
+ */
 @Getter
 public class JakartaRequestContext extends AbstractRequestContext {
 
+    /**
+     * Spring web request object
+     */
     private final WebRequest webRequest;
 
+    /**
+     * Jakarta HTTP servlet request
+     */
     private final HttpServletRequest httpRequest;
 
+    /**
+     * Jakarta HTTP servlet response
+     */
     private final HttpServletResponse httpResponse;
 
+    /**
+     * Lazily initialized map of request headers
+     */
     private final LazyObject<Map<String, List<String>>> headers;
 
+    /**
+     * Lazily initialized map of request cookies
+     */
     private final LazyObject<Map<String, List<String>>> cookies;
 
+    /**
+     * Creates a new Jakarta request context
+     *
+     * @param methods          MCP tool methods mapped by name
+     * @param paths            MCP tool methods mapped by path
+     * @param converter        Object converter for parameter conversion
+     * @param jsonSchemaParser JSON schema parser for parameter validation
+     * @param version          MCP version information
+     * @param openApi          OpenAPI specification supplier
+     * @param webRequest       Spring web request object
+     * @param httpRequest      Jakarta HTTP servlet request
+     * @param httpResponse     Jakarta HTTP servlet response
+     */
     @Builder
     public JakartaRequestContext(Map<String, McpToolMethod> methods,
                                  Map<String, McpToolMethod> paths,
@@ -68,26 +100,54 @@ public class JakartaRequestContext extends AbstractRequestContext {
         this.cookies = LazyObject.of(() -> parseCookie(httpRequest.getCookies(), c -> c.getName(), c -> c.getValue()));
     }
 
+    /**
+     * Gets a header value by name
+     *
+     * @param name The header name
+     * @return The header value or null if not found
+     */
     @Override
     public Object getHeader(String name) {
         return name == null ? null : getHeaders().get(name);
     }
 
+    /**
+     * Gets all request headers
+     *
+     * @return Map of header names to values
+     */
     @Override
     public Map<String, ? extends Object> getHeaders() {
         return headers.get();
     }
 
+    /**
+     * Gets all request cookies
+     *
+     * @return Map of cookie names to values
+     */
     @Override
     public Map<String, ? extends Object> getCookies() {
         return cookies.get();
     }
 
+    /**
+     * Gets a cookie value by name
+     *
+     * @param name The cookie name
+     * @return The cookie value or null if not found
+     */
     @Override
     public Object getCookie(String name) {
         return name == null ? null : getCookies().get(name);
     }
 
+    /**
+     * Adds a cookie to the response
+     *
+     * @param name The cookie name
+     * @param value The cookie value
+     */
     @Override
     public void addCookie(String name, String value) {
         if (!isEmpty(name) && !isEmpty(value)) {
@@ -95,11 +155,23 @@ public class JakartaRequestContext extends AbstractRequestContext {
         }
     }
 
+    /**
+     * Gets a session attribute by name
+     *
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
     @Override
     public Object getSessionAttribute(String name) {
         return httpRequest.getSession().getAttribute(name);
     }
 
+    /**
+     * Gets a request attribute by name
+     *
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
     @Override
     public Object getRequestAttribute(String name) {
         return httpRequest.getAttribute(name);

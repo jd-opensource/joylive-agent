@@ -18,18 +18,38 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 import com.jd.live.agent.governance.mcp.Expression;
 import lombok.Getter;
 
+/**
+ * Spring-specific implementation of Expression interface.
+ * Handles Spring property placeholders and SpEL expressions.
+ */
 @Getter
 public class SpringExpression implements Expression {
 
+    /**
+     * The expression string
+     */
     private String expression;
 
+    /**
+     * Flag indicating if this is a literal expression (no placeholders or SpEL)
+     */
     private boolean literal;
 
+    /**
+     * Creates a new Spring expression
+     *
+     * @param expression The expression string to evaluate
+     */
     public SpringExpression(String expression) {
         this.expression = expression;
         this.literal = expression == null || !expression.contains("${") && !expression.contains("#{");
     }
 
+    /**
+     * Returns the expression string
+     *
+     * @return The expression string
+     */
     public String toString() {
         return expression;
     }

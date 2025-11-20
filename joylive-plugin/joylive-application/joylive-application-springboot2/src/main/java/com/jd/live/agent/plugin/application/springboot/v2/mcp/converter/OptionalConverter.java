@@ -19,10 +19,28 @@ import com.jd.live.agent.core.util.converter.Converter;
 
 import java.util.Optional;
 
+/**
+ * Converter that transforms objects into Optional instances.
+ * Handles null values and preserves existing Optional objects.
+ */
 public class OptionalConverter implements Converter<Object, Object> {
 
+    /**
+     * Singleton instance of the converter
+     */
     public static final OptionalConverter INSTANCE = new OptionalConverter();
 
+    /**
+     * Converts an object to an Optional instance.
+     * <ul>
+     *   <li>null → Optional.empty()</li>
+     *   <li>Optional → returns as is</li>
+     *   <li>Other objects → Optional.ofNullable(object)</li>
+     * </ul>
+     *
+     * @param source The object to convert to an Optional
+     * @return An Optional containing the source object or empty if null
+     */
     @Override
     public Object convert(Object source) {
         if (source == null) {

@@ -32,11 +32,29 @@ import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
+/**
+ * Reactive implementation of MCP request context that works with Spring WebFlux.
+ * Provides access to request/response information through ServerWebExchange.
+ */
 @Getter
 public class ReactiveRequestContext extends AbstractRequestContext {
 
+    /**
+     * The Spring WebFlux server exchange containing request and response
+     */
     private final ServerWebExchange exchange;
 
+    /**
+     * Creates a new reactive request context
+     *
+     * @param methods          MCP tool methods mapped by name
+     * @param paths            MCP tool methods mapped by path
+     * @param converter        Object converter for parameter conversion
+     * @param jsonSchemaParser JSON schema parser for parameter validation
+     * @param version          MCP version information
+     * @param openApi          OpenAPI specification supplier
+     * @param exchange         Spring WebFlux server exchange
+     */
     @Builder
     public ReactiveRequestContext(Map<String, McpToolMethod> methods,
                                   Map<String, McpToolMethod> paths,
@@ -49,26 +67,54 @@ public class ReactiveRequestContext extends AbstractRequestContext {
         this.exchange = exchange;
     }
 
+    /**
+     * Gets a header value by name
+     *
+     * @param name The header name
+     * @return The header value or null if not found
+     */
     @Override
     public String getHeader(String name) {
         return name == null ? null : exchange.getRequest().getHeaders().getFirst(name);
     }
 
+    /**
+     * Gets all request headers
+     *
+     * @return Map of header names to values
+     */
     @Override
     public Map<String, ? extends Object> getHeaders() {
         return exchange.getRequest().getHeaders();
     }
 
+    /**
+     * Gets all request cookies
+     *
+     * @return Map of cookie names to values
+     */
     @Override
     public Map<String, ? extends Object> getCookies() {
         return exchange.getRequest().getCookies();
     }
 
+    /**
+     * Gets a cookie value by name
+     *
+     * @param name The cookie name
+     * @return The cookie value or null if not found
+     */
     @Override
     public Object getCookie(String name) {
         return name == null ? null : exchange.getRequest().getCookies().get(name);
     }
 
+    /**
+     * Adds a cookie to the response
+     *
+     * @param name The cookie name
+     * @param value The cookie value
+     */
     @Override
     public void addCookie(String name, String value) {
         if (!isEmpty(name) && !isEmpty(value)) {
@@ -76,12 +122,25 @@ public class ReactiveRequestContext extends AbstractRequestContext {
         }
     }
 
+    /**
+     * Gets a session attribute by name
+     * Note: This method blocks to obtain the session
+     *
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
     @Override
     public Object getSessionAttribute(String name) {
         WebSession session = exchange.getSession().block();
         return session == null ? null : session.getAttribute(name);
     }
 
+    /**
+     * Gets a request attribute by name
+     *
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
     @Override
     public Object getRequestAttribute(String name) {
         return exchange.getAttribute(name);
