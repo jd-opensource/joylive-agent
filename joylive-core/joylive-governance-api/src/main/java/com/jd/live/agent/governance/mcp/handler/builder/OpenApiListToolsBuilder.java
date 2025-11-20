@@ -122,7 +122,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
                     if (p.required()) {
                         required.add(p.getName());
                     }
-                    JsonSchema schema = createJsonSchema(p.getSchema(), definitions, components, true);
+                    JsonSchema schema = createJsonSchema(p.getSchema(), p.getDescription(), definitions, components, true);
                     if (schema != null) {
                         properties.put(p.getName(), schema);
                     }
@@ -136,7 +136,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
                 if (body.required()) {
                     required.add(body.getName());
                 }
-                JsonSchema schema = createJsonSchema(body, definitions, components);
+                JsonSchema schema = createJsonSchema(body, body.getDescription(), definitions, components);
                 if (schema != null) {
                     properties.put(body.getName(), schema);
                 }
@@ -147,12 +147,16 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
     }
 
     /**
-     * Creates a JsonSchema from an OpenAPI Schema object.
+     * Converts OpenAPI Schema to JsonSchema with type handling.
      *
-     * @param schema The OpenAPI Schema to convert
-     * @return JsonSchema representation
+     * @param schema OpenAPI schema to convert
+     * @param description Optional description override
+     * @param definitions Schema definitions registry
+     * @param components OpenAPI components for resolving references
+     * @param refed Whether schema is already resolved from reference
+     * @return Converted JsonSchema or null if input is null
      */
-    private JsonSchema createJsonSchema(Schema schema, McpToolDefinitions definitions, Components components, boolean refed) {
+    private JsonSchema createJsonSchema(Schema schema, String description, McpToolDefinitions definitions, Components components, boolean refed) {
         Schema target = !refed ? components.getSchema(schema) : schema;
         return target == null ? null : definitions.create(target, s -> s.getName(), s -> {
             Map<String, JsonSchema> properties = null;
@@ -161,11 +165,16 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
             if (format.isObject()) {
                 properties = createProperties(definitions, components, s.getProperties());
             } else if (format.isArray()) {
-                items = createJsonSchema(s.getItems(), definitions, components, false);
+                items = createJsonSchema(s.getItems(), null, definitions, components, false);
             }
             List<String> required = s.getRequired();
             required = required == null || required.isEmpty() ? null : required;
-            return JsonSchema.builder().type(format.getType()).properties(properties).items(items).required(required).build();
+            return JsonSchema.builder()
+                    .type(format.getType())
+                    .description(choose(description, s.getDescription()))
+                    .properties(properties)
+                    .items(items)
+                    .required(required).build();
         }).getSchema();
     }
 
@@ -183,7 +192,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
         }
         Map<String, JsonSchema> result = new LinkedHashMap<>();
         properties.forEach((name, schema) -> {
-            JsonSchema value = createJsonSchema(schema, definitions, components, false);
+            JsonSchema value = createJsonSchema(schema, null, definitions, components, false);
             if (value != null) {
                 result.put(name, value);
             }
@@ -199,12 +208,12 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
      * @param components  OpenAPI components containing reusable schemas
      * @return JsonSchema for the request body, or null if no suitable media type found
      */
-    private JsonSchema createJsonSchema(RequestBody body, McpToolDefinitions definitions, Components components) {
+    private JsonSchema createJsonSchema(RequestBody body, String description, McpToolDefinitions definitions, Components components) {
         MediaType mediaType = getMediaType(body.getContent());
         if (mediaType == null) {
             return null;
         }
-        return createJsonSchema(mediaType.getSchema(), definitions, components, false);
+        return createJsonSchema(mediaType.getSchema(), description, definitions, components, false);
     }
 
     /**
@@ -224,7 +233,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
         if (mediaType == null) {
             return null;
         }
-        JsonSchema result = createJsonSchema(mediaType.getSchema(), definitions, components, false);
+        JsonSchema result = createJsonSchema(mediaType.getSchema(), response.getDescription(), definitions, components, false);
         return version.output(result);
     }
 

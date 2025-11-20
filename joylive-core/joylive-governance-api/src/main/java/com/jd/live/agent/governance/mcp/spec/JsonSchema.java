@@ -52,6 +52,11 @@ public class JsonSchema {
     private String type;
 
     /**
+     * The description the schema
+     */
+    private String description;
+
+    /**
      * The properties of the schema object
      */
     private Map<String, JsonSchema> properties;
@@ -77,20 +82,23 @@ public class JsonSchema {
 
     @Builder
     public JsonSchema(String type,
+                      String description,
                       Map<String, JsonSchema> properties,
                       JsonSchema items,
                       List<String> required,
                       Boolean additionalProperties) {
-        this(null, type, properties, items, required, additionalProperties);
+        this(null, type, description, properties, items, required, additionalProperties);
     }
 
     private JsonSchema(String ref,
                        String type,
+                       String description,
                        Map<String, JsonSchema> properties,
                        JsonSchema items,
                        List<String> required,
                        Boolean additionalProperties) {
         this.ref = ref;
+        this.description = description;
         this.type = type;
         this.properties = properties;
         this.items = items;
