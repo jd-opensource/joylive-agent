@@ -102,4 +102,16 @@ public class Components {
      * Custom specification extensions that start with "x-".
      */
     private Map<String, Object> extensions;
+
+    public PathItem getPathItem(String ref) {
+        return ref == null || pathItems == null ? null : pathItems.get(ref);
+    }
+
+    public Parameter getParameter(String ref) {
+        return ref == null || parameters == null ? null : parameters.get(ref);
+    }
+
+    public RequestBody getRequestBody(String ref) {
+        return ref == null || requestBodies == null ? null : requestBodies.get(ref);
+    }
 }

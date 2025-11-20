@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.mcp.McpParameterParser;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.McpVersion;
@@ -56,15 +55,9 @@ public abstract class AbstractMcpController {
 
     protected LazyObject<OpenApi> openApi;
 
-    protected final McpParameterParser parameterParser;
-
     protected final Map<String, McpToolMethod> methods = new HashMap<>();
 
     protected final Map<String, McpToolMethod> paths = new HashMap<>();
-
-    public AbstractMcpController(McpParameterParser parameterParser) {
-        this.parameterParser = parameterParser;
-    }
 
     public void setHandlers(Map<String, McpHandler> handlers) {
         this.handlers = handlers;

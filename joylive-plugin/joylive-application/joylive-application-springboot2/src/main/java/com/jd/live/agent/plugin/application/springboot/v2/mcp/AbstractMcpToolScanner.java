@@ -15,26 +15,35 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
+import com.jd.live.agent.core.util.converter.Converter;
+import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.core.util.type.AnnotationGetter;
+import com.jd.live.agent.core.util.type.AnnotationGetter.MethodAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.ParameterAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.TypeAnnotationGetter;
 import com.jd.live.agent.governance.mcp.*;
+import com.jd.live.agent.governance.mcp.McpToolParameter.Location;
 import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
 import com.jd.live.agent.governance.mcp.McpToolParameterConfigurator.McpToolParameterConfiguratorChain;
+import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
-import static com.jd.live.agent.core.util.StringUtils.url;
+import static com.jd.live.agent.core.util.StringUtils.*;
+import static com.jd.live.agent.core.util.type.ClassUtils.isEntity;
+import static com.jd.live.agent.core.util.type.ClassUtils.isSimpleValueType;
 
 /**
  * Default implementation of McpToolScanner.
@@ -42,15 +51,20 @@ import static com.jd.live.agent.core.util.StringUtils.url;
  */
 public abstract class AbstractMcpToolScanner implements McpToolScanner {
 
+    protected final ConfigurableBeanFactory beanFactory;
+
     protected final ExpressionFactory expressionFactory;
 
-    public AbstractMcpToolScanner(ExpressionFactory expressionFactory) {
-        this.expressionFactory = expressionFactory;
+    protected final ParameterNameDiscoverer nameDiscoverer;
+
+    public AbstractMcpToolScanner(ConfigurableListableBeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+        this.expressionFactory = new SpringExpressionFactory(beanFactory);
+        this.nameDiscoverer = SpringUtils.getParameterNameDiscoverer(beanFactory);
     }
 
     @Override
     public List<McpToolMethod> scan(Object controller) {
-        // TODO handle ModelAttribute
         // model name by org.springframework.core.Conventions#getVariableNameForParameter
         List<McpToolMethod> tools = new ArrayList<>();
         Class<?> controllerClass = controller.getClass();
@@ -58,7 +72,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         String[] typePaths = getPaths(new TypeAnnotationGetter(controllerClass));
         for (Method method : controllerClass.getDeclaredMethods()) {
             if (filter(method)) {
-                String[] methodPaths = getPaths(new AnnotationGetter.MethodAnnotationGetter(method));
+                String[] methodPaths = getPaths(new MethodAnnotationGetter(method));
                 if (methodPaths != null) {
                     Set<String> fullPaths = appendPaths(typePaths, methodPaths);
                     String toolName = getToolName(controllerName, method, fullPaths);
@@ -195,13 +209,16 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @return Array of MCP tool parameters
      */
     protected McpToolParameter[] createParameters(Method method) {
+        String[] names = nameDiscoverer == null ? null : nameDiscoverer.getParameterNames(method);
         Parameter[] parameters = method.getParameters();
         if (parameters.length == 0) {
             return new McpToolParameter[0];
         }
         McpToolParameter[] result = new McpToolParameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
-            result[i] = createParameter(parameters[i], i);
+            Parameter parameter = parameters[i];
+            String name = names == null ? parameter.getName() : names[i];
+            result[i] = createParameter(method, parameter, i, name);
         }
         return result;
     }
@@ -209,22 +226,31 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     /**
      * Builds MCP tool parameter from method parameter.
      *
+     * @param method    Method to get parameters from
      * @param parameter Method parameter to build from
-     * @param index Parameter index in method
+     * @param index     Parameter index in method
+     * @param name      Parameter name
      * @return Built MCP tool parameter
      */
-    protected McpToolParameter createParameter(Parameter parameter, int index) {
+    protected McpToolParameter createParameter(Method method, Parameter parameter, int index, String name) {
         McpToolParameterConfigurator chain = new McpToolParameterConfiguratorChain(
                 builder -> configureRequestParam(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureModelAttribute(builder, new ParameterAnnotationGetter(parameter), new MethodAnnotationGetter(method)),
+                builder -> configurePathVariable(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureRequestHeader(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureCookieValue(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureRequestBody(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureType(builder),
-                builder -> configureSystemParam(builder)
+                builder -> configureRequestAttribute(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureSessionAttribute(builder, new ParameterAnnotationGetter(parameter)),
+                builder -> configureSystemParam(builder),
+                builder -> configureDefault(builder)
         );
-        return chain.configure(McpToolParameter.builder().parameter(parameter).index(index).required(true)).build();
+        return chain.configure(McpToolParameter.builder().parameter(parameter).name(name).index(index).required(true)).build();
     }
 
     /**
-     * Configures parameter name and requirements based on annotations.
-     * Supports @RequestParam, @PathVariable and @RequestBody.
+     * Configures @RequestParam based on annotations.
      *
      * @param builder parameter definition builder
      * @param getter  annotation accessor
@@ -233,15 +259,214 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     protected McpToolParameterBuilder configureRequestParam(McpToolParameterBuilder builder, AnnotationGetter getter) {
         RequestParam requestParam = getter.getAnnotation(RequestParam.class);
         if (requestParam != null) {
-            return builder.arg(requestParam.value()).required(requestParam.required()).defaultValueParser(createDefaultValueParser(requestParam.defaultValue()));
+            // In Spring MVC, "request parameters" map to query parameters, form data,
+            // and parts in multipart requests. This is because the Servlet API combines
+            // query parameters and form data into a single map called "parameters", and
+            // that includes automatic parsing of the request body.
+            String arg = resolveName(choose(requestParam.value(), requestParam.name()));
+            return builder
+                    .arg(arg)
+                    .required(requestParam.required())
+                    .location(Location.QUERY)
+                    .defaultValueParser(createDefaultValueParser(requestParam.defaultValue()));
         }
+        return builder;
+    }
+
+    /**
+     * Configures @ModelAttribute based on annotations.
+     *
+     * @param builder         parameter definition builder
+     * @param parameterGetter parameter annotation accessor
+     * @param methodGetter    method annotation accessor
+     * @return configured builder
+     */
+    protected McpToolParameterBuilder configureModelAttribute(McpToolParameterBuilder builder,
+                                                              AnnotationGetter parameterGetter,
+                                                              AnnotationGetter methodGetter) {
+        ModelAttribute modelAttribute = parameterGetter.getAnnotation(ModelAttribute.class);
+        if (modelAttribute != null) {
+            // TODO system parser
+            String arg = resolveName(choose(modelAttribute.value(), modelAttribute.name()));
+            if (methodGetter.getAnnotation(PostMapping.class) != null) {
+                return builder.arg(arg).location(Location.BODY);
+            } else if (methodGetter.getAnnotation(PutMapping.class) != null) {
+                return builder.arg(arg).location(Location.BODY);
+            }
+            return builder.arg(arg).location(Location.QUERY);
+        }
+        return builder;
+    }
+
+    /**
+     * Configures default based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @return configured builder
+     */
+    protected McpToolParameterBuilder configureDefault(McpToolParameterBuilder builder) {
+        if (builder.location() == null) {
+            if (isSimpleValueType(builder.type())) {
+                // as RequestParam
+                return builder.location(Location.QUERY);
+            } else if (isEntity(builder.type())) {
+                // as ModelAttribute
+                return builder.location(Location.QUERY);
+            }
+        }
+        return builder;
+    }
+
+    /**
+     * Configures @PathVariable based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
+     */
+    protected McpToolParameterBuilder configurePathVariable(McpToolParameterBuilder builder, AnnotationGetter getter) {
         PathVariable pathVariable = getter.getAnnotation(PathVariable.class);
         if (pathVariable != null) {
-            return builder.arg(pathVariable.value()).required(pathVariable.required());
+            String arg = resolveName(choose(pathVariable.value(), pathVariable.name()));
+            return builder.arg(arg).required(pathVariable.required()).location(Location.PATH);
         }
+        return builder;
+    }
+
+    /**
+     * Configures @RequestHeader based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
+     */
+    @SuppressWarnings("unchecked")
+    protected McpToolParameterBuilder configureRequestHeader(McpToolParameterBuilder builder, AnnotationGetter getter) {
+        RequestHeader requestHeader = getter.getAnnotation(RequestHeader.class);
+        if (requestHeader != null || builder.isType(HttpHeaders.class)) {
+            Converter<Object, Object> converter = null;
+            if (requestHeader == null || builder.isAssignableTo(MultiValueMap.class)) {
+                converter = v -> {
+                    if (v instanceof HttpHeaders) {
+                        return (HttpHeaders) v;
+                    }
+                    HttpHeaders headers = new HttpHeaders();
+                    if (v instanceof MultiMap) {
+                        headers.putAll((MultiMap) v);
+                    } else if (v instanceof Map) {
+                        ((Map<?, ?>) v).forEach((key, value) -> {
+                            String k = key.toString();
+                            if (value instanceof List) {
+                                ((List<?>) value).forEach(item -> headers.add(k, item.toString()));
+                            } else {
+                                headers.add(k, value.toString());
+                            }
+                        });
+                    }
+                    return headers;
+                };
+                return builder.location(Location.HEADER).converter(converter);
+            } else if (builder.isAssignableTo(Map.class)) {
+                converter = v -> {
+                    if (v instanceof HttpHeaders) {
+                        return ((HttpHeaders) v).toSingleValueMap();
+                    } else if (v instanceof MultiMap) {
+                        return ((MultiMap<String, String>) v).toSingleValueMap();
+                    } else if (v instanceof Map) {
+                        Map<String, String> result = new LinkedHashMap<>();
+                        ((Map<?, ?>) v).forEach((key, value) -> {
+                            if (value instanceof List) {
+                                List<?> list = (List<?>) value;
+                                result.put(key.toString(), list.isEmpty() ? "" : ((List<?>) value).get(0).toString());
+                            } else {
+                                result.put(key.toString(), value.toString());
+                            }
+                        });
+                        return result;
+                    }
+                    return new LinkedHashMap<>();
+                };
+                return builder.location(Location.HEADER).converter(converter);
+            }
+            String arg = resolveName(choose(requestHeader.value(), requestHeader.name()));
+            return builder
+                    .convertable(true)
+                    .arg(arg)
+                    .location(Location.HEADER)
+                    .converter(converter)
+                    .defaultValueParser(createDefaultValueParser(requestHeader.defaultValue()));
+        }
+        return builder;
+    }
+
+    /**
+     * Configures @CookieValue based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
+     */
+    private McpToolParameterBuilder configureCookieValue(McpToolParameterBuilder builder, AnnotationGetter getter) {
+        CookieValue cookieValue = getter.getAnnotation(CookieValue.class);
+        if (cookieValue != null) {
+            String arg = resolveName(choose(cookieValue.value(), cookieValue.name()));
+            if (builder.type() == HttpCookie.class) {
+                builder.converter(o -> new HttpCookie(builder.key(), o.toString()));
+            }
+            return builder
+                    .convertable(true)
+                    .arg(arg)
+                    .location(Location.COOKIE)
+                    .defaultValueParser(createDefaultValueParser(cookieValue.defaultValue()));
+        }
+        return builder;
+    }
+
+    /**
+     * Configures @RequestBody based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
+     */
+    protected McpToolParameterBuilder configureRequestBody(McpToolParameterBuilder builder, AnnotationGetter getter) {
         RequestBody requestBody = getter.getAnnotation(RequestBody.class);
         if (requestBody != null) {
-            return builder.required(requestBody.required());
+            return builder.required(requestBody.required()).location(Location.BODY);
+        }
+        return builder;
+    }
+
+    /**
+     * Configures @SessionAttribute based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
+     */
+    protected McpToolParameterBuilder configureSessionAttribute(McpToolParameterBuilder builder, AnnotationGetter getter) {
+        SessionAttribute sessionAttribute = getter.getAnnotation(SessionAttribute.class);
+        if (sessionAttribute != null) {
+            String arg = resolveName(choose(sessionAttribute.value(), sessionAttribute.name()));
+            String name = choose(arg, builder.name());
+            return builder.arg(arg).location(Location.SYSTEM).systemParser((req, ctx) -> ctx.getSessionAttribute(name));
+        }
+        return builder;
+    }
+
+    /**
+     * Configures @RequestAttribute based on annotations.
+     *
+     * @param builder parameter definition builder
+     * @param getter  annotation accessor
+     * @return configured builder
+     */
+    protected McpToolParameterBuilder configureRequestAttribute(McpToolParameterBuilder builder, AnnotationGetter getter) {
+        RequestAttribute requestAttribute = getter.getAnnotation(RequestAttribute.class);
+        if (requestAttribute != null) {
+            String arg = resolveName(choose(requestAttribute.value(), requestAttribute.name()));
+            String name = choose(arg, builder.name());
+            return builder.arg(arg).location(Location.SYSTEM).systemParser((req, ctx) -> ctx.getRequestAttribute(name));
         }
         return builder;
     }
@@ -261,6 +486,25 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @return builder with system parameters configured
      */
     protected abstract McpToolParameterBuilder configureSystemParam(McpToolParameterBuilder builder);
+
+    /**
+     * Creates a parser for the default value with optional transformation.
+     *
+     * @param defaultValue the default value to parse, may be null or empty
+     * @param function     optional transformation function to apply on parsed value
+     * @return the request parser, or null if defaultValue equals DEFAULT_NONE
+     */
+    protected McpRequestParser createDefaultValueParser(String defaultValue, Function<Object, Object> function) {
+        if (ValueConstants.DEFAULT_NONE.equals(defaultValue)) {
+            return null;
+        }
+        Expression expression = expressionFactory.parse(defaultValue);
+        if (function == null) {
+            return (req, ctx) -> expressionFactory.evaluate(expression);
+        } else {
+            return (req, ctx) -> function.apply(expressionFactory.evaluate(expression));
+        }
+    }
 
     /**
      * Extracts actual type from generic type.
@@ -284,22 +528,8 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         return createDefaultValueParser(defaultValue, null);
     }
 
-    /**
-     * Creates a parser for the default value with optional transformation.
-     *
-     * @param defaultValue the default value to parse, may be null or empty
-     * @param function     optional transformation function to apply on parsed value
-     * @return the request parser, or null if defaultValue equals DEFAULT_NONE
-     */
-    protected McpRequestParser createDefaultValueParser(String defaultValue, Function<Object, Object> function) {
-        if (ValueConstants.DEFAULT_NONE.equals(defaultValue)) {
-            return null;
-        }
-        Expression expression = expressionFactory.parse(defaultValue);
-        if (function == null) {
-            return ctx -> expressionFactory.evaluate(expression);
-        } else {
-            return ctx -> function.apply(expressionFactory.evaluate(expression));
-        }
+    protected String resolveName(String name) {
+        return name == null || name.isEmpty() ? name : expressionFactory.evaluate(expressionFactory.parse(name)).toString();
     }
+
 }

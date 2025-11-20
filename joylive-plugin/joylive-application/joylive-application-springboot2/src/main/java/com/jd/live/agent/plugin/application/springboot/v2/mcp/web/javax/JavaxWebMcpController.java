@@ -16,14 +16,12 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
 import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
-import com.jd.live.agent.governance.mcp.DefaultMcpParameterParser;
 import com.jd.live.agent.governance.mcp.McpToolScanner;
 import com.jd.live.agent.governance.mcp.handler.McpHandler;
 import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
 import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
 import com.jd.live.agent.governance.mcp.spec.Request;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
-import com.jd.live.agent.plugin.application.springboot.v2.mcp.SpringExpressionFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,10 +43,6 @@ public class JavaxWebMcpController extends AbstractMcpController {
 
     public static final String NAME = "webMcpController";
 
-    public JavaxWebMcpController() {
-        super(DefaultMcpParameterParser.INSTANCE);
-    }
-
     @Override
     protected Map<String, Object> getControllers(ConfigurableApplicationContext context) {
         return context.getBeansWithAnnotation(RestController.class);
@@ -56,7 +50,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
 
     @Override
     protected McpToolScanner createScanner(ConfigurableApplicationContext context) {
-        return new JavaxWebMcpToolScanner(new SpringExpressionFactory(context.getBeanFactory()));
+        return new JavaxWebMcpToolScanner(context.getBeanFactory());
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -85,7 +79,6 @@ public class JavaxWebMcpController extends AbstractMcpController {
                     .methods(methods)
                     .paths(paths)
                     .converter(objectConverter)
-                    .parameterParser(parameterParser)
                     .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                     .version(getVersion(version))
                     .openApi(openApi)

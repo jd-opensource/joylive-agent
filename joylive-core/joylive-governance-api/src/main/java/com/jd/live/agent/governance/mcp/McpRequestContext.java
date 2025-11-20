@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  *
  * @see ObjectConverter
  */
-public interface McpRequestContext extends ObjectConverter, McpParameterParser {
+public interface McpRequestContext extends ObjectConverter {
 
     /**
      * Gets the converter for transforming request parameters.
@@ -40,13 +40,6 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
      * @return the object converter instance
      */
     ObjectConverter getConverter();
-
-    /**
-     * Gets the parameter parser for processing request parameters.
-     *
-     * @return the parameter parser instance
-     */
-    McpParameterParser getParameterParser();
 
     /**
      * Returns the JSON schema parser instance.
@@ -104,7 +97,17 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
      * @param name the name of the header to retrieve
      * @return the header value, or null if not present
      */
-    String getHeader(String name);
+    Object getHeader(String name);
+
+    Map<String, ? extends Object> getHeaders();
+
+    Map<String, ? extends Object> getCookies();
+
+    Object getCookie(String name);
+
+    Object getSessionAttribute(String name);
+
+    Object getRequestAttribute(String name);
 
     /**
      * Adds a cookie with the specified name and value.
@@ -133,11 +136,6 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
         return getConverter().convert(source, type);
     }
 
-    @Override
-    default Object[] parse(McpToolMethod method, Object params, McpRequestContext ctx) throws Exception {
-        return getParameterParser().parse(method, params, ctx);
-    }
-
     @Getter
     abstract class AbstractRequestContext implements McpRequestContext {
 
@@ -146,8 +144,6 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
         private final Map<String, McpToolMethod> paths;
 
         private final ObjectConverter converter;
-
-        private final McpParameterParser parameterParser;
 
         private final JsonSchemaParser jsonSchemaParser;
 
@@ -158,14 +154,12 @@ public interface McpRequestContext extends ObjectConverter, McpParameterParser {
         public AbstractRequestContext(Map<String, McpToolMethod> methods,
                                       Map<String, McpToolMethod> paths,
                                       ObjectConverter converter,
-                                      McpParameterParser parameterParser,
                                       JsonSchemaParser jsonSchemaParser,
                                       McpVersion version,
                                       Supplier<OpenApi> openApi) {
             this.methods = methods;
             this.paths = paths;
             this.converter = converter;
-            this.parameterParser = parameterParser;
             this.jsonSchemaParser = jsonSchemaParser;
             this.version = version;
             this.openApi = openApi;

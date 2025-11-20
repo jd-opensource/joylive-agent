@@ -24,9 +24,10 @@ public interface McpRequestParser {
     /**
      * Parses parameter from context.
      *
-     * @param ctx parser context
+     * @param request The mcp request
+     * @param ctx     The parser context
      * @return parsed value
      * @throws Exception if parsing fails
      */
-    Object parse(McpRequestContext ctx) throws Exception;
+    Object parse(McpRequest request, McpRequestContext ctx) throws Exception;
 }

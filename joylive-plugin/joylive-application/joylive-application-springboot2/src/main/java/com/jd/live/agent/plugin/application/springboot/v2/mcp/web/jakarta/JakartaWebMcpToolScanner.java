@@ -15,40 +15,31 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
-import com.jd.live.agent.governance.mcp.ExpressionFactory;
+import com.jd.live.agent.governance.mcp.McpRequest;
 import com.jd.live.agent.governance.mcp.McpRequestContext;
+import com.jd.live.agent.governance.mcp.McpToolParameter.Location;
 import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.OptionalConverter;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.http.HttpMethod;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.RequestAttribute;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.context.request.WebRequest;
 
-import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.security.Principal;
-import java.util.*;
-import java.util.function.BiConsumer;
-
-import static com.jd.live.agent.core.util.StringUtils.choose;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Default scanner for MCP tools based on Spring MVC controllers.
  */
 public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
 
-    public JakartaWebMcpToolScanner(ExpressionFactory expressionFactory) {
-        super(expressionFactory);
+    public JakartaWebMcpToolScanner(ConfigurableListableBeanFactory beanFactory) {
+        super(beanFactory);
     }
 
     @Override
@@ -66,42 +57,24 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
     @Override
     protected McpToolParameterBuilder configureSystemParam(McpToolParameterBuilder builder) {
         if (builder.isAssignableTo(WebRequest.class)) {
-            return builder.parser(this::getWebRequest);
+            return builder.location(Location.SYSTEM).systemParser(this::getWebRequest);
         } else if (builder.isType(HttpServletRequest.class)) {
-            return builder.parser(this::getHttpRequest);
+            return builder.location(Location.SYSTEM).systemParser(this::getHttpRequest);
         } else if (builder.isType(HttpServletResponse.class)) {
-            return builder.parser(this::getHttpResponse);
+            return builder.location(Location.SYSTEM).systemParser(this::getHttpResponse);
         } else if (builder.isType(HttpSession.class)) {
-            return builder.parser(this::getSession);
+            return builder.location(Location.SYSTEM).systemParser(this::getSession);
         } else if (builder.isAssignableTo(Principal.class)) {
-            return builder.parser(ctx -> getPrincipal(ctx, builder.actualClass()));
+            return builder.location(Location.SYSTEM).systemParser((req, ctx) -> getPrincipal(ctx, builder.actualClass()));
         } else if (builder.isType(HttpMethod.class)) {
-            return builder.parser(this::getHttpMethod);
+            return builder.location(Location.SYSTEM).systemParser(this::getHttpMethod);
         } else if (builder.isType(Locale.class)) {
-            return builder.parser(this::getLocale);
-        } else {
-            Parameter parameter = builder.parameter();
-            RequestAttribute requestAttribute = parameter.getAnnotation(RequestAttribute.class);
-            if (requestAttribute != null) {
-                return configureRequestAttribute(builder, requestAttribute);
-            }
-            SessionAttribute sessionAttribute = parameter.getAnnotation(SessionAttribute.class);
-            if (sessionAttribute != null) {
-                return configureSessionAttribute(builder, sessionAttribute);
-            }
-            CookieValue cookieValue = parameter.getAnnotation(CookieValue.class);
-            if (cookieValue != null) {
-                return configureCookieValue(builder, cookieValue);
-            }
-            RequestHeader requestHeader = parameter.getAnnotation(RequestHeader.class);
-            if (requestHeader != null) {
-                return configureRequestHeader(builder, requestHeader);
-            }
+            return builder.location(Location.SYSTEM).systemParser(this::getLocale);
         }
         return builder;
     }
 
-    private WebRequest getWebRequest(McpRequestContext ctx) {
+    private WebRequest getWebRequest(McpRequest request, McpRequestContext ctx) {
         return ((JakartaRequestContext) ctx).getWebRequest();
     }
 
@@ -109,7 +82,11 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
         return ((JakartaRequestContext) ctx).getHttpRequest();
     }
 
-    private HttpServletResponse getHttpResponse(McpRequestContext ctx) {
+    private HttpServletRequest getHttpRequest(McpRequest request, McpRequestContext ctx) {
+        return getHttpRequest(ctx);
+    }
+
+    private HttpServletResponse getHttpResponse(McpRequest request, McpRequestContext ctx) {
         return ((JakartaRequestContext) ctx).getHttpResponse();
     }
 
@@ -117,105 +94,21 @@ public class JakartaWebMcpToolScanner extends AbstractMcpToolScanner {
         return getHttpRequest(ctx).getSession();
     }
 
-    private Principal getPrincipal(McpRequestContext ctx, Class<?> type) {
-        Principal principal = getHttpRequest(ctx).getUserPrincipal();
-        return principal == null || !type.isInstance(principal) ? null : principal;
+    private HttpSession getSession(McpRequest request, McpRequestContext ctx) {
+        return getSession(ctx);
     }
 
-    private Locale getLocale(McpRequestContext ctx) {
+    private Principal getPrincipal(McpRequestContext ctx, Class<?> type) {
+        Principal principal = getHttpRequest(ctx).getUserPrincipal();
+        return !type.isInstance(principal) ? null : principal;
+    }
+
+    private Locale getLocale(McpRequest request, McpRequestContext ctx) {
         return getHttpRequest(ctx).getLocale();
     }
 
-    private Object getHttpMethod(McpRequestContext ctx) {
+    private Object getHttpMethod(McpRequest request, McpRequestContext ctx) {
         return getHttpRequest(ctx).getMethod();
-    }
-
-    private McpToolParameterBuilder configureRequestHeader(McpToolParameterBuilder builder, RequestHeader requestHeader) {
-        String arg = choose(requestHeader.value(), requestHeader.name());
-        String name = choose(arg, builder.name());
-        return builder
-                .convertable(true)
-                .arg(arg)
-                .parser(ctx -> getHeader(ctx, name, builder.actualClass()))
-                .defaultValueParser(createDefaultValueParser(requestHeader.defaultValue()));
-    }
-
-    private McpToolParameterBuilder configureCookieValue(McpToolParameterBuilder builder, CookieValue cookieValue) {
-        String arg = choose(cookieValue.value(), cookieValue.name());
-        String name = choose(arg, builder.name());
-        return builder
-                .convertable(true)
-                .arg(arg)
-                .parser(ctx -> getCookieValue(ctx, name))
-                .defaultValueParser(createDefaultValueParser(cookieValue.defaultValue()));
-    }
-
-    private McpToolParameterBuilder configureSessionAttribute(McpToolParameterBuilder builder, SessionAttribute sessionAttribute) {
-        String arg = choose(sessionAttribute.value(), sessionAttribute.name());
-        String name = choose(arg, builder.name());
-        return builder.arg(arg).parser(ctx -> getSessionAttribute(ctx, name));
-    }
-
-    private McpToolParameterBuilder configureRequestAttribute(McpToolParameterBuilder builder, RequestAttribute requestAttribute) {
-        String arg = choose(requestAttribute.value(), requestAttribute.name());
-        String name = choose(arg, builder.name());
-        return builder.arg(arg).parser(ctx -> getRequestAttribute(ctx, name));
-    }
-
-    private Object getRequestAttribute(McpRequestContext ctx, String name) {
-        return getHttpRequest(ctx).getAttribute(name);
-    }
-
-    private Object getSessionAttribute(McpRequestContext ctx, String name) {
-        return getSession(ctx).getAttribute(name);
-    }
-
-    private String getCookieValue(McpRequestContext ctx, String name) {
-        Cookie[] cookies = getHttpRequest(ctx).getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals(name)) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
-
-    private Object getHeader(McpRequestContext ctx, String name, Class<?> type) {
-        WebRequest webRequest = getWebRequest(ctx);
-        if (HttpHeaders.class == type) {
-            HttpHeaders headers = new HttpHeaders();
-            processHeader(webRequest, (key, value) -> headers.add(key, value));
-            return headers;
-        } else if (MultiValueMap.class == type || LinkedMultiValueMap.class == type) {
-            MultiValueMap<String, String> headers = new LinkedMultiValueMap();
-            processHeader(webRequest, (key, value) -> headers.add(key, value));
-            return headers;
-        } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
-            Map<String, String> headers = new LinkedHashMap();
-            processHeader(webRequest, (key, value) -> headers.put(key, value));
-            return headers;
-        } else {
-            String[] values = webRequest.getHeaderValues(name);
-            if (values == null) {
-                return null;
-            }
-            return values.length == 1 ? values[0] : values;
-        }
-    }
-
-    private void processHeader(WebRequest webRequest, BiConsumer<String, String> consumer) {
-        Iterator<String> headerNames = webRequest.getHeaderNames();
-        while (headerNames.hasNext()) {
-            String headerName = headerNames.next();
-            String[] headerValues = webRequest.getHeaderValues(headerName);
-            if (headerValues != null && headerValues.length > 0) {
-                for (String headerValue : headerValues) {
-                    consumer.accept(headerName, headerValue);
-                }
-            }
-        }
     }
 
 }

@@ -36,10 +36,10 @@ public class JsonRpcException extends RuntimeException {
         return code;
     }
 
-    public static class NotEnoughParameter extends JsonRpcException {
+    public static class MissingParameterException extends JsonRpcException {
 
-        public NotEnoughParameter() {
-            super("Not enough parameters", ErrorCodes.INVALID_PARAMS);
+        public MissingParameterException(String name) {
+            super("Required parameter " + name + " is missing", ErrorCodes.INVALID_PARAMS);
         }
 
     }

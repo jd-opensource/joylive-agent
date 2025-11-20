@@ -38,6 +38,8 @@ public class RequestBody {
     @JsonField("$ref")
     private String ref;
 
+    private String name;
+
     /**
      * A brief description of the request body. CommonMark syntax may be used.
      */

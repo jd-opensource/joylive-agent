@@ -94,7 +94,7 @@ public class ReflectionListToolsBuilder implements ListToolsBuilder {
         List<String> required = new ArrayList<>();
         for (McpToolParameter parameter : parameters) {
             // filter system parameters
-            if (parameter.getParser() == null) {
+            if (parameter.getSystemParser() == null) {
                 if (parameter.isRequired()) {
                     required.add(parameter.getName());
                 }

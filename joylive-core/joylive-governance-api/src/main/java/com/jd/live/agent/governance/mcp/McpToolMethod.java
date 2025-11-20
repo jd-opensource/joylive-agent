@@ -68,4 +68,8 @@ public class McpToolMethod {
     public Type getGenericReturnType() {
         return method.getGenericReturnType();
     }
+
+    public int size() {
+        return parameters == null ? 0 : parameters.length;
+    }
 }

@@ -16,12 +16,16 @@
 package com.jd.live.agent.governance.mcp;
 
 import com.jd.live.agent.core.util.converter.Converter;
+import com.jd.live.agent.governance.mcp.spec.JsonRpcException.MissingParameterException;
 import lombok.Getter;
 
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.function.Function;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.type.ClassUtils.SIMPLE_TYPES;
 
 /**
@@ -50,9 +54,11 @@ public class McpToolParameter {
 
     private final boolean convertable;
 
-    private final Converter<Object, ?> converter;
+    private final Location location;
 
-    private final McpRequestParser parser;
+    private final Converter<Object, Object> converter;
+
+    private final McpRequestParser systemParser;
 
     private final McpRequestParser defaultValueParser;
 
@@ -63,8 +69,9 @@ public class McpToolParameter {
                             boolean required,
                             boolean optional,
                             boolean convertable,
-                            Converter<Object, ?> converter,
-                            McpRequestParser parser,
+                            Location location,
+                            Converter<Object, Object> converter,
+                            McpRequestParser systemParser,
                             McpRequestParser defaultValueParser) {
         this.parameter = parameter;
         this.name = parameter.getName();
@@ -76,12 +83,13 @@ public class McpToolParameter {
         this.required = required;
         this.optional = optional;
         this.convertable = convertable;
+        this.location = location;
         this.converter = converter;
-        this.parser = parser;
+        this.systemParser = systemParser;
         this.defaultValueParser = defaultValueParser;
     }
 
-    public String getArg() {
+    public String getKey() {
         if (arg == null || arg.isEmpty()) {
             return name;
         }
@@ -92,23 +100,51 @@ public class McpToolParameter {
         return actualType instanceof Class ? (Class<?>) actualType : type;
     }
 
-    public boolean isFramework() {
-        return parser != null;
-    }
-
-    public Object parse(McpRequestContext ctx, Function<McpToolParameter, Object> valueFunc) throws Exception {
-        Object result;
-        if (isFramework()) {
-            // system parser
-            result = parser.parse(ctx);
-            result = result == null && defaultValueParser != null ? defaultValueParser.parse(ctx) : result;
-            result = convertable ? convert(ctx, result) : result;
-        } else {
-            result = valueFunc.apply(this);
-            result = result == null && defaultValueParser != null ? defaultValueParser.parse(ctx) : result;
-            result = convert(ctx, result);
+    public Object parse(McpRequest request, McpRequestContext ctx) throws Exception {
+        Object result = getValue(request, ctx);
+        boolean empty = result == null || result instanceof CharSequence && ((CharSequence) result).length() == 0;
+        result = empty && defaultValueParser != null ? defaultValueParser.parse(request, ctx) : result;
+        result = convert(ctx, result);
+        if (result == null && required) {
+            throw new MissingParameterException(name);
         }
         return wrap(result);
+    }
+
+    private Object getValue(McpRequest request, McpRequestContext ctx) throws Exception {
+        String key = getKey();
+        switch (location) {
+            case QUERY:
+                return isEmpty(arg) ? request.getQueries() : unary(request.getQuery(key), false);
+            case HEADER:
+                return isMapType() ? request.getHeaders() : unary(request.getHeader(key), false);
+            case COOKIE:
+                return unary(request.getCookie(key), true);
+            case PATH:
+                return request.getPath(key);
+            case BODY:
+                return request.getBody(key);
+            case SYSTEM:
+                return systemParser.parse(request, ctx);
+            default:
+                return unary(request.getQuery(key), false);
+        }
+    }
+
+    private Object unary(Object value, boolean first) {
+        if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            if (list.isEmpty()) {
+                return null;
+            } else if (list.size() == 1 || first) {
+                return list.get(0);
+            }
+            Class<?> actualClass = getActualClass();
+            if (!actualClass.isArray() && !Collection.class.isAssignableFrom(actualClass)) {
+                return list.get(0);
+            }
+        }
+        return value;
     }
 
     private Object convert(McpRequestContext ctx, Object target) {
@@ -118,11 +154,19 @@ public class McpToolParameter {
         Class<?> resultClass = getActualClass();
         Class<?> targetClass = target.getClass();
         if (resultClass.isInstance(target)) {
-            if (SIMPLE_TYPES.contains(targetClass) || targetClass.isEnum()) {
+            if (isSimpleType(targetClass)) {
                 return wrap(target);
             }
         }
         return ctx.getConverter().convert(target, actualType);
+    }
+
+    private boolean isMapType() {
+        return Map.class.isAssignableFrom(type);
+    }
+
+    private boolean isSimpleType(Class<?> type) {
+        return SIMPLE_TYPES.contains(type) || type.isEnum();
     }
 
     private Object wrap(Object value) {
@@ -144,8 +188,9 @@ public class McpToolParameter {
         private boolean required;
         private boolean optional;
         private boolean convertable;
-        private Converter<Object, ?> converter;
-        private McpRequestParser parser;
+        private Location location;
+        private Converter<Object, Object> converter;
+        private McpRequestParser systemParser;
         private McpRequestParser defaultValueParser;
 
         public McpToolParameterBuilder parameter(Parameter parameter) {
@@ -154,6 +199,11 @@ public class McpToolParameter {
             this.type = parameter == null ? null : parameter.getType();
             this.genericType = parameter == null ? null : parameter.getParameterizedType();
             this.actualType = genericType;
+            return this;
+        }
+
+        public McpToolParameterBuilder name(String name) {
+            this.name = name;
             return this;
         }
 
@@ -187,13 +237,20 @@ public class McpToolParameter {
             return this;
         }
 
-        public McpToolParameterBuilder converter(Converter<Object, ?> converter) {
-            this.converter = converter;
+        public McpToolParameterBuilder converter(Converter<Object, Object> converter) {
+            if (converter != null) {
+                this.converter = this.converter == null ? converter : this.converter.then(converter);
+            }
             return this;
         }
 
-        public McpToolParameterBuilder parser(McpRequestParser parser) {
-            this.parser = parser;
+        public McpToolParameterBuilder location(Location location) {
+            this.location = location;
+            return this;
+        }
+
+        public McpToolParameterBuilder systemParser(McpRequestParser parser) {
+            this.systemParser = parser;
             return this;
         }
 
@@ -230,6 +287,13 @@ public class McpToolParameter {
             return this.arg;
         }
 
+        public String key() {
+            if (arg == null || arg.isEmpty()) {
+                return name;
+            }
+            return arg;
+        }
+
         public boolean required() {
             return this.required;
         }
@@ -242,12 +306,16 @@ public class McpToolParameter {
             return this.convertable;
         }
 
-        public Converter<Object, ?> converter() {
+        public Location location() {
+            return this.location;
+        }
+
+        public Converter<Object, Object> converter() {
             return this.converter;
         }
 
-        public McpRequestParser parser() {
-            return this.parser;
+        public McpRequestParser systemParser() {
+            return this.systemParser;
         }
 
         public McpRequestParser defaultValueParser() {
@@ -267,8 +335,38 @@ public class McpToolParameter {
         }
 
         public McpToolParameter build() {
-            return new McpToolParameter(parameter, index, actualType, arg, required, optional, convertable, converter, parser, defaultValueParser);
+            return new McpToolParameter(parameter, index, actualType, arg, required, optional, convertable, location, converter, systemParser, defaultValueParser);
         }
+    }
+
+    /**
+     * Parameter source locations.
+     */
+    public enum Location {
+        /**
+         * Query string parameters.
+         */
+        QUERY,
+        /**
+         * URL path variables.
+         */
+        PATH,
+        /**
+         * HTTP headers.
+         */
+        HEADER,
+        /**
+         * HTTP cookies.
+         */
+        COOKIE,
+        /**
+         * Request body.
+         */
+        BODY,
+        /**
+         * System-generated parameters.
+         */
+        SYSTEM
     }
 
 }

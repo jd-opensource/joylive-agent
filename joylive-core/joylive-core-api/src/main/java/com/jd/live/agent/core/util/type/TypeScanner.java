@@ -36,19 +36,6 @@ public class TypeScanner {
                     && !t.isArray()
                     && !t.equals(Object.class);
 
-    /**
-     * A predicate that checks if a class is not a primitive, annotation, enum, interface, array, Object, or part of the java or javax packages.
-     */
-    public static final Predicate<Class<?>> ENTITY_PREDICATE = t ->
-            !t.isPrimitive()
-                    && !t.isAnnotation()
-                    && !t.isEnum()
-                    && !t.isInterface()
-                    && !t.isArray()
-                    && !t.equals(Object.class)
-                    && !t.getName().startsWith("java.")
-                    && !t.getName().startsWith("javax.");
-
     private final Class<?> type;
 
     private final Predicate<Class<?>> predicate;

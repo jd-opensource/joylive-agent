@@ -29,4 +29,15 @@ public interface Converter<P, V> {
      * @return the converted result
      */
     V convert(P source);
+
+    /**
+     * Chains this converter with another converter to create a conversion pipeline.
+     * The result of this converter is passed as input to the specified converter.
+     *
+     * @param converter the converter to apply after this one; if null, returns this converter unchanged
+     * @return a new converter that applies this converter followed by the specified converter
+     */
+    default <K> Converter<P, K> then(Converter<V, K> converter) {
+        return p -> converter.convert(this.convert(p));
+    }
 }

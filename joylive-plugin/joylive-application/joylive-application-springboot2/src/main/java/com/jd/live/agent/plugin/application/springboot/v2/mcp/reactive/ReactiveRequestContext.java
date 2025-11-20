@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
 import com.jd.live.agent.core.parser.JsonSchemaParser;
 import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.governance.mcp.McpParameterParser;
 import com.jd.live.agent.governance.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpVersion;
@@ -26,6 +25,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.http.ResponseCookie;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebSession;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -41,12 +41,11 @@ public class ReactiveRequestContext extends AbstractRequestContext {
     public ReactiveRequestContext(Map<String, McpToolMethod> methods,
                                   Map<String, McpToolMethod> paths,
                                   ObjectConverter converter,
-                                  McpParameterParser parameterParser,
                                   JsonSchemaParser jsonSchemaParser,
                                   McpVersion version,
                                   Supplier<OpenApi> openApi,
                                   ServerWebExchange exchange) {
-        super(methods, paths, converter, parameterParser, jsonSchemaParser, version, openApi);
+        super(methods, paths, converter, jsonSchemaParser, version, openApi);
         this.exchange = exchange;
     }
 
@@ -56,9 +55,35 @@ public class ReactiveRequestContext extends AbstractRequestContext {
     }
 
     @Override
+    public Map<String, ? extends Object> getHeaders() {
+        return exchange.getRequest().getHeaders();
+    }
+
+    @Override
+    public Map<String, ? extends Object> getCookies() {
+        return exchange.getRequest().getCookies();
+    }
+
+    @Override
+    public Object getCookie(String name) {
+        return name == null ? null : exchange.getRequest().getCookies().get(name);
+    }
+
+    @Override
     public void addCookie(String name, String value) {
         if (!isEmpty(name) && !isEmpty(value)) {
             exchange.getResponse().addCookie(ResponseCookie.from(name, value).build());
         }
+    }
+
+    @Override
+    public Object getSessionAttribute(String name) {
+        WebSession session = exchange.getSession().block();
+        return session == null ? null : session.getAttribute(name);
+    }
+
+    @Override
+    public Object getRequestAttribute(String name) {
+        return exchange.getAttribute(name);
     }
 }

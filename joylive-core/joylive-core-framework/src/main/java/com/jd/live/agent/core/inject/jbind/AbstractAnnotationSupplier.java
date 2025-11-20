@@ -24,7 +24,7 @@ import java.lang.reflect.Modifier;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.describe;
-import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
+import static com.jd.live.agent.core.util.type.ClassUtils.isEntity;
 
 /**
  * AbstractAnnotationSupplier
@@ -35,7 +35,7 @@ public abstract class AbstractAnnotationSupplier implements InjectionSupplier {
 
     @Override
     public Injection build(Class<?> type, InjectionContext context) {
-        if (!ENTITY_PREDICATE.test(type)) {
+        if (!isEntity(type)) {
             return null;
         }
         Map<Class<?>, CacheObject<Injection>> injections = getCache(type, context);

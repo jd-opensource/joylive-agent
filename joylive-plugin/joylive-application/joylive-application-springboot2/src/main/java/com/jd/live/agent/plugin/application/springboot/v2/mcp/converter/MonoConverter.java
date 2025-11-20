@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletionStage;
 
-public class MonoConverter implements Converter<Object, Mono<Object>> {
+public class MonoConverter implements Converter<Object, Object> {
 
     public static final MonoConverter INSTANCE = new MonoConverter();
 

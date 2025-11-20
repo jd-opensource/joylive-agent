@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.mcp.spec;
 
 import com.jd.live.agent.core.parser.json.JsonField;
+import com.jd.live.agent.governance.mcp.spec.Request.MetaRequest;
 import lombok.*;
 
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CallToolRequest implements Request.MetaRequest {
+public class CallToolRequest implements MetaRequest {
     /**
      * name The name of the tool to call. This must match a tool name from tools/list.
      */

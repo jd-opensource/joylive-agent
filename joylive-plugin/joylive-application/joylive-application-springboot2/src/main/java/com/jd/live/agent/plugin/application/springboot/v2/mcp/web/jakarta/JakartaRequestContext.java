@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta;
 
 import com.jd.live.agent.core.parser.JsonSchemaParser;
 import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.governance.mcp.McpParameterParser;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.mcp.McpVersion;
@@ -29,10 +29,13 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
+import static com.jd.live.agent.core.util.http.HttpUtils.parseHeader;
 
 @Getter
 public class JakartaRequestContext extends AbstractRequestContext {
@@ -43,26 +46,46 @@ public class JakartaRequestContext extends AbstractRequestContext {
 
     private final HttpServletResponse httpResponse;
 
+    private final LazyObject<Map<String, List<String>>> headers;
+
+    private final LazyObject<Map<String, List<String>>> cookies;
+
     @Builder
     public JakartaRequestContext(Map<String, McpToolMethod> methods,
                                  Map<String, McpToolMethod> paths,
                                  ObjectConverter converter,
-                                 McpParameterParser parameterParser,
                                  JsonSchemaParser jsonSchemaParser,
                                  McpVersion version,
                                  Supplier<OpenApi> openApi,
                                  WebRequest webRequest,
                                  HttpServletRequest httpRequest,
                                  HttpServletResponse httpResponse) {
-        super(methods, paths, converter, parameterParser, jsonSchemaParser, version, openApi);
+        super(methods, paths, converter, jsonSchemaParser, version, openApi);
         this.webRequest = webRequest;
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;
+        this.headers = LazyObject.of(() -> parseHeader(httpRequest.getHeaderNames(), v -> httpRequest.getHeaders(v)));
+        this.cookies = LazyObject.of(() -> parseCookie(httpRequest.getCookies(), c -> c.getName(), c -> c.getValue()));
     }
 
     @Override
-    public String getHeader(String name) {
-        return name == null ? null : httpRequest.getHeader(name);
+    public Object getHeader(String name) {
+        return name == null ? null : getHeaders().get(name);
+    }
+
+    @Override
+    public Map<String, ? extends Object> getHeaders() {
+        return headers.get();
+    }
+
+    @Override
+    public Map<String, ? extends Object> getCookies() {
+        return cookies.get();
+    }
+
+    @Override
+    public Object getCookie(String name) {
+        return name == null ? null : getCookies().get(name);
     }
 
     @Override
@@ -70,5 +93,15 @@ public class JakartaRequestContext extends AbstractRequestContext {
         if (!isEmpty(name) && !isEmpty(value)) {
             httpResponse.addCookie(new Cookie(name, value));
         }
+    }
+
+    @Override
+    public Object getSessionAttribute(String name) {
+        return httpRequest.getSession().getAttribute(name);
+    }
+
+    @Override
+    public Object getRequestAttribute(String name) {
+        return httpRequest.getAttribute(name);
     }
 }

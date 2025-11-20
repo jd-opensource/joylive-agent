@@ -545,7 +545,7 @@ public class OpenApi2Factory implements OpenApiFactory {
         if (ref.indexOf("#/parameters") == 0) {
             ref = "#/components/requestBodies" + ref.substring("#/parameters".length());
         }
-        return RequestBody.builder().ref(ref).build();
+        return RequestBody.builder().name(parameter.getName()).ref(ref).build();
     }
 
     /**

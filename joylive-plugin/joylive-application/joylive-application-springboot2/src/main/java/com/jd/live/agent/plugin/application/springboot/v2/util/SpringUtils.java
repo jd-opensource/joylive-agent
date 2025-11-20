@@ -77,6 +77,9 @@ public class SpringUtils {
     private static final Method METHOD_DOCUMENTATION_BY_GROUP = getDeclaredMethod(CLASS_DOCUMENTATION_CACHE, "documentationByGroup", new Class[]{String.class});
     private static final Method METHOD_MAP_DOCUMENTATION = getDeclaredMethod(CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER, "mapDocumentation", new Class[]{CLASS_DOCUMENTATION});
     private static final FieldAccessor ACCESSOR_HIDDEN_REST_CONTROLLERS = getAccessor(CLASS_OPEN_API_RESOURCE, "HIDDEN_REST_CONTROLLERS");
+    private static final String TYPE_PARAMETER_NAME_DISCOVERER = "org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory";
+    private static final Class<?> CLASS_PARAMETER_NAME_DISCOVERER = loadClass(TYPE_PARAMETER_NAME_DISCOVERER, CLASS_LOADER);
+    private static final FieldAccessor ACCESSOR_PARAMETER_NAME_DISCOVERER = getAccessor(CLASS_PARAMETER_NAME_DISCOVERER, "parameterNameDiscoverer");
 
     /**
      * Checks if current thread is a development reload thread
@@ -141,6 +144,11 @@ public class SpringUtils {
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getParameterNameDiscoverer(Object factory) {
+        return (T) ACCESSOR_PARAMETER_NAME_DISCOVERER.get(factory);
     }
 
     @SuppressWarnings("unchecked")
