@@ -13,10 +13,11 @@
 
 package com.jd.live.agent.core.openapi.spec.v3;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
 import com.jd.live.agent.core.openapi.spec.v3.parameters.Parameter;
+import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -47,10 +48,21 @@ public class PathItem {
      */
     private String description;
 
-    /**
-     * Map of HTTP method to operation, e.g. "get", "post"
-     */
-    private Map<String, Operation> operations;
+    private Operation get;
+
+    private Operation put;
+
+    private Operation post;
+
+    private Operation delete;
+
+    private Operation options;
+
+    private Operation head;
+
+    private Operation patch;
+
+    private Operation trace;
 
     /**
      * Parameters for this path
@@ -58,5 +70,35 @@ public class PathItem {
     private List<Parameter> parameters;
 
     private Map<String, Object> extensions;
+
+    public List<Operation> operations() {
+        List<Operation> result = new ArrayList<>(8);
+
+        if (get != null) {
+            result.add(get);
+        }
+        if (put != null) {
+            result.add(put);
+        }
+        if (post != null) {
+            result.add(post);
+        }
+        if (delete != null) {
+            result.add(delete);
+        }
+        if (patch != null) {
+            result.add(patch);
+        }
+        if (head != null) {
+            result.add(head);
+        }
+        if (options != null) {
+            result.add(options);
+        }
+        if (trace != null) {
+            result.add(trace);
+        }
+        return result;
+    }
 
 }

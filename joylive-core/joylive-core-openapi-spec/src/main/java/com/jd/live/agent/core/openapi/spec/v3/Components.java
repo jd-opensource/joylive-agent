@@ -10,7 +10,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.jd.live.agent.core.openapi.spec.v3;
 
 import com.jd.live.agent.core.openapi.spec.v3.callbacks.Callback;
@@ -112,7 +111,47 @@ public class Components {
      */
     private Map<String, Object> extensions;
 
-    public Schema getSchema(String ref) {
+    public ComponentRef<Schema> getSchema(Schema schema) {
+        if (schema == null) {
+            return null;
+        }
+        String ref = schema.getRef();
+        return isEmpty(ref) ? new ComponentRef<>(schema) : new ComponentRef<>(schema, getSchema(ref), getName(ref));
+    }
+
+    public ComponentRef<PathItem> getPathItem(PathItem item) {
+        if (item == null) {
+            return null;
+        }
+        String ref = item.getRef();
+        return isEmpty(ref) ? new ComponentRef<>(item) : new ComponentRef<>(item, getPathItem(ref), getName(ref));
+    }
+
+    public ComponentRef<Parameter> getParameter(Parameter parameter) {
+        if (parameter == null) {
+            return null;
+        }
+        String ref = parameter.getRef();
+        return isEmpty(ref) ? new ComponentRef<>(parameter) : new ComponentRef<>(parameter, getParameter(ref), getName(ref));
+    }
+
+    public ComponentRef<RequestBody> getRequestBody(RequestBody body) {
+        if (body == null) {
+            return null;
+        }
+        String ref = body.getRef();
+        return isEmpty(ref) ? new ComponentRef<>(body) : new ComponentRef<>(body, getRequestBody(ref), getName(ref));
+    }
+
+    public ComponentRef<ApiResponse> getApiResponse(ApiResponse response) {
+        if (response == null) {
+            return null;
+        }
+        String ref = response.getRef();
+        return isEmpty(ref) ? new ComponentRef<>(response) : new ComponentRef<>(response, getApiResponse(ref), getName(ref));
+    }
+
+    private Schema getSchema(String ref) {
         if (schemas == null || schemas.isEmpty()) {
             return null;
         }
@@ -120,14 +159,7 @@ public class Components {
         return name == null ? null : schemas.get(name);
     }
 
-    public Schema getSchema(Schema schema) {
-        if (schema == null) {
-            return null;
-        }
-        return !isEmpty(schema.getRef()) ? getSchema(schema.getRef()) : schema;
-    }
-
-    public PathItem getPathItem(String ref) {
+    private PathItem getPathItem(String ref) {
         if (pathItems == null || pathItems.isEmpty()) {
             return null;
         }
@@ -135,14 +167,7 @@ public class Components {
         return name == null ? null : pathItems.get(name);
     }
 
-    public PathItem getPathItem(PathItem item) {
-        if (item == null) {
-            return null;
-        }
-        return !isEmpty(item.getRef()) ? getPathItem(item.getRef()) : item;
-    }
-
-    public Parameter getParameter(String ref) {
+    private Parameter getParameter(String ref) {
         if (parameters == null || parameters.isEmpty()) {
             return null;
         }
@@ -150,14 +175,7 @@ public class Components {
         return name == null ? null : parameters.get(name);
     }
 
-    public Parameter getParameter(Parameter parameter) {
-        if (parameter == null) {
-            return null;
-        }
-        return !isEmpty(parameter.getRef()) ? getParameter(parameter.getRef()) : parameter;
-    }
-
-    public RequestBody getRequestBody(String ref) {
+    private RequestBody getRequestBody(String ref) {
         if (requestBodies == null || requestBodies.isEmpty()) {
             return null;
         }
@@ -165,14 +183,7 @@ public class Components {
         return name == null ? null : requestBodies.get(name);
     }
 
-    public RequestBody getRequestBody(RequestBody body) {
-        if (body == null) {
-            return null;
-        }
-        return !isEmpty(body.getRef()) ? getRequestBody(body.getRef()) : body;
-    }
-
-    public ApiResponse getApiResponse(String ref) {
+    private ApiResponse getApiResponse(String ref) {
         if (responses == null || responses.isEmpty()) {
             return null;
         }
@@ -180,19 +191,20 @@ public class Components {
         return name == null ? null : responses.get(name);
     }
 
-    public ApiResponse getApiResponse(ApiResponse response) {
-        if (response == null) {
+    private boolean isEmpty(String ref) {
+        return ref == null || ref.isEmpty();
+    }
+
+    private String getName(String ref) {
+        if (ref == null || ref.isEmpty()) {
             return null;
         }
-        return !isEmpty(response.getRef()) ? getApiResponse(response.getRef()) : response;
+        int pos = ref.lastIndexOf('/');
+        return pos == -1 ? ref : ref.substring(pos + 1);
     }
 
     private String getName(String ref, String prefix) {
         return ref == null || ref.length() <= prefix.length() ? null : ref.substring(prefix.length());
-    }
-
-    private boolean isEmpty(String ref) {
-        return ref == null || ref.isEmpty();
     }
 
 }

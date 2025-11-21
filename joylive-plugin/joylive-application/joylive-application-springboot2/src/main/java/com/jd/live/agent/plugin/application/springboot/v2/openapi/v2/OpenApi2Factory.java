@@ -239,7 +239,13 @@ public class OpenApi2Factory implements OpenApiFactory {
         }
         return PathItem.builder()
                 .parameters(toList(pathItem.getParameters(), v -> buildParameter(swagger, v)))
-                .operations(toLinkMap(pathItem.getOperationMap(), m -> m.name().toLowerCase(), v -> buildOperation(swagger, v, defaults)))
+                .get(buildOperation(swagger, pathItem.getGet(), defaults))
+                .head(buildOperation(swagger, pathItem.getHead(), defaults))
+                .put(buildOperation(swagger, pathItem.getPut(), defaults))
+                .patch(buildOperation(swagger, pathItem.getPatch(), defaults))
+                .post(buildOperation(swagger, pathItem.getPost(), defaults))
+                .delete(buildOperation(swagger, pathItem.getDelete(), defaults))
+                .options(buildOperation(swagger, pathItem.getOptions(), defaults))
                 .extensions(copy(pathItem.getVendorExtensions(), VENDOR_EXTENSIONS_PREDICATE))
                 .build();
     }

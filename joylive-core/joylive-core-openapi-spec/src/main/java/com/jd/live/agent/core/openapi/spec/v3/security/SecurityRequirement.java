@@ -13,11 +13,10 @@
 
 package com.jd.live.agent.core.openapi.spec.v3.security;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,11 +26,24 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class SecurityRequirement {
-    /**
-     * Map of security scheme name to required scopes
-     */
-    private Map<String, List<String>> requirements;
+public class SecurityRequirement extends LinkedHashMap<String, List<String>> {
+
+    public SecurityRequirement() {
+    }
+
+    public SecurityRequirement(int initialCapacity) {
+        super(initialCapacity);
+    }
+
+    public SecurityRequirement(int initialCapacity, float loadFactor) {
+        super(initialCapacity, loadFactor);
+    }
+
+    public SecurityRequirement(Map<? extends String, ? extends List<String>> m) {
+        super(m);
+    }
+
+    public SecurityRequirement(int initialCapacity, float loadFactor, boolean accessOrder) {
+        super(initialCapacity, loadFactor, accessOrder);
+    }
 }

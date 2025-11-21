@@ -19,7 +19,6 @@ import com.jd.live.agent.core.mcp.McpRequestContext;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.McpToolParameter;
 import com.jd.live.agent.core.mcp.spec.v1.JsonSchema;
-import com.jd.live.agent.core.mcp.spec.v1.JsonSchema.JsonSchemaRef;
 import com.jd.live.agent.core.mcp.spec.v1.ListToolsResult;
 import com.jd.live.agent.core.mcp.spec.v1.Tool;
 import com.jd.live.agent.core.mcp.version.McpToolDefinitions;
@@ -203,12 +202,12 @@ public class ReflectionListToolsBuilder implements ListToolsBuilder {
                                     String type,
                                     Map<String, JsonSchema> properties,
                                     JsonSchema items) {
-        JsonSchemaRef ref = definitions.create(cls, this::getName,
-                c -> JsonSchema.builder().type(type).properties(properties).items(items).build());
-        if (ref.addReference() > 1) {
-            ref.ref();
-        }
-        return ref.getSchema();
+        return definitions.create(cls, this::getName, c -> JsonSchema.builder()
+                        .type(type)
+                        .properties(properties)
+                        .items(items)
+                        .build())
+                .getSchema();
     }
 
     /**

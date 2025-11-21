@@ -32,6 +32,9 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class Tool implements Serializable {
+
+    public static final String COMPONENT_REF_PREFIX = "#/$defs/";
+
     /**
      * A unique identifier for the tool. This name is used when calling the tool
      */

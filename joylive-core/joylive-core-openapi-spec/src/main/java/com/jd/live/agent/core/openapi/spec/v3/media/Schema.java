@@ -10,11 +10,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.jd.live.agent.core.openapi.spec.v3.media;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
 import com.jd.live.agent.core.openapi.spec.v3.ExternalDoc;
+import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -70,6 +69,7 @@ public class Schema {
     /**
      * Default value used when no value is provided in requests or responses.
      */
+    @JsonField("default")
     private Object defaultValue;
 
     /**
@@ -199,7 +199,10 @@ public class Schema {
     /**
      * List of valid enumeration values for string schemas.
      */
-    private List<String> enums;
+    @JsonField("enum")
+    private List<Object> enums;
+
+    private XML xml;
 
     /**
      * Schema for prefix items in tuple validation arrays.

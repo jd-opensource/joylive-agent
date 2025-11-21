@@ -239,7 +239,14 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .summary(pathItem.getSummary())
                 .description(pathItem.getDescription())
                 .parameters(toList(pathItem.getParameters(), this::buildParameter))
-                .operations(toLinkMap(pathItem.readOperationsMap(), m -> m.name().toLowerCase(), this::buildOperation))
+                .get(buildOperation(pathItem.getGet()))
+                .head(buildOperation(pathItem.getHead()))
+                .put(buildOperation(pathItem.getPut()))
+                .patch(buildOperation(pathItem.getPatch()))
+                .post(buildOperation(pathItem.getPost()))
+                .delete(buildOperation(pathItem.getDelete()))
+                .options(buildOperation(pathItem.getOptions()))
+                .trace(buildOperation(pathItem.getTrace()))
                 .extensions(copy(pathItem.getExtensions()))
                 .build();
     }

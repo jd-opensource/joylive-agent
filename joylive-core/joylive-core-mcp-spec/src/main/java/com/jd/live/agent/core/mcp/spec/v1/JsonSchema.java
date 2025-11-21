@@ -124,6 +124,7 @@ public class JsonSchema {
         private String name;
 
         @Getter
+        @Setter
         private JsonSchema schema;
 
         @Getter
@@ -136,7 +137,7 @@ public class JsonSchema {
         }
 
         public JsonSchemaRef(JsonSchemaRef ref) {
-            this(ref.name, ref.schema.clone(), ref.uri, ref.references);
+            this(ref.name, ref.schema == null ? null : ref.schema.clone(), ref.uri, ref.references);
         }
 
         private JsonSchemaRef(String name, JsonSchema schema, String uri, AtomicInteger references) {
@@ -151,30 +152,20 @@ public class JsonSchema {
          *
          * @return the updated reference count
          */
-        public int addReference() {
-            return references.incrementAndGet();
+        public int getAndIncReference() {
+            return references.getAndIncrement();
         }
 
         public int getReference() {
             return references.get();
         }
 
-        public boolean hasReference() {
-            return references.get() > 0;
+        public JsonSchemaRef ref() {
+            return new JsonSchemaRef(name, new JsonSchema(uri), uri, references);
         }
 
-        /**
-         * Converts this schema to a reference schema.
-         */
-        public void ref() {
-            if (schema.ref == null) {
-                schema.ref = uri;
-                schema.type = null;
-                schema.properties = null;
-                schema.items = null;
-                schema.required = null;
-                schema.additionalProperties = null;
-            }
+        public boolean hasReference() {
+            return references.get() > 0;
         }
     }
 }

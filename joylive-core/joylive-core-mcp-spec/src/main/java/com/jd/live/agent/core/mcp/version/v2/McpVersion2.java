@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.jd.live.agent.core.mcp.spec.v1.Tool.COMPONENT_REF_PREFIX;
+
 @Extension("v2")
 public class McpVersion2 implements McpVersion {
 
@@ -64,9 +66,14 @@ public class McpVersion2 implements McpVersion {
         public <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
             JsonSchemaRef result = schemas.computeIfAbsent(key, c -> {
                 String name = nameFunc.apply(key);
-                return new JsonSchemaRef(name, schemaFunc.apply(key), "#/$defs/" + name);
+                String url = name == null || name.isEmpty() ? null : COMPONENT_REF_PREFIX + name;
+                return new JsonSchemaRef(name, null, url);
             });
-            return result.hasReference() ? new JsonSchemaRef(result) : result;
+            if (result.getAndIncReference() == 0) {
+                result.setSchema(schemaFunc.apply(key));
+                return result;
+            }
+            return result.ref();
         }
 
         @Override

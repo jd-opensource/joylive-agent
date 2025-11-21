@@ -13,11 +13,13 @@
 package com.jd.live.agent.core.openapi.spec.v3.responses;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Getter
+@Setter
 public class ApiResponses extends LinkedHashMap<String, ApiResponse> {
 
     public static final String DEFAULT = "default";
@@ -28,6 +30,21 @@ public class ApiResponses extends LinkedHashMap<String, ApiResponse> {
      * Custom specification extensions that start with "x-".
      */
     private Map<String, Object> extensions;
+
+    public ApiResponses() {
+    }
+
+    public ApiResponses(int initialCapacity) {
+        super(initialCapacity);
+    }
+
+    public ApiResponses(int initialCapacity, float loadFactor) {
+        super(initialCapacity, loadFactor);
+    }
+
+    public ApiResponses(int initialCapacity, float loadFactor, boolean accessOrder) {
+        super(initialCapacity, loadFactor, accessOrder);
+    }
 
     public ApiResponses(Map<? extends String, ? extends ApiResponse> m) {
         super(m);

@@ -13,10 +13,10 @@
 
 package com.jd.live.agent.core.openapi.spec.v3.parameters;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
 import com.jd.live.agent.core.openapi.spec.v3.examples.Example;
 import com.jd.live.agent.core.openapi.spec.v3.media.MediaType;
 import com.jd.live.agent.core.openapi.spec.v3.media.Schema;
+import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
 import java.util.Map;
