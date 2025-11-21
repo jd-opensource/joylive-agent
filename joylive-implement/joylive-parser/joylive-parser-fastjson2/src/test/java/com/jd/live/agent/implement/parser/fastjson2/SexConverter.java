@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.parser.fastjson2;
 
-import com.jd.live.agent.core.parser.json.JsonConverter;
+import com.jd.live.agent.core.parser.annotation.JsonConverter;
 
 public class SexConverter implements JsonConverter<Integer, Sex> {
 

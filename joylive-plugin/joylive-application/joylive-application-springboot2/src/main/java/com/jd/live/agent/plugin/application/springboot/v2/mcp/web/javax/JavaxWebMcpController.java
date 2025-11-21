@@ -16,13 +16,13 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
 import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
-import com.jd.live.agent.governance.exception.InvokeException;
-import com.jd.live.agent.governance.mcp.McpRequestContext;
-import com.jd.live.agent.governance.mcp.McpToolScanner;
-import com.jd.live.agent.governance.mcp.handler.McpHandler;
-import com.jd.live.agent.governance.mcp.spec.JsonRpcRequest;
-import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
-import com.jd.live.agent.governance.mcp.spec.Request;
+import com.jd.live.agent.core.exception.InvokeException;
+import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.McpToolScanner;
+import com.jd.live.agent.core.mcp.handler.McpHandler;
+import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
+import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
+import com.jd.live.agent.core.mcp.spec.v1.Request;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;

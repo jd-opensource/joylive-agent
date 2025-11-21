@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.policy.service.exception;
 
 import com.jd.live.agent.core.parser.json.CaseInsensitiveSetJsonConverter;
-import com.jd.live.agent.core.parser.json.DeserializeConverter;
+import com.jd.live.agent.core.parser.annotation.DeserializeConverter;
 import lombok.Getter;
 import lombok.Setter;
 

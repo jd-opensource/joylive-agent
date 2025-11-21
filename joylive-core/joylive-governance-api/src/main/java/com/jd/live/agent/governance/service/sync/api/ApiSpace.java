@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.service.sync.api;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.parser.annotation.JsonAlias;
 import lombok.Getter;
 import lombok.Setter;
 

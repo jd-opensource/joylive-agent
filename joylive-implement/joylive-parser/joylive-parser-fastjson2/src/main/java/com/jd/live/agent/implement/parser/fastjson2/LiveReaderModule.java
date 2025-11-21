@@ -21,7 +21,7 @@ import com.alibaba.fastjson2.modules.ObjectReaderAnnotationProcessor;
 import com.alibaba.fastjson2.modules.ObjectReaderModule;
 import com.alibaba.fastjson2.reader.ObjectReader;
 import com.alibaba.fastjson2.util.BeanUtils;
-import com.jd.live.agent.core.parser.json.*;
+import com.jd.live.agent.core.parser.annotation.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;

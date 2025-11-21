@@ -100,7 +100,17 @@ public class JInjectAnnotationSupplier extends AbstractAnnotationSupplier {
      */
     protected Sourcer build(FieldDesc fieldDesc, Inject inject, String name, Class<?> extensible, SourcerFactory factory) {
         if (extensible != null && extensible.isInterface() && extensible.isAnnotationPresent(Extensible.class)) {
-            return factory.build(name, extensible, fieldDesc.getOwner(), inject.loader());
+            switch (inject.loader()) {
+                case CORE_IMPL:
+                    return factory.build(name, extensible, fieldDesc.getOwner(), ResourcerType.CORE_IMPL);
+                case CORE:
+                    return factory.build(name, extensible, fieldDesc.getOwner(), ResourcerType.CORE);
+                case PLUGIN:
+                    return factory.build(name, extensible, fieldDesc.getOwner(), ResourcerType.PLUGIN);
+                default:
+                    return factory.build(name, extensible, fieldDesc.getOwner(), ResourcerType.CORE_IMPL);
+            }
+
         }
         return new JComponentSourcer(name, fieldDesc.getType());
     }

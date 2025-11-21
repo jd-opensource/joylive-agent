@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
-import com.jd.live.agent.governance.mcp.Expression;
+import com.jd.live.agent.core.mcp.Expression;
 import lombok.Getter;
 
 /**

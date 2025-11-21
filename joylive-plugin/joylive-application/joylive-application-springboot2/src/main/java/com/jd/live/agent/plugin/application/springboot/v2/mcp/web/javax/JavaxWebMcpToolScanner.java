@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
-import com.jd.live.agent.governance.mcp.McpRequest;
-import com.jd.live.agent.governance.mcp.McpRequestContext;
-import com.jd.live.agent.governance.mcp.McpToolParameter.Location;
-import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
+import com.jd.live.agent.core.mcp.McpRequest;
+import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.McpToolParameter.Location;
+import com.jd.live.agent.core.mcp.McpToolParameter.McpToolParameterBuilder;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpToolScanner;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.OptionalConverter;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;

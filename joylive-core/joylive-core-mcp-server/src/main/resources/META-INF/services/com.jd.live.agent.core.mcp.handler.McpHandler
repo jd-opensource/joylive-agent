@@ -1,0 +1,12 @@
+com.jd.live.agent.core.mcp.handler.ListResourcesHandler
+com.jd.live.agent.core.mcp.handler.SubscribeResourcesHandler
+com.jd.live.agent.core.mcp.handler.PingHandler
+com.jd.live.agent.core.mcp.handler.GetPromptsHandler
+com.jd.live.agent.core.mcp.handler.CallToolsHandler
+com.jd.live.agent.core.mcp.handler.ReadResourcesHandler
+com.jd.live.agent.core.mcp.handler.CompletionCompleteHandler
+com.jd.live.agent.core.mcp.handler.SetLevelHandler
+com.jd.live.agent.core.mcp.handler.ListResourcesTemplatesHandler
+com.jd.live.agent.core.mcp.handler.ListToolsHandler
+com.jd.live.agent.core.mcp.handler.InitializeHandler
+com.jd.live.agent.core.mcp.handler.ListPromptsHandler

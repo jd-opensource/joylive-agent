@@ -15,15 +15,15 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
+import com.jd.live.agent.core.mcp.*;
 import com.jd.live.agent.core.util.map.MultiMap;
 import com.jd.live.agent.core.util.type.AnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.MethodAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.ParameterAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.TypeAnnotationGetter;
-import com.jd.live.agent.governance.mcp.*;
-import com.jd.live.agent.governance.mcp.McpToolParameter.Location;
-import com.jd.live.agent.governance.mcp.McpToolParameter.McpToolParameterBuilder;
-import com.jd.live.agent.governance.mcp.McpToolParameterConfigurator.McpToolParameterConfiguratorChain;
+import com.jd.live.agent.core.mcp.McpToolParameter.Location;
+import com.jd.live.agent.core.mcp.McpToolParameter.McpToolParameterBuilder;
+import com.jd.live.agent.core.mcp.McpToolParameterConfigurator.McpToolParameterConfiguratorChain;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;

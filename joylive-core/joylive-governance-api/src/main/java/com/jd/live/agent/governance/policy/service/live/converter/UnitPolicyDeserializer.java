@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.live.converter;
 
-import com.jd.live.agent.core.parser.json.JsonConverter;
+import com.jd.live.agent.core.parser.annotation.JsonConverter;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 
 public class UnitPolicyDeserializer implements JsonConverter<String, UnitPolicy> {

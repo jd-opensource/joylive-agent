@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.introspect.AnnotatedClass;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.jd.live.agent.core.exception.ParseException;
-import com.jd.live.agent.core.parser.json.*;
+import com.jd.live.agent.core.parser.annotation.*;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;

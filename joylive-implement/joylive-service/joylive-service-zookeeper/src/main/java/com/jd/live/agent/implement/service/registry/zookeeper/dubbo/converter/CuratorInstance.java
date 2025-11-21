@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.service.registry.zookeeper.dubbo.converter;
 
-import com.jd.live.agent.core.parser.json.JsonType;
+import com.jd.live.agent.core.parser.annotation.JsonType;
 import lombok.Getter;
 
 /**

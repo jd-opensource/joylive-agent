@@ -16,7 +16,7 @@
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.converter;
 
 import com.jd.live.agent.core.util.converter.Converter;
-import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
+import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 

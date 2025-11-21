@@ -22,7 +22,7 @@ import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.mcp.spec.JsonRpcResponse;
+import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import org.springframework.web.servlet.function.HandlerFilterFunction;

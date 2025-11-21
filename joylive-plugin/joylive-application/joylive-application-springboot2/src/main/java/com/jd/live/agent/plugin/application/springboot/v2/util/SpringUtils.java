@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.application.springboot.v2.util;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.bootstrap.AppContext;
-import com.jd.live.agent.governance.openapi.OpenApi;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import com.jd.live.agent.plugin.application.springboot.v2.openapi.OpenApiFactory;
 import com.jd.live.agent.plugin.application.springboot.v2.openapi.v2.OpenApi2Factory;
 import com.jd.live.agent.plugin.application.springboot.v2.openapi.v30.OpenApi30Factory;

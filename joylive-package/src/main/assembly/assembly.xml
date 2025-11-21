@@ -39,6 +39,10 @@
             <outputDirectory>lib/core</outputDirectory>
             <unpack>false</unpack>
             <includes>
+                <include>com.jd.live:joylive-core-annotation</include>
+                <include>com.jd.live:joylive-core-openapi-spec</include>
+                <include>com.jd.live:joylive-core-mcp-spec</include>
+                <include>com.jd.live:joylive-core-mcp-server</include>
                 <include>com.jd.live:joylive-core-api</include>
                 <include>com.jd.live:joylive-governance-api</include>
                 <include>com.jd.live:joylive-core-framework</include>

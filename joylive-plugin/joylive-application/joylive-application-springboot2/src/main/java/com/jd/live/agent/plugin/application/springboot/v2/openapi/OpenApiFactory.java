@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.openapi;
 
-import com.jd.live.agent.governance.openapi.OpenApi;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 
 /**
  * Factory interface for creating OpenAPI specification objects from API definitions.

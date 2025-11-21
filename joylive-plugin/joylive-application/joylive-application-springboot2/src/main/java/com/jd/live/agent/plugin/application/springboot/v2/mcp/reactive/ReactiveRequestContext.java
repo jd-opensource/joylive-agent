@@ -17,10 +17,10 @@ package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
 import com.jd.live.agent.core.parser.JsonSchemaParser;
 import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.governance.mcp.McpRequestContext.AbstractRequestContext;
-import com.jd.live.agent.governance.mcp.McpToolMethod;
-import com.jd.live.agent.governance.mcp.McpVersion;
-import com.jd.live.agent.governance.openapi.OpenApi;
+import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
+import com.jd.live.agent.core.mcp.McpToolMethod;
+import com.jd.live.agent.core.mcp.version.McpVersion;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.http.ResponseCookie;

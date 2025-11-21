@@ -15,9 +15,9 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.openapi.v30;
 
-import com.jd.live.agent.governance.openapi.OpenApi;
-import com.jd.live.agent.governance.openapi.info.Info;
-import com.jd.live.agent.governance.openapi.info.License;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
+import com.jd.live.agent.core.openapi.spec.v3.info.Info;
+import com.jd.live.agent.core.openapi.spec.v3.info.License;
 import com.jd.live.agent.plugin.application.springboot.v2.openapi.v31.OpenApi31Factory;
 import io.swagger.v3.oas.models.OpenAPI;
 
