@@ -200,7 +200,7 @@ public class Schema {
      * List of valid enumeration values for string schemas.
      */
     @JsonField("enum")
-    private List<Object> enums;
+    private List<? extends Object> enums;
 
     private XML xml;
 
