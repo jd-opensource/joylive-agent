@@ -16,8 +16,8 @@
 package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.mcp.spec.v1.*;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.spec.v1.*;
 
 @Extension(JsonRpcMessage.METHOD_INITIALIZE)
 public class InitializeHandler implements McpHandler {
@@ -28,12 +28,13 @@ public class InitializeHandler implements McpHandler {
         InitializeResult result = InitializeResult.builder()
                 .protocolVersion(req.getProtocolVersion())
                 .capabilities(ServerCapabilities.builder()
-                        .logging(new ServerCapabilities.LoggingCapabilities())
+                        // Fix empty bean for jackson issue
+                        //.logging(new ServerCapabilities.LoggingCapabilities())
+                        //.completions(new ServerCapabilities.CompletionCapabilities())
                         // TODO tools listChanged
                         .tools(new ServerCapabilities.ToolCapabilities())
                         .prompts(new ServerCapabilities.PromptCapabilities())
                         .resources(new ServerCapabilities.ResourceCapabilities())
-                        .completions(new ServerCapabilities.CompletionCapabilities())
                         .experimental(null)
                         .build())
                 .serverInfo(null)
