@@ -1,8 +1,8 @@
-com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationRunListenersDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.SpringApplicationContextDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.AbstractPropertyResolverDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.NacosRegistrationDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.SofaBootstrapRunListenerDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.TomcatReactiveWebServerFactoryDefinition
-com.jd.live.agent.plugin.application.springboot.v2.definition.TomcatServletWebServerFactoryDefinition
+com.jd.live.agent.plugin.application.springboot.definition.SpringApplicationDefinition
+com.jd.live.agent.plugin.application.springboot.definition.SpringApplicationRunListenersDefinition
+com.jd.live.agent.plugin.application.springboot.definition.SpringApplicationContextDefinition
+com.jd.live.agent.plugin.application.springboot.definition.AbstractPropertyResolverDefinition
+com.jd.live.agent.plugin.application.springboot.definition.NacosRegistrationDefinition
+com.jd.live.agent.plugin.application.springboot.definition.SofaBootstrapRunListenerDefinition
+com.jd.live.agent.plugin.application.springboot.definition.TomcatReactiveWebServerFactoryDefinition
+com.jd.live.agent.plugin.application.springboot.definition.TomcatServletWebServerFactoryDefinition
