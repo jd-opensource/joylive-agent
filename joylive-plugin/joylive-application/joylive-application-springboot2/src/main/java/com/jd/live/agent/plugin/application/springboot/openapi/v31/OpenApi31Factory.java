@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.openapi.v31;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.openapi.spec.v3.*;
 import com.jd.live.agent.core.openapi.spec.v3.callbacks.Callback;
 import com.jd.live.agent.core.openapi.spec.v3.examples.Example;
@@ -42,7 +43,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.*;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * Factory implementation for creating OpenApi objects from OpenAPI 3.1 specifications.
@@ -283,6 +286,7 @@ public class OpenApi31Factory implements OpenApiFactory {
      * @param schema The OpenAPI Schema object
      * @return The internal Schema representation
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     protected Schema buildSchema(io.swagger.v3.oas.models.media.Schema schema) {
         if (schema == null) {
             return null;
@@ -302,7 +306,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .properties(toLinkMap(schema.getProperties(), this::buildSchema))
                 .patternProperties(toLinkMap(schema.getPatternProperties(), this::buildSchema))
                 .additionalProperties(schema.getAdditionalProperties())
-                .booleanSchemaValue(schema.getBooleanSchemaValue())
+                .booleanSchemaValue(Version.getBooleanSchemaValue(schema)) // @since 2.2.2
                 .items(buildSchema(schema.getItems()))
                 .required(schema.getRequired() == null ? null : new ArrayList<>(schema.getRequired()))
                 .nullable(schema.getNullable())
@@ -334,9 +338,9 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .contains(buildSchema(schema.getContains()))
                 .schema(schema.get$schema())
                 .anchor(schema.get$anchor())
-                //.vocabulary(schema.get$vocabulary())
-                //.dynamicAnchor(schema.get$dynamicAnchor())
-                //.dynamicRef(schema.get$dynamicRef())
+                .vocabulary(Version.getVocabulary(schema)) // @since 2.2.14
+                .dynamicAnchor(Version.getDynamicAnchor(schema)) // @since 2.2.14
+                .dynamicRef(Version.getDynamicRef(schema)) // @since 2.2.32
                 .contentEncoding(schema.getContentEncoding())
                 .contentMediaType(schema.getContentMediaType())
                 .contentSchema(buildSchema(schema.getContentSchema()))
@@ -410,7 +414,7 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .responses(apiResponses)
                 .callbacks(toLinkMap(operation.getCallbacks(), this::buildCallback))
                 .security(toList(operation.getSecurity(),
-                        v -> new SecurityRequirement(toLinkMap(v, k -> new ArrayList(k)))))
+                        v -> new SecurityRequirement(toLinkMap(v, k -> new ArrayList<>(k)))))
                 .deprecated(operation.getDeprecated())
                 .servers(toList(operation.getServers(), this::buildServer))
                 .extensions(copy(operation.getExtensions()))
@@ -653,6 +657,7 @@ public class OpenApi31Factory implements OpenApiFactory {
      * @param link The OpenAPI Link object
      * @return The internal Link representation
      */
+    @SuppressWarnings("deprecation")
     protected Link buildLink(io.swagger.v3.oas.models.links.Link link) {
         if (link == null) {
             return null;
@@ -668,5 +673,53 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .server(buildServer(link.getServer()))
                 .extensions(copy(link.getExtensions()))
                 .build();
+    }
+
+    protected static class Version {
+
+        private static final ClassLoader CLASS_LOADER = io.swagger.v3.oas.models.media.Schema.class.getClassLoader();
+
+        private static final Class<?> CLASS_SCHEMA = loadClass("io.swagger.v3.oas.models.media.Schema", CLASS_LOADER);
+
+        private static final FieldAccessor ACCESSOR_VOCABULARY = getAccessor(CLASS_SCHEMA, "$vocabulary");
+
+        private static final FieldAccessor ACCESSOR_DYNAMIC_ANCHOR = getAccessor(CLASS_SCHEMA, "$dynamicAnchor");
+
+        private static final FieldAccessor ACCESSOR_DYNAMIC_REF = getAccessor(CLASS_SCHEMA, "$dynamicRef");
+
+        private static final FieldAccessor ACCESSOR_BOOLEAN_SCHEMA_VALUE = getAccessor(CLASS_SCHEMA, "booleanSchemaValue");
+
+        public static String getVocabulary(io.swagger.v3.oas.models.media.Schema schema) {
+            // @since 2.2.14
+            if (ACCESSOR_VOCABULARY != null) {
+                return schema.get$vocabulary();
+            }
+            return null;
+        }
+
+        public static String getDynamicAnchor(io.swagger.v3.oas.models.media.Schema schema) {
+            // @since 2.2.14
+            if (ACCESSOR_DYNAMIC_ANCHOR != null) {
+                return schema.get$dynamicAnchor();
+            }
+            return null;
+        }
+
+        public static String getDynamicRef(io.swagger.v3.oas.models.media.Schema schema) {
+            // @since 2.2.32
+            if (ACCESSOR_DYNAMIC_REF != null) {
+                return schema.get$dynamicRef();
+            }
+            return null;
+        }
+
+        public static Boolean getBooleanSchemaValue(io.swagger.v3.oas.models.media.Schema schema) {
+            // @since 2.2.2
+            if (ACCESSOR_BOOLEAN_SCHEMA_VALUE != null) {
+                return schema.getBooleanSchemaValue();
+            }
+            return null;
+        }
+
     }
 }
