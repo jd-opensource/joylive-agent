@@ -144,6 +144,7 @@ public class OpenApiConverter {
                 }
                 JsonSchema schema = createJsonSchema(body, body.getDescription());
                 if (schema != null) {
+                    schema.setIn("body");
                     properties.put(body.getName(), schema);
                 }
             }
