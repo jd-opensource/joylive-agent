@@ -83,7 +83,7 @@ public class JavaxRequestContext extends AbstractRequestContext {
      */
     @Builder
     public JavaxRequestContext(Map<String, McpToolMethod> methods,
-                               Map<String, McpToolMethod> paths,
+                               Map<String, List<McpToolMethod>> paths,
                                ObjectConverter converter,
                                JsonSchemaParser jsonSchemaParser,
                                McpVersion version,

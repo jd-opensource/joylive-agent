@@ -22,6 +22,7 @@ import com.jd.live.agent.core.parser.ObjectConverter;
 import lombok.Getter;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,7 +68,7 @@ public interface McpRequestContext extends ObjectConverter {
      *
      * @return a map of method names to their corresponding McpToolMethod objects
      */
-    Map<String, McpToolMethod> getPaths();
+    Map<String, List<McpToolMethod>> getPaths();
 
     /**
      * Retrieves a tool method by its name.
@@ -86,8 +87,11 @@ public interface McpRequestContext extends ObjectConverter {
      * @param path The path string that identifies the tool method
      * @return The corresponding McpToolMethod object
      */
-    default McpToolMethod getToolMethodByPath(String path) {
-        Map<String, McpToolMethod> methods = getPaths();
+    default List<McpToolMethod> getToolMethodsByPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        Map<String, List<McpToolMethod>> methods = getPaths();
         return methods == null ? null : methods.get(path);
     }
 
@@ -141,7 +145,7 @@ public interface McpRequestContext extends ObjectConverter {
 
         private final Map<String, McpToolMethod> methods;
 
-        private final Map<String, McpToolMethod> paths;
+        private final Map<String, List<McpToolMethod>> paths;
 
         private final ObjectConverter converter;
 
@@ -152,7 +156,7 @@ public interface McpRequestContext extends ObjectConverter {
         private final OpenApi openApi;
 
         public AbstractRequestContext(Map<String, McpToolMethod> methods,
-                                      Map<String, McpToolMethod> paths,
+                                      Map<String, List<McpToolMethod>> paths,
                                       ObjectConverter converter,
                                       JsonSchemaParser jsonSchemaParser,
                                       McpVersion version,

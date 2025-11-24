@@ -25,6 +25,8 @@ import com.jd.live.agent.core.util.type.AnnotationGetter.MethodAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.ParameterAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.TypeAnnotationGetter;
 import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.ParameterNameDiscoverer;
@@ -87,15 +89,17 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         List<McpToolMethod> tools = new ArrayList<>();
         Class<?> controllerClass = controller.getClass();
         String controllerName = getControllerName(controllerClass);
-        String[] typePaths = getPaths(new TypeAnnotationGetter(controllerClass));
+        PathMethod typePath = getPathMethod(new TypeAnnotationGetter(controllerClass));
         for (Method method : controllerClass.getDeclaredMethods()) {
             if (filter(method)) {
-                String[] methodPaths = getPaths(new MethodAnnotationGetter(method));
-                if (methodPaths != null) {
-                    Set<String> fullPaths = appendPaths(typePaths, methodPaths);
-                    String toolName = getToolName(controllerName, method, fullPaths);
-                    tools.add(new McpToolMethod(toolName, controller, method, createParameters(method), fullPaths));
+                PathMethod methodPath = getPathMethod(new MethodAnnotationGetter(method));
+                if (methodPath == null && typePath == null) {
+                    continue;
                 }
+                Set<String> fullPaths = methodPath == null ? typePath.mergePaths(null) : methodPath.mergePaths(typePath);
+                Set<String> methods = method == null ? typePath.mergeMethods(null) : methodPath.mergeMethods(typePath);
+                String toolName = getToolName(controllerName, method, fullPaths);
+                tools.add(new McpToolMethod(toolName, controller, method, createParameters(method), fullPaths, methods));
             }
         }
         return tools;
@@ -127,81 +131,47 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     }
 
     /**
-     * Combines root paths with sub paths to form complete URLs, filtering out empty paths.
-     * For example: ["/api"] + ["/users", "", "/roles"] = ["/api/users", "/api/roles"]
-     *
-     * @param roots base paths, can be empty
-     * @param paths sub paths to append
-     * @return combined paths, or original paths if roots is empty
-     */
-    protected Set<String> appendPaths(String[] roots, String[] paths) {
-        int rootLength = roots == null ? 0 : roots.length;
-        if (rootLength == 0) {
-            return appendPaths(paths);
-        }
-        int pathLength = paths == null ? 0 : paths.length;
-        if (pathLength == 0) {
-            return appendPaths(roots);
-        }
-        Set<String> results = new LinkedHashSet<>(rootLength * pathLength);
-        for (String root : roots) {
-            if (isEmpty(root)) continue;
-            for (String path : paths) {
-                if (isEmpty(path)) continue;
-                results.add(url(root, path));
-            }
-        }
-        return results;
-    }
-
-    /**
-     * Filters empty paths and returns unique non-empty paths in a set.
-     *
-     * @param paths array of paths to filter
-     * @return set of non-empty unique paths
-     */
-    protected Set<String> appendPaths(String[] paths) {
-        if (paths == null) {
-            return new LinkedHashSet<>();
-        }
-        Set<String> results = new LinkedHashSet<>(paths.length);
-        for (String path : paths) {
-            if (isEmpty(path)) continue;
-            results.add(path);
-        }
-        return results;
-    }
-
-    /**
      * Gets request paths from Spring MVC mapping annotations (RequestMapping, GetMapping, etc).
      *
      * @param getter annotation getter function
      * @return mapped paths or null if no mapping found
      */
-    protected String[] getPaths(AnnotationGetter getter) {
+    protected PathMethod getPathMethod(AnnotationGetter getter) {
         RequestMapping requestMapping = getter.getAnnotation(RequestMapping.class);
         if (requestMapping != null) {
-            return requestMapping.value().length > 0 ? requestMapping.value() : requestMapping.path();
+            return requestMapping.value().length > 0
+                    ? new PathMethod(requestMapping.value(), requestMapping.method())
+                    : new PathMethod(requestMapping.path(), requestMapping.method());
         }
         GetMapping getMapping = getter.getAnnotation(GetMapping.class);
         if (getMapping != null) {
-            return getMapping.value().length > 0 ? getMapping.value() : getMapping.path();
+            return getMapping.value().length > 0
+                    ? new PathMethod(getMapping.value(), new RequestMethod[]{RequestMethod.GET})
+                    : new PathMethod(getMapping.path(), new RequestMethod[]{RequestMethod.GET});
         }
         PostMapping postMapping = getter.getAnnotation(PostMapping.class);
         if (postMapping != null) {
-            return postMapping.value().length > 0 ? postMapping.value() : postMapping.path();
+            return postMapping.value().length > 0
+                    ? new PathMethod(postMapping.value(), new RequestMethod[]{RequestMethod.POST})
+                    : new PathMethod(postMapping.path(), new RequestMethod[]{RequestMethod.POST});
         }
         PutMapping putMapping = getter.getAnnotation(PutMapping.class);
         if (putMapping != null) {
-            return putMapping.value().length > 0 ? putMapping.value() : putMapping.path();
+            return putMapping.value().length > 0
+                    ? new PathMethod(putMapping.value(), new RequestMethod[]{RequestMethod.PUT})
+                    : new PathMethod(putMapping.path(), new RequestMethod[]{RequestMethod.PUT});
         }
         DeleteMapping deleteMapping = getter.getAnnotation(DeleteMapping.class);
         if (deleteMapping != null) {
-            return deleteMapping.value().length > 0 ? deleteMapping.value() : deleteMapping.path();
+            return deleteMapping.value().length > 0
+                    ? new PathMethod(deleteMapping.value(), new RequestMethod[]{RequestMethod.DELETE})
+                    : new PathMethod(deleteMapping.path(), new RequestMethod[]{RequestMethod.DELETE});
         }
         PatchMapping patchMapping = getter.getAnnotation(PatchMapping.class);
         if (patchMapping != null) {
-            return patchMapping.value().length > 0 ? patchMapping.value() : patchMapping.path();
+            return patchMapping.value().length > 0
+                    ? new PathMethod(patchMapping.value(), new RequestMethod[]{RequestMethod.PATCH})
+                    : new PathMethod(patchMapping.path(), new RequestMethod[]{RequestMethod.PATCH});
         }
         return null;
     }
@@ -607,6 +577,80 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      */
     protected String resolveName(String name) {
         return name == null || name.isEmpty() ? name : expressionFactory.evaluate(expressionFactory.parse(name)).toString();
+    }
+
+    @Getter
+    @AllArgsConstructor
+    protected static class PathMethod {
+
+        private final String[] paths;
+
+        private final RequestMethod[] methods;
+
+        public Set<String> mergePaths(PathMethod method) {
+            return appendPaths(paths, method == null ? null : method.paths);
+        }
+
+        public Set<String> mergeMethods(PathMethod method) {
+            RequestMethod[] methods = this.methods;
+            if (methods == null || methods.length == 0) {
+                methods = method.methods;
+            }
+            if (methods == null || methods.length == 0) {
+                return null;
+            }
+            Set<String> result = new LinkedHashSet<>();
+            for (RequestMethod m : methods) {
+                result.add(m.toString());
+            }
+            return result;
+        }
+
+        /**
+         * Combines root paths with sub paths to form complete URLs, filtering out empty paths.
+         * For example: ["/api"] + ["/users", "", "/roles"] = ["/api/users", "/api/roles"]
+         *
+         * @param roots base paths, can be empty
+         * @param paths sub paths to append
+         * @return combined paths, or original paths if roots is empty
+         */
+        protected Set<String> appendPaths(String[] roots, String[] paths) {
+            int rootLength = roots == null ? 0 : roots.length;
+            if (rootLength == 0) {
+                return appendPaths(paths);
+            }
+            int pathLength = paths == null ? 0 : paths.length;
+            if (pathLength == 0) {
+                return appendPaths(roots);
+            }
+            Set<String> results = new LinkedHashSet<>(rootLength * pathLength);
+            for (String root : roots) {
+                if (isEmpty(root)) continue;
+                for (String path : paths) {
+                    if (isEmpty(path)) continue;
+                    results.add(url(root, path));
+                }
+            }
+            return results;
+        }
+
+        /**
+         * Filters empty paths and returns unique non-empty paths in a set.
+         *
+         * @param paths array of paths to filter
+         * @return set of non-empty unique paths
+         */
+        protected Set<String> appendPaths(String[] paths) {
+            if (paths == null) {
+                return new LinkedHashSet<>();
+            }
+            Set<String> results = new LinkedHashSet<>(paths.length);
+            for (String path : paths) {
+                if (isEmpty(path)) continue;
+                results.add(path);
+            }
+            return results;
+        }
     }
 
 }

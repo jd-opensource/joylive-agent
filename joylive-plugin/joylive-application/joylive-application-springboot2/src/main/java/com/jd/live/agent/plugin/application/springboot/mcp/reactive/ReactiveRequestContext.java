@@ -27,6 +27,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebSession;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
@@ -56,7 +57,7 @@ public class ReactiveRequestContext extends AbstractRequestContext {
      */
     @Builder
     public ReactiveRequestContext(Map<String, McpToolMethod> methods,
-                                  Map<String, McpToolMethod> paths,
+                                  Map<String, List<McpToolMethod>> paths,
                                   ObjectConverter converter,
                                   JsonSchemaParser jsonSchemaParser,
                                   McpVersion version,

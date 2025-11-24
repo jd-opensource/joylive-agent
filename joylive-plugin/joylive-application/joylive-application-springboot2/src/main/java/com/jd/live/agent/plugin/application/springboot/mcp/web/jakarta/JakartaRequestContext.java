@@ -83,7 +83,7 @@ public class JakartaRequestContext extends AbstractRequestContext {
      */
     @Builder
     public JakartaRequestContext(Map<String, McpToolMethod> methods,
-                                 Map<String, McpToolMethod> paths,
+                                 Map<String, List<McpToolMethod>> paths,
                                  ObjectConverter converter,
                                  JsonSchemaParser jsonSchemaParser,
                                  McpVersion version,

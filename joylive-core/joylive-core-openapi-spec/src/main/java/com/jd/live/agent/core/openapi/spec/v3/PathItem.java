@@ -20,6 +20,7 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 
 /**
  * PathItem describes the operations available on a single path.
@@ -72,21 +73,30 @@ public class PathItem {
     private Map<String, Object> extensions;
 
     public List<Operation> operations() {
+        return operations(null);
+    }
+
+    public List<Operation> operations(BiPredicate<String, Operation> predicate) {
         List<Operation> result = new ArrayList<>(8);
-        addOperation(get, result);
-        addOperation(put, result);
-        addOperation(post, result);
-        addOperation(delete, result);
-        addOperation(patch, result);
-        addOperation(head, result);
-        addOperation(options, result);
-        addOperation(trace, result);
+        addOperation("GET", get, predicate, result);
+        addOperation("PUT", put, predicate, result);
+        addOperation("POST", post, predicate, result);
+        addOperation("DELETE", delete, predicate, result);
+        addOperation("PATCH", patch, predicate, result);
+        addOperation("HEAD", head, predicate, result);
+        addOperation("OPTIONS", options, predicate, result);
+        addOperation("TRACE", trace, predicate, result);
         return result;
     }
 
-    private void addOperation(Operation operation, List<Operation> operations) {
+    private void addOperation(String method,
+                              Operation operation,
+                              BiPredicate<String, Operation> predicate,
+                              List<Operation> operations) {
         if (operation != null) {
-            operations.add(operation);
+            if (predicate == null || predicate.test(method, operation)) {
+                operations.add(operation);
+            }
         }
     }
 

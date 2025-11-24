@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
+import java.util.function.BiFunction;
 
 import static com.jd.live.agent.core.mcp.version.McpTypes.TYPE_OBJECT;
 import static com.jd.live.agent.core.mcp.version.McpTypes.getTypeFormat;
@@ -67,12 +67,12 @@ public class OpenApiConverter {
     }
 
     /**
-     * Converts an OpenAPI specification to a list of Tool objects with filtering.
+     * Converts OpenAPI paths to Tool objects with operation filtering.
      *
-     * @param predicate Optional filter for PathItems (null to include all)
+     * @param operationFilter Function to filter or transform operations from PathItems
      * @return List of converted Tool objects
      */
-    public List<Tool> convert(Predicate<String> predicate) {
+    public List<Tool> convert(BiFunction<String, PathItem, List<Operation>> operationFilter) {
         List<Tool> result = new ArrayList<>();
         Components components = openApi.getComponents() == null ? new Components() : openApi.getComponents();
         Map<String, PathItem> paths = openApi.getPaths();
@@ -80,15 +80,13 @@ public class OpenApiConverter {
             return result;
         }
         paths.forEach((path, item) -> {
-            if (predicate == null || predicate.test(path)) {
-                ComponentRef<PathItem> ref = components.getPathItem(item);
-                PathItem target = ref.getTarget();
-                List<Operation> operations = target == null ? null : target.operations();
-                if (operations == null || operations.isEmpty()) {
-                    return;
-                }
-                operations.forEach(op -> result.add(createTool(op)));
+            ComponentRef<PathItem> ref = components.getPathItem(item);
+            PathItem target = ref.getTarget();
+            List<Operation> operations = operationFilter == null ? target.operations() : operationFilter.apply(path, target);
+            if (operations == null || operations.isEmpty()) {
+                return;
             }
+            operations.forEach(op -> result.add(createTool(op)));
         });
         return result;
     }

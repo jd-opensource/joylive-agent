@@ -40,6 +40,8 @@ public class McpToolMethod {
 
     private final Set<String> paths;
 
+    private final Set<String> httpMethods;
+
     // TODO String[] params()
     // TODO String[] headers()
     // TODO String version() 1.7/1.7+
@@ -49,12 +51,14 @@ public class McpToolMethod {
                          Object controller,
                          Method method,
                          McpToolParameter[] parameters,
-                         Set<String> paths) {
+                         Set<String> paths,
+                         Set<String> httpMethods) {
         this.name = name;
         this.controller = controller;
         this.method = method;
         this.parameters = parameters;
         this.paths = paths;
+        this.httpMethods = httpMethods;
     }
 
     public Object invoke(Object... args) throws Throwable {
@@ -71,5 +75,9 @@ public class McpToolMethod {
 
     public int size() {
         return parameters == null ? 0 : parameters.length;
+    }
+
+    public boolean containsMethod(String methodName) {
+        return methodName == null || httpMethods == null ? false : httpMethods.contains(methodName);
     }
 }

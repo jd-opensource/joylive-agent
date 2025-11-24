@@ -34,6 +34,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,7 @@ public abstract class AbstractMcpController {
     /**
      * Path mapping, keyed by URL path
      */
-    protected final Map<String, McpToolMethod> paths = new HashMap<>();
+    protected final Map<String, List<McpToolMethod>> paths = new HashMap<>();
 
     protected final CompletableFuture<Void> future = new CompletableFuture();
 
@@ -189,6 +190,7 @@ public abstract class AbstractMcpController {
 
     protected void addToolMethod(McpToolMethod method, OpenApi openApi) {
         if (openApi == null) {
+            // TODO unique
             methods.put(method.getName(), method);
         }
         if (method.getPaths() != null) {
@@ -201,7 +203,7 @@ public abstract class AbstractMcpController {
                         });
                     }
                 }
-                paths.put(p, method);
+                paths.computeIfAbsent(p, v -> new ArrayList<>()).add(method);
             });
         }
     }
