@@ -10,7 +10,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.jd.live.agent.core.openapi.spec.v3;
 
 import com.jd.live.agent.core.openapi.spec.v3.info.Info;
@@ -87,5 +86,9 @@ public class OpenApi {
 
     @Singular(ignoreNullCollections = true)
     private Map<String, Object> extensions;
+
+    public PathItem getPath(String path) {
+        return path == null || paths == null ? null : paths.get(path);
+    }
 
 }

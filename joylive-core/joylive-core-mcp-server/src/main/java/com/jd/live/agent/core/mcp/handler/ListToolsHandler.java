@@ -31,7 +31,7 @@ public class ListToolsHandler implements McpHandler {
     @Override
     public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
         ListToolsResult result;
-        OpenApi openApi = ctx.getOpenApi().get();
+        OpenApi openApi = ctx.getOpenApi();
         if (openApi != null) {
             result = OpenApiListToolsBuilder.INSTANCE.create(ctx);
         } else {

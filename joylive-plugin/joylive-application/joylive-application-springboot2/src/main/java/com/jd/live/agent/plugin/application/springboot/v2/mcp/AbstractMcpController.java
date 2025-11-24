@@ -15,16 +15,19 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp;
 
-import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.McpToolScanner;
-import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.mcp.handler.McpHandler;
+import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
+import com.jd.live.agent.core.openapi.spec.v3.PathItem;
+import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.util.SpringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -34,6 +37,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 
@@ -42,6 +50,8 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
  * Scans and registers methods from Spring controllers during application startup.
  */
 public abstract class AbstractMcpController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractMcpController.class);
 
     /**
      * MCP handler mapping, keyed by method name
@@ -52,6 +62,8 @@ public abstract class AbstractMcpController {
      * Object converter for request and response transformation
      */
     protected ObjectConverter objectConverter;
+
+    protected ObjectParser objectParser;
 
     /**
      * Governance configuration
@@ -71,7 +83,7 @@ public abstract class AbstractMcpController {
     /**
      * Lazy-loaded OpenAPI object
      */
-    protected LazyObject<OpenApi> openApi;
+    protected final AtomicReference<OpenApi> openApi = new AtomicReference<>();
 
     /**
      * Method mapping, keyed by method name
@@ -83,47 +95,28 @@ public abstract class AbstractMcpController {
      */
     protected final Map<String, McpToolMethod> paths = new HashMap<>();
 
-    /**
-     * Sets MCP handler mapping
-     *
-     * @param handlers handler mapping
-     */
+    protected final CompletableFuture<Void> future = new CompletableFuture();
+
     public void setHandlers(Map<String, McpHandler> handlers) {
         this.handlers = handlers;
     }
 
-    /**
-     * Sets object converter
-     *
-     * @param objectConverter object converter
-     */
     public void setObjectConverter(ObjectConverter objectConverter) {
         this.objectConverter = objectConverter;
     }
 
-    /**
-     * Sets governance configuration
-     *
-     * @param config governance configuration
-     */
+    public void setObjectParser(ObjectParser objectParser) {
+        this.objectParser = objectParser;
+    }
+
     public void setConfig(GovernanceConfig config) {
         this.config = config;
     }
 
-    /**
-     * Sets MCP version mapping
-     *
-     * @param versions version mapping
-     */
     public void setVersions(Map<String, McpVersion> versions) {
         this.versions = versions;
     }
 
-    /**
-     * Sets default MCP version
-     *
-     * @param defaultVersion default version
-     */
     public void setDefaultVersion(McpVersion defaultVersion) {
         this.defaultVersion = defaultVersion;
     }
@@ -146,27 +139,34 @@ public abstract class AbstractMcpController {
      */
     @EventListener
     public void onApplicationEvent(ApplicationStartedEvent event) {
-        Map<String, Object> controllers = getControllers(event.getApplicationContext());
-        Class<?> thisClass = this.getClass();
-        McpToolScanner scanner = createScanner(event.getApplicationContext());
-        if (controllers != null) {
-            for (Object controller : controllers.values()) {
-                if (thisClass.isInstance(controller)) {
-                    // for flow control interceptor
-                    McpToolMethod.HANDLE_METHOD = getDeclaredMethod(controller.getClass(), "handle");
-                } else if (!config.getServiceConfig().isSystemHandler(controller.getClass())) {
-                    List<McpToolMethod> values = scanner.scan(controller);
-                    if (values != null) {
-                        values.forEach(m -> {
-                            methods.put(m.getName(), m);
-                            if (m.getPaths() != null) {
-                                m.getPaths().forEach(p -> paths.put(p, m));
+        SpringUtils.addOpenApiHiddenControllers(this.getClass());
+        Thread thread = new Thread(() -> {
+            try {
+                OpenApi value = SpringUtils.getOpenApi(new SpringAppContext(event.getApplicationContext()));
+                openApi.set(value);
+                Map<String, Object> controllers = getControllers(event.getApplicationContext());
+                if (controllers != null && !controllers.isEmpty()) {
+                    Class<?> thisClass = this.getClass();
+                    McpToolScanner scanner = createScanner(event.getApplicationContext());
+                    for (Object controller : controllers.values()) {
+                        if (thisClass.isInstance(controller)) {
+                            // for flow control interceptor
+                            McpToolMethod.HANDLE_METHOD = getDeclaredMethod(controller.getClass(), "handle");
+                        } else if (!config.getServiceConfig().isSystemHandler(controller.getClass())) {
+                            List<McpToolMethod> values = scanner.scan(controller);
+                            if (values != null) {
+                                values.forEach(m -> addToolMethod(m, value));
                             }
-                        });
+                        }
                     }
                 }
+                future.complete(null);
+            } catch (Throwable e) {
+                future.completeExceptionally(e);
             }
-        }
+        });
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /**
@@ -176,10 +176,35 @@ public abstract class AbstractMcpController {
      */
     @EventListener
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        SpringUtils.addOpenApiHiddenControllers(this.getClass());
-        openApi = LazyObject.of(SpringUtils.getOpenApi(new SpringAppContext(event.getApplicationContext())));
+        try {
+            future.get(5000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            logger.warn("Failed to prepare mcp methods.", e);
+        } catch (TimeoutException e) {
+            logger.warn("It's timeout to prepare mcp methods.");
+        }
     }
 
+    protected void addToolMethod(McpToolMethod method, OpenApi openApi) {
+        if (openApi == null) {
+            methods.put(method.getName(), method);
+        }
+        if (method.getPaths() != null) {
+            method.getPaths().forEach(p -> {
+                if (openApi != null) {
+                    PathItem pathItem = openApi.getPath(p);
+                    if (pathItem != null) {
+                        pathItem.operations().forEach(o -> {
+                            methods.put(o.getOperationId(), method);
+                        });
+                    }
+                }
+                paths.put(p, method);
+            });
+        }
+    }
 
     /**
      * Gets all Spring controllers to be scanned.

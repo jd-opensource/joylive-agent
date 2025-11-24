@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.application.springboot.v2.openapi.v30;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import com.jd.live.agent.core.openapi.spec.v3.info.Info;
 import com.jd.live.agent.core.openapi.spec.v3.info.License;
+import com.jd.live.agent.core.openapi.spec.v3.media.Schema;
 import com.jd.live.agent.plugin.application.springboot.v2.openapi.v31.OpenApi31Factory;
 import io.swagger.v3.oas.models.OpenAPI;
 
@@ -43,6 +44,53 @@ public class OpenApi30Factory extends OpenApi31Factory {
                 .security(toList(openApi.getSecurity(), item -> toLinkMap(item, v -> new ArrayList<>(v))))
                 .specVersion(openApi.getSpecVersion().name())
                 .extensions(copy(openApi.getExtensions()))
+                .build();
+    }
+
+    @Override
+    protected Schema buildSchema(io.swagger.v3.oas.models.media.Schema schema) {
+        if (schema == null) {
+            return null;
+        }
+        return Schema.builder()
+                .ref(schema.get$ref())
+                .name(schema.getName())
+                .title(schema.getTitle())
+                .description(schema.getDescription())
+                .externalDocs(buildExternalDoc(schema.getExternalDocs()))
+                .type(schema.getType())
+                .format(schema.getFormat())
+                .defaultValue(schema.getDefault())
+                .properties(toLinkMap(schema.getProperties(), this::buildSchema))
+                .additionalProperties(schema.getAdditionalProperties())
+                .items(buildSchema(schema.getItems()))
+                .required(schema.getRequired() == null ? null : new ArrayList<>(schema.getRequired()))
+                .nullable(schema.getNullable())
+                .readOnly(schema.getReadOnly())
+                .writeOnly(schema.getWriteOnly())
+                .deprecated(schema.getDeprecated())
+                .multipleOf(schema.getMultipleOf())
+                .maximum(schema.getMaximum())
+                .exclusiveMaximum(schema.getExclusiveMaximum())
+                .minimum(schema.getMinimum())
+                .exclusiveMinimum(schema.getExclusiveMinimum())
+                .maxLength(schema.getMaxLength())
+                .minLength(schema.getMinLength())
+                .pattern(schema.getPattern())
+                .maxItems(schema.getMaxItems())
+                .minItems(schema.getMinItems())
+                .uniqueItems(schema.getUniqueItems())
+                .maxProperties(schema.getMaxProperties())
+                .minProperties(schema.getMinProperties())
+                .enums(schema.getEnum())
+                .allOf(toList(schema.getAllOf(), this::buildSchema))
+                .anyOf(toList(schema.getAnyOf(), this::buildSchema))
+                .oneOf(toList(schema.getOneOf(), this::buildSchema))
+                .not(buildSchema(schema.getNot()))
+                .xml(buildXml(schema.getXml()))
+                .discriminator(buildDiscriminator(schema.getDiscriminator()))
+                .example(schema.getExample())
+                .extensions(copy(schema.getExtensions()))
                 .build();
     }
 

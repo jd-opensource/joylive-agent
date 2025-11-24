@@ -15,10 +15,10 @@
  */
 package com.jd.live.agent.core.mcp.handler.builder;
 
+import com.jd.live.agent.core.mcp.McpRequestContext;
 import com.jd.live.agent.core.mcp.converter.OpenApiConverter;
 import com.jd.live.agent.core.mcp.spec.v1.ListToolsResult;
 import com.jd.live.agent.core.mcp.spec.v1.Tool;
-import com.jd.live.agent.core.mcp.McpRequestContext;
 
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class OpenApiListToolsBuilder implements ListToolsBuilder {
      * @return The list tools result
      */
     private ListToolsResult doCreate(McpRequestContext ctx) {
-        OpenApiConverter converter = new OpenApiConverter(ctx.getOpenApi().get(), ctx.getVersion());
+        OpenApiConverter converter = new OpenApiConverter(ctx.getOpenApi(), ctx.getVersion());
         List<Tool> tools = converter.convert();
         return new ListToolsResult(tools);
     }

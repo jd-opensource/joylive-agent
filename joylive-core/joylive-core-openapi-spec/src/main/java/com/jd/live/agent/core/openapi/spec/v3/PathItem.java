@@ -73,32 +73,21 @@ public class PathItem {
 
     public List<Operation> operations() {
         List<Operation> result = new ArrayList<>(8);
-
-        if (get != null) {
-            result.add(get);
-        }
-        if (put != null) {
-            result.add(put);
-        }
-        if (post != null) {
-            result.add(post);
-        }
-        if (delete != null) {
-            result.add(delete);
-        }
-        if (patch != null) {
-            result.add(patch);
-        }
-        if (head != null) {
-            result.add(head);
-        }
-        if (options != null) {
-            result.add(options);
-        }
-        if (trace != null) {
-            result.add(trace);
-        }
+        addOperation(get, result);
+        addOperation(put, result);
+        addOperation(post, result);
+        addOperation(delete, result);
+        addOperation(patch, result);
+        addOperation(head, result);
+        addOperation(options, result);
+        addOperation(trace, result);
         return result;
+    }
+
+    private void addOperation(Operation operation, List<Operation> operations) {
+        if (operation != null) {
+            operations.add(operation);
+        }
     }
 
 }

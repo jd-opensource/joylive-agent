@@ -23,9 +23,7 @@ import com.jd.live.agent.core.openapi.spec.v3.info.Contact;
 import com.jd.live.agent.core.openapi.spec.v3.info.Info;
 import com.jd.live.agent.core.openapi.spec.v3.info.License;
 import com.jd.live.agent.core.openapi.spec.v3.links.Link;
-import com.jd.live.agent.core.openapi.spec.v3.media.Encoding;
-import com.jd.live.agent.core.openapi.spec.v3.media.MediaType;
-import com.jd.live.agent.core.openapi.spec.v3.media.Schema;
+import com.jd.live.agent.core.openapi.spec.v3.media.*;
 import com.jd.live.agent.core.openapi.spec.v3.parameters.Parameter;
 import com.jd.live.agent.core.openapi.spec.v3.parameters.RequestBody;
 import com.jd.live.agent.core.openapi.spec.v3.responses.ApiResponse;
@@ -41,6 +39,8 @@ import com.jd.live.agent.plugin.application.springboot.v2.openapi.OpenApiFactory
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.jd.live.agent.core.util.CollectionUtils.*;
 
@@ -287,25 +287,100 @@ public class OpenApi31Factory implements OpenApiFactory {
         if (schema == null) {
             return null;
         }
-        // TODO other fields
         return Schema.builder()
+                .id(schema.get$id())
+                .ref(schema.get$ref())
                 .name(schema.getName())
                 .title(schema.getTitle())
+                .comment(schema.get$comment())
                 .description(schema.getDescription())
+                .externalDocs(buildExternalDoc(schema.getExternalDocs()))
                 .type(schema.getType())
+                .types(schema.getTypes())
                 .format(schema.getFormat())
                 .defaultValue(schema.getDefault())
                 .properties(toLinkMap(schema.getProperties(), this::buildSchema))
+                .patternProperties(toLinkMap(schema.getPatternProperties(), this::buildSchema))
+                .additionalProperties(schema.getAdditionalProperties())
+                .booleanSchemaValue(schema.getBooleanSchemaValue())
                 .items(buildSchema(schema.getItems()))
-                .ref(schema.get$ref())
                 .required(schema.getRequired() == null ? null : new ArrayList<>(schema.getRequired()))
                 .nullable(schema.getNullable())
                 .readOnly(schema.getReadOnly())
                 .writeOnly(schema.getWriteOnly())
-                .description(schema.getDescription())
-                .additionalProperties(schema.getAdditionalProperties())
-                .externalDocs(buildExternalDoc(schema.getExternalDocs()))
+                .deprecated(schema.getDeprecated())
+                .multipleOf(schema.getMultipleOf())
+                .maximum(schema.getMaximum())
+                .exclusiveMaximum(schema.getExclusiveMaximum())
+                .exclusiveMaximumValue(schema.getExclusiveMaximumValue())
+                .minimum(schema.getMinimum())
+                .exclusiveMinimum(schema.getExclusiveMinimum())
+                .exclusiveMinimumValue(schema.getExclusiveMinimumValue())
+                .maxLength(schema.getMaxLength())
+                .minLength(schema.getMinLength())
+                .pattern(schema.getPattern())
+                .maxItems(schema.getMaxItems())
+                .minItems(schema.getMinItems())
+                .uniqueItems(schema.getUniqueItems())
+                .maxProperties(schema.getMaxProperties())
+                .minProperties(schema.getMinProperties())
+                .enums(schema.getEnum())
+                .constValue(schema.getConst())
+                .prefixItems(toList(schema.getPrefixItems(), this::buildSchema))
+                .allOf(toList(schema.getAllOf(), this::buildSchema))
+                .anyOf(toList(schema.getAnyOf(), this::buildSchema))
+                .oneOf(toList(schema.getOneOf(), this::buildSchema))
+                .not(buildSchema(schema.getNot()))
+                .contains(buildSchema(schema.getContains()))
+                .schema(schema.get$schema())
+                .anchor(schema.get$anchor())
+                .vocabulary(schema.get$vocabulary())
+                .dynamicAnchor(schema.get$dynamicAnchor())
+                .dynamicRef(schema.get$dynamicRef())
+                .contentEncoding(schema.getContentEncoding())
+                .contentMediaType(schema.getContentMediaType())
+                .contentSchema(buildSchema(schema.getContentSchema()))
+                .propertyNames(buildSchema(schema.getPropertyNames()))
+                .unevaluatedProperties(buildSchema(schema.getUnevaluatedProperties()))
+                .maxContains(schema.getMaxContains())
+                .minContains(schema.getMinContains())
+                .additionalItems(buildSchema(schema.getAdditionalItems()))
+                .unevaluatedItems(buildSchema(schema.getUnevaluatedItems()))
+                .ifCnd(buildSchema(schema.getIf()))
+                .elseCnd(buildSchema(schema.getElse()))
+                .thenCnd(buildSchema(schema.getThen()))
+                .dependentSchemas(toLinkMap((Map<String, io.swagger.v3.oas.models.media.Schema>) schema.getDependentSchemas(), this::buildSchema))
+                .dependentRequired(toLinkMap((Map<String, List<String>>) schema.getDependentRequired(), v -> copy(v)))
+                .xml(buildXml(schema.getXml()))
+                .discriminator(buildDiscriminator(schema.getDiscriminator()))
+                .example(schema.getExample())
+                .examples(copy(schema.getExamples()))
                 .extensions(copy(schema.getExtensions()))
+                .build();
+    }
+
+    protected Discriminator buildDiscriminator(io.swagger.v3.oas.models.media.Discriminator discriminator) {
+        if (discriminator == null) {
+            return null;
+        }
+        return Discriminator.builder()
+                .propertyName(discriminator.getPropertyName())
+                .mapping(copy(discriminator.getMapping()))
+                .extensions(copy(discriminator.getExtensions()))
+                .build();
+    }
+
+    protected XML buildXml(io.swagger.v3.oas.models.media.XML xml) {
+        if (xml == null) {
+            return null;
+        }
+        return XML.builder()
+                .name(xml.getName())
+                .namespace(xml.getNamespace())
+                .prefix(xml.getPrefix())
+                .attribute(xml.getAttribute())
+                .wrapped(xml.getWrapped())
+                .extensions(copy(xml.getExtensions()))
                 .build();
     }
 

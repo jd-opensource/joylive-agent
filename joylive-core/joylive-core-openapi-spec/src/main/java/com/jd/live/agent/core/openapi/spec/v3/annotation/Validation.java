@@ -10,29 +10,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.openapi.spec.v3.media;
+package com.jd.live.agent.core.openapi.spec.v3.annotation;
 
-import lombok.*;
+import java.lang.annotation.Inherited;
 
-import java.io.Serializable;
-import java.util.Map;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class XML implements Serializable {
-
-    private String name;
-
-    private String namespace;
-
-    private String prefix;
-
-    private Boolean attribute;
-
-    private Boolean wrapped;
-
-    private Map<String, Object> extensions;
+@Inherited
+public @interface Validation {
 }

@@ -16,14 +16,13 @@
 package com.jd.live.agent.core.mcp;
 
 import com.jd.live.agent.core.mcp.version.McpVersion;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import com.jd.live.agent.core.parser.JsonSchemaParser;
 import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import lombok.Getter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Context interface for MCP request parameter conversion.
@@ -123,7 +122,7 @@ public interface McpRequestContext extends ObjectConverter {
      *
      * @return open api insance
      */
-    default Supplier<OpenApi> getOpenApi() {
+    default OpenApi getOpenApi() {
         return null;
     }
 
@@ -150,14 +149,14 @@ public interface McpRequestContext extends ObjectConverter {
 
         private final McpVersion version;
 
-        private final Supplier<OpenApi> openApi;
+        private final OpenApi openApi;
 
         public AbstractRequestContext(Map<String, McpToolMethod> methods,
                                       Map<String, McpToolMethod> paths,
                                       ObjectConverter converter,
                                       JsonSchemaParser jsonSchemaParser,
                                       McpVersion version,
-                                      Supplier<OpenApi> openApi) {
+                                      OpenApi openApi) {
             this.methods = methods;
             this.paths = paths;
             this.converter = converter;

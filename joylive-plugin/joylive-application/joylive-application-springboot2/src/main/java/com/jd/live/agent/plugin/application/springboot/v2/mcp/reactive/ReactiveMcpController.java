@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
-import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
 import com.jd.live.agent.core.exception.InvokeException;
 import com.jd.live.agent.core.mcp.McpRequestContext;
 import com.jd.live.agent.core.mcp.McpToolScanner;
@@ -23,6 +22,7 @@ import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.core.mcp.spec.v1.Request;
+import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.converter.MonoConverter;
 import org.slf4j.Logger;
@@ -116,7 +116,7 @@ public class ReactiveMcpController extends AbstractMcpController {
                 .converter(objectConverter)
                 .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                 .version(getVersion(getMcpVersion(exchange)))
-                .openApi(openApi)
+                .openApi(openApi.get())
                 .exchange(exchange)
                 .build();
     }

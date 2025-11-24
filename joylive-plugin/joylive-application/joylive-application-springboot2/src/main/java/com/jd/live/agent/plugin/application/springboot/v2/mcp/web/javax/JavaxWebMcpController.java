@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
-import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
 import com.jd.live.agent.core.exception.InvokeException;
 import com.jd.live.agent.core.mcp.McpRequestContext;
 import com.jd.live.agent.core.mcp.McpToolScanner;
@@ -23,13 +22,11 @@ import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.core.mcp.spec.v1.Request;
+import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.AbstractMcpController;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
 import javax.servlet.http.Cookie;
@@ -72,6 +69,20 @@ public class JavaxWebMcpController extends AbstractMcpController {
     @Override
     protected McpToolScanner createScanner(ConfigurableApplicationContext context) {
         return new JavaxWebMcpToolScanner(context.getBeanFactory());
+    }
+
+    @GetMapping(
+            consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_EVENT_STREAM_VALUE},
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public void initialize(WebRequest webRequest, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws Exception {
+//        JsonRpcResponse response = handle(new JsonRpcRequest(JsonRpcResponse.METHOD_TOOLS_LIST, 1), webRequest, httpRequest, httpResponse);
+//        String content = objectParser.write(response);
+//        httpResponse.setContentType(MediaType.TEXT_EVENT_STREAM_VALUE);
+//        httpResponse.setCharacterEncoding("UTF-8");
+//        httpResponse.setStatus(HttpServletResponse.SC_OK);
+//        try (PrintWriter writer = httpResponse.getWriter()) {
+//            writer.write(content);
+//        }
     }
 
     /**
@@ -122,7 +133,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
                 .converter(objectConverter)
                 .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                 .version(getVersion(getMcpVersion(request)))
-                .openApi(openApi)
+                .openApi(openApi.get())
                 .webRequest(webRequest)
                 .httpRequest(request)
                 .httpResponse(response)

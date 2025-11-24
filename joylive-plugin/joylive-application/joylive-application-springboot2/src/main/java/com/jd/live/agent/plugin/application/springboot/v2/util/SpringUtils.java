@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
@@ -162,19 +161,17 @@ public class SpringUtils {
         }
     }
 
-    public static Supplier<OpenApi> getOpenApi(AppContext context) {
+    public static OpenApi getOpenApi(AppContext context) {
         if (CLASS_OPEN_API_RESOURCE != null && METHOD_GET_OPEN_API != null) {
             try {
                 Object bean = context.getBean(CLASS_OPEN_API_RESOURCE);
                 OpenApiFactory factory = CLASS_OPEN_API_V31 != null ? new OpenApi31Factory() : new OpenApi30Factory();
-                return () -> {
-                    try {
-                        Object object = METHOD_GET_OPEN_API.invoke(bean, Locale.getDefault());
-                        return factory.create(object);
-                    } catch (Throwable e) {
-                        return null;
-                    }
-                };
+                try {
+                    Object object = METHOD_GET_OPEN_API.invoke(bean, Locale.getDefault());
+                    return factory.create(object);
+                } catch (Throwable e) {
+                    return null;
+                }
             } catch (Throwable ignore) {
             }
         } else if (CLASS_DOCUMENTATION_CACHE != null && CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER != null) {
@@ -182,18 +179,16 @@ public class SpringUtils {
                 Object documentCache = context.getBean(CLASS_DOCUMENTATION_CACHE);
                 Object mapper = context.getBean(CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER);
                 if (documentCache != null && mapper != null) {
-                    return () -> {
-                        try {
-                            Object document = METHOD_DOCUMENTATION_BY_GROUP.invoke(documentCache, "default");
-                            if (document != null) {
-                                Object swagger = METHOD_MAP_DOCUMENTATION.invoke(mapper, document);
-                                OpenApi2Factory factory = new OpenApi2Factory();
-                                return factory.create(swagger);
-                            }
-                        } catch (Throwable ignore) {
+                    try {
+                        Object document = METHOD_DOCUMENTATION_BY_GROUP.invoke(documentCache, "default");
+                        if (document != null) {
+                            Object swagger = METHOD_MAP_DOCUMENTATION.invoke(mapper, document);
+                            OpenApi2Factory factory = new OpenApi2Factory();
+                            return factory.create(swagger);
                         }
-                        return null;
-                    };
+                    } catch (Throwable ignore) {
+                    }
+                    return null;
                 }
             } catch (Throwable ignore) {
             }

@@ -20,12 +20,13 @@ import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bootstrap.AppListener.AppListenerAdapter;
 import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
+import com.jd.live.agent.core.mcp.handler.McpHandler;
+import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.McpConfig;
-import com.jd.live.agent.core.mcp.version.McpVersion;
-import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.plugin.application.springboot.v2.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive.ReactiveMcpController;
 import com.jd.live.agent.plugin.application.springboot.v2.mcp.web.jakarta.JakartaWebMcpController;
@@ -50,6 +51,7 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
     private final AppListenerSupervisor supervisor;
     private final Map<String, McpHandler> handlers;
     private final ObjectConverter converter;
+    private final ObjectParser parser;
     private final Map<String, McpVersion> versions;
     private final McpVersion defaultVersion;
 
@@ -57,12 +59,14 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
                                                    GovernanceConfig config,
                                                    Map<String, McpHandler> handlers,
                                                    ObjectConverter converter,
+                                                   ObjectParser parser,
                                                    Map<String, McpVersion> versions,
                                                    McpVersion defaultVersion) {
         this.supervisor = supervisor;
         this.config = config;
         this.handlers = handlers;
         this.converter = converter;
+        this.parser = parser;
         this.versions = versions;
         this.defaultVersion = defaultVersion;
     }
@@ -114,6 +118,7 @@ public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor 
                     BeanDefinition definition = BeanDefinitionBuilder
                             .genericBeanDefinition(mcpType)
                             .addPropertyValue("objectConverter", converter)
+                            .addPropertyValue("objectParser", parser)
                             .addPropertyValue("handlers", handlers)
                             .addPropertyValue("config", config)
                             .addPropertyValue("versions", versions)

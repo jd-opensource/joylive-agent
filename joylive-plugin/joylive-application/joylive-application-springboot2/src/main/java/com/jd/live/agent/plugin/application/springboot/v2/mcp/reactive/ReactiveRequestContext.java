@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.reactive;
 
-import com.jd.live.agent.core.parser.JsonSchemaParser;
-import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
+import com.jd.live.agent.core.parser.JsonSchemaParser;
+import com.jd.live.agent.core.parser.ObjectConverter;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.http.ResponseCookie;
@@ -28,7 +28,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebSession;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
@@ -61,7 +60,7 @@ public class ReactiveRequestContext extends AbstractRequestContext {
                                   ObjectConverter converter,
                                   JsonSchemaParser jsonSchemaParser,
                                   McpVersion version,
-                                  Supplier<OpenApi> openApi,
+                                  OpenApi openApi,
                                   ServerWebExchange exchange) {
         super(methods, paths, converter, jsonSchemaParser, version, openApi);
         this.exchange = exchange;

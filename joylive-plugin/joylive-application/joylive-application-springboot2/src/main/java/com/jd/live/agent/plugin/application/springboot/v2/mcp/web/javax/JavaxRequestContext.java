@@ -15,13 +15,13 @@
  */
 package com.jd.live.agent.plugin.application.springboot.v2.mcp.web.javax;
 
-import com.jd.live.agent.core.parser.JsonSchemaParser;
-import com.jd.live.agent.core.parser.ObjectConverter;
-import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
+import com.jd.live.agent.core.parser.JsonSchemaParser;
+import com.jd.live.agent.core.parser.ObjectConverter;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
@@ -88,7 +87,7 @@ public class JavaxRequestContext extends AbstractRequestContext {
                                ObjectConverter converter,
                                JsonSchemaParser jsonSchemaParser,
                                McpVersion version,
-                               Supplier<OpenApi> openApi,
+                               OpenApi openApi,
                                WebRequest webRequest,
                                HttpServletRequest httpRequest,
                                HttpServletResponse httpResponse) {
