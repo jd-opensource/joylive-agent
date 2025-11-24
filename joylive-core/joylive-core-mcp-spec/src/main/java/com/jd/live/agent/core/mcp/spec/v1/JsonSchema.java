@@ -51,6 +51,8 @@ public class JsonSchema {
      */
     private String type;
 
+    private String in;
+
     /**
      * The description the schema
      */

@@ -128,6 +128,7 @@ public class OpenApiConverter {
                     }
                     JsonSchema schema = createJsonSchema(target.getSchema(), choose(p.getDescription(), target.getDescription()));
                     if (schema != null) {
+                        schema.setIn(choose(p.getIn(), target.getIn()));
                         properties.put(p.getName(), schema);
                     }
                 }
