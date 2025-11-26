@@ -230,7 +230,8 @@ public abstract class AbstractMcpController implements BeanPostProcessor {
                 .version(application.getMeta(Constants.LABEL_AGENT_VERSION, null))
                 .build();
         ServerCapabilities serverCapabilities = ServerCapabilities.builder()
-                .logging(new ServerCapabilities.LoggingCapabilities())
+                // disable logging capabilities for risk
+                //.logging(new ServerCapabilities.LoggingCapabilities())
                 //.completions(new ServerCapabilities.CompletionCapabilities())
                 // TODO tools listChanged
                 .tools(new ServerCapabilities.ToolCapabilities(Boolean.FALSE))
