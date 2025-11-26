@@ -37,13 +37,13 @@ public class LoggingMessageNotification implements Notification.MetaNotification
      */
     private LoggingLevel level;
     /**
-     * The logger that generated the message.
+     * An optional name of the logger issuing this message.
      */
     private String logger;
     /**
-     * JSON-serializable logging data.
+     * The data to be logged, such as a string message or an object. Any JSON serializable type is allowed here.
      */
-    private String data;
+    private Object data;
     /**
      * See specification for notes on _meta usage
      */
