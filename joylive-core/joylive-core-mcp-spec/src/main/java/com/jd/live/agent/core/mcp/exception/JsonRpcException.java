@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.core.mcp.spec.v1;
+package com.jd.live.agent.core.mcp.exception;
+
+import com.jd.live.agent.core.mcp.spec.v1.ErrorCodes;
 
 public class JsonRpcException extends RuntimeException {
 

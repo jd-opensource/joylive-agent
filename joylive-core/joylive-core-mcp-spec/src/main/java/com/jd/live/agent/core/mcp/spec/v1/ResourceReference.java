@@ -15,33 +15,40 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
  * A reference to a resource or resource template definition for completion requests.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ResourceReference implements CompleteReference {
 
-    public static final String TYPE = "ref/resource";
+public class ResourceReference implements CompleteReference {
 
     /**
      * The reference type identifier (typically "ref/resource")
      */
-    private String type;
+    private String type = TYPE_REF_RESOURCE;
     /**
      * The URI or URI template of the resource
      */
+    @Getter
+    @Setter
     private String uri;
 
+    public ResourceReference() {
+    }
+
     public ResourceReference(String uri) {
-        this(TYPE, uri);
+        this.uri = uri;
+    }
+
+    @Override
+    public String getType() {
+        return TYPE_REF_RESOURCE;
+    }
+
+    public void setType(String type) {
+
     }
 
     @Override

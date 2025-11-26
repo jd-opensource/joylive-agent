@@ -19,6 +19,7 @@ import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,7 +32,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Tool implements Serializable {
+public class Tool implements Icons, Serializable {
 
     public static final String COMPONENT_REF_PREFIX = "#/$defs/";
 
@@ -68,18 +69,13 @@ public class Tool implements Serializable {
      */
     private ToolAnnotations annotations;
     /**
+     * Optional set of sized icons that the client can display in a user interface.
+     */
+    private List<Icon> icons;
+    /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public Tool(String name,
-                String title,
-                String description,
-                Map<String, JsonSchema> defs,
-                JsonSchema inputSchema,
-                JsonSchema outputSchema,
-                ToolAnnotations annotations) {
-        this(name, title, description, defs, inputSchema, outputSchema, annotations, null);
-    }
 }

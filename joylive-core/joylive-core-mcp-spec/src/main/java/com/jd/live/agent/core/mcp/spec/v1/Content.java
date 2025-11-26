@@ -31,5 +31,19 @@ import java.io.Serializable;
  */
 public interface Content extends Serializable {
 
+    String TYPE_TEXT = "text";
+
+    String TYPE_AUDIO = "audio";
+
+    String TYPE_RESOURCE = "resource";
+
+    String TYPE_IMAGE = "image";
+
+    String TYPE_RESOURCE_LINK = "resource_link";
+
+    String TYPE_TOOL_USE = "tool_use";
+
+    String TYPE_TOOL_RESULT = "tool_result";
+
     String getType();
 }

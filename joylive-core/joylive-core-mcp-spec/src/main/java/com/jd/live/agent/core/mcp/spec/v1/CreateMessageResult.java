@@ -45,37 +45,21 @@ public class CreateMessageResult implements Result {
      */
     private String model;
     /**
-     * The reason why sampling stopped, if known
+     * The reason why sampling stopped, if known.
+     *
+     * Standard values:
+     * - "endTurn": Natural end of the assistant's turn
+     * - "stopSequence": A stop sequence was encountered
+     * - "maxTokens": Maximum token limit was reached
+     * - "toolUse": The model wants to use one or more tools
+     *
+     * This field is an open string to allow for provider-specific stop reasons.
      */
-    private StopReason stopReason;
+    private String stopReason;
     /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public CreateMessageResult(Role role, Content content, String model, StopReason stopReason) {
-        this(role, content, model, stopReason, null);
-    }
-
-    public enum StopReason {
-        @JsonField("endTurn")
-        END_TURN("endTurn"),
-
-        @JsonField("stopSequence")
-        STOP_SEQUENCE("stopSequence"),
-
-        @JsonField("maxTokens")
-        MAX_TOKENS("maxTokens"),
-
-        @JsonField("unknown")
-        UNKNOWN("unknown");
-
-        private final String value;
-
-        StopReason(String value) {
-            this.value = value;
-        }
-
-    }
 }

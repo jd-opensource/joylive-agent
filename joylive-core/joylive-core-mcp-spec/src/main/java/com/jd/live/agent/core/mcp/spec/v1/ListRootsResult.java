@@ -15,10 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -31,24 +28,15 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ListRootsResult implements Result {
+public class ListRootsResult extends PaginatedResult {
 
     /**
      * A list of tools that the server provides.
      */
     private List<Root> roots;
-    /**
-     * An optional cursor for pagination. If present, indicates there
-     * are more prompts available.
-     */
-    private String nextCursor;
-    /**
-     * See specification for notes on _meta usage
-     */
-    @JsonField("_meta")
-    private Map<String, Object> meta;
+
+    public ListRootsResult() {
+    }
 
     public ListRootsResult(List<Root> roots) {
         this(roots, null, null);
@@ -56,5 +44,10 @@ public class ListRootsResult implements Result {
 
     public ListRootsResult(List<Root> roots, String nextCursor) {
         this(roots, nextCursor, null);
+    }
+
+    public ListRootsResult(List<Root> roots, String nextCursor, Map<String, Object> meta) {
+        super(nextCursor, meta);
+        this.roots = roots;
     }
 }

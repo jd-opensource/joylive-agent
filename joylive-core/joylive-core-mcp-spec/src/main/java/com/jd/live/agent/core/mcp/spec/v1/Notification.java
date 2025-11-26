@@ -18,6 +18,9 @@ package com.jd.live.agent.core.mcp.spec.v1;
 /**
  * Represents a Notification with metadata capabilities.
  */
-public interface Notification extends Meta {
+public interface Notification {
+
+    interface MetaNotification extends Notification, Meta {
+    }
 
 }

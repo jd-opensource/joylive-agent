@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.mcp.exception.JsonRpcException;
 import lombok.*;
 
 import java.io.Serializable;
@@ -64,7 +65,7 @@ public class JsonRpcResponse implements JsonRpcMessage {
      *
      * @return true if this is a successful response
      */
-    public boolean isSuccess() {
+    public boolean success() {
         return error == null;
     }
 
@@ -73,7 +74,7 @@ public class JsonRpcResponse implements JsonRpcMessage {
      *
      * @return true if this is an error response
      */
-    public boolean isError() {
+    public boolean error() {
         return error != null;
     }
 
@@ -127,6 +128,20 @@ public class JsonRpcResponse implements JsonRpcMessage {
      */
     public static JsonRpcResponse createInvalidRequestResponse(Object id) {
         return createErrorResponse(id, JsonRpcError.invalidRequest());
+    }
+
+    /**
+     * Create an invalid request error response
+     */
+    public static JsonRpcResponse createInvalidRequestResponse(String message) {
+        return createErrorResponse(null, ErrorCodes.INVALID_REQUEST, message);
+    }
+
+    /**
+     * Create an invalid request error response
+     */
+    public static JsonRpcResponse createInvalidRequestResponse(Object id, String message) {
+        return createErrorResponse(id, ErrorCodes.INVALID_REQUEST, message);
     }
 
     /**

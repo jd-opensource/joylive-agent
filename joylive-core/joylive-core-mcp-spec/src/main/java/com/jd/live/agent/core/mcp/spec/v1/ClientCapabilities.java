@@ -53,8 +53,12 @@ public class ClientCapabilities implements Serializable {
     private Elicitation elicitation;
 
     /**
+     * Present if the client supports task-augmented requests.
+     */
+    private Tasks tasks;
+
+    /**
      * Present if the client supports listing roots.
-     *
      */
     @Getter
     @Setter
@@ -68,29 +72,103 @@ public class ClientCapabilities implements Serializable {
     }
 
     /**
-     * Provides a standardized way for servers to request LLM sampling ("completions"
-     * or "generations") from language models via clients. This flow allows clients to
-     * maintain control over model access, selection, and permissions while enabling
-     * servers to leverage AI capabilities—with no server API keys necessary. Servers
-     * can request text or image-based interactions and optionally include context
-     * from MCP servers in their prompts.
+     * Present if the client supports sampling from an LLM.
      */
     @Getter
     @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Sampling implements Serializable {
+
+        /**
+         * Whether the client supports context inclusion via includeContext parameter.
+         * If not declared, servers SHOULD only use `includeContext: "none"` (or omit it).
+         */
+        private Object context;
+        /**
+         * Whether the client supports tool use via tools and toolChoice parameters.
+         */
+        private Object tools;
 
     }
 
     /**
-     * Provides a standardized way for servers to request additional information from
-     * users through the client during interactions. This flow allows clients to
-     * maintain control over user interactions and data sharing while enabling servers
-     * to gather necessary information dynamically. Servers can request structured
-     * data from users with optional JSON schemas to validate responses.
+     * Present if the client supports elicitation from the server.
      */
     @Getter
     @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Elicitation implements Serializable {
 
+        private Object form;
+
+        private Object url;
+
+    }
+
+    /**
+     * Present if the client supports task-augmented requests.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Tasks implements Serializable {
+        /**
+         * Whether this client supports tasks/list.
+         */
+        private Object list;
+        /**
+         * Whether this client supports tasks/cancel.
+         */
+        private Object cancel;
+        /**
+         * Specifies which request types can be augmented with tasks.
+         */
+        private TaskRequests requests;
+    }
+
+    /**
+     * Specifies which request types can be augmented with tasks.
+     */
+    public static class TaskRequests implements Serializable {
+        /**
+         * Task support for sampling-related requests.
+         */
+        private TaskSampling sampling;
+
+        /**
+         * Task support for elicitation-related requests.
+         */
+        private TaskElicitation elicitation;
+    }
+
+    /**
+     * Task support for sampling-related requests.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskSampling implements Serializable {
+        /**
+         * Whether the client supports task-augmented sampling/createMessage requests.
+         */
+        private Object createMessage;
+    }
+
+    /**
+     * Task support for elicitation-related requests.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskElicitation implements Serializable {
+        /**
+         * Whether the client supports task-augmented elicitation/create requests.
+         */
+        private Object create;
     }
 }

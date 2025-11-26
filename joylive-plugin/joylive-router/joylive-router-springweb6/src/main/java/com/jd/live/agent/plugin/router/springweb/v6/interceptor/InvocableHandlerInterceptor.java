@@ -25,6 +25,8 @@ import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod;
 
@@ -65,7 +67,14 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
                 if (e == null) {
                     mc.skipWithResult(v);
                 } else if (request.isMcp()) {
-                    mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
+                    HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
+                    if (response.isCommitted()) {
+                        // sse
+                        mc.skipWithResult(null);
+                    } else {
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
+                    }
                 } else {
                     mc.skipWithThrowable(THROWER.createException(e, request));
                 }

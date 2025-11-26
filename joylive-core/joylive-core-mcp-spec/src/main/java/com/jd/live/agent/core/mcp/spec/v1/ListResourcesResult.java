@@ -15,10 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -29,26 +26,27 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ListResourcesResult implements Result {
+public class ListResourcesResult extends PaginatedResult {
 
     /**
      * A list of resources that the server provides
      */
     private List<Resource> resources;
-    /**
-     * An opaque token representing the pagination position after the
-     * last returned result. If present, there may be more results available
-     */
-    private String nextCursor;
-    /**
-     * See specification for notes on _meta usage
-     */
-    @JsonField("_meta")
-    private Map<String, Object> meta;
+
+    public ListResourcesResult() {
+    }
+
+    public ListResourcesResult(List<Resource> resources) {
+        this(resources, null, null);
+    }
 
     public ListResourcesResult(List<Resource> resources, String nextCursor) {
         this(resources, nextCursor, null);
     }
+
+    public ListResourcesResult(List<Resource> resources, String nextCursor, Map<String, Object> meta) {
+        super(nextCursor, meta);
+        this.resources = resources;
+    }
+
 }

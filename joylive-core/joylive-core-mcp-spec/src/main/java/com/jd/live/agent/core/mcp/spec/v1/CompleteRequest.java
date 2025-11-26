@@ -65,6 +65,8 @@ public class CompleteRequest implements Request.MetaRequest {
     /**
      * The argument's information for completion requests.
      */
+    @Getter
+    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CompleteArgument implements Serializable {
@@ -81,6 +83,8 @@ public class CompleteRequest implements Request.MetaRequest {
     /**
      * Additional, optional context for completions.
      */
+    @Getter
+    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CompleteContext implements Serializable {

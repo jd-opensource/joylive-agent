@@ -26,7 +26,6 @@ public class Person {
 
     private int age;
 
-    @DeserializeConverter(SexConverter.class)
     private Sex sex;
 
     @DeserializeConverter(CaseInsensitiveSetJsonConverter.class)

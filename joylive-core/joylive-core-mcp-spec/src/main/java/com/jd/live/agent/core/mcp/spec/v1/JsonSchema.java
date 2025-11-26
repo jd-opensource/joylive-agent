@@ -18,20 +18,19 @@ package com.jd.live.agent.core.mcp.spec.v1;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A JSON Schema object that describes the expected structure of arguments or output.
  */
 @Getter
 @Setter
-@NoArgsConstructor
-public class JsonSchema {
+public class JsonSchema implements Serializable {
 
     /**
      * The URI reference to another schema.
@@ -43,7 +42,7 @@ public class JsonSchema {
      * </ul>
      * </p>
      */
-    @JsonField("$ref")
+    @JsonField("$schema")
     private String ref;
 
     /**
@@ -54,29 +53,107 @@ public class JsonSchema {
     private String in;
 
     /**
+     * Short title describing the schema's purpose, typically used for display in documentation.
+     */
+    private String title;
+
+    /**
      * The description the schema
      */
     private String description;
 
     /**
+     * Maximum length constraint when type is "string".
+     */
+    private Integer maxLength;
+
+    /**
+     * Minimum length constraint when type is "string".
+     */
+    private Integer minLength;
+
+    /**
+     * Semantic format of the data when type is "string". includes "email" | "uri" | "date" | "date-time"
+     */
+    private String format;
+
+    @JsonField("const")
+    private String constValue;
+
+    /**
+     * Default value to be used when instance value is undefined.
+     */
+    @JsonField("default")
+    private Object defaultValue;
+
+    /**
+     * Minimum allowed numeric value when type is "number" or "integer"
+     */
+    private BigDecimal minimum;
+
+    /**
+     * Maximum allowed numeric value when type is "number" or "integer"
+     */
+    private BigDecimal maximum;
+
+    /**
+     * Array of enum values to choose from.
+     * for single-selection enumeration without display titles for options when type is "string".
+     */
+    @JsonField("enum")
+    private List<String> enums;
+    /**
+     * (Legacy) Display names for enum values.
+     * Non-standard according to JSON schema 2020-12.
+     */
+    private List<String> enumNames;
+
+    /**
+     * Array of enum options with values and display labels when type is "string".
+     * The const of each schema is the enum value.
+     * The title of each schema is the display label for this option
+     */
+    private List<JsonSchema> oneOf;
+
+    /**
+     * Maximum number of items allowed in array instances when type is "array"
+     */
+    private Integer maxItems;
+
+    /**
+     * Minimum number of items required in array instances when type is "array"
+     */
+    private Integer minItems;
+
+    /**
+     * The array item schema for multiple-selection enumeration without display titles when type is "array".
+     * <li>1. The type of items is "string" and the enum of items is array of enum values to choose from
+     * <li>2. The type of items is "array" and the anyOf of items is array of enum options with values and display labels
+     */
+    private JsonSchema items;
+
+    /**
+     * Array of enum options with values and display labels when type is "array".
+     */
+    private List<JsonSchema> anyOf;
+
+    /**
      * The properties of the schema object
      */
     private Map<String, JsonSchema> properties;
-    /**
-     * Defines the schema for array items when type is "array".
-     * For homogeneous arrays, this is a single schema that all items must satisfy.
-     * For tuple validation (heterogeneous arrays), this can be a list of schemas
-     * where each item must match the schema at the same position.
-     */
-    private JsonSchema items;
+
     /**
      * List of required property names
      */
     private List<String> required;
+
     /**
      * Whether additional properties are allowed
      */
     private Boolean additionalProperties;
+
+    public JsonSchema() {
+    }
 
     public JsonSchema(String ref) {
         this.ref = ref;
@@ -84,90 +161,79 @@ public class JsonSchema {
 
     @Builder
     public JsonSchema(String type,
+                      String in,
+                      String title,
                       String description,
-                      Map<String, JsonSchema> properties,
+                      Integer maxLength,
+                      Integer minLength,
+                      String format,
+                      String constValue,
+                      Object defaultValue,
+                      BigDecimal minimum,
+                      BigDecimal maximum,
+                      List<String> enums,
+                      List<String> enumNames,
+                      List<JsonSchema> oneOf,
+                      Integer maxItems,
+                      Integer minItems,
                       JsonSchema items,
+                      List<JsonSchema> anyOf,
+                      Map<String, JsonSchema> properties,
                       List<String> required,
                       Boolean additionalProperties) {
-        this(null, type, description, properties, items, required, additionalProperties);
+        this(null, type, in, title, description, maxLength, minLength, format, constValue, defaultValue, minimum, maximum,
+                enums, enumNames, oneOf, maxItems, minItems, items, anyOf, properties, required, additionalProperties);
     }
 
     private JsonSchema(String ref,
                        String type,
+                       String in,
+                       String title,
                        String description,
-                       Map<String, JsonSchema> properties,
+                       Integer maxLength,
+                       Integer minLength,
+                       String format,
+                       String constValue,
+                       Object defaultValue,
+                       BigDecimal minimum,
+                       BigDecimal maximum,
+                       List<String> enums,
+                       List<String> enumNames,
+                       List<JsonSchema> oneOf,
+                       Integer maxItems,
+                       Integer minItems,
                        JsonSchema items,
+                       List<JsonSchema> anyOf,
+                       Map<String, JsonSchema> properties,
                        List<String> required,
                        Boolean additionalProperties) {
         this.ref = ref;
-        this.description = description;
         this.type = type;
-        this.properties = properties;
+        this.in = in;
+        this.title = title;
+        this.description = description;
+        this.maxLength = maxLength;
+        this.minLength = minLength;
+        this.format = format;
+        this.constValue = constValue;
+        this.defaultValue = defaultValue;
+        this.minimum = minimum;
+        this.maximum = maximum;
+        this.enums = enums;
+        this.enumNames = enumNames;
+        this.oneOf = oneOf;
+        this.maxItems = maxItems;
+        this.minItems = minItems;
         this.items = items;
+        this.anyOf = anyOf;
+        this.properties = properties;
         this.required = required;
         this.additionalProperties = additionalProperties;
     }
 
     public JsonSchema clone() {
-        try {
-            return (JsonSchema) super.clone();
-        } catch (CloneNotSupportedException e) {
-            return new JsonSchema(ref, type, properties, items, required, additionalProperties);
-        }
-    }
-
-    /**
-     * Represents a reference to a JSON schema with reference counting.
-     * Used to manage schema references and convert schemas to reference format.
-     */
-    public static class JsonSchemaRef {
-
-        @Getter
-        private String name;
-
-        @Getter
-        @Setter
-        private JsonSchema schema;
-
-        @Getter
-        private String uri;
-
-        private AtomicInteger references;
-
-        public JsonSchemaRef(String name, JsonSchema schema, String uri) {
-            this(name, schema, uri, new AtomicInteger(0));
-        }
-
-        public JsonSchemaRef(JsonSchemaRef ref) {
-            this(ref.name, ref.schema == null ? null : ref.schema.clone(), ref.uri, ref.references);
-        }
-
-        private JsonSchemaRef(String name, JsonSchema schema, String uri, AtomicInteger references) {
-            this.name = name;
-            this.schema = schema;
-            this.uri = uri;
-            this.references = references;
-        }
-
-        /**
-         * Increments and returns the reference count.
-         *
-         * @return the updated reference count
-         */
-        public int getAndIncReference() {
-            return references.getAndIncrement();
-        }
-
-        public int getReference() {
-            return references.get();
-        }
-
-        public JsonSchemaRef ref() {
-            return new JsonSchemaRef(name, new JsonSchema(uri), uri, references);
-        }
-
-        public boolean hasReference() {
-            return references.get() > 0;
-        }
+        return new JsonSchema(ref, type, in, title, description, maxLength, minLength, format, constValue, defaultValue,
+                minimum, maximum, enums, enumNames, oneOf, maxItems, minItems, items, anyOf,
+                properties, required, additionalProperties);
     }
 }

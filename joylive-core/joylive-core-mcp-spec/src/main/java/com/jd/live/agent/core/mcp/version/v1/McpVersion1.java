@@ -17,7 +17,7 @@ package com.jd.live.agent.core.mcp.version.v1;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.spec.v1.JsonSchema;
-import com.jd.live.agent.core.mcp.spec.v1.JsonSchema.JsonSchemaRef;
+import com.jd.live.agent.core.mcp.version.McpSchemaRef;
 import com.jd.live.agent.core.mcp.version.McpToolDefinitions;
 import com.jd.live.agent.core.mcp.version.McpTypes;
 import com.jd.live.agent.core.mcp.version.McpVersion;
@@ -26,15 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-@Extension({"v1", "2025-06-18"})
+import static com.jd.live.agent.core.mcp.version.McpVersion.*;
+
+@Extension({"v1", VERSION_2025_11_25, VERSION_2025_06_18, VERSION_2025_03_26, VERSION_2024_11_05})
 public class McpVersion1 implements McpVersion {
 
     public static final McpVersion INSTANCE = new McpVersion1();
-
-    @Override
-    public String getRevision() {
-        return "2025-06-18";
-    }
 
     @Override
     public McpToolDefinitions createDefinitions() {
@@ -75,8 +72,8 @@ public class McpVersion1 implements McpVersion {
     private static class McpToolDefinitionsV1 implements McpToolDefinitions {
 
         @Override
-        public <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
-            return new JsonSchemaRef(nameFunc.apply(key), schemaFunc.apply(key), null);
+        public <K> McpSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
+            return new McpSchemaRef(nameFunc.apply(key), schemaFunc.apply(key), null);
         }
 
         @Override

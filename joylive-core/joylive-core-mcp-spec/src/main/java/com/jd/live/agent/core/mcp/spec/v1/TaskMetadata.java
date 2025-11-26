@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.parser.fastjson2;
+package com.jd.live.agent.core.mcp.spec.v1;
 
-import com.jd.live.agent.core.parser.annotation.JsonConverter;
+import lombok.Getter;
+import lombok.Setter;
 
-public class SexConverter implements JsonConverter<Integer, Sex> {
+/**
+ * Metadata for augmenting a request with task execution.
+ * Include this in the `task` field of the request parameters.
+ *
+ * @category `tasks`
+ */
+@Getter
+@Setter
+public class TaskMetadata {
 
-    @Override
-    public Sex convert(Integer source) {
-        if (source == null) {
-            return null;
-        }
-        return source == 1 ? Sex.FEMALE : Sex.MALE;
-    }
+    /**
+     * Requested duration in milliseconds to retain task from creation.
+     */
+    private Long ttl;
 }

@@ -36,6 +36,13 @@ import java.util.Map;
 public interface McpRequestContext extends ObjectConverter {
 
     /**
+     * Gets the request session.
+     *
+     * @return the request session
+     */
+    McpSession getSession();
+
+    /**
      * Gets the converter for transforming request parameters.
      *
      * @return the object converter instance
@@ -114,14 +121,6 @@ public interface McpRequestContext extends ObjectConverter {
     Object getRequestAttribute(String name);
 
     /**
-     * Adds a cookie with the specified name and value.
-     *
-     * @param name  the cookie name
-     * @param value the cookie value
-     */
-    void addCookie(String name, String value);
-
-    /**
      * Retrieves OpenApi
      *
      * @return open api insance
@@ -143,6 +142,8 @@ public interface McpRequestContext extends ObjectConverter {
     @Getter
     abstract class AbstractRequestContext implements McpRequestContext {
 
+        private final McpSession session;
+
         private final Map<String, McpToolMethod> methods;
 
         private final Map<String, List<McpToolMethod>> paths;
@@ -155,12 +156,14 @@ public interface McpRequestContext extends ObjectConverter {
 
         private final OpenApi openApi;
 
-        public AbstractRequestContext(Map<String, McpToolMethod> methods,
+        public AbstractRequestContext(McpSession session,
+                                      Map<String, McpToolMethod> methods,
                                       Map<String, List<McpToolMethod>> paths,
                                       ObjectConverter converter,
                                       JsonSchemaParser jsonSchemaParser,
                                       McpVersion version,
                                       OpenApi openApi) {
+            this.session = session;
             this.methods = methods;
             this.paths = paths;
             this.converter = converter;
@@ -168,5 +171,6 @@ public interface McpRequestContext extends ObjectConverter {
             this.version = version;
             this.openApi = openApi;
         }
+
     }
 }

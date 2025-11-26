@@ -17,6 +17,7 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 
@@ -34,8 +35,8 @@ public interface McpHandler {
      * @param request The JSON-RPC request to be processed
      * @param ctx     The context containing conversion and parsing utilities for the request
      * @return A JSON-RPC response containing the result or error information
-     * @throws Exception If an error occurs during request processing
+     * @throws McpException If an error occurs during request processing
      */
-    JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception;
+    JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException;
 
 }

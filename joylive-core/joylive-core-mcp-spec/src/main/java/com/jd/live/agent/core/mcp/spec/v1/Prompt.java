@@ -16,12 +16,8 @@
 package com.jd.live.agent.core.mcp.spec.v1;
 
 import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +28,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Prompt implements Identifier {
 
     /**
@@ -56,11 +53,4 @@ public class Prompt implements Identifier {
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public Prompt(String name, String description, List<PromptArgument> arguments) {
-        this(name, null, description, arguments != null ? arguments : new ArrayList<>());
-    }
-
-    public Prompt(String name, String title, String description, List<PromptArgument> arguments) {
-        this(name, title, description, arguments != null ? arguments : new ArrayList<>(), null);
-    }
 }

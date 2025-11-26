@@ -15,12 +15,13 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
+import java.util.Map;
 
 /**
  * An opaque token representing the pagination position after the last returned
@@ -30,10 +31,16 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaginatedResult implements Serializable {
+public class PaginatedResult implements Result {
     /**
      * An opaque token representing the pagination position after the
      * last returned result. If present, there may be more results available
      */
     private String nextCursor;
+
+    /**
+     * See specification for notes on _meta usage
+     */
+    @JsonField("_meta")
+    private Map<String, Object> meta;
 }

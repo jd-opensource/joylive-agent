@@ -23,12 +23,30 @@ package com.jd.live.agent.core.mcp.spec.v1;
  */
 public interface ResourceContent extends Identifier, Annotated, Meta {
 
+    /**
+     * the URI of the resource.
+     */
     String getUri();
 
+    /**
+     * A description of what this resource represents. This can be used
+     * by clients to improve the LLM's understanding of available resources. It can be
+     * thought of like a "hint" to the model.
+     */
     String getDescription();
 
+    /**
+     * The MIME type of this resource.
+     *
+     * @return the MIME type of this resource.
+     */
     String getMimeType();
 
+    /**
+     * The size of the raw resource content, in bytes (i.e., before base64
+     * encoding or any tokenization), if known. This can be used by Hosts to display file
+     * sizes and estimate context window usage.
+     */
     Long getSize();
 
 }

@@ -29,14 +29,16 @@ import com.jd.live.agent.core.mcp.spec.v1.JsonSchema;
 @Extensible("McpVersion")
 public interface McpVersion {
 
+    String VERSION_2024_11_05 = "2024-11-05";
+    String VERSION_2025_03_26 = "2025-03-26";
+    String VERSION_2025_06_18 = "2025-06-18";
+    String VERSION_2025_11_25 = "2025-11-25";
+
     String PROPERTY_RESULT = "result";
 
-    /**
-     * Gets the revision identifier for this MCP version.
-     *
-     * @return A string representing the revision of this MCP implementation
-     */
-    String getRevision();
+    static String getLatestVersion() {
+        return VERSION_2025_11_25;
+    }
 
     /**
      * Creates tool definitions compatible with this MCP version.

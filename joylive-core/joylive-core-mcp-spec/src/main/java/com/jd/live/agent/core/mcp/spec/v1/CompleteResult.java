@@ -68,7 +68,7 @@ public class CompleteResult implements Result {
          * Indicates whether there are additional completion options beyond those provided in the current response,
          * even if the exact total is unknown
          */
-        private boolean hasMore;
+        private Boolean hasMore;
     }
 
 }

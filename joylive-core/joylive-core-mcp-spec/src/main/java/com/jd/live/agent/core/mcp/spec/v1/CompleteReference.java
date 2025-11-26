@@ -22,6 +22,10 @@ import java.io.Serializable;
  */
 public interface CompleteReference extends Serializable {
 
+    String TYPE_REF_PROMPT = "ref/prompt";
+
+    String TYPE_REF_RESOURCE = "ref/resource";
+
     String getType();
 
     String identifier();

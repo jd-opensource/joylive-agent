@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.mcp.spec.v1.Request.MetaRequest;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
@@ -32,7 +33,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateMessageRequest implements Request.MetaRequest {
+public class CreateMessageRequest implements MetaRequest {
     /**
      * The conversation messages to send to the LLM
      */
@@ -66,25 +67,34 @@ public class CreateMessageRequest implements Request.MetaRequest {
      */
     private List<String> stopSequences;
     /**
-     * Optional metadata to pass through to the LLM provider. The format of this metadata is provider-specific
+     * Optional metadata to pass through to the LLM provider. The format of this metadata is provider-specific.
      */
-    private Map<String, Object> metadata;
+    private Object metadata;
+    /**
+     * Tools that the model may use during generation.
+     * The client MUST return an error if this field is provided but ClientCapabilities.sampling.tools is not declared.
+     */
+    private List<Tool> tools;
+    /**
+     * Controls how the model uses tools.
+     * The client MUST return an error if this field is provided but ClientCapabilities.sampling.tools is not declared.
+     * Default is `{ mode: "auto" }`.
+     */
+    private ToolChoice toolChoice;
+    /**
+     * If specified, the caller is requesting task-augmented execution for this request.
+     * The request will return a CreateTaskResult immediately, and the actual result can be
+     * retrieved later via tasks/result.
+     * <p>
+     * Task augmentation is subject to capability negotiation - receivers MUST declare support
+     * for task augmentation of specific request types in their capabilities.
+     */
+    private TaskMetadata task;
     /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
-
-    public CreateMessageRequest(List<SamplingMessage> messages,
-                                ModelPreferences modelPreferences,
-                                String systemPrompt,
-                                ContextInclusionStrategy includeContext,
-                                Double temperature,
-                                Integer maxTokens,
-                                List<String> stopSequences,
-                                Map<String, Object> metadata) {
-        this(messages, modelPreferences, systemPrompt, includeContext, temperature, maxTokens, stopSequences, metadata, null);
-    }
 
     public enum ContextInclusionStrategy {
 
@@ -96,5 +106,17 @@ public class CreateMessageRequest implements Request.MetaRequest {
 
         @JsonField("allServers")
         ALL_SERVERS
+    }
+
+    public enum ToolChoice {
+
+        @JsonField("auto")
+        AUTO,
+
+        @JsonField("required")
+        REQUIRED,
+
+        @JsonField("none")
+        NONE
     }
 }

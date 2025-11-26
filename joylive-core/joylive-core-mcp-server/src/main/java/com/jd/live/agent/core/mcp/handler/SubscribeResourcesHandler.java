@@ -17,6 +17,7 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcMessage;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
@@ -28,7 +29,7 @@ import java.util.Collections;
 public class SubscribeResourcesHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         SubscribeRequest req = ctx.convert(request.getParams(), SubscribeRequest.class);
         return JsonRpcResponse.createSuccessResponse(request.getId(), Collections.EMPTY_MAP);
     }

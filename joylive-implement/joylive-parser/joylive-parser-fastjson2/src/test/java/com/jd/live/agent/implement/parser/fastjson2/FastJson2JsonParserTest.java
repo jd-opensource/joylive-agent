@@ -34,7 +34,7 @@ public class FastJson2JsonParserTest {
             Assertions.assertNotNull(inputStream);
             String json = new String(IOUtils.read(inputStream));
             Person person = jsonParser.read(new StringReader(json), Person.class);
-            Assertions.assertEquals(person.getSex(), Sex.FEMALE);
+            Assertions.assertEquals(person.getSex(), Sex.MALE);
             Assertions.assertEquals(pathParser.read(json, "$.name"), "person");
             Assertions.assertTrue(person.containsAlias("john doe"));
         }

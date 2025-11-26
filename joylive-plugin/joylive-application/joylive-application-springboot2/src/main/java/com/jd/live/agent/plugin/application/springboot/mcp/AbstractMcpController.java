@@ -15,71 +15,102 @@
  */
 package com.jd.live.agent.plugin.application.springboot.mcp;
 
-import com.jd.live.agent.core.mcp.McpToolMethod;
-import com.jd.live.agent.core.mcp.McpToolScanner;
+import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.mcp.*;
+import com.jd.live.agent.core.mcp.McpSession.DefaultMcpSession;
+import com.jd.live.agent.core.mcp.McpSessionManager.DefaultMcpSessionManager;
+import com.jd.live.agent.core.mcp.McpTransportManager.DefaultMcpMTransportManager;
 import com.jd.live.agent.core.mcp.handler.McpHandler;
+import com.jd.live.agent.core.mcp.spec.v1.Implementation;
+import com.jd.live.agent.core.mcp.spec.v1.ServerCapabilities;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import com.jd.live.agent.core.openapi.spec.v3.PathItem;
 import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.config.McpConfig;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.application.springboot.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 
 /**
  * Base controller for MCP (Method Call Protocol) implementation.
  * Scans and registers methods from Spring controllers during application startup.
  */
-public abstract class AbstractMcpController {
+public abstract class AbstractMcpController implements BeanPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMcpController.class);
 
     /**
+     * Governance invocation context
+     */
+    @Setter
+    protected InvocationContext context;
+
+    /**
      * MCP handler mapping, keyed by method name
      */
+    @Setter
     protected Map<String, McpHandler> handlers;
 
     /**
      * Object converter for request and response transformation
      */
+    @Setter
     protected ObjectConverter objectConverter;
 
+    @Setter
     protected ObjectParser objectParser;
 
     /**
      * Governance configuration
      */
+    @Setter
     protected GovernanceConfig config;
 
     /**
      * MCP version mapping, keyed by version identifier
      */
+    @Setter
     protected Map<String, McpVersion> versions;
 
     /**
      * Default MCP version
      */
+    @Setter
     protected McpVersion defaultVersion;
+
+    /**
+     * Map of active client transport, keyed by client ID.
+     */
+    protected final McpTransportManager transports = new DefaultMcpMTransportManager();
+
+    /**
+     * sessions for none sse
+     */
+    protected final McpSessionManager sessions = new DefaultMcpSessionManager();
 
     /**
      * Lazy-loaded OpenAPI object
@@ -96,31 +127,7 @@ public abstract class AbstractMcpController {
      */
     protected final Map<String, List<McpToolMethod>> paths = new HashMap<>();
 
-    protected final CompletableFuture<Void> future = new CompletableFuture();
-
-    public void setHandlers(Map<String, McpHandler> handlers) {
-        this.handlers = handlers;
-    }
-
-    public void setObjectConverter(ObjectConverter objectConverter) {
-        this.objectConverter = objectConverter;
-    }
-
-    public void setObjectParser(ObjectParser objectParser) {
-        this.objectParser = objectParser;
-    }
-
-    public void setConfig(GovernanceConfig config) {
-        this.config = config;
-    }
-
-    public void setVersions(Map<String, McpVersion> versions) {
-        this.versions = versions;
-    }
-
-    public void setDefaultVersion(McpVersion defaultVersion) {
-        this.defaultVersion = defaultVersion;
-    }
+    protected final CompletableFuture<Void> future = new CompletableFuture<>();
 
     /**
      * Gets specified version or returns default if not found
@@ -177,6 +184,14 @@ public abstract class AbstractMcpController {
      */
     @EventListener
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        // cleaner
+        McpConfig cfg = config.getMcpConfig();
+        context.getTimer().schedule("clean-mcp-session", cfg.getCheckInterval(), () -> {
+            int count = sessions.evict(cfg.getTimeout());
+            if (count > 0) {
+                logger.info("Success cleaning expired mcp sessions: {}", count);
+            }
+        });
         try {
             future.get(5000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -186,6 +201,58 @@ public abstract class AbstractMcpController {
         } catch (TimeoutException e) {
             logger.warn("It's timeout to prepare mcp methods.");
         }
+    }
+
+    /**
+     * Creates and initializes a new MCP session with specified parameters.
+     *
+     * @param sessionId Unique identifier for the session
+     * @return true if session creation succeeded, false if it failed
+     */
+    protected McpSession createSession(String sessionId) {
+        return createSession(sessionId, null);
+    }
+
+    /**
+     * Creates and initializes a new MCP session with specified parameters.
+     *
+     * @param sessionId Unique identifier for the session
+     * @param version   The mcp protocol version
+     * @return true if session creation succeeded, false if it failed
+     */
+    protected McpSession createSession(String sessionId, String version) {
+        Application application = context.getApplication();
+        McpConfig mcpConfig = config.getMcpConfig();
+        Implementation serverInfo = Implementation
+                .builder()
+                .name(application.getName())
+                .title(mcpConfig.getTitle())
+                .version(application.getMeta(Constants.LABEL_AGENT_VERSION, null))
+                .build();
+        ServerCapabilities serverCapabilities = ServerCapabilities.builder()
+                .logging(new ServerCapabilities.LoggingCapabilities())
+                //.completions(new ServerCapabilities.CompletionCapabilities())
+                // TODO tools listChanged
+                .tools(new ServerCapabilities.ToolCapabilities(Boolean.FALSE))
+                //.prompts(new ServerCapabilities.PromptCapabilities())
+                //.resources(new ServerCapabilities.ResourceCapabilities())
+                //.experimental(null)
+                .build();
+        sessionId = isEmpty(sessionId) ? UUID.randomUUID().toString() : sessionId;
+        Predicate<String> predicate = v -> v != null && versions.containsKey(v);
+        if (!predicate.test(version)) {
+            version = mcpConfig.getVersion();
+            if (!predicate.test(version)) {
+                version = McpVersion.getLatestVersion();
+            }
+        }
+        return new DefaultMcpSession(
+                sessionId,
+                version,
+                serverCapabilities,
+                serverInfo,
+                predicate
+        );
     }
 
     protected void addToolMethod(McpToolMethod method, OpenApi openApi) {

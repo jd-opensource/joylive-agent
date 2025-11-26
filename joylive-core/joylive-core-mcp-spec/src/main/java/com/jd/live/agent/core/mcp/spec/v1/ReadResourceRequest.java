@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.mcp.spec.v1.Request.MetaRequest;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +31,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReadResourceRequest implements Request.MetaRequest {
+public class ReadResourceRequest implements MetaRequest {
 
     /**
      * The URI of the resource to read. The URI can use any protocol; it is up

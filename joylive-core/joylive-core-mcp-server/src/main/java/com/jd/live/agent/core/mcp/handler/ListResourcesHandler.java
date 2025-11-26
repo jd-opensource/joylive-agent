@@ -17,6 +17,7 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcMessage;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
@@ -26,7 +27,7 @@ import com.jd.live.agent.core.mcp.spec.v1.ListResourcesResult;
 public class ListResourcesHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         return JsonRpcResponse.createSuccessResponse(request.getId(), new ListResourcesResult());
     }
 }

@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.application.springboot.mcp.reactive;
 
 import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
+import com.jd.live.agent.core.mcp.McpSession;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
@@ -23,14 +24,11 @@ import com.jd.live.agent.core.parser.JsonSchemaParser;
 import com.jd.live.agent.core.parser.ObjectConverter;
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.http.ResponseCookie;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebSession;
 
 import java.util.List;
 import java.util.Map;
-
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 
 /**
  * Reactive implementation of MCP request context that works with Spring WebFlux.
@@ -44,26 +42,16 @@ public class ReactiveRequestContext extends AbstractRequestContext {
      */
     private final ServerWebExchange exchange;
 
-    /**
-     * Creates a new reactive request context
-     *
-     * @param methods          MCP tool methods mapped by name
-     * @param paths            MCP tool methods mapped by path
-     * @param converter        Object converter for parameter conversion
-     * @param jsonSchemaParser JSON schema parser for parameter validation
-     * @param version          MCP version information
-     * @param openApi          OpenAPI specification supplier
-     * @param exchange         Spring WebFlux server exchange
-     */
     @Builder
-    public ReactiveRequestContext(Map<String, McpToolMethod> methods,
+    public ReactiveRequestContext(McpSession session,
+                                  Map<String, McpToolMethod> methods,
                                   Map<String, List<McpToolMethod>> paths,
                                   ObjectConverter converter,
                                   JsonSchemaParser jsonSchemaParser,
                                   McpVersion version,
                                   OpenApi openApi,
                                   ServerWebExchange exchange) {
-        super(methods, paths, converter, jsonSchemaParser, version, openApi);
+        super(session, methods, paths, converter, jsonSchemaParser, version, openApi);
         this.exchange = exchange;
     }
 
@@ -107,19 +95,6 @@ public class ReactiveRequestContext extends AbstractRequestContext {
     @Override
     public Object getCookie(String name) {
         return name == null ? null : exchange.getRequest().getCookies().get(name);
-    }
-
-    /**
-     * Adds a cookie to the response
-     *
-     * @param name The cookie name
-     * @param value The cookie value
-     */
-    @Override
-    public void addCookie(String name, String value) {
-        if (!isEmpty(name) && !isEmpty(value)) {
-            exchange.getResponse().addCookie(ResponseCookie.from(name, value).build());
-        }
     }
 
     /**

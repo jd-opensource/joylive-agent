@@ -15,8 +15,12 @@
  */
 package com.jd.live.agent.implement.parser.jackson;
 
-public enum Sex {
+import com.jd.live.agent.core.parser.annotation.JsonField;
 
-    MALE, FEMALE
+public enum Sex {
+    @JsonField("male")
+    MALE,
+    @JsonField("female")
+    FEMALE
 
 }

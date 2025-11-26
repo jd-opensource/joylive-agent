@@ -16,6 +16,7 @@
 package com.jd.live.agent.plugin.application.springboot.mcp.web.javax;
 
 import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
+import com.jd.live.agent.core.mcp.McpSession;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
@@ -26,13 +27,11 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.web.context.request.WebRequest;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.http.HttpUtils.parseCookie;
 import static com.jd.live.agent.core.util.http.HttpUtils.parseHeader;
 
@@ -68,21 +67,9 @@ public class JavaxRequestContext extends AbstractRequestContext {
      */
     private final LazyObject<Map<String, List<String>>> cookies;
 
-    /**
-     * Creates a new Javax request context
-     *
-     * @param methods          MCP tool methods mapped by name
-     * @param paths            MCP tool methods mapped by path
-     * @param converter        Object converter for parameter conversion
-     * @param jsonSchemaParser JSON schema parser for parameter validation
-     * @param version          MCP version information
-     * @param openApi          OpenAPI specification supplier
-     * @param webRequest       Spring web request object
-     * @param httpRequest      Javax HTTP servlet request
-     * @param httpResponse     Javax HTTP servlet response
-     */
     @Builder
-    public JavaxRequestContext(Map<String, McpToolMethod> methods,
+    public JavaxRequestContext(McpSession session,
+                               Map<String, McpToolMethod> methods,
                                Map<String, List<McpToolMethod>> paths,
                                ObjectConverter converter,
                                JsonSchemaParser jsonSchemaParser,
@@ -91,7 +78,7 @@ public class JavaxRequestContext extends AbstractRequestContext {
                                WebRequest webRequest,
                                HttpServletRequest httpRequest,
                                HttpServletResponse httpResponse) {
-        super(methods, paths, converter, jsonSchemaParser, version, openApi);
+        super(session, methods, paths, converter, jsonSchemaParser, version, openApi);
         this.webRequest = webRequest;
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;
@@ -139,19 +126,6 @@ public class JavaxRequestContext extends AbstractRequestContext {
     @Override
     public Object getCookie(String name) {
         return name == null ? null : getCookies().get(name);
-    }
-
-    /**
-     * Adds a cookie to the response
-     *
-     * @param name The cookie name
-     * @param value The cookie value
-     */
-    @Override
-    public void addCookie(String name, String value) {
-        if (!isEmpty(name) && !isEmpty(value)) {
-            httpResponse.addCookie(new Cookie(name, value));
-        }
     }
 
     /**

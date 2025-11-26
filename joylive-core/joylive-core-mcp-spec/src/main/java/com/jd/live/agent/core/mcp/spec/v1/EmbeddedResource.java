@@ -16,9 +16,7 @@
 package com.jd.live.agent.core.mcp.spec.v1;
 
 import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -29,33 +27,49 @@ import java.util.Map;
  * It is up to the client how best to render embedded resources for the benefit of the
  * LLM and/or the user.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class EmbeddedResource implements Annotated, Content {
 
-    /**
-     * Optional annotations for the client
-     */
-    private Annotations annotations;
+    private String type = TYPE_RESOURCE;
+
     /**
      * The resource contents that are embedded
      */
+    @Getter
+    @Setter
     private ResourceContents resource;
+    /**
+     * Optional annotations for the client
+     */
+    @Getter
+    @Setter
+    private Annotations annotations;
     /**
      * See specification for notes on _meta usage
      */
+    @Getter
+    @Setter
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public EmbeddedResource(Annotations annotations, ResourceContents resource) {
-        this(annotations, resource, null);
+    public EmbeddedResource() {
+    }
+
+    public EmbeddedResource(ResourceContents resource) {
+        this.resource = resource;
+    }
+
+    public EmbeddedResource(ResourceContents resource, Annotations annotations, Map<String, Object> meta) {
+        this.annotations = annotations;
+        this.resource = resource;
+        this.meta = meta;
     }
 
     @Override
     public String getType() {
-        return "resource";
+        return TYPE_RESOURCE;
+    }
+
+    public void setType(String type) {
     }
 
     public List<Role> audience() {
@@ -65,4 +79,5 @@ public class EmbeddedResource implements Annotated, Content {
     public Double priority() {
         return annotations == null ? null : annotations.getPriority();
     }
+
 }

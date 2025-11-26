@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v6.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v6.util.CloudUtils;
+import org.springframework.http.MediaType;
 import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.HandlerFunction;
 import org.springframework.web.servlet.function.ServerResponse;
@@ -96,7 +97,7 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
                     return (ServerResponse) context.inward(invocation, () -> handler.handle(req));
                 } catch (Throwable e) {
                     if (request.isMcp()) {
-                        return ServerResponse.ok().body(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
+                        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                     }
                     Exception exception = toException(THROWER.createException(e, request));
                     HandlerFilterFunction<ServerResponse, ServerResponse> errorFunction = CloudUtils.getErrorFunction(target);

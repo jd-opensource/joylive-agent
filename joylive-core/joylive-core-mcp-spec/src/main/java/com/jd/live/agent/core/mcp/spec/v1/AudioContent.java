@@ -16,9 +16,7 @@
 package com.jd.live.agent.core.mcp.spec.v1;
 
 import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Map;
@@ -26,36 +24,57 @@ import java.util.Map;
 /**
  * Audio provided to or from an LLM.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class AudioContent implements Annotated, Content {
 
-    /**
-     * Optional annotations for the client
-     */
-    private Annotations annotations;
+    private String type = TYPE_AUDIO;
+
     /**
      * The base64-encoded audio data
      */
+    @Getter
+    @Setter
     private String data;
     /**
      * The MIME type of the audio. Different providers may support different audio types
      */
+    @Getter
+    @Setter
     private String mimeType;
+    /**
+     * Optional annotations for the client
+     */
+    @Getter
+    @Setter
+    private Annotations annotations;
     /**
      * See specification for notes on _meta usage
      */
+    @Getter
+    @Setter
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public AudioContent(Annotations annotations, String data, String mimeType) {
-        this(annotations, data, mimeType, null);
+    public AudioContent() {
+    }
+
+    public AudioContent(String data, String mimeType) {
+        this.data = data;
+        this.mimeType = mimeType;
+    }
+
+    public AudioContent(String data, String mimeType, Annotations annotations, Map<String, Object> meta) {
+        this.data = data;
+        this.mimeType = mimeType;
+        this.annotations = annotations;
+        this.meta = meta;
     }
 
     @Override
     public String getType() {
-        return "audio";
+        return type;
+    }
+
+    public void setType(String type) {
+
     }
 }

@@ -17,31 +17,16 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.*;
 
 @Extension(JsonRpcMessage.METHOD_INITIALIZE)
-public class InitializeHandler implements McpHandler {
+public class InitializeHandler implements McpHandler, Initialization {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         InitializeRequest req = ctx.convert(request.getParams(), InitializeRequest.class);
-        InitializeResult result = InitializeResult.builder()
-                .protocolVersion(req.getProtocolVersion())
-                .capabilities(ServerCapabilities.builder()
-                        // Fix empty bean for jackson issue
-                        //.logging(new ServerCapabilities.LoggingCapabilities())
-                        //.completions(new ServerCapabilities.CompletionCapabilities())
-                        // TODO tools listChanged
-                        .tools(new ServerCapabilities.ToolCapabilities())
-                        .prompts(new ServerCapabilities.PromptCapabilities())
-                        .resources(new ServerCapabilities.ResourceCapabilities())
-                        .experimental(null)
-                        .build())
-                .serverInfo(null)
-                .instructions(null)
-                .meta(null)
-                .build();
-        ctx.addCookie("MCP-Version", req.getProtocolVersion());
+        InitializeResult result = ctx.getSession().initialize(req);
         return JsonRpcResponse.createSuccessResponse(request.getId(), result);
     }
 }

@@ -17,7 +17,7 @@ package com.jd.live.agent.core.mcp.version.v2;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.spec.v1.JsonSchema;
-import com.jd.live.agent.core.mcp.spec.v1.JsonSchema.JsonSchemaRef;
+import com.jd.live.agent.core.mcp.version.McpSchemaRef;
 import com.jd.live.agent.core.mcp.version.McpToolDefinitions;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 
@@ -31,11 +31,6 @@ import static com.jd.live.agent.core.mcp.spec.v1.Tool.COMPONENT_REF_PREFIX;
 public class McpVersion2 implements McpVersion {
 
     public static final McpVersion INSTANCE = new McpVersion2();
-
-    @Override
-    public String getRevision() {
-        return "v2";
-    }
 
     @Override
     public McpToolDefinitions createDefinitions() {
@@ -60,14 +55,14 @@ public class McpVersion2 implements McpVersion {
         /**
          * Maps Java classes to their corresponding JSON schemas.
          */
-        private final Map<Object, JsonSchemaRef> schemas = new HashMap<>();
+        private final Map<Object, McpSchemaRef> schemas = new HashMap<>();
 
         @Override
-        public <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
-            JsonSchemaRef result = schemas.computeIfAbsent(key, c -> {
+        public <K> McpSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc) {
+            McpSchemaRef result = schemas.computeIfAbsent(key, c -> {
                 String name = nameFunc.apply(key);
                 String url = name == null || name.isEmpty() ? null : COMPONENT_REF_PREFIX + name;
-                return new JsonSchemaRef(name, null, url);
+                return new McpSchemaRef(name, null, url);
             });
             if (result.getAndIncReference() == 0) {
                 result.setSchema(schemaFunc.apply(key));
@@ -79,8 +74,8 @@ public class McpVersion2 implements McpVersion {
         @Override
         public Map<String, JsonSchema> getDefinitions() {
             Map<String, JsonSchema> result = new HashMap<>(schemas.size());
-            for (Map.Entry<Object, JsonSchemaRef> entry : schemas.entrySet()) {
-                JsonSchemaRef ref = entry.getValue();
+            for (Map.Entry<Object, McpSchemaRef> entry : schemas.entrySet()) {
+                McpSchemaRef ref = entry.getValue();
                 if (ref.getReference() > 1) {
                     result.put(ref.getName(), ref.getSchema());
                 }

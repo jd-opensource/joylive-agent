@@ -17,17 +17,18 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcMessage;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 
 import java.util.Collections;
 
-@Extension(JsonRpcMessage.METHOD_PING)
+@Extension(value = {JsonRpcMessage.METHOD_PING, JsonRpcMessage.METHOD_HEARTBEAT})
 public class PingHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         return JsonRpcResponse.createSuccessResponse(request.getId(), Collections.EMPTY_MAP);
     }
 }

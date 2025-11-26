@@ -21,34 +21,26 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
 import java.util.Map;
 
 /**
- * The server's response to a resources/templates/list request from the client.
+ * A response to a task-augmented request.
+ *
+ * @category `tasks`
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ListResourcesTemplateResult implements Result {
-
-    /**
-     * A list of resource templates that the server provides
-     */
-    private List<ResourceTemplate> resourcesTemplate;
-    /**
-     * An opaque token representing the pagination position after the
-     * last returned result. If present, there may be more results available
-     */
-    private String nextCursor;
+public class CreateTaskResult implements Result {
+    private Task task;
     /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public ListResourcesTemplateResult(List<ResourceTemplate> resourcesTemplate, String nextCursor) {
-        this(resourcesTemplate, nextCursor, null);
+    public CreateTaskResult(Task task) {
+        this.task = task;
     }
 }

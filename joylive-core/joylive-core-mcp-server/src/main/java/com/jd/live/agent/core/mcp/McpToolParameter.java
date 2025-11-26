@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.core.mcp;
 
-import com.jd.live.agent.core.mcp.spec.v1.JsonRpcException.MissingParameterException;
+import com.jd.live.agent.core.mcp.exception.JsonRpcException.MissingParameterException;
 import com.jd.live.agent.core.util.converter.Converter;
 import com.jd.live.agent.core.util.type.ClassUtils;
 import lombok.Getter;

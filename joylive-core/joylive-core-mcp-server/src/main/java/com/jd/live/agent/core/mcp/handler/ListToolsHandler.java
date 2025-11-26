@@ -17,6 +17,7 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.handler.builder.OpenApiListToolsBuilder;
 import com.jd.live.agent.core.mcp.handler.builder.ReflectionListToolsBuilder;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcMessage;
@@ -29,7 +30,7 @@ import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 public class ListToolsHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         ListToolsResult result;
         OpenApi openApi = ctx.getOpenApi();
         if (openApi != null) {

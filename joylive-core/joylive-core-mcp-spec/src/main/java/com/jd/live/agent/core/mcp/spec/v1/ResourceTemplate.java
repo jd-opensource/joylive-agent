@@ -18,6 +18,7 @@ package com.jd.live.agent.core.mcp.spec.v1;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,7 +29,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ResourceTemplate implements Annotated, Identifier, Meta {
+public class ResourceTemplate implements Annotated, Identifier, Meta, Icons {
 
     /**
      * A URI template that can be used to generate URIs for this esource.
@@ -59,18 +60,13 @@ public class ResourceTemplate implements Annotated, Identifier, Meta {
      */
     private Annotations annotations;
     /**
+     * Optional set of sized icons that the client can display in a user interface.
+     */
+    private List<Icon> icons;
+    /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public ResourceTemplate(String uriTemplate, String name, String title, String description, String mimeType,
-                            Annotations annotations) {
-        this(uriTemplate, name, title, description, mimeType, annotations, null);
-    }
-
-    public ResourceTemplate(String uriTemplate, String name, String description, String mimeType,
-                            Annotations annotations) {
-        this(uriTemplate, name, null, description, mimeType, annotations);
-    }
 }

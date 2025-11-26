@@ -17,16 +17,17 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcMessage;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
-import com.jd.live.agent.core.mcp.spec.v1.ListPromptResult;
+import com.jd.live.agent.core.mcp.spec.v1.ListPromptsResult;
 
 @Extension(JsonRpcMessage.METHOD_PROMPTS_LIST)
 public class ListPromptsHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
-        return JsonRpcResponse.createSuccessResponse(request.getId(), new ListPromptResult());
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
+        return JsonRpcResponse.createSuccessResponse(request.getId(), new ListPromptsResult());
     }
 }

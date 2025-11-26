@@ -16,9 +16,7 @@
 package com.jd.live.agent.core.mcp.spec.v1;
 
 import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -27,42 +25,57 @@ import java.util.Map;
 /**
  * An image provided to or from an LLM.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class ImageContent implements Annotated, Content {
 
-    /**
-     * Optional annotations for the client
-     */
-    private Annotations annotations;
+    private String type = TYPE_IMAGE;
+
     /**
      * The base64-encoded image data
      */
+    @Getter
+    @Setter
     private String data;
     /**
      * The MIME type of the image. Different providers may support different image types
      */
+    @Getter
+    @Setter
     private String mimeType;
+    /**
+     * Optional annotations for the client
+     */
+    @Getter
+    @Setter
+    private Annotations annotations;
     /**
      * See specification for notes on _meta usage
      */
+    @Getter
+    @Setter
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public ImageContent(Annotations annotations, String data, String mimeType) {
-        this(annotations, data, mimeType, null);
+    public ImageContent() {
     }
 
-    public ImageContent(List<Role> audience, Double priority, String data, String mimeType) {
-        this(audience != null || priority != null ? new Annotations(audience, priority) : null, data, mimeType,
-                null);
+    public ImageContent(String data, String mimeType) {
+        this.data = data;
+        this.mimeType = mimeType;
+    }
+
+    public ImageContent(String data, String mimeType, Annotations annotations, Map<String, Object> meta) {
+        this.data = data;
+        this.mimeType = mimeType;
+        this.annotations = annotations;
+        this.meta = meta;
     }
 
     @Override
     public String getType() {
-        return "image";
+        return TYPE_IMAGE;
+    }
+
+    public void setType(String type) {
     }
 
     public List<Role> audience() {

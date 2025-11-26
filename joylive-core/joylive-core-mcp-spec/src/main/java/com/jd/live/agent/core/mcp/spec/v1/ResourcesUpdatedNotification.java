@@ -31,7 +31,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ResourcesUpdatedNotification implements Notification {
+public class ResourcesUpdatedNotification implements Notification.MetaNotification {
     /**
      * The updated resource uri.
      */

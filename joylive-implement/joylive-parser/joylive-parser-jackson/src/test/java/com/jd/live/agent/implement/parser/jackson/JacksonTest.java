@@ -68,7 +68,7 @@ public class JacksonTest {
         Map<String, Object> map = new HashMap<>();
         map.put("name", "John");
         map.put("age", 30L);
-        map.put("sex", "MALE");
+        map.put("sex", "male");
         map.put("aliases", Arrays.asList("john", "doe"));
         Person person = converter.convert(map, Person.class);
         Assert.assertEquals("John", person.getName());

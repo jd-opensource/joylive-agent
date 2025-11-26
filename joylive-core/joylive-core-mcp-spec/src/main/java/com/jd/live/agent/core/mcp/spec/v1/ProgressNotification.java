@@ -32,10 +32,10 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProgressNotification implements Notification {
+public class ProgressNotification implements Notification.MetaNotification {
     /**
-     * A unique token to identify the progress notification. MUST be
-     * unique across all active requests.
+     * A progress token, used to associate progress notifications with the original request.
+     * string | number
      */
     private Object progressToken;
     /**

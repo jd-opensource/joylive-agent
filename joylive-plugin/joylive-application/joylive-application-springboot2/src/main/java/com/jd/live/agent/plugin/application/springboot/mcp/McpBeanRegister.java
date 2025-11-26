@@ -21,7 +21,7 @@ import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.governance.config.GovernanceConfig;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.application.springboot.mcp.reactive.ReactiveMcpController;
 import com.jd.live.agent.plugin.application.springboot.mcp.web.jakarta.JakartaWebMcpController;
 import com.jd.live.agent.plugin.application.springboot.mcp.web.javax.JavaxWebMcpController;
@@ -39,8 +39,8 @@ import java.util.Map;
 @Injectable
 public class McpBeanRegister implements BeanRegister {
 
-    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
-    private GovernanceConfig config;
+    @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
+    private InvocationContext context;
 
     @Inject
     private Map<String, McpHandler> handlers;
@@ -57,10 +57,9 @@ public class McpBeanRegister implements BeanRegister {
     @Inject
     private McpVersion defaultVersion;
 
-
     @Override
     public void register(ConfigurableApplicationContext ctx) {
-        if (!config.getMcpConfig().isEnabled()) {
+        if (!context.getGovernanceConfig().getMcpConfig().isEnabled()) {
             return;
         }
         ConfigurableEnvironment environment = ctx.getEnvironment();
@@ -83,10 +82,11 @@ public class McpBeanRegister implements BeanRegister {
             if (mcpType != null) {
                 BeanDefinition definition = BeanDefinitionBuilder
                         .genericBeanDefinition(mcpType)
+                        .addPropertyValue("context", context)
                         .addPropertyValue("objectConverter", converter)
                         .addPropertyValue("objectParser", parser)
                         .addPropertyValue("handlers", handlers)
-                        .addPropertyValue("config", config)
+                        .addPropertyValue("config", context.getGovernanceConfig())
                         .addPropertyValue("versions", versions)
                         .addPropertyValue("defaultVersion", defaultVersion)
                         .getBeanDefinition();

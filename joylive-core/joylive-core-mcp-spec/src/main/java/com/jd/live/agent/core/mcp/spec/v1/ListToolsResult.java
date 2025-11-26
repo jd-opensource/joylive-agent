@@ -15,10 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
@@ -30,26 +27,16 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ListToolsResult implements Result {
+public class ListToolsResult extends PaginatedResult {
 
     /**
      * An array of Root objects, each representing a root directory or file
      * that the server can operate on.
      */
     private List<Tool> tools;
-    /**
-     * An optional cursor for pagination. If present, indicates there
-     * are more roots available. The client can use this cursor to request the next page
-     * of results by sending a roots/list request with the cursor parameter set to this
-     */
-    private String nextCursor;
-    /**
-     * See specification for notes on _meta usage
-     */
-    @JsonField("_meta")
-    private Map<String, Object> meta;
+
+    public ListToolsResult() {
+    }
 
     public ListToolsResult(List<Tool> tools) {
         this(tools, null, null);
@@ -57,6 +44,11 @@ public class ListToolsResult implements Result {
 
     public ListToolsResult(List<Tool> tools, String nextCursor) {
         this(tools, nextCursor, null);
+    }
+
+    public ListToolsResult(List<Tool> tools, String nextCursor, Map<String, Object> meta) {
+        super(nextCursor, meta);
+        this.tools = tools;
     }
 
     public void addTool(Tool tool) {

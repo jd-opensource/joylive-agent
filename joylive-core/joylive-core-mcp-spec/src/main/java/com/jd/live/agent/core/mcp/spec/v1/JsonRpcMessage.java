@@ -27,6 +27,7 @@ public interface JsonRpcMessage extends Serializable {
     String METHOD_INITIALIZE = "initialize";
     String METHOD_NOTIFICATIONS_INITIALIZED = "notifications/initialized";
     String METHOD_PING = "ping";
+    String METHOD_HEARTBEAT = "heartbeat";
     String METHOD_NOTIFICATIONS_PROGRESS = "notifications/progress";
     String METHOD_NOTIFICATIONS_CANCELLED = "notifications/cancelled";
 
@@ -54,6 +55,13 @@ public interface JsonRpcMessage extends Serializable {
 
     String METHOD_SAMPLING_CREATE_MESSAGE = "sampling/createMessage";
     String METHOD_ELICITATION_CREATE = "elicitation/create";
+    String METHOD_NOTIFICATIONS_ELICITATION_COMPLETE = "notifications/elicitation/complete";
+
+    String METHOD_TASKS_GET = "tasks/get";
+    String METHOD_TASKS_RESULT = "tasks/result";
+    String METHOD_TASKS_CANCEL = "tasks/cancel";
+    String METHOD_TASKS_LIST = "tasks/list";
+    String METHOD_NOTIFICATIONS_TASKS_STATUS = "otifications/elicitation/complete";
 
     /**
      * Returns the JSON-RPC protocol version string.

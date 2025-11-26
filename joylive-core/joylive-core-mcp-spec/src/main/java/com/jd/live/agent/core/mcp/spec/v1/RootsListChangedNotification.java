@@ -21,34 +21,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
 import java.util.Map;
 
 /**
- * The server's response to a prompts/list request from the client.
+ * A notification from the client to the server, informing it that the list of roots has changed.
+ * This notification should be sent whenever the client adds, removes, or modifies any root.
+ * The server should then request an updated list of roots using the ListRootsRequest.
+ *
+ * @category `notifications/roots/list_changed`
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ListPromptResult implements Result {
-
-    /**
-     * A list of prompts that the server provides.
-     */
-    private List<Prompt> prompts;
-    /**
-     * An optional cursor for pagination. If present, indicates there
-     * are more prompts available.
-     */
-    private String nextCursor;
+public class RootsListChangedNotification implements Notification.MetaNotification {
     /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public ListPromptResult(List<Prompt> prompts, String nextCursor) {
-        this(prompts, nextCursor, null);
-    }
 }

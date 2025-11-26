@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -31,7 +30,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Root implements Serializable {
+public class Root implements Meta {
     /**
      * The URI identifying the root. This *must* start with file:// for now.
      * This restriction may be relaxed in future versions of the protocol to allow other

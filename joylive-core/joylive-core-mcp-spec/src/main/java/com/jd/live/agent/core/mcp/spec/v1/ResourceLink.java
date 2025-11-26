@@ -15,61 +15,67 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
-import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.*;
-
+import java.util.List;
 import java.util.Map;
 
 /**
  * A known resource that the server is capable of reading.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResourceLink implements Content, ResourceContents {
-    /**
-     * A human-readable name for this resource. This can be used by clients to populate UI elements.
-     */
-    private String name;
-    /**
-     * A human-readable title for this resource.
-     */
-    private String title;
-    /**
-     * the URI of the resource.
-     */
-    private String uri;
-    /**
-     * A description of what this resource represents. This can be used
-     * by clients to improve the LLM's understanding of available resources. It can be
-     * thought of like a "hint" to the model.
-     */
-    private String description;
-    /**
-     * The MIME type of this resource, if known.
-     */
-    private String mimeType;
-    /**
-     * The size of the raw resource content, in bytes (i.e., before base64
-     * encoding or any tokenization), if known. This can be used by Hosts to display file
-     * sizes and estimate context window usage.
-     */
-    private Long size;
-    /**
-     * Optional annotations for the client.
-     * The client can use annotations to inform how objects are used or displayed.
-     */
-    private Annotations annotations;
-    /**
-     * See specification for notes on _meta usage
-     */
-    @JsonField("_meta")
-    private Map<String, Object> meta;
+public class ResourceLink extends Resource implements Content {
+
+    private String type = TYPE_RESOURCE_LINK;
+
+    public ResourceLink() {
+    }
+
+    public ResourceLink(String uri, String name, String title, String description, String mimeType, Long size) {
+        super(uri, name, title, description, mimeType, size, null, null, null);
+    }
+
+    public ResourceLink(String uri,
+                        String name,
+                        String title,
+                        String description,
+                        String mimeType,
+                        Long size,
+                        Annotations annotations,
+                        List<Icon> icons,
+                        Map<String, Object> meta) {
+        super(uri, name, title, description, mimeType, size, annotations, icons, meta);
+    }
 
     @Override
     public String getType() {
-        return "resource_link";
+        return TYPE_RESOURCE_LINK;
     }
+
+    public void setType(String type) {
+
+    }
+
+    /**
+     * ResourceLink's Builder implementation
+     */
+    public static class ResourceLinkBuilder extends AbstractResourceBuilder<ResourceLink, ResourceLinkBuilder> {
+
+        @Override
+        protected ResourceLinkBuilder self() {
+            return this;
+        }
+
+        @Override
+        protected ResourceLink createInstance() {
+            return new ResourceLink();
+        }
+
+        /**
+         * Creates a new builder for ResourceLink.
+         *
+         * @return a new ResourceLinkBuilder
+         */
+        public static ResourceLinkBuilder builder() {
+            return new ResourceLinkBuilder();
+        }
+    }
+
 }

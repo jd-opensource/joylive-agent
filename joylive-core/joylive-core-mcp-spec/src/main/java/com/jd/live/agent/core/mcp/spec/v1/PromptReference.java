@@ -15,37 +15,62 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
-import lombok.AllArgsConstructor;
+import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Map;
 
 /**
  * Identifies a prompt for completion requests.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class PromptReference implements CompleteReference, Identifier {
-
-    public static final String TYPE = "ref/prompt";
+public class PromptReference implements CompleteReference, Identifier, Meta {
 
     /**
      * The reference type identifier (typically "ref/prompt")
      */
-    private String type;
+    private String type = TYPE_REF_PROMPT;
+
     /**
      * The name of the prompt
      */
+    @Getter
+    @Setter
     private String name;
     /**
      * An optional title for the prompt
      */
+    @Getter
+    @Setter
     private String title;
 
+    /**
+     * See specification for notes on _meta usage
+     */
+    @Getter
+    @Setter
+    @JsonField("_meta")
+    private Map<String, Object> meta;
+
+    public PromptReference() {
+    }
+
     public PromptReference(String name, String title) {
-        this(TYPE, name, title);
+        this(name, title, null);
+    }
+
+    public PromptReference(String name, String title, Map<String, Object> meta) {
+        this.name = name;
+        this.title = title;
+        this.meta = meta;
+    }
+
+    public String getType() {
+        return TYPE_REF_PROMPT;
+    }
+
+    public void setType(String type) {
+
     }
 
     @Override

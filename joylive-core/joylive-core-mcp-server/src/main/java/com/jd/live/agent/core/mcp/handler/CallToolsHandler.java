@@ -15,14 +15,13 @@
  */
 package com.jd.live.agent.core.mcp.handler;
 
-import com.jd.live.agent.core.exception.InvokeException;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequest;
 import com.jd.live.agent.core.mcp.McpRequestContext;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.McpToolParameter;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.*;
-import com.jd.live.agent.core.util.ExceptionUtils;
 
 import java.util.Map;
 
@@ -30,26 +29,26 @@ import java.util.Map;
 public class CallToolsHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         CallToolRequest req = ctx.convert(request.getParams(), CallToolRequest.class);
         McpToolMethod method = ctx.getToolMethodByName(req.getName());
         if (method == null) {
             return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
         }
-
-        Object[] args = parseArgs(method, createRequest(method, req, ctx), ctx);
-        Object result = invoke(method, args);
-        result = ctx.getVersion().output(result);
-        CallToolResult response = CallToolResult.builder().isError(false).structuredContent(result).build();
-        return JsonRpcResponse.createSuccessResponse(request.getId(), response);
+        try {
+            Object[] args = parseArgs(method, createRequest(method, req, ctx), ctx);
+            Object result = invoke(method, args);
+            result = ctx.getVersion().output(result);
+            CallToolResult response = CallToolResult.builder().structuredContent(result).build();
+            return JsonRpcResponse.createSuccessResponse(request.getId(), response);
+        } catch (Throwable e) {
+            // Tool Execution Errors: Reported in tool results with isError: true
+            return JsonRpcResponse.createSuccessResponse(request.getId(), new CallToolResult(e));
+        }
     }
 
-    private Object invoke(McpToolMethod method, Object[] args) throws InvokeException {
-        try {
-            return method.getMethod().invoke(method.getController(), args);
-        } catch (Throwable e) {
-            throw new InvokeException(ExceptionUtils.getCause(e));
-        }
+    private Object invoke(McpToolMethod method, Object[] args) throws Exception {
+        return method.getMethod().invoke(method.getController(), args);
     }
 
     private McpRequest createRequest(McpToolMethod method, CallToolRequest request, McpRequestContext ctx) {

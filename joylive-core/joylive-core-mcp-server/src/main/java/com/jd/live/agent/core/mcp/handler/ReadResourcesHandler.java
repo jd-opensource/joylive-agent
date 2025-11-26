@@ -16,14 +16,15 @@
 package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.mcp.spec.v1.*;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
+import com.jd.live.agent.core.mcp.spec.v1.*;
 
 @Extension(JsonRpcMessage.METHOD_RESOURCES_READ)
 public class ReadResourcesHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         ReadResourceRequest req = ctx.convert(request.getParams(), ReadResourceRequest.class);
         return JsonRpcResponse.createSuccessResponse(request.getId(), new ReadResourceResult());
     }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.mcp.spec.v1.Request.MetaRequest;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +31,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetPromptRequest implements Request.MetaRequest {
+public class GetPromptRequest implements MetaRequest {
 
     /**
      * The name of the prompt or prompt template.
@@ -39,14 +40,14 @@ public class GetPromptRequest implements Request.MetaRequest {
     /**
      * Arguments to use for templating the prompt.
      */
-    private Map<String, Object> arguments;
+    private Map<String, String> arguments;
     /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public GetPromptRequest(String name, Map<String, Object> arguments) {
+    public GetPromptRequest(String name, Map<String, String> arguments) {
         this(name, arguments, null);
     }
 

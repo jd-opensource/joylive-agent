@@ -17,17 +17,19 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
+import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v5.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v5.util.CloudUtils;
+import org.springframework.http.MediaType;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.plugin.router.springweb.v5.exception.SpringInboundThrower.THROWER;
@@ -67,7 +69,14 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
                 if (e == null) {
                     mc.skipWithResult(v);
                 } else if (request.isMcp()) {
-                    mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
+                    HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
+                    if (response.isCommitted()) {
+                        // sse
+                        mc.skipWithResult(null);
+                    } else {
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
+                    }
                 } else {
                     mc.skipWithThrowable(THROWER.createException(e, request));
                 }

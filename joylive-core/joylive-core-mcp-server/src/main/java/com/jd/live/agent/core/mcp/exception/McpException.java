@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.implement.parser.jackson;
+package com.jd.live.agent.core.mcp.exception;
 
-import com.jd.live.agent.core.parser.annotation.JsonConverter;
+public class McpException extends RuntimeException {
 
-public class SexConverter implements JsonConverter<Object, Sex> {
+    public McpException(String message) {
+        super(message, null, false, false);
+    }
 
-    @Override
-    public Sex convert(Object source) {
-        if (source == null) {
-            return null;
-        }
-        if (source instanceof Integer) {
-            return ((Integer) source) == 1 ? Sex.FEMALE : Sex.MALE;
-        } else {
-            return Sex.valueOf(source.toString());
-        }
+    public McpException(String message, Throwable cause) {
+        super(message, cause, false, false);
     }
 }

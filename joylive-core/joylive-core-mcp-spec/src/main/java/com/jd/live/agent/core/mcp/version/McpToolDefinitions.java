@@ -16,7 +16,6 @@
 package com.jd.live.agent.core.mcp.version;
 
 import com.jd.live.agent.core.mcp.spec.v1.JsonSchema;
-import com.jd.live.agent.core.mcp.spec.v1.JsonSchema.JsonSchemaRef;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -35,7 +34,7 @@ public interface McpToolDefinitions {
      * @param schemaFunc Function to create schema if not found
      * @return Schema reference with tracking information
      */
-    <K> JsonSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc);
+    <K> McpSchemaRef create(K key, Function<K, String> nameFunc, Function<K, JsonSchema> schemaFunc);
 
     /**
      * Extracts reusable schema definitions based on reference counts.

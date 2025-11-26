@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.mcp.spec.v1.Request.MetaRequest;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,7 +32,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UnsubscribeRequest implements Request.MetaRequest {
+public class UnsubscribeRequest implements MetaRequest {
 
     /**
      * the URI of the resource to subscribe to. The URI can use any protocol;

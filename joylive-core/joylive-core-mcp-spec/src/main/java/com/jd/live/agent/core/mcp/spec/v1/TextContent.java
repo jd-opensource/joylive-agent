@@ -16,9 +16,7 @@
 package com.jd.live.agent.core.mcp.spec.v1;
 
 import com.jd.live.agent.core.parser.annotation.JsonField;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Map;
@@ -26,36 +24,48 @@ import java.util.Map;
 /**
  * Text provided to or from an LLM.
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class TextContent implements Annotated, Content {
 
-    /**
-     * Optional annotations for the client
-     */
-    private Annotations annotations;
+    private String type = TYPE_TEXT;
     /**
      * The text content of the message
      */
+    @Getter
+    @Setter
     private String text;
+    /**
+     * Optional annotations for the client
+     */
+    @Getter
+    @Setter
+    private Annotations annotations;
     /**
      * See specification for notes on _meta usage
      */
+    @Getter
+    @Setter
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public TextContent(Annotations annotations, String text) {
-        this(annotations, text, null);
+    public TextContent() {
     }
 
-    public TextContent(String content) {
-        this(null, content, null);
+    public TextContent(String text) {
+        this.text = text;
+    }
+
+    public TextContent(String text, Annotations annotations, Map<String, Object> meta) {
+        this.text = text;
+        this.annotations = annotations;
+        this.meta = meta;
     }
 
     @Override
     public String getType() {
-        return "text";
+        return TYPE_TEXT;
+    }
+
+    public void setType(String type) {
+
     }
 }

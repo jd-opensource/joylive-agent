@@ -34,11 +34,6 @@ import java.util.Map;
 public class ServerCapabilities implements Serializable {
 
     /**
-     * resent if the server supports argument autocompletion suggestions
-     */
-    private CompletionCapabilities completions;
-
-    /**
      * Experimental, non-standard capabilities that the server supports
      */
     private Map<String, Object> experimental;
@@ -47,6 +42,11 @@ public class ServerCapabilities implements Serializable {
      * Present if the server supports sending log messages to the client
      */
     private LoggingCapabilities logging;
+
+    /**
+     * resent if the server supports argument autocompletion suggestions
+     */
+    private CompletionCapabilities completions;
 
     /**
      * Present if the server offers any prompt templates
@@ -62,6 +62,11 @@ public class ServerCapabilities implements Serializable {
      * Present if the server offers any tools to call
      */
     private ToolCapabilities tools;
+
+    /**
+     * Present if the server supports task-augmented requests.
+     */
+    private TaskCapabilities tasks;
 
     /**
      * Present if the server supports argument autocompletion suggestions.
@@ -89,7 +94,7 @@ public class ServerCapabilities implements Serializable {
         /**
          * Whether this server supports notifications for changes to
          */
-        private boolean listChanged;
+        private Boolean listChanged;
 
     }
 
@@ -101,17 +106,15 @@ public class ServerCapabilities implements Serializable {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ResourceCapabilities implements Serializable {
-
         /**
          * Whether this server supports subscribing to resource updates
          */
-        private boolean subscribe;
+        private Boolean subscribe;
 
         /**
          * Whether this server supports notifications for changes to
          */
-        private boolean listChanged;
-
+        private Boolean listChanged;
     }
 
     /**
@@ -122,11 +125,81 @@ public class ServerCapabilities implements Serializable {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ToolCapabilities implements Serializable {
-
         /**
          * Whether this server supports notifications for changes to
          */
-        private boolean listChanged;
+        private Boolean listChanged;
+    }
+
+    /**
+     * Present if the server supports task-augmented requests.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskCapabilities implements Serializable {
+        /**
+         * Whether this server supports tasks/list.
+         */
+        private TaskListCapabilities list;
+        /**
+         * Whether this server supports tasks/cancel.
+         */
+        private TaskCancelCapabilities cancel;
+        /**
+         * Specifies which request types can be augmented with tasks.
+         */
+        private TaskRequestCapabilities requests;
+    }
+
+    /**
+     * Whether this server supports tasks/list.
+     */
+    public static class TaskListCapabilities implements Serializable {
+
+    }
+
+    /**
+     * Whether this server supports tasks/cancel.
+     */
+    public static class TaskCancelCapabilities implements Serializable {
+
+    }
+
+    /**
+     * Specifies which request types can be augmented with tasks.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskRequestCapabilities implements Serializable {
+
+        /**
+         * Task support for tool-related requests.
+         */
+        private TaskToolCapabilities tools;
+    }
+
+    /**
+     * Task support for tool-related requests.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskToolCapabilities implements Serializable {
+        /**
+         * Whether the server supports task-augmented tools/call requests.
+         */
+        private TaskCallCapabilities call;
+    }
+
+    /**
+     * Whether the server supports task-augmented tools/call requests.
+     */
+    public static class TaskCallCapabilities implements Serializable {
 
     }
 }

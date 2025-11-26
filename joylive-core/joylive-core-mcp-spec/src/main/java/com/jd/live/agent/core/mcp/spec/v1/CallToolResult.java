@@ -18,10 +18,12 @@ package com.jd.live.agent.core.mcp.spec.v1;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * The server's response to a tools/call request from the client.
@@ -41,7 +43,8 @@ public class CallToolResult implements Result {
      * If true, indicates that the tool execution failed and the content contains error information.
      * If false or absent, indicates successful execution.
      */
-    private boolean isError;
+    @JsonField("isError")
+    private Boolean error;
     /**
      * An optional JSON object that represents the structured result of the tool call.
      */
@@ -52,16 +55,27 @@ public class CallToolResult implements Result {
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public CallToolResult(List<Content> content, boolean isError) {
-        this(content, isError, null, null);
+    public CallToolResult(List<Content> content, Boolean error) {
+        this(content, error, null, null);
     }
 
-    public CallToolResult(List<Content> content, boolean isError, Map<String, Object> structuredContent) {
-        this(content, isError, structuredContent, null);
+    public CallToolResult(List<Content> content, Boolean error, Map<String, Object> structuredContent) {
+        this(content, error, structuredContent, null);
     }
 
-    public CallToolResult(String content, Boolean isError) {
-        this(new ArrayList<>(Collections.singletonList(new TextContent(content))), isError, null);
+    public CallToolResult(String content, Boolean error) {
+        this(new ArrayList<>(Collections.singletonList(new TextContent(content))), error, null);
+    }
+
+    public CallToolResult(Throwable e) {
+        error = Boolean.TRUE;
+        Throwable cause = e;
+        if (e instanceof InvocationTargetException) {
+            cause = e.getCause();
+        } else if (e instanceof ExecutionException) {
+            cause = e.getCause();
+        }
+        addContent(new TextContent(cause.getMessage()));
     }
 
     /**

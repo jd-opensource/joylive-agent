@@ -59,7 +59,7 @@ public class MonoConverter implements Converter<Object, Object> {
             return Mono.fromCompletionStage((CompletionStage<Object>) source);
         } else if (source instanceof JsonRpcResponse) {
             JsonRpcResponse response = (JsonRpcResponse) source;
-            if (response.isSuccess()) {
+            if (response.success()) {
                 Object result = response.getResult();
                 if (result instanceof Mono) {
                     return (Mono<Object>) result;

@@ -17,16 +17,17 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcMessage;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
-import com.jd.live.agent.core.mcp.spec.v1.ListResourcesTemplateResult;
+import com.jd.live.agent.core.mcp.spec.v1.ListResourceTemplateResult;
 
 @Extension(JsonRpcMessage.METHOD_RESOURCES_TEMPLATES_LIST)
 public class ListResourcesTemplatesHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
-        return JsonRpcResponse.createSuccessResponse(request.getId(), new ListResourcesTemplateResult());
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
+        return JsonRpcResponse.createSuccessResponse(request.getId(), new ListResourceTemplateResult());
     }
 }

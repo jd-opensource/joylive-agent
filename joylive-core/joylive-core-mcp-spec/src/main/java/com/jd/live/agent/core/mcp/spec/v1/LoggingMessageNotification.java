@@ -31,7 +31,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoggingMessageNotification implements Notification {
+public class LoggingMessageNotification implements Notification.MetaNotification {
     /**
      * The severity levels. The minimum log level is set by the client.
      */

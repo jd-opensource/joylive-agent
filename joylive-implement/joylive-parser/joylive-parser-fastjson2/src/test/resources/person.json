@@ -1,7 +1,7 @@
 {
   "name": "person",
   "age": 41,
-  "sex": 1,
+  "sex": "male",
   "aliases": [
     "John Doe",
     "William Smith"

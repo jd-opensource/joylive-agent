@@ -16,8 +16,9 @@
 package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.mcp.spec.v1.*;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.exception.McpException;
+import com.jd.live.agent.core.mcp.spec.v1.*;
 import com.jd.live.agent.core.mcp.spec.v1.CompleteResult.CompleteCompletion;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import java.util.ArrayList;
 public class CompletionCompleteHandler implements McpHandler {
 
     @Override
-    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws Exception {
+    public JsonRpcResponse handle(JsonRpcRequest request, McpRequestContext ctx) throws McpException {
         CompleteRequest req = ctx.convert(request.getParams(), CompleteRequest.class);
         CompleteCompletion completion = new CompleteCompletion(new ArrayList<>(), 0, false);
         return JsonRpcResponse.createSuccessResponse(request.getId(), new CompleteResult(completion));

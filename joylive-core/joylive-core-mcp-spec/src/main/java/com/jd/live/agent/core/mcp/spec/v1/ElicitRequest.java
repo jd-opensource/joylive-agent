@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.mcp.spec.v1;
 
+import com.jd.live.agent.core.mcp.spec.v1.Request.MetaRequest;
 import com.jd.live.agent.core.parser.annotation.JsonField;
 import lombok.*;
 
@@ -29,7 +30,10 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ElicitRequest implements Request.MetaRequest {
+public class ElicitRequest implements MetaRequest {
+
+    private ElicitMode mode;
+
     /**
      * The message to present to the user
      */
@@ -38,14 +42,38 @@ public class ElicitRequest implements Request.MetaRequest {
      * A restricted subset of JSON Schema. Only top-level
      * properties are allowed, without nesting
      */
-    private Map<String, Object> requestedSchema;
+    private JsonSchema requestedSchema;
+    /**
+     * The ID of the elicitation, which must be unique within the context of the server.
+     * The client MUST treat this ID as an opaque value.
+     */
+    private String elicitationId;
+    /**
+     * The URL that the user should navigate to.
+     *
+     * @format uri
+     */
+    private String url;
+    /**
+     * If specified, the caller is requesting task-augmented execution for this request.
+     * The request will return a CreateTaskResult immediately, and the actual result can be
+     * retrieved later via tasks/result.
+     * <p>
+     * Task augmentation is subject to capability negotiation - receivers MUST declare support
+     * for task augmentation of specific request types in their capabilities.
+     */
+    private TaskMetadata task;
     /**
      * See specification for notes on _meta usage
      */
     @JsonField("_meta")
     private Map<String, Object> meta;
 
-    public ElicitRequest(String message, Map<String, Object> requestedSchema) {
-        this(message, requestedSchema, null);
+    public enum ElicitMode {
+        @JsonField("form")
+        FORM,
+        @JsonField("url")
+        URL
+
     }
 }
