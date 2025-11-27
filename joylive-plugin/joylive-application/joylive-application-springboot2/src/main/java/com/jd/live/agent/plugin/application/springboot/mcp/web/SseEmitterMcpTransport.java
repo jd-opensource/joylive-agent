@@ -118,7 +118,10 @@ public class SseEmitterMcpTransport implements McpTransport {
      * Closes the transport and logs the timeout.
      */
     private void onTimeout() {
-        close(() -> logger.warn("SSE connection is timed out for client: {}", clientId));
+        close(() -> {
+            emitter.complete();
+            logger.warn("SSE connection is timed out for client: {}", clientId);
+        });
     }
 
     /**
