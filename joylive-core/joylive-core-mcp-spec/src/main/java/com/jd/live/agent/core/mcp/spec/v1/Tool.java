@@ -65,6 +65,10 @@ public class Tool implements Icons, Serializable {
      */
     private JsonSchema outputSchema;
     /**
+     * Execution-related properties for this tool.
+     */
+    private ToolExecution execution;
+    /**
      * Optional additional tool information.
      */
     private ToolAnnotations annotations;
