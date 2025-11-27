@@ -254,6 +254,7 @@ public abstract class AbstractMcpController {
                 version,
                 serverCapabilities,
                 serverInfo,
+                mcpConfig.getMetadata(),
                 predicate
         );
     }

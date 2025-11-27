@@ -241,6 +241,7 @@ agent:
       path: ${CONFIG_MCP_PATH:/mcp}
       timeout: ${CONFIG_MCP_TIMEOUT}
       governanceEnabled: ${CONFIG_MCP_GOVERNANCE_ENABLED:true}
+      metadata: ${CONFIG_MCP_METADATA}
     mq:
       liveMode: ${CONFIG_LIVE_MQ_MODE:ISOLATION_CLUSTER}
       laneMode: ${CONFIG_LANE_MQ_MODE:SHARED}

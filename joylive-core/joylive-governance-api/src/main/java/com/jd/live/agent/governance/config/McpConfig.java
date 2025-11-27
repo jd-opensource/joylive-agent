@@ -19,6 +19,8 @@ import com.jd.live.agent.core.util.URI;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 @Getter
 @Setter
 public class McpConfig {
@@ -39,6 +41,8 @@ public class McpConfig {
     private long timeout = DEFAULT_TIME_OUT;
 
     private boolean governanceEnabled = true;
+
+    private Map<String, Object> metadata;
 
     public boolean isMcpPath(String path) {
         return enabled && URI.isSubPath(path, this.path);

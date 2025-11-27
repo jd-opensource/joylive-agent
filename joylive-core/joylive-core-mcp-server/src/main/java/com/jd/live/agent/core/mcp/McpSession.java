@@ -17,6 +17,7 @@ package com.jd.live.agent.core.mcp;
 
 import com.jd.live.agent.core.mcp.spec.v1.*;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
@@ -52,6 +53,13 @@ public interface McpSession {
      * @param request The initialization request to process
      */
     InitializeResult initialize(InitializeRequest request);
+
+    /**
+     * Returns the extension metadata provided in the MCP initialization request.
+     *
+     * @return Map containing client-supplied metadata key-value pairs
+     */
+    Map<String, Object> getMetadata();
 
     /**
      * Returns the current logging level for this session.
@@ -110,9 +118,11 @@ public interface McpSession {
         private final String id;
         private final ServerCapabilities serverCapabilities;
         private final Implementation serverInfo;
+        private final Map<String, Object> serverMetadata;
         private final Predicate<String> versionPredicate;
         private ClientCapabilities clientCapabilities;
         private Implementation clientInfo;
+        private Map<String, Object> clientMetadata;
         private LoggingLevel loggingLevel;
 
         private String version;
@@ -123,11 +133,13 @@ public interface McpSession {
                                  String version,
                                  ServerCapabilities serverCapabilities,
                                  Implementation serverInfo,
+                                 Map<String, Object> serverMetadata,
                                  Predicate<String> idPredicate) {
             this.id = id;
             this.version = version;
             this.serverCapabilities = serverCapabilities;
             this.serverInfo = serverInfo;
+            this.serverMetadata = serverMetadata;
             this.versionPredicate = idPredicate;
             this.lastAccessedTime = System.currentTimeMillis();
         }
@@ -146,6 +158,7 @@ public interface McpSession {
         public InitializeResult initialize(InitializeRequest request) {
             this.clientCapabilities = request.getCapabilities();
             this.clientInfo = request.getClientInfo();
+            this.clientMetadata = request.getMeta();
             String protocolVersion = request.getProtocolVersion();
             this.version = versionPredicate.test(protocolVersion) ? protocolVersion : version;
             return InitializeResult.builder()
@@ -153,8 +166,13 @@ public interface McpSession {
                     .capabilities(serverCapabilities)
                     .serverInfo(serverInfo)
                     .instructions(null)
-                    .meta(null)
+                    .meta(serverMetadata)
                     .build();
+        }
+
+        @Override
+        public Map<String, Object> getMetadata() {
+            return clientMetadata;
         }
 
         @Override
