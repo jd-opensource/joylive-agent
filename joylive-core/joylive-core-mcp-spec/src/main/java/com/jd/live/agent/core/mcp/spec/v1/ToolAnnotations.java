@@ -51,8 +51,7 @@ public class ToolAnnotations {
      * <p>
      * Default: true
      */
-    @Builder.Default
-    private Boolean destructiveHint = true;
+    private Boolean destructiveHint;
     /**
      * If true, calling the tool repeatedly with the same arguments
      * will have no additional effect on its environment.
@@ -70,8 +69,11 @@ public class ToolAnnotations {
      * <p>
      * Default: true
      */
-    @Builder.Default
-    private Boolean openWorldHint = true;
+    private Boolean openWorldHint;
 
+    /**
+     * It determines whether the result of a tool execution should be returned directly to the client
+     * or if it should be processed further by the language model (LLM)
+     */
     private Boolean returnDirect;
 }
