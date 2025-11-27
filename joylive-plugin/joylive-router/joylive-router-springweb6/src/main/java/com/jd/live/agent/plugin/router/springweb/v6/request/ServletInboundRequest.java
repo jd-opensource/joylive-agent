@@ -16,8 +16,6 @@
 package com.jd.live.agent.plugin.router.springweb.v6.request;
 
 import com.jd.live.agent.core.mcp.McpToolMethod;
-import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -27,7 +25,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -47,20 +44,17 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     private final Predicate<Class<?>> systemHanderPredicate;
     private final Predicate<String> systemPathPredicate;
     private final Predicate<String> mcpPathPredicate;
-    private final JsonPathParser parser;
 
     public ServletInboundRequest(HttpServletRequest request,
                                  Object[] arguments,
                                  Object handler,
-                                 GovernanceConfig config,
-                                 JsonPathParser parser) {
+                                 GovernanceConfig config) {
         super(request);
         this.arguments = arguments;
         this.handler = handler;
         this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
         this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
         this.mcpPathPredicate = config.getMcpConfig()::isMcpPath;
-        this.parser = parser;
         URI u = null;
         try {
             u = new URI(request.getRequestURI());
@@ -103,14 +97,6 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     public boolean isMcp() {
         return McpToolMethod.HANDLE_METHOD != null && mcpPathPredicate != null && mcpPathPredicate.test(getPath());
-    }
-
-    public Object getMcpRequestId() {
-        try {
-            return parser.read(request.getInputStream(), JsonRpcRequest.JSON_PATH_ID);
-        } catch (IOException e) {
-            return null;
-        }
     }
 
     @Override

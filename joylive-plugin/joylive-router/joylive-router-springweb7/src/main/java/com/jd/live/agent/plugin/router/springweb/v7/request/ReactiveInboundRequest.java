@@ -16,7 +16,6 @@
 package com.jd.live.agent.plugin.router.springweb.v7.request;
 
 import com.jd.live.agent.core.mcp.McpToolMethod;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
@@ -58,19 +57,14 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     private final Predicate<Class<?>> systemHanderPredicate;
     private final Predicate<String> systemPathPredicate;
     private final Predicate<String> mcpPathPredicate;
-    private final JsonPathParser parser;
 
-    public ReactiveInboundRequest(ServerWebExchange exchange,
-                                  Object handler,
-                                  GovernanceConfig config,
-                                  JsonPathParser parser) {
+    public ReactiveInboundRequest(ServerWebExchange exchange, Object handler, GovernanceConfig config) {
         super(exchange.getRequest());
         this.exchange = exchange;
         this.handler = handler;
         this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
         this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
         this.mcpPathPredicate = config.getMcpConfig()::isMcpPath;
-        this.parser = parser;
         this.uri = request.getURI();
     }
 

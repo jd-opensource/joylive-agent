@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -47,11 +46,8 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final JsonPathParser parser;
-
-    public RouterFunctionInterceptor(InvocationContext context, JsonPathParser parser) {
+    public RouterFunctionInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     @Override
@@ -87,7 +83,7 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("rawtypes")
     private HandlerFunction wrap(Object target, HandlerFunction handler) {
         return req -> {
-            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, null, context.getGovernanceConfig(), parser);
+            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, null, context.getGovernanceConfig());
             if (!request.isSystem()) {
                 HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
                 try {

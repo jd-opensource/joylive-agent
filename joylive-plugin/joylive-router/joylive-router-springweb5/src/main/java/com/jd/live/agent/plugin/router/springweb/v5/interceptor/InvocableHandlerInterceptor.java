@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
@@ -37,11 +36,8 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final JsonPathParser parser;
-
-    public InvocableHandlerInterceptor(InvocationContext context, JsonPathParser parser) {
+    public InvocableHandlerInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     @Override
@@ -57,8 +53,7 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
                 servletRequest,
                 ctx.getArguments(),
                 CloudUtils.getHandler(ctx.getTarget()),
-                context.getGovernanceConfig(),
-                parser);
+                context.getGovernanceConfig());
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
             context.inward(invocation, mc::invokeOrigin, (v, e) -> {
