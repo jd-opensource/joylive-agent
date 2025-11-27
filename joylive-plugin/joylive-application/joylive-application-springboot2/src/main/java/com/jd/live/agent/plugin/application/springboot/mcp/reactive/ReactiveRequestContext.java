@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.application.springboot.mcp.reactive;
 
 import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.core.mcp.McpSession;
+import com.jd.live.agent.core.mcp.McpToolInterceptor;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
@@ -50,8 +51,9 @@ public class ReactiveRequestContext extends AbstractRequestContext {
                                   JsonSchemaParser jsonSchemaParser,
                                   McpVersion version,
                                   OpenApi openApi,
+                                  McpToolInterceptor interceptor,
                                   ServerWebExchange exchange) {
-        super(session, methods, paths, converter, jsonSchemaParser, version, openApi);
+        super(session, methods, paths, converter, jsonSchemaParser, version, openApi, interceptor);
         this.exchange = exchange;
     }
 

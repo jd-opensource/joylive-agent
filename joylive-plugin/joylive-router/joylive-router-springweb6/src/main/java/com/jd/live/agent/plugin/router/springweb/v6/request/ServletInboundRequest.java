@@ -15,12 +15,12 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v6.request;
 
+import com.jd.live.agent.core.mcp.McpToolMethod;
+import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.core.mcp.McpToolMethod;
-import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.governance.request.HeaderProvider;
 import jakarta.servlet.http.Cookie;
@@ -93,6 +93,9 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
             }
         }
         if (systemPathPredicate != null && systemPathPredicate.test(getPath())) {
+            return true;
+        }
+        if (isMcp()) {
             return true;
         }
         return super.isSystem();

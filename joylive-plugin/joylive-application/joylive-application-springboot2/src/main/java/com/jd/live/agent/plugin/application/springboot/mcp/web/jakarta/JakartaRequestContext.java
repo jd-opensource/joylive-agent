@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.application.springboot.mcp.web.jakarta;
 
 import com.jd.live.agent.core.mcp.McpRequestContext.AbstractRequestContext;
 import com.jd.live.agent.core.mcp.McpSession;
+import com.jd.live.agent.core.mcp.McpToolInterceptor;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.version.McpVersion;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
@@ -75,10 +76,11 @@ public class JakartaRequestContext extends AbstractRequestContext {
                                  JsonSchemaParser jsonSchemaParser,
                                  McpVersion version,
                                  OpenApi openApi,
+                                 McpToolInterceptor interceptor,
                                  WebRequest webRequest,
                                  HttpServletRequest httpRequest,
                                  HttpServletResponse httpResponse) {
-        super(session, methods, paths, converter, jsonSchemaParser, version, openApi);
+        super(session, methods, paths, converter, jsonSchemaParser, version, openApi, interceptor);
         this.webRequest = webRequest;
         this.httpRequest = httpRequest;
         this.httpResponse = httpResponse;

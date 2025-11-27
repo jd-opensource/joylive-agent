@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
@@ -25,12 +24,9 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.MediaType;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.plugin.router.springweb.v7.exception.SpringInboundThrower.THROWER;
 
 /**
@@ -66,15 +62,6 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
             context.inward(invocation, mc::invokeOrigin, (v, e) -> {
                 if (e == null) {
                     mc.skipWithResult(v);
-                } else if (request.isMcp()) {
-                    HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
-                    if (response.isCommitted()) {
-                        // sse
-                        mc.skipWithResult(null);
-                    } else {
-                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                        mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
-                    }
                 } else {
                     mc.skipWithThrowable(THROWER.createException(e, request));
                 }

@@ -16,15 +16,16 @@
 package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.mcp.McpRequest;
-import com.jd.live.agent.core.mcp.McpRequestContext;
-import com.jd.live.agent.core.mcp.McpToolMethod;
-import com.jd.live.agent.core.mcp.McpToolParameter;
+import com.jd.live.agent.core.mcp.*;
 import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.*;
 
 import java.util.Map;
 
+/**
+ * Handler for processing MCP tool call requests.
+ * Implements the JSON-RPC method for tool execution.
+ */
 @Extension(JsonRpcMessage.METHOD_TOOLS_CALL)
 public class CallToolsHandler implements McpHandler {
 
@@ -36,8 +37,12 @@ public class CallToolsHandler implements McpHandler {
             return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
         }
         try {
-            Object[] args = parseArgs(method, createRequest(method, req, ctx), ctx);
-            Object result = invoke(method, args);
+            McpRequest mcpRequest = createRequest(method, req, ctx);
+            Object[] args = parseArgs(method, mcpRequest, ctx);
+            McpToolInterceptor interceptor = ctx.getInterceptor();
+            Object result = interceptor != null
+                    ? interceptor.intercept(new McpToolInvocation(mcpRequest, ctx.getSession(), method, args))
+                    : invoke(method, args);
             result = ctx.getVersion().output(result);
             CallToolResult response = CallToolResult.builder().structuredContent(result).build();
             return JsonRpcResponse.createSuccessResponse(request.getId(), response);

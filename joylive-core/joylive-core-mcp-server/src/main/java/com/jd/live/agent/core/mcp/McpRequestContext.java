@@ -50,6 +50,15 @@ public interface McpRequestContext extends ObjectConverter {
     ObjectConverter getConverter();
 
     /**
+     * Returns the McpToolInterceptor for MCP tool method execution.
+     *
+     * @return The McpToolInterceptor instance
+     */
+    default McpToolInterceptor getInterceptor() {
+        return null;
+    }
+
+    /**
      * Returns the JSON schema parser instance.
      *
      * @return A parser that can generate JSON schema definitions
@@ -174,6 +183,8 @@ public interface McpRequestContext extends ObjectConverter {
 
         private final ObjectConverter converter;
 
+        private final McpToolInterceptor interceptor;
+
         private final JsonSchemaParser jsonSchemaParser;
 
         private final McpVersion version;
@@ -186,7 +197,8 @@ public interface McpRequestContext extends ObjectConverter {
                                       ObjectConverter converter,
                                       JsonSchemaParser jsonSchemaParser,
                                       McpVersion version,
-                                      OpenApi openApi) {
+                                      OpenApi openApi,
+                                      McpToolInterceptor interceptor) {
             this.session = session;
             this.methods = methods;
             this.paths = paths;
@@ -194,6 +206,7 @@ public interface McpRequestContext extends ObjectConverter {
             this.jsonSchemaParser = jsonSchemaParser;
             this.version = version;
             this.openApi = openApi;
+            this.interceptor = interceptor;
         }
 
     }
