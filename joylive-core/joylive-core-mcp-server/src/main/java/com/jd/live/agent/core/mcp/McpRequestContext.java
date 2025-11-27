@@ -110,14 +110,38 @@ public interface McpRequestContext extends ObjectConverter {
      */
     Object getHeader(String name);
 
+    /**
+     * Returns all HTTP headers from the request.
+     *
+     * @return Map of header names to their values
+     */
     Map<String, ? extends Object> getHeaders();
 
+    /**
+     * Returns all cookies from the request.
+     * @return Map of cookie names to their values
+     */
     Map<String, ? extends Object> getCookies();
 
+    /**
+     * Gets a specific cookie value by name.
+     * @param name The cookie name
+     * @return The cookie value or null if not found
+     */
     Object getCookie(String name);
 
+    /**
+     * Retrieves an attribute from the session.
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
     Object getSessionAttribute(String name);
 
+    /**
+     * Retrieves an attribute from the request.
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
     Object getRequestAttribute(String name);
 
     /**
