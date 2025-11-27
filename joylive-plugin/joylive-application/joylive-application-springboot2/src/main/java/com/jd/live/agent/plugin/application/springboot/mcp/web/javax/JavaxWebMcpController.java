@@ -83,8 +83,11 @@ public class JavaxWebMcpController extends AbstractMcpController {
         long timeout = config.getMcpConfig().getTimeout();
         SseEmitter emitter = timeout > 0 ? new SseEmitter(timeout) : new SseEmitter();
         SseEmitterMcpTransport transport = new SseEmitterMcpTransport(emitter, clientId, this::createSession);
-        transports.put(clientId, transport);
+        McpTransport old = transports.put(clientId, transport);
         transport.send(null, EventType.ENDPOINT, request.getRequestURI() + "?clientId=" + clientId);
+        if (old != null) {
+            old.close();
+        }
         return emitter;
     }
 

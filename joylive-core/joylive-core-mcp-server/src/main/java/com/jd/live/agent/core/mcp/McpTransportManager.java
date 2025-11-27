@@ -41,7 +41,7 @@ public interface McpTransportManager {
      * @param clientId The unique client identifier
      * @param client   The client to store
      */
-    void put(String clientId, McpTransport client);
+    McpTransport put(String clientId, McpTransport client);
 
     /**
      * Removes a client by its ID.
@@ -62,8 +62,8 @@ public interface McpTransportManager {
         }
 
         @Override
-        public void put(String clientId, McpTransport client) {
-            clients.put(clientId, client);
+        public McpTransport put(String clientId, McpTransport client) {
+            return clients.put(clientId, client);
         }
 
         @Override

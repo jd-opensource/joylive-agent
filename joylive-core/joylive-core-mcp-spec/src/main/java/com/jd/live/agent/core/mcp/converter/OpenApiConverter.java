@@ -150,7 +150,8 @@ public class OpenApiConverter {
             }
         }
         required = required.isEmpty() ? null : required;
-        return properties.isEmpty() ? null : JsonSchema.builder().type(TYPE_OBJECT).required(required).properties(properties).build();
+        // Fix NPE issue when inputSchema is null in langchain4j-mcp
+        return JsonSchema.builder().type(TYPE_OBJECT).required(required).properties(properties).build();
     }
 
     /**

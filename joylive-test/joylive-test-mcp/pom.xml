@@ -11,6 +11,10 @@
 
     <artifactId>joylive-test-mcp</artifactId>
 
+    <properties>
+        <langchain4j.version>1.9.0-beta16</langchain4j.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -19,6 +23,11 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-parser-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-mcp</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
     </dependencies>
 
