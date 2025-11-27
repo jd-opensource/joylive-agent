@@ -28,6 +28,13 @@ import java.util.Map;
 public interface McpRequest {
 
     /**
+     * Returns the IP address of the client that sent the request.
+     *
+     * @return The client's IP address as a string
+     */
+    String getRemoteAddr();
+
+    /**
      * Returns all query parameters from the request.
      *
      * @return a map of query parameter names to their values
@@ -95,7 +102,7 @@ public interface McpRequest {
      *
      * @return a map of path variable names to their values
      */
-    Map<String, Object> getPaths();
+    Map<String, ? extends Object> getPaths();
 
     /**
      * Returns a specific path variable value by name.
@@ -107,7 +114,7 @@ public interface McpRequest {
         if (name == null) {
             return null;
         }
-        Map<String, Object> map = getPaths();
+        Map<String, ? extends Object> map = getPaths();
         return map == null ? null : map.get(name);
     }
 
@@ -118,11 +125,4 @@ public interface McpRequest {
      * @return the value of the specified body parameter, or null if not present
      */
     Object getBody(String name);
-
-    /**
-     * Returns a specific value from the request body.
-     *
-     * @return the value of the specified body parameter, or null if not present
-     */
-    Object getBody();
 }

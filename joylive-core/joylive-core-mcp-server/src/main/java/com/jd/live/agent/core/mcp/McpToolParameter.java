@@ -367,27 +367,49 @@ public class McpToolParameter {
         /**
          * Query string parameters.
          */
-        QUERY,
+        QUERY("query"),
         /**
          * URL path variables.
          */
-        PATH,
+        PATH("path"),
         /**
          * HTTP headers.
          */
-        HEADER,
+        HEADER("header"),
         /**
          * HTTP cookies.
          */
-        COOKIE,
+        COOKIE("cookie"),
         /**
          * Request body.
          */
-        BODY,
+        BODY("body"),
         /**
          * System-generated parameters.
          */
-        SYSTEM
+        SYSTEM("system");
+
+        private String value;
+
+        Location(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static Location fromValue(String value) {
+            if (value == null) {
+                return null;
+            }
+            for (Location location : Location.values()) {
+                if (value.equals(location.value)) {
+                    return location;
+                }
+            }
+            return null;
+        }
     }
 
 }

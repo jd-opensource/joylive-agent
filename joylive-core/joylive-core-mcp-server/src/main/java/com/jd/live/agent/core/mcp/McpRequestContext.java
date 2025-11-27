@@ -154,6 +154,13 @@ public interface McpRequestContext extends ObjectConverter {
     Object getRequestAttribute(String name);
 
     /**
+     * Returns the IP address of the client that sent the request.
+     *
+     * @return The client's IP address as a string
+     */
+    String getRemoteAddr();
+
+    /**
      * Retrieves OpenApi
      *
      * @return open api insance

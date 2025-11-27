@@ -290,7 +290,6 @@ public class JakartaWebMcpController extends AbstractMcpController {
                                             WebRequest webRequest,
                                             HttpServletRequest request,
                                             HttpServletResponse response) {
-        // TODO interceptor for service governance
         return JakartaRequestContext.builder()
                 .session(session)
                 .methods(methods)
@@ -299,6 +298,7 @@ public class JakartaWebMcpController extends AbstractMcpController {
                 .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                 .version(versions.get(session.getVersion()))
                 .openApi(openApi.get())
+                .interceptor(this::intercept)
                 .webRequest(webRequest)
                 .httpRequest(request)
                 .httpResponse(response)

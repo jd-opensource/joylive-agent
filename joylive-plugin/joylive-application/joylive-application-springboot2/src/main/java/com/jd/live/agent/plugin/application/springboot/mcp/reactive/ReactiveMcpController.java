@@ -117,6 +117,7 @@ public class ReactiveMcpController extends AbstractMcpController {
                 .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                 .version(getVersion(getMcpVersion(exchange)))
                 .openApi(openApi.get())
+                .interceptor(this::intercept)
                 .exchange(exchange)
                 .build();
     }
@@ -127,7 +128,7 @@ public class ReactiveMcpController extends AbstractMcpController {
      * @param exchange The server web exchange containing request/response information
      * @return Version string if found in cookies, null otherwise
      */
-    private static String getMcpVersion(ServerWebExchange exchange) {
+    private String getMcpVersion(ServerWebExchange exchange) {
         HttpCookie cookie = exchange.getRequest().getCookies().getFirst(Request.KEY_VERSION);
         return cookie != null ? cookie.getValue() : null;
     }

@@ -38,6 +38,8 @@ public class McpConfig {
 
     private long timeout = DEFAULT_TIME_OUT;
 
+    private boolean governanceEnabled = true;
+
     public boolean isMcpPath(String path) {
         return enabled && URI.isSubPath(path, this.path);
     }

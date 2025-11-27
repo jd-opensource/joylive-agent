@@ -476,7 +476,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                 .location(Location.SYSTEM)
                 .systemParser(((req, ctx) -> {
                     if (location == Location.BODY) {
-                        Object value = req.getBody();
+                        Object value = req.getBody(builder.arg());
                         if (!isEmpty(arg)) {
                             value = value instanceof Map ? cascadeAndGet((Map<String, Object>) value, arg, HashMap::new) : null;
                         }

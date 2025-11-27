@@ -287,7 +287,6 @@ public class JavaxWebMcpController extends AbstractMcpController {
                                             WebRequest webRequest,
                                             HttpServletRequest request,
                                             HttpServletResponse response) {
-        // TODO interceptor for service governance
         return JavaxRequestContext.builder()
                 .session(session)
                 .methods(methods)
@@ -296,6 +295,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
                 .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                 .version(versions.get(session.getVersion()))
                 .openApi(openApi.get())
+                .interceptor(this::intercept)
                 .webRequest(webRequest)
                 .httpRequest(request)
                 .httpResponse(response)

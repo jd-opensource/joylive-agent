@@ -88,67 +88,38 @@ public class JakartaRequestContext extends AbstractRequestContext {
         this.cookies = LazyObject.of(() -> parseCookie(httpRequest.getCookies(), c -> c.getName(), c -> c.getValue()));
     }
 
-    /**
-     * Gets a header value by name
-     *
-     * @param name The header name
-     * @return The header value or null if not found
-     */
     @Override
     public Object getHeader(String name) {
         return name == null ? null : getHeaders().get(name);
     }
 
-    /**
-     * Gets all request headers
-     *
-     * @return Map of header names to values
-     */
     @Override
     public Map<String, ? extends Object> getHeaders() {
         return headers.get();
     }
 
-    /**
-     * Gets all request cookies
-     *
-     * @return Map of cookie names to values
-     */
     @Override
     public Map<String, ? extends Object> getCookies() {
         return cookies.get();
     }
 
-    /**
-     * Gets a cookie value by name
-     *
-     * @param name The cookie name
-     * @return The cookie value or null if not found
-     */
     @Override
     public Object getCookie(String name) {
         return name == null ? null : getCookies().get(name);
     }
 
-    /**
-     * Gets a session attribute by name
-     *
-     * @param name The attribute name
-     * @return The attribute value or null if not found
-     */
     @Override
     public Object getSessionAttribute(String name) {
         return httpRequest.getSession().getAttribute(name);
     }
 
-    /**
-     * Gets a request attribute by name
-     *
-     * @param name The attribute name
-     * @return The attribute value or null if not found
-     */
     @Override
     public Object getRequestAttribute(String name) {
         return httpRequest.getAttribute(name);
+    }
+
+    @Override
+    public String getRemoteAddr() {
+        return httpRequest.getRemoteAddr();
     }
 }

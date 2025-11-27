@@ -15,12 +15,16 @@
  */
 package com.jd.live.agent.core.mcp;
 
+import com.jd.live.agent.core.mcp.McpToolParameter.Location;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Represents a method definition for MCP tool.
@@ -77,7 +81,36 @@ public class McpToolMethod {
         return parameters == null ? 0 : parameters.length;
     }
 
-    public boolean containsMethod(String methodName) {
-        return methodName == null || httpMethods == null ? false : httpMethods.contains(methodName);
+    public McpToolParameter[] getParameters(Location location) {
+        if (location == null || parameters == null || parameters.length == 0) {
+            return null;
+        }
+        if (parameters.length == 1) {
+            return parameters[0].getLocation() == location ? new McpToolParameter[]{parameters[0]} : null;
+        }
+        List<McpToolParameter> result = new ArrayList<>(parameters.length);
+        for (McpToolParameter parameter : parameters) {
+            if (parameter.getLocation() == location) {
+                result.add(parameter);
+            }
+        }
+        return result.isEmpty() ? null : result.toArray(new McpToolParameter[result.size()]);
+    }
+
+    public void parameter(Location location, BiConsumer<String, McpToolParameter> consumer) {
+        if (location == null || consumer == null || parameters == null || parameters.length == 0) {
+            return;
+        }
+        if (parameters.length == 1) {
+            if (parameters[0].getLocation() == location) {
+                consumer.accept(parameters[0].getArg(), parameters[0]);
+            }
+        } else {
+            for (McpToolParameter parameter : parameters) {
+                if (parameter.getLocation() == location) {
+                    consumer.accept(parameter.getKey(), parameter);
+                }
+            }
+        }
     }
 }

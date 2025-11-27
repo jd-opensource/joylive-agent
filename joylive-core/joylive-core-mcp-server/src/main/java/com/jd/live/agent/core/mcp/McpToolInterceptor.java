@@ -15,8 +15,18 @@
  */
 package com.jd.live.agent.core.mcp;
 
+/**
+ * Interceptor for MCP tool method invocations.
+ */
 public interface McpToolInterceptor {
 
+    /**
+     * Intercepts and processes a tool method invocation.
+     *
+     * @param invocation The tool invocation context
+     * @return The result of the invocation
+     * @throws Exception If an error occurs during interception
+     */
     Object intercept(McpToolInvocation invocation) throws Exception;
 
 }

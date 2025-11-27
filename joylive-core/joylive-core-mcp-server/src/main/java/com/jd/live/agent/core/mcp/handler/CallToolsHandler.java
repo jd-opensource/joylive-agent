@@ -17,10 +17,15 @@ package com.jd.live.agent.core.mcp.handler;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.mcp.*;
+import com.jd.live.agent.core.mcp.McpToolParameter.Location;
 import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.spec.v1.*;
+import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Handler for processing MCP tool call requests.
@@ -37,12 +42,11 @@ public class CallToolsHandler implements McpHandler {
             return JsonRpcResponse.createMethodNotFoundResponse(request.getId());
         }
         try {
-            McpRequest mcpRequest = createRequest(method, req, ctx);
+            McpRequest mcpRequest = new McpCallToolRequest(ctx, method, req.getArguments());
             Object[] args = parseArgs(method, mcpRequest, ctx);
             McpToolInterceptor interceptor = ctx.getInterceptor();
-            Object result = interceptor != null
-                    ? interceptor.intercept(new McpToolInvocation(mcpRequest, ctx.getSession(), method, args))
-                    : invoke(method, args);
+            McpToolInvocation invocation = new McpToolInvocation(mcpRequest, ctx.getSession(), method, args);
+            Object result = interceptor == null ? invocation.call() : interceptor.intercept(invocation);
             result = ctx.getVersion().output(result);
             CallToolResult response = CallToolResult.builder().structuredContent(result).build();
             return JsonRpcResponse.createSuccessResponse(request.getId(), response);
@@ -50,59 +54,6 @@ public class CallToolsHandler implements McpHandler {
             // Tool Execution Errors: Reported in tool results with isError: true
             return JsonRpcResponse.createSuccessResponse(request.getId(), new CallToolResult(e));
         }
-    }
-
-    private Object invoke(McpToolMethod method, Object[] args) throws Exception {
-        return method.getMethod().invoke(method.getController(), args);
-    }
-
-    private McpRequest createRequest(McpToolMethod method, CallToolRequest request, McpRequestContext ctx) {
-        Map<String, Object> arguments = request.getArguments();
-        // TODO filter headers & cookies & paths parameters
-        //  and fallback to ctx.getHeaders or ctx.getCookies.
-        return new McpRequest() {
-            @Override
-            public Map<String, ? extends Object> getQueries() {
-                return arguments;
-            }
-
-            @Override
-            public Map<String, ? extends Object> getHeaders() {
-                return ctx.getHeaders();
-            }
-
-            @Override
-            public Object getHeader(String name) {
-                return ctx.getHeader(name);
-            }
-
-            @Override
-            public Map<String, ? extends Object> getCookies() {
-                return ctx.getCookies();
-            }
-
-            @Override
-            public Object getCookie(String name) {
-                return ctx.getCookie(name);
-            }
-
-            @Override
-            public Map<String, Object> getPaths() {
-                return arguments;
-            }
-
-            @Override
-            public Object getBody(String name) {
-                // TODO fix name
-                return arguments == null ? null : arguments.get("body");
-            }
-
-            @Override
-            public Object getBody() {
-                // TODO fix name
-                return arguments == null ? null : arguments.get("body");
-            }
-        };
     }
 
     /**
@@ -129,5 +80,113 @@ public class CallToolsHandler implements McpHandler {
             }
         }
         return args;
+    }
+
+    /**
+     * Adapter class that converts MCP call tool requests to standard MCP call requests.
+     */
+    private static class McpCallToolRequest implements McpRequest {
+        private final McpRequestContext ctx;
+        private final McpToolMethod method;
+        private final Map<String, Object> arguments;
+        private final LazyObject<Map<String, ? extends Object>> queries;
+        private final LazyObject<Map<String, ? extends Object>> headers;
+        private final LazyObject<Map<String, ? extends Object>> cookies;
+        private final LazyObject<Map<String, ? extends Object>> paths;
+
+        McpCallToolRequest(McpRequestContext ctx, McpToolMethod method, Map<String, Object> arguments) {
+            this.ctx = ctx;
+            this.method = method;
+            this.arguments = arguments;
+            this.queries = new LazyObject<>(() -> getParams(Location.QUERY, i -> new LinkedHashMap<>()));
+            this.headers = new LazyObject<>(() -> merge(ctx.getHeaders(), Location.HEADER, i -> new CaseInsensitiveLinkedMap<>()));
+            this.cookies = new LazyObject<>(() -> merge(ctx.getCookies(), Location.COOKIE, i -> new LinkedHashMap<>()));
+            this.paths = new LazyObject<>(() -> getParams(Location.PATH, i -> new LinkedHashMap<>()));
+        }
+
+        @Override
+        public String getRemoteAddr() {
+            return ctx.getRemoteAddr();
+        }
+
+        @Override
+        public Map<String, ? extends Object> getQueries() {
+            return queries.get();
+        }
+
+        @Override
+        public Map<String, ? extends Object> getHeaders() {
+            return headers.get();
+        }
+
+        @Override
+        public Object getHeader(String name) {
+            if (name == null || name.isEmpty()) {
+                return null;
+            }
+            Map<String, ? extends Object> map = headers.get();
+            Object result = map == null ? null : map.get(name);
+            if (result == null) {
+                result = ctx.getHeader(name);
+            }
+            return result;
+        }
+
+        @Override
+        public Map<String, ? extends Object> getCookies() {
+            return cookies.get();
+        }
+
+        @Override
+        public Object getCookie(String name) {
+            return ctx.getCookie(name);
+        }
+
+        @Override
+        public Map<String, ? extends Object> getPaths() {
+            return paths.get();
+        }
+
+        @Override
+        public Object getBody(String name) {
+            return arguments == null ? null : arguments.get("body");
+        }
+
+        /**
+         * Merges two maps, preserving entries from destination map when keys conflict.
+         *
+         * @param src      Source map to merge from
+         * @param location Parameter location identifier
+         * @param function Function to create destination map based on size
+         * @return Merged map or original source/destination if either is empty
+         */
+        private Map<String, ? extends Object> merge(Map<String, ?> src, Location location, Function<Integer, Map<String, Object>> function) {
+            Map<String, Object> dest = getParams(location, function);
+            if (dest == null || dest.isEmpty()) {
+                return src;
+            } else if (src == null || src.isEmpty()) {
+                return dest;
+            }
+            for (Map.Entry<String, ?> entry : src.entrySet()) {
+                dest.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+            return dest;
+        }
+
+        /**
+         * Retrieves parameters for the specified location using the provided map factory function.
+         *
+         * @param location Parameter location identifier
+         * @param function Function to create a map of appropriate size
+         * @return Map of parameters or null if no parameters exist
+         */
+        private Map<String, Object> getParams(Location location, Function<Integer, Map<String, Object>> function) {
+            if (arguments == null || arguments.isEmpty() || method.size() == 0) {
+                return null;
+            }
+            Map<String, Object> result = function.apply(arguments.size());
+            method.parameter(location, (arg, parameter) -> result.put(arg, arguments.get(arg)));
+            return result;
+        }
     }
 }

@@ -57,69 +57,39 @@ public class ReactiveRequestContext extends AbstractRequestContext {
         this.exchange = exchange;
     }
 
-    /**
-     * Gets a header value by name
-     *
-     * @param name The header name
-     * @return The header value or null if not found
-     */
     @Override
     public String getHeader(String name) {
         return name == null ? null : exchange.getRequest().getHeaders().getFirst(name);
     }
 
-    /**
-     * Gets all request headers
-     *
-     * @return Map of header names to values
-     */
     @Override
     public Map<String, ? extends Object> getHeaders() {
         return exchange.getRequest().getHeaders();
     }
 
-    /**
-     * Gets all request cookies
-     *
-     * @return Map of cookie names to values
-     */
     @Override
     public Map<String, ? extends Object> getCookies() {
         return exchange.getRequest().getCookies();
     }
 
-    /**
-     * Gets a cookie value by name
-     *
-     * @param name The cookie name
-     * @return The cookie value or null if not found
-     */
     @Override
     public Object getCookie(String name) {
         return name == null ? null : exchange.getRequest().getCookies().get(name);
     }
 
-    /**
-     * Gets a session attribute by name
-     * Note: This method blocks to obtain the session
-     *
-     * @param name The attribute name
-     * @return The attribute value or null if not found
-     */
     @Override
     public Object getSessionAttribute(String name) {
         WebSession session = exchange.getSession().block();
         return session == null ? null : session.getAttribute(name);
     }
 
-    /**
-     * Gets a request attribute by name
-     *
-     * @param name The attribute name
-     * @return The attribute value or null if not found
-     */
     @Override
     public Object getRequestAttribute(String name) {
         return exchange.getAttribute(name);
+    }
+
+    @Override
+    public String getRemoteAddr() {
+        return exchange.getRequest().getRemoteAddress().toString();
     }
 }

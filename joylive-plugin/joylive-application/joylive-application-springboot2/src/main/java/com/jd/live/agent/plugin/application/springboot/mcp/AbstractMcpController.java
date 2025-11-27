@@ -21,6 +21,7 @@ import com.jd.live.agent.core.mcp.*;
 import com.jd.live.agent.core.mcp.McpSession.DefaultMcpSession;
 import com.jd.live.agent.core.mcp.McpSessionManager.DefaultMcpSessionManager;
 import com.jd.live.agent.core.mcp.McpTransportManager.DefaultMcpMTransportManager;
+import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.spec.v1.Implementation;
 import com.jd.live.agent.core.mcp.spec.v1.ServerCapabilities;
@@ -31,13 +32,14 @@ import com.jd.live.agent.core.parser.ObjectConverter;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.McpConfig;
+import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.application.springboot.context.SpringAppContext;
+import com.jd.live.agent.plugin.application.springboot.mcp.request.McpInboundRequest;
 import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -59,7 +61,7 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
  * Base controller for MCP (Method Call Protocol) implementation.
  * Scans and registers methods from Spring controllers during application startup.
  */
-public abstract class AbstractMcpController implements BeanPostProcessor {
+public abstract class AbstractMcpController {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMcpController.class);
 
@@ -273,6 +275,28 @@ public abstract class AbstractMcpController implements BeanPostProcessor {
                 }
                 paths.computeIfAbsent(p, v -> new ArrayList<>()).add(method);
             });
+        }
+    }
+
+    /**
+     * Intercepts tool invocations and delegates to the actual controller method.
+     *
+     * @param invocation The tool invocation context
+     * @return The result of the controller method execution
+     * @throws Exception If method invocation fails
+     */
+    protected Object intercept(McpToolInvocation invocation) throws Exception {
+        if (!config.getMcpConfig().isGovernanceEnabled()) {
+            return invocation.call();
+        }
+        McpInboundRequest request = new McpInboundRequest(invocation.getRequest(), invocation.getMethod());
+        HttpInboundInvocation<McpInboundRequest> inv = new HttpInboundInvocation<>(request, context);
+        try {
+            return context.inward(inv, invocation::call);
+        } catch (Exception e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new McpException(e.getMessage(), e);
         }
     }
 

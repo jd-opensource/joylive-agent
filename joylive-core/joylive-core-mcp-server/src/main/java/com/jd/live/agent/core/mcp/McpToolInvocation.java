@@ -15,10 +15,12 @@
  */
 package com.jd.live.agent.core.mcp;
 
+import java.util.concurrent.Callable;
+
 /**
  * Represents an MCP tool method invocation with its context.
  */
-public class McpToolInvocation {
+public class McpToolInvocation implements Callable<Object> {
 
     private McpRequest request;
 
@@ -49,5 +51,10 @@ public class McpToolInvocation {
 
     public Object[] getArgs() {
         return args;
+    }
+
+    @Override
+    public Object call() throws Exception {
+        return method.getMethod().invoke(method.getController(), args);
     }
 }
