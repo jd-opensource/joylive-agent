@@ -17,7 +17,9 @@ package com.jd.live.agent.plugin.application.springboot.mcp.reactive;
 
 import com.jd.live.agent.core.exception.InvokeException;
 import com.jd.live.agent.core.mcp.McpRequestContext;
+import com.jd.live.agent.core.mcp.McpSession;
 import com.jd.live.agent.core.mcp.McpToolScanner;
+import com.jd.live.agent.core.mcp.McpTransport;
 import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
@@ -103,6 +105,11 @@ public class ReactiveMcpController extends AbstractMcpController {
         });
     }
 
+    @Override
+    protected McpTransport createTransport(McpSession session) {
+        return null;
+    }
+
     /**
      * Creates a reactive request context from server exchange.
      *
@@ -132,4 +139,5 @@ public class ReactiveMcpController extends AbstractMcpController {
         HttpCookie cookie = exchange.getRequest().getCookies().getFirst(Request.KEY_VERSION);
         return cookie != null ? cookie.getValue() : null;
     }
+
 }

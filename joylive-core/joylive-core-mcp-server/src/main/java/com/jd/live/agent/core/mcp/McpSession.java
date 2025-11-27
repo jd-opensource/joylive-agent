@@ -48,6 +48,20 @@ public interface McpSession {
     String getVersion();
 
     /**
+     * Returns the transport mechanism associated with this MCP session.
+     *
+     * @return The transport implementation used for communication
+     */
+    McpTransport getTransport();
+
+    /**
+     * Establishes connection and returns the transport mechanism.
+     *
+     * @return The transport used for communication
+     */
+    McpTransport connect();
+
+    /**
      * Handles initialization requests from clients.
      *
      * @param request The initialization request to process
@@ -116,16 +130,18 @@ public interface McpSession {
      */
     class DefaultMcpSession implements McpSession {
         private final String id;
+        private String version;
         private final ServerCapabilities serverCapabilities;
         private final Implementation serverInfo;
         private final Map<String, Object> serverMetadata;
         private final Predicate<String> versionPredicate;
+        private final McpTransportFactory transportFactory;
         private ClientCapabilities clientCapabilities;
         private Implementation clientInfo;
         private Map<String, Object> clientMetadata;
         private LoggingLevel loggingLevel;
 
-        private String version;
+        private McpTransport transport;
         private long lastAccessedTime;
         private volatile boolean initialized;
 
@@ -134,19 +150,34 @@ public interface McpSession {
                                  ServerCapabilities serverCapabilities,
                                  Implementation serverInfo,
                                  Map<String, Object> serverMetadata,
-                                 Predicate<String> idPredicate) {
+                                 Predicate<String> versionPredicate,
+                                 McpTransportFactory transportFactory) {
             this.id = id;
             this.version = version;
             this.serverCapabilities = serverCapabilities;
             this.serverInfo = serverInfo;
             this.serverMetadata = serverMetadata;
-            this.versionPredicate = idPredicate;
+            this.versionPredicate = versionPredicate;
+            this.transportFactory = transportFactory;
             this.lastAccessedTime = System.currentTimeMillis();
         }
 
         @Override
         public String getId() {
             return id;
+        }
+
+        @Override
+        public McpTransport getTransport() {
+            return transport;
+        }
+
+        @Override
+        public McpTransport connect() {
+            if (transport == null) {
+                transport = transportFactory.create(this);
+            }
+            return transport;
         }
 
         @Override

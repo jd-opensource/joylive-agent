@@ -16,17 +16,16 @@
 package com.jd.live.agent.core.mcp;
 
 /**
- * Factory interface for creating MCP (Model Context Protocol) session instances.
+ * Factory for creating transport implementations for MCP sessions.
  */
 @FunctionalInterface
-public interface McpSessionFactory {
+public interface McpTransportFactory {
 
     /**
-     * Creates a new MCP session with the specified ID and transport.
-     *
-     * @param id The unique identifier for the session
-     * @return A new {@link McpSession} instance configured with the provided parameters
+     * Creates a transport instance for the given session.
+     * @param session The session requiring transport
+     * @return A new transport implementation
      */
-    McpSession create(String id);
+    McpTransport create(McpSession session);
 
 }

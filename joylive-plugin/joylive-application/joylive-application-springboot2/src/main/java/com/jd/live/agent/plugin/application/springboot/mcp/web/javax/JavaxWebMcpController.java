@@ -43,11 +43,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.jd.live.agent.core.mcp.McpSession.HEADER_SESSION_ID;
 import static com.jd.live.agent.core.mcp.McpSession.QUERY_SESSION_ID;
-import static com.jd.live.agent.core.mcp.McpTransport.CLIENT_ID;
 import static com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse.*;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
@@ -70,7 +69,8 @@ public class JavaxWebMcpController extends AbstractMcpController {
     public static final String NAME = "javaxWebMcpController";
 
     @GetMapping
-    public SseEmitter connect(@RequestParam(value = CLIENT_ID, required = false) String clientId,
+    public SseEmitter connect(@RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId1,
+                              @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId2,
                               HttpServletRequest request,
                               HttpServletResponse response) throws Exception {
         // some client does not provide content type MediaType.TEXT_EVENT_STREAM_VALUE
@@ -78,35 +78,29 @@ public class JavaxWebMcpController extends AbstractMcpController {
             onAppNotReady(response);
             return null;
         }
-        boolean empty = isEmpty(clientId);
-        clientId = empty ? UUID.randomUUID().toString() : clientId;
-        long timeout = config.getMcpConfig().getTimeout();
-        SseEmitter emitter = timeout > 0 ? new SseEmitter(timeout) : new SseEmitter();
-        SseEmitterMcpTransport transport = new SseEmitterMcpTransport(emitter, clientId, this::createSession);
-        McpTransport old = transports.put(clientId, transport);
-        String url = request.getRequestURI() + "?clientId=" + clientId;
-        transport.send(null, EventType.ENDPOINT, url);
-        if (old != null) {
-            old.close();
+        McpSession session = getOrCreateSession(choose(sessionId1, sessionId2));
+        McpTransport transport = session.getTransport();
+        if (transport == null) {
+            transport = session.connect();
+            String url = request.getRequestURI() + "?" + QUERY_SESSION_ID + "=" + session.getId();
+            transport.send(null, EventType.ENDPOINT, url);
         }
-        return emitter;
+        return transport.getConnection();
     }
 
     /**
      * Delete session
      *
-     * @param sessionId The session id
-     * @return The JSON-RPC response
+     * @param sessionId1   The header session id
+     * @param sessionId2   The query session id
      */
     @DeleteMapping
-    public void deleteSession(@RequestParam(value = CLIENT_ID, required = false) String clientId,
-                              @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId) {
-        McpTransport transport = transports.get(clientId);
-        if (transport == null) {
-            McpSession session = transport.removeSession(sessionId);
-            if (session != null) {
-                session.close();
-            }
+    public void deleteSession(@RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId1,
+                              @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId2) {
+        String sessionId = choose(sessionId1, sessionId2);
+        McpSession session = sessions.get(sessionId);
+        if (session != null) {
+            session.close();
         }
     }
 
@@ -123,9 +117,8 @@ public class JavaxWebMcpController extends AbstractMcpController {
      */
     @PostMapping
     public void handle(@RequestBody JsonRpcRequest request,
-                       @RequestParam(value = CLIENT_ID, required = false) String clientId,
-                       @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId1,
-                       @RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId2,
+                       @RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId1,
+                       @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId2,
                        WebRequest webRequest,
                        HttpServletRequest httpRequest,
                        HttpServletResponse httpResponse) throws Exception {
@@ -134,10 +127,9 @@ public class JavaxWebMcpController extends AbstractMcpController {
             return;
         }
         // get transport and session
-        McpTransport transport = transports.get(clientId);
         String sessionId = choose(sessionId1, sessionId2);
         McpHandler handler = handlers.get(request.getMethod());
-        McpSession session = getOrCreateSession(sessionId, transport, handler, httpResponse);
+        McpSession session = getOrCreateSession(sessionId, handler, httpResponse);
         if (session == null) {
             onMissingSession(sessionId, httpResponse);
             return;
@@ -156,7 +148,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
             response = createErrorResponse(request.getId(), e.getCause());
         }
         // reply
-        reply(request, response, transport, session, httpResponse);
+        reply(request, response, session, httpResponse);
     }
 
     @Override
@@ -167,6 +159,17 @@ public class JavaxWebMcpController extends AbstractMcpController {
     @Override
     protected McpToolScanner createScanner(ConfigurableApplicationContext context) {
         return new JavaxWebMcpToolScanner(context.getBeanFactory());
+    }
+
+    @Override
+    protected McpTransport createTransport(McpSession session) {
+        String sessionId = session.getId();
+        long timeout = config.getMcpConfig().getTimeout();
+        SseEmitter emitter = timeout > 0 ? new SseEmitter(timeout) : new SseEmitter();
+        return new SseEmitterMcpTransport(emitter, sessionId, id -> {
+            sessions.remove(id);
+            return CompletableFuture.completedFuture(null);
+        });
     }
 
     /**
@@ -203,14 +206,12 @@ public class JavaxWebMcpController extends AbstractMcpController {
      *
      * @param request      The original JSON-RPC request
      * @param response     The JSON-RPC response to send
-     * @param transport    The transport mechanism for SSE connections, may be null for standard HTTP
      * @param session      The MCP session associated with this request
      * @param httpResponse The HTTP servlet response object
      * @throws IOException If an I/O error occurs during response writing
      */
     private void reply(JsonRpcRequest request,
                        JsonRpcResponse response,
-                       McpTransport transport,
                        McpSession session,
                        HttpServletResponse httpResponse) throws IOException {
         if (response != null && !request.notification()) {
@@ -218,6 +219,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
             String id = request.getId().toString();
             String data = objectParser.write(response);
             String sid = session.getId();
+            McpTransport transport = session.getTransport();
             if (transport != null) {
                 // sse
                 transport.send(id, EventType.MESSAGE, data).whenComplete((v, e) -> {
@@ -245,31 +247,20 @@ public class JavaxWebMcpController extends AbstractMcpController {
      * Retrieves an existing MCP session or creates a new one.
      *
      * @param sessionId The session identifier
-     * @param transport The MCP transport mechanism, may be null for non-SSE requests
      * @param handler   The MCP request handler
      * @param response  The HTTP servlet response
      * @return The MCP session associated with the request, or null if unavailable
      */
-    private McpSession getOrCreateSession(String sessionId,
-                                          McpTransport transport,
-                                          McpHandler handler,
-                                          HttpServletResponse response) {
-        McpSession session = null;
-        if (handler instanceof Initialization) {
-            if (transport != null) {
-                // sse
-                session = transport.createSession(sessionId);
-            } else {
-                // none sse
-                session = createSession(sessionId);
-                sessions.put(session.getId(), session);
-            }
+    private McpSession getOrCreateSession(String sessionId, McpHandler handler, HttpServletResponse response) {
+        McpSession session = isEmpty(sessionId) ? null : sessions.get(sessionId);
+        if (session != null) {
+            session.setLastAccessedTime(System.currentTimeMillis());
+            return session;
+        } else if (handler instanceof Initialization) {
+            // none sse
+            session = createSession(sessionId);
+            sessions.put(session.getId(), session);
             response.setHeader(HEADER_SESSION_ID, session.getId());
-        } else if (sessionId != null) {
-            session = transport == null ? sessions.get(sessionId) : transport.getSession(sessionId);
-            if (session != null) {
-                session.setLastAccessedTime(System.currentTimeMillis());
-            }
         }
         return session;
     }
@@ -295,7 +286,7 @@ public class JavaxWebMcpController extends AbstractMcpController {
                 .jsonSchemaParser(ReflectionJsonSchemaParser.INSTANCE)
                 .version(versions.get(session.getVersion()))
                 .openApi(openApi.get())
-                .interceptor(this::intercept)
+                .interceptor(interceptor)
                 .webRequest(webRequest)
                 .httpRequest(request)
                 .httpResponse(response)

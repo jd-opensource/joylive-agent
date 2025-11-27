@@ -24,7 +24,13 @@ import java.util.concurrent.CompletionStage;
  */
 public interface McpTransport {
 
-    String CLIENT_ID = "clientId";
+    /**
+     * Retrieves the underlying connection object.
+     *
+     * @param <T> The connection type
+     * @return The connection instance
+     */
+    <T> T getConnection();
 
     /**
      * Sends a server-sent event with specified ID, type, and data payload.
@@ -42,30 +48,6 @@ public interface McpTransport {
      * @return A CompleteFuture that completes when the connection is closed
      */
     CompletionStage<Void> close();
-
-    /**
-     * Retrieves an MCP session by its identifier.
-     *
-     * @param id The session identifier
-     * @return The associated session, or null if not found
-     */
-    McpSession getSession(String id);
-
-    /**
-     * Creates a new MCP session with the specified identifier.
-     *
-     * @param id The session identifier
-     * @return The newly created session
-     */
-    McpSession createSession(String id);
-
-    /**
-     * Removes and returns an MCP session by its identifier.
-     *
-     * @param id The session identifier
-     * @return The removed session, or null if not found
-     */
-    McpSession removeSession(String id);
 
     enum EventType {
         /**

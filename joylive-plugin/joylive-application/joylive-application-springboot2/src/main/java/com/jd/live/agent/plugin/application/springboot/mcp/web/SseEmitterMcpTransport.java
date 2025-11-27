@@ -15,10 +15,6 @@
  */
 package com.jd.live.agent.plugin.application.springboot.mcp.web;
 
-import com.jd.live.agent.core.mcp.McpSession;
-import com.jd.live.agent.core.mcp.McpSessionFactory;
-import com.jd.live.agent.core.mcp.McpSessionManager;
-import com.jd.live.agent.core.mcp.McpSessionManager.DefaultMcpSessionManager;
 import com.jd.live.agent.core.mcp.McpTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +25,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /**
  * Implementation of McpTransport using Spring's SseEmitter for Server-Sent Events.
@@ -45,24 +42,28 @@ public class SseEmitterMcpTransport implements McpTransport {
     private static final Logger logger = LoggerFactory.getLogger(SseEmitterMcpTransport.class);
 
     private final SseEmitter emitter;
-    private final String clientId;
-    private final McpSessionFactory sessionFactory;
+    private final String sessionId;
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final McpSessionManager sessions = new DefaultMcpSessionManager();
+    private final Function<String, CompletionStage<Void>> closer;
 
     /**
      * Creates a new SSE-based MCP transport.
      *
      * @param emitter        The Spring SseEmitter for sending server events
-     * @param clientId       The unique identifier for the client connection
-     * @param sessionFactory Factory for creating MCP session instances
+     * @param sessionId      The unique identifier for the client connection
+     * @param closer         The closer
      */
-    public SseEmitterMcpTransport(SseEmitter emitter, String clientId, McpSessionFactory sessionFactory) {
+    public SseEmitterMcpTransport(SseEmitter emitter, String sessionId, Function<String, CompletionStage<Void>> closer) {
         this.emitter = emitter;
-        this.clientId = clientId;
-        this.sessionFactory = sessionFactory;
+        this.sessionId = sessionId;
+        this.closer = closer;
         emitter.onCompletion(this::onCompletion);
         emitter.onTimeout(this::onTimeout);
+    }
+
+    @Override
+    public <T> T getConnection() {
+        return (T) emitter;
     }
 
     @Override
@@ -70,7 +71,7 @@ public class SseEmitterMcpTransport implements McpTransport {
         CompletableFuture<Void> result = new CompletableFuture<>();
         try {
             if (closed.get()) {
-                result.completeExceptionally(new IllegalStateException("SSE connection is already closed for client: " + clientId));
+                result.completeExceptionally(new IllegalStateException("SSE connection is already closed for client: " + sessionId));
             } else {
                 MediaType mediaType = type == EventType.ENDPOINT ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON;
                 emitter.send(SseEmitter.event().id(id).name(type.getName()).data(data, mediaType));
@@ -88,29 +89,12 @@ public class SseEmitterMcpTransport implements McpTransport {
         return close(() -> emitter.complete());
     }
 
-    @Override
-    public McpSession getSession(String id) {
-        return id == null ? null : sessions.get(id);
-    }
-
-    @Override
-    public McpSession createSession(String id) {
-        McpSession result = sessionFactory.create(id);
-        sessions.put(result.getId(), result);
-        return result;
-    }
-
-    @Override
-    public McpSession removeSession(String id) {
-        return id == null ? null : sessions.remove(id);
-    }
-
     /**
      * Handles the SSE connection completion event.
      * Closes the transport and logs the completion.
      */
     private void onCompletion() {
-        close(() -> logger.info("SSE connection is completed for client: {}", clientId));
+        close(() -> logger.info("SSE connection is completed for session: {}", sessionId));
     }
 
     /**
@@ -120,7 +104,7 @@ public class SseEmitterMcpTransport implements McpTransport {
     private void onTimeout() {
         close(() -> {
             emitter.complete();
-            logger.warn("SSE connection is timed out for client: {}", clientId);
+            logger.warn("SSE connection is timed out for session: {}", sessionId);
         });
     }
 
@@ -132,7 +116,10 @@ public class SseEmitterMcpTransport implements McpTransport {
      */
     private CompletionStage<Void> close(Runnable thenRun) {
         if (closed.compareAndSet(false, true)) {
-            return sessions.close().thenRun(thenRun);
+            if (closer != null) {
+                return closer.apply(sessionId).thenRun(thenRun);
+            }
+            thenRun.run();
         }
         return CompletableFuture.completedFuture(null);
     }

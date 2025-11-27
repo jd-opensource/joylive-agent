@@ -20,7 +20,6 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.mcp.*;
 import com.jd.live.agent.core.mcp.McpSession.DefaultMcpSession;
 import com.jd.live.agent.core.mcp.McpSessionManager.DefaultMcpSessionManager;
-import com.jd.live.agent.core.mcp.McpTransportManager.DefaultMcpMTransportManager;
 import com.jd.live.agent.core.mcp.exception.McpException;
 import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.spec.v1.Implementation;
@@ -104,10 +103,9 @@ public abstract class AbstractMcpController {
     @Setter
     protected McpVersion defaultVersion;
 
-    /**
-     * Map of active client transport, keyed by client ID.
-     */
-    protected final McpTransportManager transports = new DefaultMcpMTransportManager();
+    protected final McpTransportFactory transportFactory = this::createTransport;
+
+    protected final McpToolInterceptor interceptor = this::intercept;
 
     /**
      * sessions for none sse
@@ -206,9 +204,29 @@ public abstract class AbstractMcpController {
     }
 
     /**
+     * Retrieves an existing MCP session or creates a new one if none exists.
+     *
+     * @param sessionId The session identifier. If null or empty, a new UUID will be generated.
+     * @return The existing or newly created McpSession associated with the sessionId
+     */
+    protected McpSession getOrCreateSession(String sessionId) {
+        McpSession session = null;
+        if (!isEmpty(sessionId)) {
+            session = sessions.get(sessionId);
+        } else {
+            sessionId = UUID.randomUUID().toString();
+        }
+        if (session == null) {
+            session = createSession(sessionId, null);
+            sessions.put(sessionId, session);
+        }
+        return session;
+    }
+
+    /**
      * Creates and initializes a new MCP session with specified parameters.
      *
-     * @param sessionId Unique identifier for the session
+     * @param sessionId        Unique identifier for the session
      * @return true if session creation succeeded, false if it failed
      */
     protected McpSession createSession(String sessionId) {
@@ -218,8 +236,8 @@ public abstract class AbstractMcpController {
     /**
      * Creates and initializes a new MCP session with specified parameters.
      *
-     * @param sessionId Unique identifier for the session
-     * @param version   The mcp protocol version
+     * @param sessionId        Unique identifier for the session
+     * @param version          The mcp protocol version
      * @return true if session creation succeeded, false if it failed
      */
     protected McpSession createSession(String sessionId, String version) {
@@ -255,10 +273,25 @@ public abstract class AbstractMcpController {
                 serverCapabilities,
                 serverInfo,
                 mcpConfig.getMetadata(),
-                predicate
+                predicate,
+                transportFactory
         );
     }
 
+    /**
+     * Creates a transport mechanism for the given session.
+     *
+     * @param session The session requiring transport
+     * @return The created transport implementation
+     */
+    protected abstract McpTransport createTransport(McpSession session);
+
+    /**
+     * Registers a tool method with this controller.
+     *
+     * @param method  The tool method to register
+     * @param openApi Optional OpenAPI specification for path mapping
+     */
     protected void addToolMethod(McpToolMethod method, OpenApi openApi) {
         if (openApi == null) {
             // TODO unique
