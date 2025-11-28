@@ -44,6 +44,7 @@ public class CallToolsHandler implements McpHandler {
         try {
             McpRequest mcpRequest = new McpCallToolRequest(ctx, method, req.getArguments());
             Object[] args = parseArgs(method, mcpRequest, ctx);
+            method.validate(args);
             McpToolInterceptor interceptor = ctx.getInterceptor();
             McpToolInvocation invocation = new McpToolInvocation(mcpRequest, ctx.getSession(), method, args);
             Object result = interceptor == null ? invocation.call() : interceptor.intercept(invocation);

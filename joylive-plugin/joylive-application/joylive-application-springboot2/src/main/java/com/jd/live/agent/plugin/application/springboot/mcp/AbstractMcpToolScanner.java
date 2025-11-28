@@ -232,7 +232,8 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                 builder -> configureSessionAttribute(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureSystemParam(builder),
                 builder -> configureDefault(builder),
-                builder -> configureWrapper(builder)
+                builder -> configureWrapper(builder),
+                builder -> configureValidator(builder)
         );
         return chain.configure(McpToolParameter.builder().parameter(parameter).name(name).index(index).required(true)).build();
     }
@@ -327,7 +328,6 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @param getter  annotation accessor
      * @return configured builder
      */
-    @SuppressWarnings("unchecked")
     protected McpToolParameterBuilder configureRequestHeader(McpToolParameterBuilder builder, AnnotationGetter getter) {
         if (builder.isType(HttpHeaders.class)) {
             return builder.location(Location.SYSTEM).systemParser(createMultiValueHeaderParser());
@@ -470,6 +470,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @param location the location of arg
      * @return builder with system parameters configured
      */
+    @SuppressWarnings("unchecked")
     protected McpToolParameterBuilder configureModelAttribute(McpToolParameterBuilder builder, String arg, Location location) {
         return builder
                 .arg(arg)
@@ -488,15 +489,31 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     }
 
     /**
+     * Configures validator for MCP tool parameter.
+     *
+     * @param builder parameter definition builder
+     * @return configured builder with validator settings
+     */
+    protected McpToolParameterBuilder configureValidator(McpToolParameterBuilder builder) {
+        // TODO mcp tool parameter validator
+        return builder;
+    }
+
+    /**
      * Extracts actual type from generic type.
      *
      * @param genericType the generic type
      * @return actual type, or original type if not parameterized
      */
     protected Type getActualType(Type genericType) {
-        return genericType == ParameterizedType.class
-                ? ((ParameterizedType) genericType).getActualTypeArguments()[0]
-                : null;
+        if (genericType instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) genericType;
+            Type[] argTypes = parameterizedType.getActualTypeArguments();
+            if (argTypes.length > 0) {
+                return argTypes[0];
+            }
+        }
+        return null;
     }
 
     /**
@@ -506,21 +523,22 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      *
      * @return Parser for single-value header extraction
      */
+    @SuppressWarnings("unchecked")
     protected McpRequestParser createSingleValueHeaderParser() {
         return (req, ctx) -> {
-            Map<String, ? extends Object> values = req.getHeaders();
+            Map<String, ?> values = req.getHeaders();
             if (values instanceof HttpHeaders) {
                 return ((HttpHeaders) values).toSingleValueMap();
-            } else if (values instanceof MultiMap) {
+            } else if (values instanceof MultiMap<?, ?>) {
                 return ((MultiMap<String, String>) values).toSingleValueMap();
-            } else if (values instanceof Map) {
+            } else if (values != null) {
                 Map<String, String> result = new LinkedHashMap<>();
                 values.forEach((key, value) -> {
-                    if (value instanceof List) {
+                    if (value instanceof List<?>) {
                         List<?> list = (List<?>) value;
-                        result.put(key.toString(), list.isEmpty() ? "" : ((List<?>) value).get(0).toString());
+                        result.put(key, list.isEmpty() ? "" : ((List<?>) value).get(0).toString());
                     } else {
-                        result.put(key.toString(), value.toString());
+                        result.put(key, value.toString());
                     }
                 });
                 return result;
@@ -536,22 +554,22 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      *
      * @return Parser for multi-value header extraction
      */
+    @SuppressWarnings("unchecked")
     protected McpRequestParser createMultiValueHeaderParser() {
         return (req, ctx) -> {
-            Map<String, ? extends Object> values = req.getHeaders();
+            Map<String, ?> values = req.getHeaders();
             if (values instanceof HttpHeaders) {
                 return values;
             }
             HttpHeaders headers = new HttpHeaders();
-            if (values instanceof MultiMap) {
+            if (values instanceof MultiMap<?, ?>) {
                 headers.putAll((MultiMap) values);
-            } else if (values instanceof Map) {
+            } else if (values != null) {
                 values.forEach((key, value) -> {
-                    String k = key.toString();
-                    if (value instanceof List) {
-                        ((List<?>) value).forEach(item -> headers.add(k, item.toString()));
+                    if (value instanceof List<?>) {
+                        ((List<?>) value).forEach(item -> headers.add(key, item.toString()));
                     } else {
-                        headers.add(k, value.toString());
+                        headers.add(key, value.toString());
                     }
                 });
             }

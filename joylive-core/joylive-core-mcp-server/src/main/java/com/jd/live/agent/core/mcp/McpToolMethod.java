@@ -113,4 +113,15 @@ public class McpToolMethod {
             }
         }
     }
+
+    public void validate(Object[] args) throws Exception {
+        if (args == null || args.length == 0 || args.length != parameters.length) {
+            return;
+        }
+        McpToolParameter parameter;
+        for (int i = 0; i < args.length; i++) {
+            parameter = parameters[i];
+            parameter.validate(args[i]);
+        }
+    }
 }
