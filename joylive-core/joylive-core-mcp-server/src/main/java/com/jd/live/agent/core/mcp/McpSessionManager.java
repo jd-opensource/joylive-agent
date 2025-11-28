@@ -93,7 +93,7 @@ public interface McpSessionManager {
             long expireTime = current - ttl;
             for (Map.Entry<String, McpSession> entry : sessions.entrySet()) {
                 McpSession session = entry.getValue();
-                if (session.getLastAccessedTime() > expireTime) {
+                if (session.getLastAccessedTime() < expireTime) {
                     count++;
                     session.close();
                 }

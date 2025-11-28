@@ -16,6 +16,7 @@
 package com.jd.live.agent.core.mcp;
 
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 
 /**
  * Transport interface for sending JSON-RPC messages in MCP (Model Context Protocol).
@@ -23,6 +24,8 @@ import java.util.concurrent.CompletionStage;
  * Provides asynchronous methods for message transmission and connection management.
  */
 public interface McpTransport {
+
+    String getId();
 
     /**
      * Retrieves the underlying connection object.
@@ -49,6 +52,55 @@ public interface McpTransport {
      */
     CompletionStage<Void> close();
 
+    /**
+     * Closes the transport connection asynchronously.
+     *
+     * @param cause The throwable indicating the reason for closing, or null if closing normally
+     * @return A CompletionStage that completes when the connection is closed
+     */
+    default CompletionStage<Void> close(Throwable cause) {
+        return close();
+    }
+
+    /**
+     * Registers a callback to be executed when the transport completes normally.
+     *
+     * @param runnable The callback to execute on completion
+     */
+    void onCompletion(Runnable runnable);
+
+    /**
+     * Registers a callback to be executed when the transport encounters an error.
+     *
+     * @param consumer The callback to execute on error
+     */
+    void onError(Consumer<Throwable> consumer);
+
+    /**
+     * Registers a callback to be executed when the transport times out.
+     *
+     * @param runnable The callback to execute on timeout
+     */
+    void onTimeout(Runnable runnable);
+
+    /**
+     * Returns the timestamp of the most recent session activity.
+     *
+     * @return The last accessed time in milliseconds since epoch
+     */
+    long getLastAccessedTime();
+
+    /**
+     * Checks if the transport connection is idle.
+     * A connection is considered idle if no activity has occurred
+     * in the last 5 seconds.
+     *
+     * @return true if the connection is idle, false otherwise
+     */
+    default boolean isIdle() {
+        return System.currentTimeMillis() - getLastAccessedTime() > 5000;
+    }
+
     enum EventType {
         /**
          * Event type for sending the message endpoint URI to clients.
@@ -58,16 +110,21 @@ public interface McpTransport {
         /**
          * Event type for regular messages
          */
-        MESSAGE("message");
+        MESSAGE("message"),
 
-        private String name;
+        /**
+         * Event type for ping
+         */
+        HEARTBEAT("heartbeat");
 
-        EventType(String name) {
-            this.name = name;
+        private String value;
+
+        EventType(String value) {
+            this.value = value;
         }
 
-        public String getName() {
-            return name;
+        public String getValue() {
+            return value;
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.plugin.application.springboot.mcp.converter;
 
+import com.jd.live.agent.core.mcp.spec.v1.CallToolResult;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.core.util.converter.Converter;
 import org.reactivestreams.Publisher;
@@ -49,26 +50,26 @@ public class MonoConverter implements Converter<Object, Object> {
      */
     @Override
     public Mono<Object> convert(Object source) {
-        if (source == null) {
-            return Mono.empty();
-        } else if (source instanceof Mono) {
-            return (Mono<Object>) source;
-        } else if (source instanceof Publisher) {
-            return Mono.from((Publisher<Object>) source);
-        } else if (source instanceof CompletionStage) {
-            return Mono.fromCompletionStage((CompletionStage<Object>) source);
-        } else if (source instanceof JsonRpcResponse) {
+        Object target = source;
+        if (target instanceof JsonRpcResponse) {
             JsonRpcResponse response = (JsonRpcResponse) source;
             if (response.success()) {
-                Object result = response.getResult();
-                if (result instanceof Mono) {
-                    return (Mono<Object>) result;
-                } else if (result instanceof Publisher) {
-                    return Mono.from((Publisher<Object>) result);
-                } else if (result instanceof CompletionStage) {
-                    return Mono.fromCompletionStage((CompletionStage<Object>) result);
+                target = response.getResult();
+                if (target instanceof CallToolResult) {
+                    CallToolResult result = (CallToolResult) target;
+                    Boolean error = result.getError();
+                    if (error == null || !error) {
+                        target = result.getStructuredContent();
+                    }
                 }
             }
+        }
+        if (target instanceof Mono) {
+            return (Mono<Object>) target;
+        } else if (target instanceof Publisher) {
+            return Mono.from((Publisher<Object>) target);
+        } else if (target instanceof CompletionStage) {
+            return Mono.fromCompletionStage((CompletionStage<Object>) target);
         }
         return Mono.just(source);
     }

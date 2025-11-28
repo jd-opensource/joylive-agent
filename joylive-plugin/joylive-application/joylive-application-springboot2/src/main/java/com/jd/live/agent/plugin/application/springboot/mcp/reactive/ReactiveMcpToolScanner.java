@@ -227,30 +227,6 @@ public class ReactiveMcpToolScanner extends AbstractMcpToolScanner {
     }
 
     /**
-     * Retrieves an attribute from the request
-     *
-     * @param ctx The MCP request context
-     * @param name The attribute name
-     * @return The attribute value or null if not found
-     */
-    private Object getRequestAttribute(McpRequestContext ctx, String name) {
-        return getWebExchange(ctx).getAttribute(name);
-    }
-
-    /**
-     * Retrieves an attribute from the session
-     * Note: This method blocks to obtain the session
-     *
-     * @param ctx The MCP request context
-     * @param name The attribute name
-     * @return The attribute value or null if not found
-     */
-    private Object getSessionAttribute(McpRequestContext ctx, String name) {
-        WebSession session = getSession(ctx).block();
-        return session == null ? null : session.getAttribute(name);
-    }
-
-    /**
      * Retrieves the HTTP method from the request
      *
      * @param request The MCP request

@@ -82,6 +82,10 @@ public class OpenApiConverter {
         paths.forEach((path, item) -> {
             ComponentRef<PathItem> ref = components.getPathItem(item);
             PathItem target = ref.getTarget();
+            if (target == null) {
+                //$ref is not exists.
+                return;
+            }
             List<Operation> operations = operationFilter == null ? target.operations() : operationFilter.apply(path, target);
             if (operations == null || operations.isEmpty()) {
                 return;
@@ -122,15 +126,17 @@ public class OpenApiConverter {
             for (Parameter p : parameters) {
                 ComponentRef<Parameter> ref = components.getParameter(p);
                 Parameter target = ref.getTarget();
-                if (target != null) {
-                    if (p.required()) {
-                        required.add(p.getName());
-                    }
-                    JsonSchema schema = createJsonSchema(target.getSchema(), choose(p.getDescription(), target.getDescription()));
-                    if (schema != null) {
-                        schema.setIn(choose(p.getIn(), target.getIn()));
-                        properties.put(p.getName(), schema);
-                    }
+                if (target == null) {
+                    //$ref is not exists.
+                    continue;
+                }
+                if (p.required()) {
+                    required.add(p.getName());
+                }
+                JsonSchema schema = createJsonSchema(target.getSchema(), choose(p.getDescription(), target.getDescription()));
+                if (schema != null) {
+                    schema.setIn(choose(p.getIn(), target.getIn()));
+                    properties.put(p.getName(), schema);
                 }
             }
         }
@@ -162,6 +168,9 @@ public class OpenApiConverter {
      * @return Converted JsonSchema or null if input is null
      */
     private JsonSchema createJsonSchema(Schema schema, String description) {
+        if (schema == null) {
+            return null;
+        }
         ComponentRef<Schema> ref = components.getSchema(schema);
         Schema target = ref.getTarget();
         return target == null ? null : definitions.create(target, s -> ref.getComponent(), s -> {

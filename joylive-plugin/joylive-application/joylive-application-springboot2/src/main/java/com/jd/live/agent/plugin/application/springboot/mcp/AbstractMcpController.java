@@ -43,6 +43,9 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.EventListener;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
@@ -53,6 +56,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.mcp.McpSession.HEADER_SESSION_ID;
+import static com.jd.live.agent.core.mcp.McpSession.QUERY_SESSION_ID;
+import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 
@@ -103,7 +109,7 @@ public abstract class AbstractMcpController {
     @Setter
     protected McpVersion defaultVersion;
 
-    protected final McpTransportFactory transportFactory = this::createTransport;
+    protected final McpTransportFactory transportFactory = s -> configure(createTransport(s));
 
     protected final McpToolInterceptor interceptor = this::intercept;
 
@@ -204,6 +210,22 @@ public abstract class AbstractMcpController {
     }
 
     /**
+     * Delete session
+     *
+     * @param sessionId1 The header session id
+     * @param sessionId2 The query session id
+     */
+    @DeleteMapping
+    public void deleteSession(@RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId1,
+                              @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId2) {
+        String sessionId = choose(sessionId1, sessionId2);
+        McpSession session = sessions.remove(sessionId);
+        if (session != null) {
+            session.close();
+        }
+    }
+
+    /**
      * Retrieves an existing MCP session or creates a new one if none exists.
      *
      * @param sessionId The session identifier. If null or empty, a new UUID will be generated.
@@ -285,6 +307,61 @@ public abstract class AbstractMcpController {
      * @return The created transport implementation
      */
     protected abstract McpTransport createTransport(McpSession session);
+
+    /**
+     * Configures a transport with completion, timeout, and error handlers.
+     *
+     * @param transport The transport to configure
+     * @return The configured transport, or null if input was null
+     */
+    protected McpTransport configure(McpTransport transport) {
+        if (transport != null) {
+            transport.onCompletion(() -> onCompletion(transport));
+            transport.onTimeout(() -> onTimeout(transport));
+            transport.onError(e -> onError(transport, e));
+        }
+        return transport;
+    }
+
+    /**
+     * Handles transport completion events.
+     * Removes the session from active sessions, closes the transport,
+     * and logs the completion event.
+     *
+     * @param transport The transport connection that completed
+     */
+    protected void onCompletion(McpTransport transport) {
+        sessions.remove(transport.getId());
+        transport.close();
+        logger.info("SSE connection is closed by completion for session: {}", transport.getId());
+    }
+
+    /**
+     * Handles transport error events.
+     * Removes the session from active sessions, closes the transport with the error,
+     * and logs the error event.
+     *
+     * @param transport The transport connection that encountered an error
+     * @param e         The throwable representing the error
+     */
+    protected void onError(McpTransport transport, Throwable e) {
+        sessions.remove(transport.getId());
+        transport.close(e);
+        logger.error("SSE connection is closed by error for session: {}", transport.getId(), e);
+    }
+
+    /**
+     * Handles transport timeout events.
+     * Removes the session from active sessions, closes the transport,
+     * and logs the timeout event.
+     *
+     * @param transport The transport connection that timed out
+     */
+    protected void onTimeout(McpTransport transport) {
+        sessions.remove(transport.getId());
+        transport.close();
+        logger.warn("SSE connection is closed by timed out for session: {}", transport.getId());
+    }
 
     /**
      * Registers a tool method with this controller.

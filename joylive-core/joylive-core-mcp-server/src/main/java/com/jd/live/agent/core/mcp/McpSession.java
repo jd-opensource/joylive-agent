@@ -238,6 +238,9 @@ public interface McpSession {
 
         @Override
         public CompletionStage<Void> close() {
+            if (transport != null) {
+                return transport.close();
+            }
             return CompletableFuture.completedFuture(null);
         }
     }

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.mcp.web;
+package com.jd.live.agent.plugin.application.springboot.mcp.reactive;
 
 import com.jd.live.agent.core.mcp.McpTransport;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Sinks;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -24,31 +25,15 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-/**
- * Implementation of McpTransport using Spring's SseEmitter for Server-Sent Events.
- * <p>
- * This class provides a transport layer for MCP (Model Context Protocol) communication
- * over HTTP using Server-Sent Events (SSE). It manages the lifecycle of SSE connections
- * and handles session creation, message delivery, and connection termination.
- *
- * @see McpTransport The transport interface this class implements
- * @see SseEmitter Spring's Server-Sent Events emitter
- */
-public class SseEmitterMcpTransport implements McpTransport {
+public class ReactiveMcpTransport implements McpTransport {
 
-    private final SseEmitter emitter;
+    private final Sinks.Many<ServerSentEvent<Object>> sink;
     private final String id;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private volatile long lastAccessedTime;
 
-    /**
-     * Creates a new SSE-based MCP transport.
-     *
-     * @param emitter The Spring SseEmitter for sending server events
-     * @param id      The unique identifier for the client connection
-     */
-    public SseEmitterMcpTransport(SseEmitter emitter, String id) {
-        this.emitter = emitter;
+    public ReactiveMcpTransport(Sinks.Many<ServerSentEvent<Object>> sink, String id) {
+        this.sink = sink;
         this.id = id;
     }
 
@@ -59,58 +44,55 @@ public class SseEmitterMcpTransport implements McpTransport {
 
     @Override
     public <T> T getConnection() {
-        return (T) emitter;
+        return (T) sink;
     }
 
     @Override
     public CompletionStage<Void> send(String id, EventType type, Object data) {
         lastAccessedTime = System.currentTimeMillis();
         CompletableFuture<Void> result = new CompletableFuture<>();
-        try {
-            if (closed.get()) {
-                result.completeExceptionally(new IllegalStateException("SSE connection is already closed for client: " + this.id));
-            } else {
-                switch (type) {
-                    case HEARTBEAT:
-                        emitter.send(SseEmitter.event().comment(type.getValue()));
-                        break;
-                    case ENDPOINT:
-                    case MESSAGE:
-                    default:
-                        emitter.send(SseEmitter.event().id(id).name(type.getValue()).data(data));
-                }
-                result.complete(null);
+        if (closed.get()) {
+            result.completeExceptionally(new IllegalStateException("SSE connection is already closed for client: " + this.id));
+        } else {
+            ServerSentEvent<Object> event;
+            switch (type) {
+                case HEARTBEAT:
+                    event = ServerSentEvent.builder().comment(type.getValue()).build();
+                    break;
+                case ENDPOINT:
+                case MESSAGE:
+                default:
+                    event = ServerSentEvent.builder().id(id).event(type.getValue()).data(data).build();
             }
-        } catch (IOException e) {
-            close(() -> emitter.completeWithError(e));
-            result.completeExceptionally(e);
+            Sinks.EmitResult er = sink.tryEmitNext(event);
+            if (er.isSuccess()) {
+                result.complete(null);
+            } else {
+                sink.tryEmitError(new IOException("Failed to send message for session: " + this.id));
+                result.completeExceptionally(new IOException("Failed to send message for session: " + this.id));
+            }
         }
         return result;
     }
 
     @Override
     public CompletionStage<Void> close() {
-        return close(() -> emitter.complete());
-    }
-
-    @Override
-    public CompletionStage<Void> close(Throwable cause) {
-        return close(() -> emitter.completeWithError(cause));
+        return close(() -> sink.tryEmitComplete());
     }
 
     @Override
     public void onCompletion(Runnable runnable) {
-        emitter.onCompletion(runnable);
+        sink.asFlux().doOnComplete(runnable).subscribe();
     }
 
     @Override
     public void onError(Consumer<Throwable> consumer) {
-        emitter.onError(consumer);
+        sink.asFlux().doOnError(consumer).subscribe();
     }
 
     @Override
     public void onTimeout(Runnable runnable) {
-        emitter.onTimeout(runnable);
+
     }
 
     @Override

@@ -69,6 +69,10 @@ public class JsonRpcRequest implements JsonRpcMessage {
         return id == null;
     }
 
+    public boolean heartbeat() {
+        return METHOD_PING.equals(method);
+    }
+
     public boolean validate() {
         return JSON_RPC_VERSION.equals(jsonrpc) && method != null && !method.isEmpty();
     }

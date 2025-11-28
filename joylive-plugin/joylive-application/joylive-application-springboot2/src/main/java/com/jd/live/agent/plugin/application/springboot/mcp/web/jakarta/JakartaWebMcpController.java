@@ -29,10 +29,12 @@ import com.jd.live.agent.core.mcp.handler.McpHandler;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcRequest;
 import com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse;
 import com.jd.live.agent.core.parser.jdk.ReflectionJsonSchemaParser;
+import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.plugin.application.springboot.mcp.AbstractMcpController;
 import com.jd.live.agent.plugin.application.springboot.mcp.web.SseEmitterMcpTransport;
 import com.jd.live.agent.plugin.application.springboot.mcp.web.javax.JavaxWebMcpController;
 import com.jd.live.agent.plugin.application.springboot.mcp.web.javax.JavaxWebMcpToolScanner;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -42,18 +44,14 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import static com.jd.live.agent.core.mcp.McpSession.HEADER_SESSION_ID;
 import static com.jd.live.agent.core.mcp.McpSession.QUERY_SESSION_ID;
 import static com.jd.live.agent.core.mcp.spec.v1.JsonRpcResponse.*;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.core.util.StringUtils.isEmpty;
-import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 /**
@@ -71,6 +69,16 @@ public class JakartaWebMcpController extends AbstractMcpController {
      */
     public static final String NAME = "jakartaWebMcpController";
 
+    /**
+     * Establishes an SSE connection for MCP communication.
+     *
+     * @param sessionId1 Session ID from request parameter
+     * @param sessionId2 Session ID from request header
+     * @param request    HTTP servlet request
+     * @param response   HTTP servlet response
+     * @return SseEmitter for the established connection or null if application is not ready
+     * @throws Exception If connection establishment fails
+     */
     @GetMapping
     public SseEmitter connect(@RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId1,
                               @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId2,
@@ -89,22 +97,6 @@ public class JakartaWebMcpController extends AbstractMcpController {
             transport.send(null, EventType.ENDPOINT, url);
         }
         return transport.getConnection();
-    }
-
-    /**
-     * Delete session
-     *
-     * @param sessionId1   The header session id
-     * @param sessionId2   The query session id
-     */
-    @DeleteMapping
-    public void deleteSession(@RequestParam(value = QUERY_SESSION_ID, required = false) String sessionId1,
-                              @RequestHeader(value = HEADER_SESSION_ID, required = false) String sessionId2) {
-        String sessionId = choose(sessionId1, sessionId2);
-        McpSession session = sessions.get(sessionId);
-        if (session != null) {
-            session.close();
-        }
     }
 
     /**
@@ -139,16 +131,16 @@ public class JakartaWebMcpController extends AbstractMcpController {
         }
         // validate and invoke
         JsonRpcResponse response;
-        try {
-            if (!request.validate()) {
-                response = createInvalidRequestResponse(request.getId());
-            } else if (handler == null) {
-                response = createMethodNotFoundResponse(request.getId());
-            } else {
+        if (!request.validate()) {
+            response = createInvalidRequestResponse(request.getId());
+        } else if (handler == null) {
+            response = createMethodNotFoundResponse(request.getId());
+        } else {
+            try {
                 response = handler.handle(request, createContext(session, webRequest, httpRequest, httpResponse));
+            } catch (McpException e) {
+                response = createErrorResponse(request.getId(), e.getCause());
             }
-        } catch (McpException e) {
-            response = createErrorResponse(request.getId(), e.getCause());
         }
         // reply
         reply(request, response, session, httpResponse);
@@ -166,106 +158,9 @@ public class JakartaWebMcpController extends AbstractMcpController {
 
     @Override
     protected McpTransport createTransport(McpSession session) {
-        String sessionId = session.getId();
         long timeout = config.getMcpConfig().getTimeout();
         SseEmitter emitter = timeout > 0 ? new SseEmitter(timeout) : new SseEmitter();
-        return new SseEmitterMcpTransport(emitter, sessionId, id -> {
-            sessions.remove(id);
-            return CompletableFuture.completedFuture(null);
-        });
-    }
-
-    /**
-     * Handles requests when the application is not ready to process them.
-     *
-     * @param httpResponse The HTTP response object
-     * @throws IOException If an I/O error occurs during response writing
-     */
-    private void onAppNotReady(HttpServletResponse httpResponse) throws IOException {
-        writeAndFlush(httpResponse, TEXT_PLAIN_VALUE, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "SSE Server is not ready.");
-    }
-
-    /**
-     * Handles missing session scenarios according to MCP protocol specifications.
-     *
-     * @param sessionId    The requested session identifier
-     * @param httpResponse The HTTP response object
-     * @throws IOException If an I/O error occurs during response writing
-     */
-    private void onMissingSession(String sessionId, HttpServletResponse httpResponse) throws IOException {
-        if (!isEmpty(sessionId)) {
-            // Servers that require a session ID SHOULD respond to requests
-            // without an Mcp-Session-Id header (other than initialization) with HTTP 400 Bad Request
-            writeAndFlush(httpResponse, TEXT_PLAIN_VALUE, HttpServletResponse.SC_BAD_REQUEST, "SSE without an Mcp-Session-Id header.");
-        } else {
-            // When a client receives HTTP 404 in response to a request containing an Mcp-Session-Id,
-            // it MUST start a new session by sending a new InitializeRequest without a session ID attached
-            writeAndFlush(httpResponse, TEXT_PLAIN_VALUE, SC_NOT_FOUND, "SSE session is not found: " + sessionId);
-        }
-    }
-
-    /**
-     * Sends a JSON-RPC response to the client.
-     *
-     * @param request      The original JSON-RPC request
-     * @param response     The JSON-RPC response to send
-     * @param session      The MCP session associated with this request
-     * @param httpResponse The HTTP servlet response object
-     * @throws IOException If an I/O error occurs during response writing
-     */
-    private void reply(JsonRpcRequest request,
-                       JsonRpcResponse response,
-                       McpSession session,
-                       HttpServletResponse httpResponse) throws IOException {
-        if (response != null && !request.notification()) {
-            // only text event stream
-            String id = request.getId().toString();
-            String data = objectParser.write(response);
-            String sid = session.getId();
-            McpTransport transport = session.getTransport();
-            if (transport != null) {
-                // sse
-                transport.send(id, EventType.MESSAGE, data).whenComplete((v, e) -> {
-                    if (e != null) {
-                        logger.error("SSE Failed to send message to session {}: {}", sid, e.getMessage());
-                    }
-                });
-                httpResponse.setStatus(HttpServletResponse.SC_ACCEPTED);
-            } else {
-                // none sse
-                httpResponse.setStatus(SC_OK);
-                httpResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                httpResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                httpResponse.setContentLength(data.length());
-                PrintWriter writer = httpResponse.getWriter();
-                writer.write(data);
-                writer.flush();
-            }
-        } else {
-            httpResponse.setStatus(HttpServletResponse.SC_ACCEPTED);
-        }
-    }
-
-    /**
-     * Retrieves an existing MCP session or creates a new one.
-     *
-     * @param sessionId The session identifier
-     * @param handler   The MCP request handler
-     * @param response  The HTTP servlet response
-     * @return The MCP session associated with the request, or null if unavailable
-     */
-    private McpSession getOrCreateSession(String sessionId, McpHandler handler, HttpServletResponse response) {
-        McpSession session = isEmpty(sessionId) ? null : sessions.get(sessionId);
-        if (session != null) {
-            session.setLastAccessedTime(System.currentTimeMillis());
-            return session;
-        } else if (handler instanceof Initialization) {
-            // none sse
-            session = createSession(sessionId);
-            sessions.put(session.getId(), session);
-            response.setHeader(HEADER_SESSION_ID, session.getId());
-        }
-        return session;
+        return new SseEmitterMcpTransport(emitter, session.getId());
     }
 
     /**
@@ -297,6 +192,93 @@ public class JakartaWebMcpController extends AbstractMcpController {
     }
 
     /**
+     * Retrieves an existing MCP session or creates a new one.
+     *
+     * @param sessionId The session identifier
+     * @param handler   The MCP request handler
+     * @param response  The HTTP servlet response
+     * @return The MCP session associated with the request, or null if unavailable
+     */
+    private McpSession getOrCreateSession(String sessionId, McpHandler handler, HttpServletResponse response) {
+        McpSession session = isEmpty(sessionId) ? null : sessions.get(sessionId);
+        if (session != null) {
+            session.setLastAccessedTime(System.currentTimeMillis());
+            return session;
+        } else if (handler instanceof Initialization) {
+            // none sse
+            session = createSession(sessionId);
+            sessions.put(session.getId(), session);
+            response.setHeader(HEADER_SESSION_ID, session.getId());
+        }
+        return session;
+    }
+
+    /**
+     * Handles requests when the application is not ready to process them.
+     *
+     * @param response The HTTP response object
+     * @throws IOException If an I/O error occurs during response writing
+     */
+    private void onAppNotReady(HttpServletResponse response) throws IOException {
+        writeAndFlush(response, TEXT_PLAIN_VALUE, HttpStatus.SERVICE_UNAVAILABLE.value(), "SSE Server is not ready.");
+    }
+
+    /**
+     * Handles missing session scenarios according to MCP protocol specifications.
+     *
+     * @param sessionId The requested session identifier
+     * @param response  The HTTP response object
+     * @throws IOException If an I/O error occurs during response writing
+     */
+    private void onMissingSession(String sessionId, HttpServletResponse response) throws IOException {
+        if (!isEmpty(sessionId)) {
+            // Servers that require a session ID SHOULD respond to requests
+            // without an Mcp-Session-Id header (other than initialization) with HTTP 400 Bad Request
+            writeAndFlush(response, TEXT_PLAIN_VALUE, HttpStatus.BAD_REQUEST.value(), "SSE without an Mcp-Session-Id header.");
+        } else {
+            // When a client receives HTTP 404 in response to a request containing an Mcp-Session-Id,
+            // it MUST start a new session by sending a new InitializeRequest without a session ID attached
+            writeAndFlush(response, TEXT_PLAIN_VALUE, HttpStatus.NOT_FOUND.value(), "SSE session is not found: " + sessionId);
+        }
+    }
+
+    /**
+     * Sends a JSON-RPC response to the client.
+     *
+     * @param req      The original JSON-RPC request
+     * @param resp     The JSON-RPC response to send
+     * @param session  The MCP session associated with this request
+     * @param response The HTTP servlet response object
+     * @throws IOException If an I/O error occurs during response writing
+     */
+    private void reply(JsonRpcRequest req, JsonRpcResponse resp, McpSession session, HttpServletResponse response) throws IOException {
+        McpTransport transport = session.getTransport();
+        String sid = session.getId();
+        if (resp != null && !req.notification()) {
+            // only text event stream
+            String data = objectParser.write(resp);
+            if (transport == null) {
+                // none sse
+                writeAndFlush(response, MediaType.APPLICATION_JSON_VALUE, HttpStatus.OK.value(), data);
+                return;
+            }
+            if (transport != null) {
+                // sse
+                transport.send(req.getId().toString(), EventType.MESSAGE, data)
+                        .whenComplete((v, e) -> {
+                            if (e != null) {
+                                logger.error("SSE Failed to send message to session {}: {}", sid, e.getMessage());
+                            }
+                        });
+            }
+        } else if (transport != null && transport.isIdle() && req.heartbeat()) {
+            // keep transport heartbeat
+            transport.send(null, EventType.HEARTBEAT, null);
+        }
+        response.setStatus(HttpStatus.ACCEPTED.value());
+    }
+
+    /**
      * Writes response with specified status code and message.
      *
      * @param response    The HTTP servlet response
@@ -306,9 +288,13 @@ public class JakartaWebMcpController extends AbstractMcpController {
      * @throws IOException If an I/O error occurs while writing the response
      */
     private void writeAndFlush(HttpServletResponse response, String contentType, int status, String message) throws IOException {
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         response.setStatus(status);
         response.setContentType(contentType);
-        response.getWriter().write(message);
-        response.getWriter().flush();
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentLength(bytes.length);
+        ServletOutputStream os = response.getOutputStream();
+        os.write(bytes);
+        os.flush();
     }
 }
