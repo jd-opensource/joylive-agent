@@ -232,6 +232,7 @@ public class ReactiveMcpController extends AbstractMcpController {
         if (resp != null && !req.notification()) {
             String requestId = req.getId().toString();
             String sessionId = session.getId();
+            // Already handled CallToolResult exception in convert
             return MonoConverter.INSTANCE.convert(resp)
                     .flatMap(r -> {
                         JsonRpcResponse value = r instanceof JsonRpcResponse ? (JsonRpcResponse) r : createSuccessResponse(requestId, r);

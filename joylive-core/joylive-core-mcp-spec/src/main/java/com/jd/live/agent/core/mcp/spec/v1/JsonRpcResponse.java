@@ -78,6 +78,11 @@ public class JsonRpcResponse implements JsonRpcMessage {
         return error != null;
     }
 
+    public JsonRpcResponse result(Object result) {
+        this.result = result;
+        return this;
+    }
+
     /**
      * Create a notification response
      */

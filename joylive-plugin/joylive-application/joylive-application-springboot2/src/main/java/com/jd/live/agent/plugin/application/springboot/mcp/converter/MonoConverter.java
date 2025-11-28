@@ -22,6 +22,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 /**
  * Converter that transforms various types of objects into Mono instances.
@@ -50,26 +51,30 @@ public class MonoConverter implements Converter<Object, Object> {
      */
     @Override
     public Mono<Object> convert(Object source) {
+        Function<Object, Object> map = null;
+        Function<Throwable, Mono<Object>> errorResume = null;
         Object target = source;
         if (target instanceof JsonRpcResponse) {
             JsonRpcResponse response = (JsonRpcResponse) source;
-            if (response.success()) {
-                target = response.getResult();
-                if (target instanceof CallToolResult) {
-                    CallToolResult result = (CallToolResult) target;
-                    Boolean error = result.getError();
-                    if (error == null || !error) {
-                        target = result.getStructuredContent();
-                    }
+            if (response.success() && response.getResult() instanceof CallToolResult) {
+                CallToolResult result = (CallToolResult) response.getResult();
+                Boolean error = result.getError();
+                if (error == null || !error) {
+                    target = result.getStructuredContent();
+                    map = o -> result.structuredContent(o);
+                    errorResume = e -> Mono.just(response.result(new CallToolResult(e)));
                 }
             }
         }
         if (target instanceof Mono) {
-            return (Mono<Object>) target;
+            Mono<Object> mono = (Mono<Object>) target;
+            return map == null ? mono : mono.map(map).onErrorResume(errorResume);
         } else if (target instanceof Publisher) {
-            return Mono.from((Publisher<Object>) target);
+            Mono<Object> mono = Mono.from((Publisher<Object>) target);
+            return map == null ? mono : mono.map(map).onErrorResume(errorResume);
         } else if (target instanceof CompletionStage) {
-            return Mono.fromCompletionStage((CompletionStage<Object>) target);
+            Mono<Object> mono = Mono.fromCompletionStage((CompletionStage<Object>) target);
+            return map == null ? mono : mono.map(map).onErrorResume(errorResume);
         }
         return Mono.just(source);
     }

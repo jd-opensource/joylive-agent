@@ -78,6 +78,11 @@ public class CallToolResult implements Result {
         addContent(new TextContent(cause.getMessage()));
     }
 
+    public CallToolResult structuredContent(Object structuredContent) {
+        this.structuredContent = structuredContent;
+        return this;
+    }
+
     /**
      * Adds a content item to the tool result.
      *
