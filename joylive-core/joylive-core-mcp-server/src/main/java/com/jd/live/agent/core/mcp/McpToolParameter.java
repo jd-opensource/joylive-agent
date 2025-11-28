@@ -112,12 +112,12 @@ public class McpToolParameter {
     /**
      * Parser for system-generated parameter values.
      */
-    private final McpRequestParser systemParser;
+    private final McpRequestParser parser;
 
     /**
      * Parser for default values when parameter is not provided.
      */
-    private final McpRequestParser defaultValueParser;
+    private final McpRequestParser defaultParser;
 
     private final Validator validator;
 
@@ -131,8 +131,8 @@ public class McpToolParameter {
                             boolean convertable,
                             Converter<Object, Object> converter,
                             Converter<Object, Object> wrapper,
-                            McpRequestParser systemParser,
-                            McpRequestParser defaultValueParser,
+                            McpRequestParser parser,
+                            McpRequestParser defaultParser,
                             Validator validator) {
         this.parameter = parameter;
         this.name = parameter.getName();
@@ -147,8 +147,8 @@ public class McpToolParameter {
         this.convertable = convertable;
         this.converter = converter;
         this.wrapper = wrapper;
-        this.systemParser = systemParser;
-        this.defaultValueParser = defaultValueParser;
+        this.parser = parser;
+        this.defaultParser = defaultParser;
         this.validator = validator;
     }
 
@@ -187,7 +187,7 @@ public class McpToolParameter {
     public Object parse(McpRequest request, McpRequestContext ctx) throws Exception {
         Object result = getValue(request, ctx);
         boolean empty = result == null || result instanceof CharSequence && ((CharSequence) result).length() == 0;
-        result = empty && defaultValueParser != null ? defaultValueParser.parse(request, ctx) : result;
+        result = empty && defaultParser != null ? defaultParser.parse(request, ctx) : result;
         result = result == null || !convertable ? result : convert(ctx, result);
         if (result == null && required) {
             throw new MissingParameterException(name);
@@ -206,9 +206,10 @@ public class McpToolParameter {
      */
     private Object getValue(McpRequest request, McpRequestContext ctx) throws Exception {
         String key = getKey();
+        if (parser != null) {
+            return parser.parse(request, ctx);
+        }
         switch (location) {
-            case QUERY:
-                return unary(request.getQuery(key), false);
             case HEADER:
                 return unary(request.getHeader(key), false);
             case COOKIE:
@@ -217,8 +218,7 @@ public class McpToolParameter {
                 return request.getPath(key);
             case BODY:
                 return request.getBody(key);
-            case SYSTEM:
-                return systemParser.parse(request, ctx);
+            case QUERY:
             default:
                 return unary(request.getQuery(key), false);
         }
@@ -324,8 +324,8 @@ public class McpToolParameter {
         private boolean convertable = true;
         private Converter<Object, Object> converter;
         private Converter<Object, Object> wrapper;
-        private McpRequestParser systemParser;
-        private McpRequestParser defaultValueParser;
+        private McpRequestParser parser;
+        private McpRequestParser defaultParser;
         private Validator validator;
 
         /**
@@ -465,8 +465,8 @@ public class McpToolParameter {
          * @param parser The system parser to use
          * @return This builder instance for method chaining
          */
-        public McpToolParameterBuilder systemParser(McpRequestParser parser) {
-            this.systemParser = parser;
+        public McpToolParameterBuilder parser(McpRequestParser parser) {
+            this.parser = parser;
             return this;
         }
 
@@ -477,7 +477,7 @@ public class McpToolParameter {
          * @return This builder instance for method chaining
          */
         public McpToolParameterBuilder defaultValueParser(McpRequestParser defaultValueParser) {
-            this.defaultValueParser = defaultValueParser;
+            this.defaultParser = defaultValueParser;
             return this;
         }
 
@@ -594,7 +594,7 @@ public class McpToolParameter {
          *
          * @return True if conversion should be applied
          */
-        public boolean isConvertable() {
+        public boolean convertable() {
             return convertable;
         }
 
@@ -621,8 +621,8 @@ public class McpToolParameter {
          *
          * @return The system parser
          */
-        public McpRequestParser systemParser() {
-            return this.systemParser;
+        public McpRequestParser parser() {
+            return this.parser;
         }
 
         /**
@@ -631,7 +631,7 @@ public class McpToolParameter {
          * @return The default value parser
          */
         public McpRequestParser defaultValueParser() {
-            return this.defaultValueParser;
+            return this.defaultParser;
         }
 
         public Validator validator() {
@@ -692,7 +692,7 @@ public class McpToolParameter {
          */
         public McpToolParameter build() {
             return new McpToolParameter(parameter, index, actualType, arg, required, optional, location,
-                    convertable, converter, wrapper, systemParser, defaultValueParser, validator);
+                    convertable, converter, wrapper, parser, defaultParser, validator);
         }
     }
 

@@ -18,6 +18,7 @@ package com.jd.live.agent.core.mcp.handler.builder;
 import com.jd.live.agent.core.mcp.McpRequestContext;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.mcp.McpToolParameter;
+import com.jd.live.agent.core.mcp.McpToolParameter.Location;
 import com.jd.live.agent.core.mcp.spec.v1.JsonSchema;
 import com.jd.live.agent.core.mcp.spec.v1.ListToolsResult;
 import com.jd.live.agent.core.mcp.spec.v1.Tool;
@@ -97,7 +98,7 @@ public class ReflectionListToolsBuilder implements ListToolsBuilder {
         List<String> required = new ArrayList<>();
         for (McpToolParameter parameter : parameters) {
             // filter system parameters
-            if (parameter.getSystemParser() == null) {
+            if (parameter.getLocation() != Location.SYSTEM) {
                 if (parameter.isRequired()) {
                     required.add(parameter.getName());
                 }

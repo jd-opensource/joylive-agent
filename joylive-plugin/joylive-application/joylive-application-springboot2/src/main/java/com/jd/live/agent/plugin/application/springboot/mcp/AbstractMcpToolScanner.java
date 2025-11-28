@@ -221,6 +221,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      * @return Built MCP tool parameter
      */
     protected McpToolParameter createParameter(Method method, Parameter parameter, int index, String name) {
+        // TODO parse complex model object by system json parser.
         McpToolParameterConfigurator chain = new McpToolParameterConfiguratorChain(
                 builder -> configureRequestParam(builder, new ParameterAnnotationGetter(parameter)),
                 builder -> configureModelAttribute(builder, new ParameterAnnotationGetter(parameter), new MethodAnnotationGetter(method)),
@@ -330,14 +331,14 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
      */
     protected McpToolParameterBuilder configureRequestHeader(McpToolParameterBuilder builder, AnnotationGetter getter) {
         if (builder.isType(HttpHeaders.class)) {
-            return builder.location(Location.SYSTEM).systemParser(createMultiValueHeaderParser());
+            return builder.location(Location.SYSTEM).parser(createMultiValueHeaderParser());
         }
         RequestHeader requestHeader = getter.getAnnotation(RequestHeader.class);
         if (requestHeader != null) {
             if (builder.isAssignableTo(MultiValueMap.class)) {
-                return builder.location(Location.SYSTEM).convertable(false).systemParser(createMultiValueHeaderParser());
+                return builder.location(Location.SYSTEM).convertable(false).parser(createMultiValueHeaderParser());
             } else if (builder.isAssignableTo(Map.class)) {
-                return builder.location(Location.SYSTEM).convertable(false).systemParser(createSingleValueHeaderParser());
+                return builder.location(Location.SYSTEM).convertable(false).parser(createSingleValueHeaderParser());
             }
             String arg = resolveName(choose(requestHeader.value(), requestHeader.name()));
             return builder
@@ -401,7 +402,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                     .arg(arg)
                     .location(Location.SYSTEM)
                     .convertable(false)
-                    .systemParser((req, ctx) -> ctx.getSessionAttribute(name));
+                    .parser((req, ctx) -> ctx.getSessionAttribute(name));
         }
         return builder;
     }
@@ -422,7 +423,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
                     .arg(arg)
                     .location(Location.SYSTEM)
                     .convertable(false)
-                    .systemParser((req, ctx) -> ctx.getRequestAttribute(name));
+                    .parser((req, ctx) -> ctx.getRequestAttribute(name));
         }
         return builder;
     }
@@ -475,7 +476,7 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
         return builder
                 .arg(arg)
                 .location(Location.SYSTEM)
-                .systemParser(((req, ctx) -> {
+                .parser(((req, ctx) -> {
                     if (location == Location.BODY) {
                         Object value = req.getBody(builder.arg());
                         if (!isEmpty(arg)) {
