@@ -170,6 +170,9 @@ public class Artifact {
      * @return Version string from JAR manifest
      */
     public static String getVersion(Class<?> type) {
+        if (type == null) {
+            return null;
+        }
         CodeSource codeSource = type.getProtectionDomain().getCodeSource();
         Artifact artifact = new Artifact(codeSource.getLocation().getPath());
         return artifact.getVersion();

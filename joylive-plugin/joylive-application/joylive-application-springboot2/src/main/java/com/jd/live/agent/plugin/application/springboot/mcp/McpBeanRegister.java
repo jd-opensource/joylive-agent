@@ -54,9 +54,6 @@ public class McpBeanRegister implements BeanRegister {
     @Inject
     private Map<String, McpVersion> versions;
 
-    @Inject
-    private McpVersion defaultVersion;
-
     @Override
     public void register(ConfigurableApplicationContext ctx) {
         if (!context.getGovernanceConfig().getMcpConfig().isEnabled()) {
@@ -88,7 +85,6 @@ public class McpBeanRegister implements BeanRegister {
                         .addPropertyValue("handlers", handlers)
                         .addPropertyValue("config", context.getGovernanceConfig())
                         .addPropertyValue("versions", versions)
-                        .addPropertyValue("defaultVersion", defaultVersion)
                         .getBeanDefinition();
                 BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
                 registry.registerBeanDefinition(beanName, definition);

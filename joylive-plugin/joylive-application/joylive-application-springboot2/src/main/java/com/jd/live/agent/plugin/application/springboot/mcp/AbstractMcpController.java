@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.plugin.application.springboot.mcp;
 
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.mcp.*;
 import com.jd.live.agent.core.mcp.McpSession.DefaultMcpSession;
@@ -103,12 +102,6 @@ public abstract class AbstractMcpController {
     @Setter
     protected Map<String, McpVersion> versions;
 
-    /**
-     * Default MCP version
-     */
-    @Setter
-    protected McpVersion defaultVersion;
-
     protected final McpTransportFactory transportFactory = s -> configure(createTransport(s));
 
     protected final McpToolInterceptor interceptor = this::intercept;
@@ -134,17 +127,6 @@ public abstract class AbstractMcpController {
     protected final Map<String, List<McpToolMethod>> paths = new HashMap<>();
 
     protected final CompletableFuture<Void> future = new CompletableFuture<>();
-
-    /**
-     * Gets specified version or returns default if not found
-     *
-     * @param version version identifier
-     * @return MCP version
-     */
-    public McpVersion getVersion(String version) {
-        McpVersion result = version == null ? null : versions.get(version);
-        return result == null ? defaultVersion : result;
-    }
 
     /**
      * Application start event handler, scans and registers controller methods
@@ -269,7 +251,7 @@ public abstract class AbstractMcpController {
                 .builder()
                 .name(application.getName())
                 .title(mcpConfig.getTitle())
-                .version(application.getMeta(Constants.LABEL_AGENT_VERSION, null))
+                .version(isEmpty(application.getVersion()) ? "unknown" : application.getVersion())
                 .build();
         ServerCapabilities serverCapabilities = ServerCapabilities.builder()
                 // disable logging capabilities for risk

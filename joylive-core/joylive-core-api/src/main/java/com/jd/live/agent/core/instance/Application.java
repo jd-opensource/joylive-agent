@@ -127,6 +127,9 @@ public class Application {
     @Setter
     private ClassLoader classLoader;
 
+    @Setter
+    private String version;
+
     /**
      * Default constructor initializes the process ID and instance with a unique application ID.
      */
