@@ -28,6 +28,7 @@ public class OpenApiRegister extends AppListener.AppListenerAdapter {
 
     @Override
     public void onStarted(AppContext context) {
+
         OpenApiFactory.INSTANCE_REF.set(SpringUtils.getApiFactory(context));
     }
 }
