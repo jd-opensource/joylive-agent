@@ -18,7 +18,6 @@ package com.jd.live.agent.plugin.application.springboot.definition;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
-import com.jd.live.agent.core.extension.ExtensionManager;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
@@ -30,7 +29,6 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.application.springboot.interceptor.ApplicationOnContextPreparedInterceptor;
 import com.jd.live.agent.plugin.application.springboot.interceptor.ApplicationOnEnvironmentPreparedInterceptor;
@@ -69,14 +67,8 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
-    @Inject(DocumentRegistry.COMPONENT_SERVICE_DOC_REGISTRY)
-    private DocumentRegistry docRegistry;
-
     @Inject(Application.COMPONENT_APPLICATION)
     private Application application;
-
-    @Inject(ExtensionManager.COMPONENT_EXTENSION_MANAGER)
-    private ExtensionManager extensionManager;
 
     public SpringApplicationRunListenersDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_SPRING_APPLICATION_RUN_LISTENERS);
@@ -84,9 +76,9 @@ public class SpringApplicationRunListenersDefinition extends PluginDefinitionAda
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_ENVIRONMENT_PREPARED),
                         () -> new ApplicationOnEnvironmentPreparedInterceptor(supervisor, config, registry, application)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_STARTED),
-                        () -> new ApplicationOnStartedInterceptor(supervisor, docRegistry, application)),
+                        () -> new ApplicationOnStartedInterceptor(supervisor)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_CONTEXT_PREPARED),
-                        () -> new ApplicationOnContextPreparedInterceptor(supervisor, extensionManager)),
+                        () -> new ApplicationOnContextPreparedInterceptor(supervisor)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.in(METHOD_READY, METHOD_RUNNING, METHOD_FINISHED),
                         () -> new ApplicationOnReadyInterceptor(supervisor, config, registry, application)),
         };

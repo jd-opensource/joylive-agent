@@ -17,23 +17,18 @@ package com.jd.live.agent.plugin.application.springboot.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
-import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApiFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.governance.doc.DocumentRegistry;
 import com.jd.live.agent.plugin.application.springboot.context.SpringAppContext;
 import com.jd.live.agent.plugin.application.springboot.util.AppLifecycle;
-import com.jd.live.agent.plugin.application.springboot.util.WebDoc;
+import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
 
 public class ApplicationOnStartedInterceptor extends InterceptorAdaptor {
 
     private final AppListener listener;
-    private final DocumentRegistry docRegistry;
-    private final Application application;
 
-    public ApplicationOnStartedInterceptor(AppListener listener, DocumentRegistry docRegistry, Application application) {
+    public ApplicationOnStartedInterceptor(AppListener listener) {
         this.listener = listener;
-        this.docRegistry = docRegistry;
-        this.application = application;
     }
 
     @Override
@@ -41,9 +36,21 @@ public class ApplicationOnStartedInterceptor extends InterceptorAdaptor {
         // fix for spring boot 2.1, it will trigger twice.
         AppLifecycle.started(() -> {
             SpringAppContext context = new SpringAppContext(ctx.getArgument(0));
-            WebDoc webDoc = new WebDoc(application, context.getContext());
-            docRegistry.register(webDoc.build());
+            OpenApiFactory apiFactory = SpringUtils.getApiFactory(context);
+            OpenApiFactory.INSTANCE_REF.set(apiFactory);
             listener.onStarted(context);
+
+            // async create open api instance after lister on started.
+            if (apiFactory != null) {
+                Thread thread = new Thread(() -> {
+                    try {
+                        apiFactory.create();
+                    } catch (Throwable e) {
+                    }
+                });
+                thread.setDaemon(true);
+                thread.start();
+            }
         });
     }
 

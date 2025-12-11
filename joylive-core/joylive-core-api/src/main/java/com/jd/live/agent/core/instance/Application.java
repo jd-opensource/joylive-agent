@@ -62,6 +62,8 @@ public class Application {
      */
     public static final String KEY_APPLICATION_SERVICE_PORT = "APPLICATION_SERVICE_PORT";
 
+    public static final String KEY_OPEN_API = "APPLICATION_OPEN_API";
+
     /**
      * Constant for the application instance configuration key.
      */
@@ -94,7 +96,7 @@ public class Application {
      */
     @Setter
     @Config("service")
-    private AppService service = new AppService();
+    private AppService service;
 
     /**
      * Location information of the application.

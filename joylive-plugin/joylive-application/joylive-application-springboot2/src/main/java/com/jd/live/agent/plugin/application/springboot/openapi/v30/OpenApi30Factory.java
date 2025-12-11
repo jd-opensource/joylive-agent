@@ -23,6 +23,7 @@ import com.jd.live.agent.plugin.application.springboot.openapi.v31.OpenApi31Fact
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 import static com.jd.live.agent.core.util.CollectionUtils.*;
 
@@ -30,6 +31,10 @@ import static com.jd.live.agent.core.util.CollectionUtils.*;
  * Factory implementation for creating OpenApi objects from OpenAPI 3.1 specifications.
  */
 public class OpenApi30Factory extends OpenApi31Factory {
+
+    public OpenApi30Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
+        super(callable);
+    }
 
     @Override
     protected OpenApi build(OpenAPI openApi) {

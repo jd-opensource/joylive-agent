@@ -138,8 +138,9 @@ public class GovernanceConfig {
     public static final String CONFIG_EXPORTER_TRAFFIC_ENABLED = CONFIG_EXPORTER_TRAFFIC + ENABLED;
     public static final String CONFIG_EXPORTER_EXCEPTION = CONFIG_EXPORTER + ".exception";
     public static final String CONFIG_EXPORTER_EXCEPTION_ENABLED = CONFIG_EXPORTER_EXCEPTION + ENABLED;
-    public static final String CONFIG_EXPORTER_DOCUMENT = CONFIG_EXPORTER + ".document";
-    public static final String CONFIG_EXPORTER_DOCUMENT_ENABLED = CONFIG_EXPORTER_DOCUMENT + ENABLED;
+
+    public static final String CONFIG_MCP = CONFIG_GOVERNANCE + ".mcp";
+    public static final String CONFIG_MCP_ENABLED = CONFIG_MCP + ENABLED;
 
     @Config("live")
     private LiveConfig liveConfig = new LiveConfig();

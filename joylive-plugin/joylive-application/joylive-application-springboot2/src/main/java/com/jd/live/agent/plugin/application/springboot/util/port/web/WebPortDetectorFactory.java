@@ -59,7 +59,7 @@ public class WebPortDetectorFactory implements PortDetectorFactory {
         public static boolean isWebServerEnabled(AppContext context) {
             if (context instanceof SpringAppContext) {
                 SpringAppContext springContext = (SpringAppContext) context;
-                if (CLASS_WEB_SERVER_APPLICATION_CONTEXT != null && CLASS_WEB_SERVER_APPLICATION_CONTEXT.isInstance(springContext.getContext())) {
+                if (CLASS_WEB_SERVER_APPLICATION_CONTEXT != null && CLASS_WEB_SERVER_APPLICATION_CONTEXT.isInstance(springContext.unwrap())) {
                     return true;
                 }
             }
@@ -68,7 +68,7 @@ public class WebPortDetectorFactory implements PortDetectorFactory {
 
         @Override
         public PortInfo getPort() {
-            WebServerApplicationContext wsac = (WebServerApplicationContext) ((SpringAppContext) context).getContext();
+            WebServerApplicationContext wsac = (WebServerApplicationContext) ((SpringAppContext) context).unwrap();
             WebServer webServer = wsac.getWebServer();
             int port = webServer.getPort();
             boolean secure = false;

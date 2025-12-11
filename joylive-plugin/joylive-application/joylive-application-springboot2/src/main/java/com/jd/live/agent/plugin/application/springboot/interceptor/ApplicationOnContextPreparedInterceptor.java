@@ -17,15 +17,9 @@ package com.jd.live.agent.plugin.application.springboot.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.bootstrap.AppListenerSupervisor;
-import com.jd.live.agent.core.extension.ExtensibleDesc;
-import com.jd.live.agent.core.extension.ExtensionManager;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.plugin.application.springboot.context.SpringAppContext;
-import com.jd.live.agent.plugin.application.springboot.register.BeanRegister;
 import com.jd.live.agent.plugin.application.springboot.util.AppLifecycle;
-import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.List;
 
 /**
  * Interceptor that handles context prepared events by notifying registered listeners
@@ -33,26 +27,14 @@ import java.util.List;
 public class ApplicationOnContextPreparedInterceptor extends InterceptorAdaptor {
 
     private final AppListenerSupervisor supervisor;
-    private final ExtensionManager extensionManager;
 
-    public ApplicationOnContextPreparedInterceptor(AppListenerSupervisor supervisor, ExtensionManager extensionManager) {
+    public ApplicationOnContextPreparedInterceptor(AppListenerSupervisor supervisor) {
         this.supervisor = supervisor;
-        this.extensionManager = extensionManager;
     }
 
     @Override
     public void onSuccess(ExecutableContext ctx) {
-        AppLifecycle.contextPrepared(() -> {
-            ConfigurableApplicationContext context = ctx.getArgument(0);
-            ExtensibleDesc<BeanRegister> extensibleDesc = extensionManager.loadExtensible(BeanRegister.class, this.getClass().getClassLoader());
-            List<BeanRegister> registers = extensibleDesc.getExtensions();
-            if (registers != null) {
-                for (BeanRegister register : registers) {
-                    register.register(context);
-                }
-            }
-            supervisor.onContextPrepared(new SpringAppContext(context));
-        });
+        AppLifecycle.contextPrepared(() -> supervisor.onContextPrepared(new SpringAppContext(ctx.getArgument(0))));
     }
 
 }

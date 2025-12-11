@@ -34,7 +34,8 @@ import com.jd.live.agent.core.openapi.spec.v3.security.SecurityRequirement;
 import com.jd.live.agent.core.openapi.spec.v3.security.SecurityScheme;
 import com.jd.live.agent.core.openapi.spec.v3.servers.Server;
 import com.jd.live.agent.core.openapi.spec.v3.tags.Tag;
-import com.jd.live.agent.plugin.application.springboot.openapi.OpenApiFactory;
+import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
 import io.swagger.models.*;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.BasicAuthDefinition;
@@ -49,6 +50,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 import static com.alibaba.nacos.api.utils.StringUtils.isEmpty;
@@ -67,18 +69,29 @@ public class OpenApi2Factory implements OpenApiFactory {
      */
     private static final Predicate<String> VENDOR_EXTENSIONS_PREDICATE = key -> !EXCLUDE_KEYS.contains(key);
 
-    /**
-     * Creates an OpenApi object from the provided API specification.
-     *
-     * @param api The API specification object (expected to be a Swagger instance)
-     * @return An OpenApi object if the input is a Swagger instance, null otherwise
-     */
+    private final Callable<Swagger> callable;
+
+    private final LazyObject<OpenApi> openApi;
+
+    public OpenApi2Factory(Callable<Swagger> callable) {
+        this.callable = callable;
+        this.openApi = new LazyObject<>(() -> {
+            try {
+                return build(callable.call());
+            } catch (Exception e) {
+                return null;
+            }
+        });
+    }
+
     @Override
-    public OpenApi create(Object api) {
-        if (api instanceof Swagger) {
-            build((Swagger) api);
-        }
-        return null;
+    public OpenApi create() {
+        return openApi.get();
+    }
+
+    @Override
+    public void addHiddenController(Class<?> type) {
+        SpringUtils.addOpenApiHiddenControllers(type);
     }
 
     /**

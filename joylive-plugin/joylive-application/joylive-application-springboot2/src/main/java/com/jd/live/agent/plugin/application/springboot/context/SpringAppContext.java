@@ -15,10 +15,19 @@
  */
 package com.jd.live.agent.plugin.application.springboot.context;
 
+import com.jd.live.agent.core.bootstrap.AppBeanDefinition;
+import com.jd.live.agent.core.bootstrap.WebType;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.bootstrap.ConfigurableAppContext;
 import com.jd.live.agent.governance.subscription.config.ConfigCenter;
 import com.jd.live.agent.plugin.application.springboot.config.SpringConfigRefresher;
+import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * An implementation of the ApplicationContext interface for Spring-based applications.
@@ -32,6 +41,8 @@ public class SpringAppContext implements ConfigurableAppContext {
      */
     private final SpringConfigRefresher refresher;
 
+    private final LazyObject<WebType> webType;
+
     /**
      * Constructs a new SpringApplicationContext instance.
      *
@@ -40,6 +51,7 @@ public class SpringAppContext implements ConfigurableAppContext {
     public SpringAppContext(ConfigurableApplicationContext context) {
         this.context = context;
         this.refresher = new SpringConfigRefresher(context);
+        this.webType = new LazyObject<>(() -> getWebType(context.getEnvironment()));
     }
 
     @Override
@@ -53,12 +65,43 @@ public class SpringAppContext implements ConfigurableAppContext {
     }
 
     @Override
+    public void register(AppBeanDefinition definition) {
+        ConfigurableBeanFactory beanFactory = context.getBeanFactory();
+        if (beanFactory instanceof BeanDefinitionRegistry) {
+            BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+            AbstractBeanDefinition def = new GenericBeanDefinition();
+            def.setBeanClass(definition.getType());
+            def.getPropertyValues().addPropertyValues(definition.getProperties());
+            registry.registerBeanDefinition(definition.getName(), def);
+        }
+    }
+
+    @Override
+    public WebType getWebType() {
+        return webType.get();
+    }
+
+    @Override
     public void subscribe(ConfigCenter configCenter) {
         refresher.subscribe(configCenter);
     }
 
-    public ConfigurableApplicationContext getContext() {
+    @Override
+    public ConfigurableApplicationContext unwrap() {
         return context;
+    }
+
+    private WebType getWebType(ConfigurableEnvironment environment) {
+        if (SpringUtils.isWeb(environment)) {
+            if (SpringUtils.isJavaxServlet()) {
+                return WebType.WEB_SERVLET_JAVAX;
+            } else {
+                return WebType.WEB_SERVLET_JAKARTA;
+            }
+        } else if (SpringUtils.isWebFlux(environment)) {
+            return WebType.WEB_REACTIVE;
+        }
+        return WebType.NONE;
     }
 
 }

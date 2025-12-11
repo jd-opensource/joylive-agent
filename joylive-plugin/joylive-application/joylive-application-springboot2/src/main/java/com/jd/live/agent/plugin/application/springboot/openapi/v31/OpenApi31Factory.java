@@ -36,12 +36,14 @@ import com.jd.live.agent.core.openapi.spec.v3.security.SecurityScheme;
 import com.jd.live.agent.core.openapi.spec.v3.servers.Server;
 import com.jd.live.agent.core.openapi.spec.v3.servers.ServerVariable;
 import com.jd.live.agent.core.openapi.spec.v3.tags.Tag;
-import com.jd.live.agent.plugin.application.springboot.openapi.OpenApiFactory;
+import com.jd.live.agent.core.util.cache.LazyObject;
+import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.*;
@@ -56,21 +58,29 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  */
 public class OpenApi31Factory implements OpenApiFactory {
 
-    /**
-     * Creates an OpenApi object from the provided API specification.
-     * <p>
-     * This method checks if the input is an OpenAPI 3.1 specification and converts it
-     * to the internal OpenApi model if applicable.
-     *
-     * @param api The API specification object (expected to be an OpenAPI instance)
-     * @return An OpenApi object if the input is an OpenAPI instance, null otherwise
-     */
+    private final Callable<io.swagger.v3.oas.models.OpenAPI> callable;
+
+    private final LazyObject<OpenApi> openApi;
+
+    public OpenApi31Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
+        this.callable = callable;
+        this.openApi = new LazyObject<>(() -> {
+            try {
+                return build(callable.call());
+            } catch (Exception e) {
+                return null;
+            }
+        });
+    }
+
     @Override
-    public OpenApi create(Object api) {
-        if (api instanceof io.swagger.v3.oas.models.OpenAPI) {
-            return build((io.swagger.v3.oas.models.OpenAPI) api);
-        }
-        return null;
+    public OpenApi create() {
+        return openApi.get();
+    }
+
+    @Override
+    public void addHiddenController(Class<?> type) {
+        SpringUtils.addOpenApiHiddenControllers(type);
     }
 
     /**
