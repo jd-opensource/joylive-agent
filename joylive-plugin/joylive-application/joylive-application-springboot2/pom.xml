@@ -82,6 +82,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-mcp-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser-v2-converter</artifactId>
             <version>2.1.35</version>
