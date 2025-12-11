@@ -44,7 +44,7 @@ import java.util.Map;
 @ConditionalOnProperty(GovernanceConfig.CONFIG_MCP_ENABLED)
 @ConditionalOnClass("org.springframework.context.ConfigurableApplicationContext")
 @Injectable
-public class McpAppRegister extends AppListener.AppListenerAdapter {
+public class McpRegister extends AppListener.AppListenerAdapter {
 
     @Inject(InvocationContext.COMPONENT_INVOCATION_CONTEXT)
     private InvocationContext context;
