@@ -14,6 +14,7 @@
 
     <modules>
         <module>joylive-bean-spring-mcp</module>
+        <module>joylive-bean-spring-openapi</module>
     </modules>
 
 </project>

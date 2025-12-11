@@ -92,6 +92,10 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-bean-spring-openapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-bean-spring-mcp</artifactId>
         </dependency>
         <dependency>

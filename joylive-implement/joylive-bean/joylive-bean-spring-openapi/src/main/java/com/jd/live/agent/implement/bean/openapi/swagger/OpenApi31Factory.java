@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.openapi.v31;
+package com.jd.live.agent.implement.bean.openapi.swagger;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.openapi.spec.v3.*;
@@ -37,7 +37,7 @@ import com.jd.live.agent.core.openapi.spec.v3.servers.Server;
 import com.jd.live.agent.core.openapi.spec.v3.servers.ServerVariable;
 import com.jd.live.agent.core.openapi.spec.v3.tags.Tag;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
+import com.jd.live.agent.implement.bean.openapi.util.SpringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;

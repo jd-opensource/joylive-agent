@@ -15,28 +15,17 @@
  */
 package com.jd.live.agent.plugin.application.springboot.util;
 
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.bootstrap.AppContext;
-import com.jd.live.agent.core.openapi.spec.v3.OpenApiFactory;
-import com.jd.live.agent.plugin.application.springboot.openapi.v2.OpenApi2Factory;
-import com.jd.live.agent.plugin.application.springboot.openapi.v30.OpenApi30Factory;
-import com.jd.live.agent.plugin.application.springboot.openapi.v31.OpenApi31Factory;
 import com.jd.live.agent.plugin.application.springboot.util.port.PortDetector;
 import com.jd.live.agent.plugin.application.springboot.util.port.PortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.util.port.PortInfo;
 import com.jd.live.agent.plugin.application.springboot.util.port.env.EnvPortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.util.port.jmx.JmxPortDetectorFactory;
 import com.jd.live.agent.plugin.application.springboot.util.port.web.WebPortDetectorFactory;
-import io.swagger.models.Swagger;
 import org.springframework.core.io.ResourceLoader;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
-import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
@@ -58,21 +47,6 @@ public class SpringUtils {
     // spring boot 2+/3+
     private static final String TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 = "org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment";
     private static final Class<?> CLASS_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3 = loadClass(TYPE_CONFIGURABLE_REACTIVE_WEB_ENVIRONMENT3, CLASS_LOADER);
-
-    private static final String TYPE_OPEN_API31 = "io.swagger.v3.oas.models.annotations.OpenAPI31";
-    private static final Class<?> CLASS_OPEN_API_V31 = loadClass(TYPE_OPEN_API31, CLASS_LOADER);
-    private static final String TYPE_OPEN_API_RESOURCE = "org.springdoc.api.AbstractOpenApiResource";
-    private static final Class<?> CLASS_OPEN_API_RESOURCE = loadClass(TYPE_OPEN_API_RESOURCE, CLASS_LOADER);
-    private static final Method METHOD_GET_OPEN_API = getDeclaredMethod(CLASS_OPEN_API_RESOURCE, "getOpenApi", new Class[]{Locale.class});
-    private static final String TYPE_DOCUMENTATION_CACHE = "springfox.documentation.spring.web.DocumentationCache";
-    private static final Class<?> CLASS_DOCUMENTATION_CACHE = loadClass(TYPE_DOCUMENTATION_CACHE, CLASS_LOADER);
-    private static final String TYPE_SERVICE_MODEL_TO_SWAGGER2_MAPPER = "springfox.documentation.swagger2.mappers.ServiceModelToSwagger2Mapper";
-    private static final Class<?> CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER = loadClass(TYPE_SERVICE_MODEL_TO_SWAGGER2_MAPPER, CLASS_LOADER);
-    private static final String TYPE_DOCUMENTATION = "springfox.documentation.service.Documentation";
-    private static final Class<?> CLASS_DOCUMENTATION = loadClass(TYPE_DOCUMENTATION, CLASS_LOADER);
-    private static final Method METHOD_DOCUMENTATION_BY_GROUP = getDeclaredMethod(CLASS_DOCUMENTATION_CACHE, "documentationByGroup", new Class[]{String.class});
-    private static final Method METHOD_MAP_DOCUMENTATION = getDeclaredMethod(CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER, "mapDocumentation", new Class[]{CLASS_DOCUMENTATION});
-    private static final FieldAccessor ACCESSOR_HIDDEN_REST_CONTROLLERS = getAccessor(CLASS_OPEN_API_RESOURCE, "HIDDEN_REST_CONTROLLERS");
 
     /**
      * Checks if current thread is a development reload thread
@@ -139,38 +113,4 @@ public class SpringUtils {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    public static void addOpenApiHiddenControllers(Class<?>... types) {
-        if (ACCESSOR_HIDDEN_REST_CONTROLLERS != null) {
-            try {
-                Set<Class<?>> set = ACCESSOR_HIDDEN_REST_CONTROLLERS.get(null, Set.class);
-                Collections.addAll(set, types);
-            } catch (Throwable ignore) {
-            }
-        }
-    }
-
-    public static OpenApiFactory getApiFactory(AppContext context) {
-        try {
-            if (CLASS_OPEN_API_RESOURCE != null && METHOD_GET_OPEN_API != null) {
-                Object bean = context.getBean(CLASS_OPEN_API_RESOURCE);
-                Callable<io.swagger.v3.oas.models.OpenAPI> callable = () -> (io.swagger.v3.oas.models.OpenAPI) METHOD_GET_OPEN_API.invoke(bean, Locale.getDefault());
-                return CLASS_OPEN_API_V31 != null ? new OpenApi31Factory(callable) : new OpenApi30Factory(callable);
-            } else if (CLASS_DOCUMENTATION_CACHE != null && CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER != null) {
-                Object documentCache = context.getBean(CLASS_DOCUMENTATION_CACHE);
-                Object mapper = context.getBean(CLASS_SERVICE_MODEL_TO_SWAGGER2_MAPPER);
-                if (documentCache != null && mapper != null) {
-                    Object document = METHOD_DOCUMENTATION_BY_GROUP.invoke(documentCache, "default");
-                    if (document != null) {
-                        Callable<Swagger> callable = () -> (Swagger) METHOD_MAP_DOCUMENTATION.invoke(mapper, document);
-                        return new OpenApi2Factory(callable);
-                    }
-                    return null;
-                }
-            }
-        } catch (Throwable ignore) {
-        }
-        // TODO add reflection factory
-        return null;
-    }
 }

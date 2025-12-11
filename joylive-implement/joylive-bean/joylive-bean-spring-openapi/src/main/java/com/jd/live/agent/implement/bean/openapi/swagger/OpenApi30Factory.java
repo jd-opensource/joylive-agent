@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.openapi.v30;
+package com.jd.live.agent.implement.bean.openapi.swagger;
 
 import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
 import com.jd.live.agent.core.openapi.spec.v3.info.Info;
 import com.jd.live.agent.core.openapi.spec.v3.info.License;
 import com.jd.live.agent.core.openapi.spec.v3.media.Schema;
-import com.jd.live.agent.plugin.application.springboot.openapi.v31.OpenApi31Factory;
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.util.ArrayList;

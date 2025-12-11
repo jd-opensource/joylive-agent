@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.application.springboot.openapi.v2;
+package com.jd.live.agent.implement.bean.openapi.swagger;
 
 import com.jd.live.agent.core.openapi.spec.v3.*;
 import com.jd.live.agent.core.openapi.spec.v3.Operation;
@@ -35,7 +35,7 @@ import com.jd.live.agent.core.openapi.spec.v3.security.SecurityScheme;
 import com.jd.live.agent.core.openapi.spec.v3.servers.Server;
 import com.jd.live.agent.core.openapi.spec.v3.tags.Tag;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.plugin.application.springboot.util.SpringUtils;
+import com.jd.live.agent.implement.bean.openapi.util.SpringUtils;
 import io.swagger.models.*;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.BasicAuthDefinition;
@@ -53,8 +53,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
-import static com.alibaba.nacos.api.utils.StringUtils.isEmpty;
 import static com.jd.live.agent.core.util.CollectionUtils.*;
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
 import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
 
 /**

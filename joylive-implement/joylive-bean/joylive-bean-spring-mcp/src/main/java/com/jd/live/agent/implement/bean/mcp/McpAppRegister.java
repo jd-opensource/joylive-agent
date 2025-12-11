@@ -40,7 +40,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.HashMap;
 import java.util.Map;
 
-@Extension("McpAppRegister")
+@Extension(value = "McpAppRegister", order = AppListener.ORDER_MCP)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_MCP_ENABLED)
 @ConditionalOnClass("org.springframework.context.ConfigurableApplicationContext")
 @Injectable
