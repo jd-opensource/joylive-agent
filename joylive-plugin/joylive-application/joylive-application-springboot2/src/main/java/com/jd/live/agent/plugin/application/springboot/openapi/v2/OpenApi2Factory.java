@@ -69,12 +69,9 @@ public class OpenApi2Factory implements OpenApiFactory {
      */
     private static final Predicate<String> VENDOR_EXTENSIONS_PREDICATE = key -> !EXCLUDE_KEYS.contains(key);
 
-    private final Callable<Swagger> callable;
-
     private final LazyObject<OpenApi> openApi;
 
     public OpenApi2Factory(Callable<Swagger> callable) {
-        this.callable = callable;
         this.openApi = new LazyObject<>(() -> {
             try {
                 return build(callable.call());
@@ -880,12 +877,11 @@ public class OpenApi2Factory implements OpenApiFactory {
      * @return built Schema object with converted reference path
      */
     protected Schema buildSchema(RefProperty property) {
-        RefProperty refProperty = property;
-        String ref = refProperty.get$ref();
+        String ref = property.get$ref();
         if (ref.indexOf("#/definitions/") == 0) {
             ref = Components.COMPONENTS_SCHEMAS_REF + ref.substring("#/definitions/".length());
         }
-        return Schema.builder().type(refProperty.getType()).ref(ref).build();
+        return Schema.builder().type(property.getType()).ref(ref).build();
     }
 
     /**
@@ -996,17 +992,17 @@ public class OpenApi2Factory implements OpenApiFactory {
         /**
          * Standard parameters (excluding body and header types)
          */
-        private Map<String, io.swagger.models.parameters.Parameter> parameters;
+        private final Map<String, io.swagger.models.parameters.Parameter> parameters;
 
         /**
          * Request body parameters
          */
-        private Map<String, BodyParameter> bodies;
+        private final Map<String, BodyParameter> bodies;
 
         /**
          * Form parameters
          */
-        private Map<String, FormParameter> forms;
+        private final Map<String, FormParameter> forms;
 
         /**
          * Constructs component container and sorts parameters by type
@@ -1047,23 +1043,23 @@ public class OpenApi2Factory implements OpenApiFactory {
         /**
          * Reference parameter if present in the parameter list.
          */
-        private List<RefParameter> refs;
+        private final List<RefParameter> refs;
 
-        private RefParameter refBody;
+        private final RefParameter refBody;
 
-        private List<RefParameter> refForms;
+        private final List<RefParameter> refForms;
 
         /**
          * Body parameter if present in the parameter list.
          */
-        private BodyParameter body;
+        private final BodyParameter body;
 
-        private List<FormParameter> forms;
+        private final List<FormParameter> forms;
 
         /**
          * List of parameters that are neither reference nor body parameters.
          */
-        private List<io.swagger.models.parameters.Parameter> parameters;
+        private final List<io.swagger.models.parameters.Parameter> parameters;
 
         /**
          * Constructs a Parameters object by categorizing the provided parameter list.

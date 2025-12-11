@@ -58,12 +58,9 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  */
 public class OpenApi31Factory implements OpenApiFactory {
 
-    private final Callable<io.swagger.v3.oas.models.OpenAPI> callable;
-
     private final LazyObject<OpenApi> openApi;
 
     public OpenApi31Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
-        this.callable = callable;
         this.openApi = new LazyObject<>(() -> {
             try {
                 return build(callable.call());
@@ -373,6 +370,12 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .build();
     }
 
+    /**
+     * Builds a Discriminator object from OpenAPI discriminator model.
+     *
+     * @param discriminator the OpenAPI discriminator model
+     * @return the built Discriminator object, or null if input is null
+     */
     protected Discriminator buildDiscriminator(io.swagger.v3.oas.models.media.Discriminator discriminator) {
         if (discriminator == null) {
             return null;
@@ -384,6 +387,12 @@ public class OpenApi31Factory implements OpenApiFactory {
                 .build();
     }
 
+    /**
+     * Builds an XML object from OpenAPI XML model.
+     *
+     * @param xml the OpenAPI XML model
+     * @return the built XML object, or null if input is null
+     */
     protected XML buildXml(io.swagger.v3.oas.models.media.XML xml) {
         if (xml == null) {
             return null;
