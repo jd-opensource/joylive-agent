@@ -13,7 +13,7 @@
     <name>joylive-transmission-springweb7</name>
 
     <properties>
-        <spring-web.version>7.0.0-M9</spring-web.version>
+        <spring-web.version>7.0.1</spring-web.version>
     </properties>
 
     <dependencies>
