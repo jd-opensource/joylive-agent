@@ -15,19 +15,14 @@
  */
 package com.jd.live.agent.plugin.registry.sofarpc.interceptor;
 
-import com.alipay.sofa.rpc.api.GenericService;
 import com.alipay.sofa.rpc.bootstrap.ProviderBootstrap;
 import com.alipay.sofa.rpc.config.ProviderConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.doc.DocumentRegistry;
-import com.jd.live.agent.governance.doc.ServiceAnchor;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceId;
-
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * ProviderBootstrapInterceptor
@@ -36,11 +31,8 @@ public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<P
 
     private static final Logger logger = LoggerFactory.getLogger(ConsumerBootstrapInterceptor.class);
 
-    private final DocumentRegistry docRegistry;
-
-    public ProviderBootstrapInterceptor(Application application, Registry registry, DocumentRegistry docRegistry) {
+    public ProviderBootstrapInterceptor(Application application, Registry registry) {
         super(application, registry);
-        this.docRegistry = docRegistry;
     }
 
     @Override
@@ -48,11 +40,6 @@ public class ProviderBootstrapInterceptor extends AbstractBootstrapInterceptor<P
         ServiceId serviceId = new ServiceId(config.getInterfaceId(), getGroup(config), true);
         registry.register(serviceId);
         logger.info("Found sofa rpc provider {}.", serviceId.getUniqueName());
-        Class<?> clazz = config.getProxyClass();
-        if (clazz != GenericService.class) {
-            docRegistry.register(() -> toList(clazz.getMethods(), method ->
-                    new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), "/", method.getName())));
-        }
     }
 
     @Override

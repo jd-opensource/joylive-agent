@@ -23,6 +23,7 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.core.util.type.Artifact;
 
 /**
  * An extension of the ApplicationListenerAdapter that publishes events to a Publisher when the application starts, is ready, or stops.
@@ -44,6 +45,7 @@ public class AppBootstrapListener extends AppListenerAdapter {
         application.setClassLoader(classLoader);
         LiveClassLoader.APP_CLASS_LOADER = classLoader;
         application.setMainClass(mainClass);
+        application.setVersion(Artifact.getVersion(mainClass));
         publisher.offer(AgentEvent.onApplicationLoading("Application is loading"));
     }
 

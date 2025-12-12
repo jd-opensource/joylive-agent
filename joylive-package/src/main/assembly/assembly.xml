@@ -39,6 +39,10 @@
             <outputDirectory>lib/core</outputDirectory>
             <unpack>false</unpack>
             <includes>
+                <include>com.jd.live:joylive-core-annotation</include>
+                <include>com.jd.live:joylive-core-openapi-spec</include>
+                <include>com.jd.live:joylive-core-mcp-spec</include>
+                <include>com.jd.live:joylive-core-mcp-server</include>
                 <include>com.jd.live:joylive-core-api</include>
                 <include>com.jd.live:joylive-governance-api</include>
                 <include>com.jd.live:joylive-core-framework</include>
@@ -61,6 +65,8 @@
                 <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
                 <include>com.jd.live:joylive-parser-jxpath</include>
+                <include>com.jd.live:joylive-bean-spring-openapi</include>
+                <include>com.jd.live:joylive-bean-spring-mcp</include>
                 <include>com.jd.live:joylive-servlet-tomcat9</include>
                 <include>com.jd.live:joylive-servlet-tomcat10</include>
                 <include>com.jd.live:joylive-servlet-undertow2</include>

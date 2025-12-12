@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.governance.policy.live;
 
-import com.jd.live.agent.core.parser.json.DeserializeConverter;
-import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.parser.annotation.DeserializeConverter;
+import com.jd.live.agent.core.parser.annotation.JsonAlias;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;

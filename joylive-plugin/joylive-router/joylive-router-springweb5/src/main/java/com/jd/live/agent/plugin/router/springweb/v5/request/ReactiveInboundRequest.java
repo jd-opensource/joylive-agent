@@ -15,17 +15,13 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v5.request;
 
-import com.jd.live.agent.core.parser.JsonPathParser;
+import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
-import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v5.util.CloudUtils;
 import org.springframework.core.MethodParameter;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.HandlerResult;
@@ -36,7 +32,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
@@ -58,19 +53,14 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
     private final Predicate<Class<?>> systemHanderPredicate;
     private final Predicate<String> systemPathPredicate;
     private final Predicate<String> mcpPathPredicate;
-    private final JsonPathParser parser;
 
-    public ReactiveInboundRequest(ServerWebExchange exchange,
-                                  Object handler,
-                                  GovernanceConfig config,
-                                  JsonPathParser parser) {
+    public ReactiveInboundRequest(ServerWebExchange exchange, Object handler, GovernanceConfig config) {
         super(exchange.getRequest());
         this.exchange = exchange;
         this.handler = handler;
         this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
         this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
         this.mcpPathPredicate = config.getMcpConfig()::isMcpPath;
-        this.parser = parser;
         this.uri = request.getURI();
     }
 
@@ -90,6 +80,9 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
             return true;
         }
         if (systemPathPredicate != null && systemPathPredicate.test(getPath())) {
+            return true;
+        }
+        if (isMcp()) {
             return true;
         }
         return super.isSystem();
@@ -149,9 +142,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
      */
     public Mono<HandlerResult> convert(CompletionStage<Object> stage) {
         return Mono.fromCompletionStage(stage).cast(HandlerResult.class).onErrorResume(e -> {
-            if (isMcp()) {
-                return onMcpErrorResume(e);
-            } else if (CloudUtils.isReactiveRouterFunction(handler)) {
+            if (CloudUtils.isReactiveRouterFunction(handler)) {
                 Object target = CloudUtils.getReactiveFilterFunction(handler);
                 target = target == null ? handler : target;
                 HandlerFilterFunction<ServerResponse, ServerResponse> errorFunction = CloudUtils.getErrorFunction(target);
@@ -169,35 +160,4 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
         });
     }
 
-    /**
-     * Handles MCP errors by creating a JsonRpc error response.
-     * Wraps the error into a HandlerResult with appropriate response format.
-     *
-     * @param e The throwable that caused the error
-     * @return Mono containing HandlerResult with JsonRpc error response
-     */
-    private Mono<HandlerResult> onMcpErrorResume(Throwable e) {
-        return getMcpRequestId().map(id ->
-                new HandlerResult(
-                        handler,
-                        JsonRpcResponse.createErrorResponse(id, e),
-                        new MethodParameter(McpToolMethod.HANDLE_METHOD, -1)));
-    }
-
-    /**
-     * Extracts the request ID from MCP request body using JsonPath.
-     *
-     * @return A Mono containing the request ID, or empty if extraction fails
-     */
-    private Mono<Object> getMcpRequestId() {
-        return DataBufferUtils.join(request.getBody())
-                .map(dataBuffer -> {
-                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                    dataBuffer.read(bytes);
-                    DataBufferUtils.release(dataBuffer);
-                    return new ByteArrayInputStream(bytes);
-                })
-                .map(is -> parser.read(is, JsonRpcRequest.JSON_PATH_ID, null))
-                .onErrorResume(e -> null);
-    }
 }

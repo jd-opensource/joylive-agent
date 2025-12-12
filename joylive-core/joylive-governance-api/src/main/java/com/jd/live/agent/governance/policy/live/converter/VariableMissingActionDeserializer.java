@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.live.converter;
 
-import com.jd.live.agent.core.parser.json.JsonConverter;
+import com.jd.live.agent.core.parser.annotation.JsonConverter;
 import com.jd.live.agent.governance.policy.live.VariableMissingAction;
 
 public class VariableMissingActionDeserializer implements JsonConverter<Object, VariableMissingAction> {

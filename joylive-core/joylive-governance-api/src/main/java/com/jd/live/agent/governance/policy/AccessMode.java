@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.parser.annotation.JsonAlias;
 
 /**
  * Enumerates the access modes for resources.

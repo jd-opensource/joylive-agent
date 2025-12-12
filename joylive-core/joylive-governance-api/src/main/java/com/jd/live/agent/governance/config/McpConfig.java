@@ -19,13 +19,30 @@ import com.jd.live.agent.core.util.URI;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
+
 @Getter
 @Setter
 public class McpConfig {
 
+    public static final int DEFAULT_CHECK_INTERVAL = 10000;
+    public static final int DEFAULT_TIME_OUT = 60 * 1000;
+
     private boolean enabled;
 
+    private String title;
+
+    private String version;
+
     private String path = "/mcp";
+
+    private long checkInterval = DEFAULT_CHECK_INTERVAL;
+
+    private long timeout = DEFAULT_TIME_OUT;
+
+    private boolean governanceEnabled = true;
+
+    private Map<String, Object> metadata;
 
     public boolean isMcpPath(String path) {
         return enabled && URI.isSubPath(path, this.path);
@@ -44,5 +61,18 @@ public class McpConfig {
         }
     }
 
+    public long getCheckInterval() {
+        if (checkInterval <= 0) {
+            return DEFAULT_CHECK_INTERVAL;
+        }
+        return checkInterval;
+    }
+
+    public long getTimeout() {
+        if (timeout <= 0) {
+            return DEFAULT_TIME_OUT;
+        }
+        return timeout;
+    }
 }
 

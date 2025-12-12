@@ -19,11 +19,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.net.URL;
+import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
-
-import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
 
 /**
  * Utility class providing a collection of helper methods for class manipulation and metadata access.
@@ -182,13 +183,69 @@ public class ClassUtils {
     }
 
     /**
-     * Determines if the provided class is considered an "entity" according to custom rules defined in TypeScanner.
+     * Determines if the provided class is a simple value type.
+     *
+     * @param type The class to check.
+     * @return True if the class is a simple value type, false otherwise.
+     */
+    public static boolean isSimpleValueType(Class<?> type) {
+        if (type == null) {
+            return false;
+        } else if (SIMPLE_TYPES.contains(type)) {
+            return true;
+        } else if (type.isEnum()) {
+            return true;
+        } else if (Character.class.isAssignableFrom(type)) {
+            return true;
+        } else if (Number.class.isAssignableFrom(type)) {
+            return true;
+        } else if (Date.class.isAssignableFrom(type)) {
+            return true;
+        } else if (Temporal.class.isAssignableFrom(type)) {
+            return true;
+        } else if (URI.class == type) {
+            return true;
+        } else if (URL.class == type) {
+            return true;
+        } else if (Locale.class == type) {
+            return true;
+        } else if (Class.class == type) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determines if the provided class is considered an "entity" according to custom rules.
      *
      * @param type The class to check.
      * @return True if the class is considered an entity, false otherwise.
      */
     public static boolean isEntity(Class<?> type) {
-        return ENTITY_PREDICATE.test(type);
+        if (type == null) {
+            return false;
+        } else if (SIMPLE_TYPES.contains(type)) {
+            return false;
+        } else if (type.isAnnotation()) {
+            return false;
+        } else if (type.isEnum()) {
+            return false;
+        } else if (type.isInterface()) {
+            return false;
+        } else if (type.isArray()) {
+            return false;
+        } else if (type == Object.class) {
+            return false;
+        } else if (CharSequence.class.isAssignableFrom(type)) {
+            return false;
+        } else if (Collection.class.isAssignableFrom(type)) {
+            return false;
+        } else if (type.getName().startsWith("java.")) {
+            return false;
+        } else if (type.getName().startsWith("javax.")) {
+            return false;
+        }
+        return true;
     }
 
     /**

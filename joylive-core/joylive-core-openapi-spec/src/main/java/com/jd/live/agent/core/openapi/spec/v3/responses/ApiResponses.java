@@ -1,0 +1,57 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.jd.live.agent.core.openapi.spec.v3.responses;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Getter
+@Setter
+public class ApiResponses extends LinkedHashMap<String, ApiResponse> {
+
+    public static final String DEFAULT = "default";
+
+    public static final String STATUS_OK = "200";
+
+    /**
+     * Custom specification extensions that start with "x-".
+     */
+    private Map<String, Object> extensions;
+
+    public ApiResponses() {
+    }
+
+    public ApiResponses(int initialCapacity) {
+        super(initialCapacity);
+    }
+
+    public ApiResponses(int initialCapacity, float loadFactor) {
+        super(initialCapacity, loadFactor);
+    }
+
+    public ApiResponses(int initialCapacity, float loadFactor, boolean accessOrder) {
+        super(initialCapacity, loadFactor, accessOrder);
+    }
+
+    public ApiResponses(Map<? extends String, ? extends ApiResponse> m) {
+        super(m);
+    }
+
+    public ApiResponses(Map<? extends String, ? extends ApiResponse> m, Map<String, Object> extensions) {
+        super(m);
+        this.extensions = extensions;
+    }
+}

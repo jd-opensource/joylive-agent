@@ -16,7 +16,7 @@
 package com.jd.live.agent.implement.parser.fastjson2;
 
 import com.jd.live.agent.core.parser.json.CaseInsensitiveSetJsonConverter;
-import com.jd.live.agent.core.parser.json.DeserializeConverter;
+import com.jd.live.agent.core.parser.annotation.DeserializeConverter;
 
 import java.util.Set;
 
@@ -26,7 +26,6 @@ public class Person {
 
     private int age;
 
-    @DeserializeConverter(SexConverter.class)
     private Sex sex;
 
     @DeserializeConverter(CaseInsensitiveSetJsonConverter.class)

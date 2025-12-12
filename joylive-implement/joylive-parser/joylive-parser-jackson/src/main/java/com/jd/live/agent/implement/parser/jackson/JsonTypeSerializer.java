@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.PropertyWriter;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.jd.live.agent.core.parser.json.JsonType;
+import com.jd.live.agent.core.parser.annotation.JsonType;
 
 import java.io.IOException;
 import java.util.ArrayList;

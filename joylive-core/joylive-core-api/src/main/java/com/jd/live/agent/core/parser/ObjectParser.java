@@ -87,7 +87,7 @@ public interface ObjectParser {
     void write(Writer writer, Object obj);
 
     default String write(Object obj) {
-        StringWriter writer = new StringWriter();
+        StringWriter writer = new StringWriter(256);
         write(writer, obj);
         return writer.toString();
     }

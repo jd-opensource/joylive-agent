@@ -21,6 +21,18 @@
             <artifactId>joylive-core-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-openapi-spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-mcp-spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-mcp-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>

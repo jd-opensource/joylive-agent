@@ -36,6 +36,22 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-openapi-spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-mcp-spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-mcp-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-core-api</artifactId>
         </dependency>
         <dependency>
@@ -73,6 +89,14 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-parser-jxpath</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-bean-spring-openapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
+            <artifactId>joylive-bean-spring-mcp</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getQuietly;
-import static com.jd.live.agent.core.util.type.TypeScanner.ENTITY_PREDICATE;
+import static com.jd.live.agent.core.util.type.ClassUtils.isEntity;
 
 /**
  * A utility class that resolves the value of an object's property based on a given path expression.
@@ -188,7 +188,7 @@ public class ValuePath implements ObjectGetter {
         } else if (target instanceof ValueSupplier) {
             return ((ValueSupplier) target).getObject(property);
         }
-        return ENTITY_PREDICATE.test(target.getClass()) ? getQuietly(target, property) : null;
+        return isEntity(target.getClass()) ? getQuietly(target, property) : null;
     }
 
     /**

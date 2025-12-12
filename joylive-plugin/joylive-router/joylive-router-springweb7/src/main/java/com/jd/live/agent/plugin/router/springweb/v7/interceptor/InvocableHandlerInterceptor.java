@@ -17,18 +17,15 @@ package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.plugin.router.springweb.v7.exception.SpringInboundThrower.THROWER;
 
 /**
@@ -38,11 +35,8 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final JsonPathParser parser;
-
-    public InvocableHandlerInterceptor(InvocationContext context, JsonPathParser parser) {
+    public InvocableHandlerInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     @Override
@@ -57,15 +51,12 @@ public class InvocableHandlerInterceptor extends InterceptorAdaptor {
                 servletRequest,
                 ctx.getArguments(),
                 CloudUtils.getHandler(ctx.getTarget()),
-                context.getGovernanceConfig(),
-                parser);
+                context.getGovernanceConfig());
         if (!request.isSystem()) {
             HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
             context.inward(invocation, mc::invokeOrigin, (v, e) -> {
                 if (e == null) {
                     mc.skipWithResult(v);
-                } else if (request.isMcp()) {
-                    mc.skipWithResult(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
                 } else {
                     mc.skipWithThrowable(THROWER.createException(e, request));
                 }

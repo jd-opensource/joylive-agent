@@ -17,6 +17,7 @@
         <module>joylive-test-extension</module>
         <module>joylive-test-inject</module>
         <module>joylive-test-bytebuddy</module>
+        <module>joylive-test-mcp</module>
     </modules>
 
     <dependencies>
@@ -50,6 +51,7 @@
                         <exclude>joylive-test-extension</exclude>
                         <exclude>joylive-test-inject</exclude>
                         <exclude>joylive-test-bytebuddy</exclude>
+                        <exclude>joylive-test-mcp</exclude>
                     </excludeArtifacts>
                 </configuration>
             </plugin>

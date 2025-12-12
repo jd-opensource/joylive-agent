@@ -22,7 +22,6 @@ import java.lang.reflect.Parameter;
 /**
  * Functional interface for retrieving annotations from different sources.
  */
-@FunctionalInterface
 public interface AnnotationGetter {
     /**
      * Gets annotation of specified type from the source.
@@ -31,6 +30,13 @@ public interface AnnotationGetter {
      * @return the annotation if present, else null
      */
     <A extends Annotation> A getAnnotation(Class<A> annotationClass);
+
+    /**
+     * Get name of the annotation getter
+     *
+     * @return The name of the annotation getter
+     */
+    String getName();
 
     /**
      * Implementation for getting annotations from a Method.
@@ -45,6 +51,11 @@ public interface AnnotationGetter {
         @Override
         public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
             return method.getAnnotation(annotationClass);
+        }
+
+        @Override
+        public String getName() {
+            return method.getName();
         }
     }
 
@@ -63,6 +74,11 @@ public interface AnnotationGetter {
         public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
             return parameter.getAnnotation(annotationClass);
         }
+
+        @Override
+        public String getName() {
+            return parameter.getName();
+        }
     }
 
     /**
@@ -78,6 +94,11 @@ public interface AnnotationGetter {
         @Override
         public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
             return type.getAnnotation(annotationClass);
+        }
+
+        @Override
+        public String getName() {
+            return type.getName();
         }
     }
 }

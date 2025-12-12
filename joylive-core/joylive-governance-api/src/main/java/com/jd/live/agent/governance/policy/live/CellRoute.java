@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.live;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.parser.annotation.JsonAlias;
 import com.jd.live.agent.governance.policy.AccessMode;
 import lombok.Getter;
 import lombok.Setter;

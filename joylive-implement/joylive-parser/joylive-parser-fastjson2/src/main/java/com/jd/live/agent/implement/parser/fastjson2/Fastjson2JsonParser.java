@@ -64,7 +64,7 @@ public class Fastjson2JsonParser implements ObjectParser, ExtensionInitializer {
 
     @Override
     public void write(Writer writer, Object obj) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(1000);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream(256);
         try {
             writeTo(stream, obj, JSONWriter.Feature.FieldBased);
             writer.write(stream.toString());

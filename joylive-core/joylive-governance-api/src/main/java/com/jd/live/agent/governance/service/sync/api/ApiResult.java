@@ -1,6 +1,6 @@
 package com.jd.live.agent.governance.service.sync.api;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.parser.annotation.JsonAlias;
 import com.jd.live.agent.core.util.http.HttpStatus;
 import com.jd.live.agent.governance.service.sync.SyncResponse;
 import com.jd.live.agent.governance.service.sync.SyncStatus;

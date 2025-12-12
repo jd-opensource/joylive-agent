@@ -13,8 +13,8 @@
     <name>joylive-router-springcloud5</name>
 
     <properties>
-        <spring-cloud.version>2025.1.0-M3</spring-cloud.version>
-        <spring-web.version>7.0.0-M9</spring-web.version>
+        <spring-cloud.version>2025.1.0</spring-cloud.version>
+        <spring-web.version>7.0.1</spring-web.version>
     </properties>
 
     <dependencyManagement>

@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springweb.v6.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
 import com.jd.live.agent.governance.invoke.InboundInvocation.GatewayInboundInvocation;
@@ -41,11 +40,8 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final JsonPathParser parser;
-
-    public HandlerAdapterInterceptor(InvocationContext context, JsonPathParser parser) {
+    public HandlerAdapterInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     @SuppressWarnings("unchecked")
@@ -55,13 +51,12 @@ public class HandlerAdapterInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         ServerWebExchange exchange = mc.getArgument(0);
         Object handler = mc.getArgument(1);
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, context.getGovernanceConfig(), parser);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, context.getGovernanceConfig());
         if (!request.isSystem()) {
             exchange.getAttributes().put(KEY_LIVE_REQUEST, Boolean.TRUE);
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
-            // MCP exceptions have already been handled in the convert method
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
             mc.skipWithResult(mono);
         }

@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  *
  * @param <T> The type of the object to be lazily initialized.
  */
-public class LazyObject<T> extends CacheObject<T> {
+public class LazyObject<T> extends CacheObject<T> implements Supplier<T> {
 
     /**
      * The supplier used to create the object on demand.

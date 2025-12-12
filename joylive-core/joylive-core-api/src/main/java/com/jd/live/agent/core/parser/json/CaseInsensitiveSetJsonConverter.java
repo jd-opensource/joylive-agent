@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.core.parser.json;
 
+import com.jd.live.agent.core.parser.annotation.JsonConverter;
 import com.jd.live.agent.core.util.map.CaseInsensitiveSet;
 
 import java.util.Collection;

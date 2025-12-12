@@ -18,11 +18,9 @@ package com.jd.live.agent.plugin.router.springweb.v7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.LockContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.invoke.InboundInvocation.HttpInboundInvocation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcResponse;
 import com.jd.live.agent.plugin.router.springweb.v7.request.ServletInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
 import org.springframework.web.servlet.function.HandlerFilterFunction;
@@ -31,7 +29,6 @@ import org.springframework.web.servlet.function.ServerResponse;
 
 import java.util.Optional;
 
-import static com.jd.live.agent.core.util.ExceptionUtils.getCause;
 import static com.jd.live.agent.core.util.ExceptionUtils.toException;
 import static com.jd.live.agent.plugin.router.springweb.v7.exception.SpringInboundThrower.THROWER;
 
@@ -49,11 +46,8 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final JsonPathParser parser;
-
-    public RouterFunctionInterceptor(InvocationContext context, JsonPathParser parser) {
+    public RouterFunctionInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     @Override
@@ -89,15 +83,12 @@ public class RouterFunctionInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("rawtypes")
     private HandlerFunction wrap(Object target, HandlerFunction handler) {
         return req -> {
-            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, null, context.getGovernanceConfig(), parser);
+            ServletInboundRequest request = new ServletInboundRequest(req.servletRequest(), null, null, context.getGovernanceConfig());
             if (!request.isSystem()) {
                 HttpInboundInvocation<ServletInboundRequest> invocation = new HttpInboundInvocation<>(request, context);
                 try {
                     return (ServerResponse) context.inward(invocation, () -> handler.handle(req));
                 } catch (Throwable e) {
-                    if (request.isMcp()) {
-                        return ServerResponse.ok().body(JsonRpcResponse.createErrorResponse(request.getMcpRequestId(), getCause(e)));
-                    }
                     Exception exception = toException(THROWER.createException(e, request));
                     HandlerFilterFunction<ServerResponse, ServerResponse> errorFunction = CloudUtils.getErrorFunction(target);
                     if (errorFunction != null) {

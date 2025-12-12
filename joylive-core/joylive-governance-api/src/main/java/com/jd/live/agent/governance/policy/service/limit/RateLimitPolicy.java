@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.governance.policy.service.limit;
 
-import com.jd.live.agent.core.parser.json.JsonAlias;
+import com.jd.live.agent.core.parser.annotation.JsonAlias;
 import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import com.jd.live.agent.governance.policy.PolicyVersion;
 import com.jd.live.agent.governance.policy.service.annotation.Provider;

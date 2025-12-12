@@ -15,14 +15,11 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.interceptor;
 
-import com.alibaba.dubbo.rpc.service.GenericService;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
-import com.jd.live.agent.governance.doc.DocumentRegistry;
-import com.jd.live.agent.governance.doc.ServiceAnchor;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
@@ -32,7 +29,6 @@ import org.apache.dubbo.config.ServiceConfig;
 
 import java.util.Map;
 
-import static com.jd.live.agent.core.util.CollectionUtils.toList;
 import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INSTANCE;
 import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_REGISTER_MODE_INTERFACE;
 
@@ -43,11 +39,8 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
 
-    private final DocumentRegistry docRegistry;
-
-    public ServiceConfigInterceptor(Application application, Registry registry, DocumentRegistry docRegistry) {
+    public ServiceConfigInterceptor(Application application, Registry registry) {
         super(application, registry);
-        this.docRegistry = docRegistry;
     }
 
     @Override
@@ -68,11 +61,6 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
     protected void subscribe(ServiceConfig<?> config, ServiceId serviceId) {
         registry.register(serviceId);
         logger.info("Found dubbo provider {}.", serviceId.getUniqueName());
-        Class<?> clazz = config.getInterfaceClass();
-        if (clazz != GenericService.class) {
-            docRegistry.register(() -> toList(clazz.getMethods(), method ->
-                    new ServiceAnchor(serviceId.getService(), serviceId.getGroup(), serviceId.isInterfaceMode() ? "/" : clazz.getName(), method.getName())));
-        }
     }
 
     @Override

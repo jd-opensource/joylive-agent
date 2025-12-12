@@ -17,7 +17,6 @@ package com.jd.live.agent.plugin.router.springweb.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
-import com.jd.live.agent.core.parser.JsonPathParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InboundInvocation;
@@ -42,11 +41,8 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
-    private final JsonPathParser parser;
-
-    public DispatcherHandlerInterceptor(InvocationContext context, JsonPathParser parser) {
+    public DispatcherHandlerInterceptor(InvocationContext context) {
         this.context = context;
-        this.parser = parser;
     }
 
     @SuppressWarnings("unchecked")
@@ -57,12 +53,11 @@ public class DispatcherHandlerInterceptor extends InterceptorAdaptor {
         ServerWebExchange exchange = mc.getArgument(0);
         Object handler = mc.getArgument(1);
         GovernanceConfig config = context.getGovernanceConfig();
-        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, config, parser);
+        ReactiveInboundRequest request = new ReactiveInboundRequest(exchange, handler, config);
         if (!request.isSystem()) {
             InboundInvocation<ReactiveInboundRequest> invocation = context.getApplication().getService().isGateway()
                     ? new GatewayInboundInvocation<>(request, context)
                     : new HttpInboundInvocation<>(request, context);
-            // MCP exceptions have already been handled in the convert method
             Mono<HandlerResult> mono = context.inbound(invocation, () -> ((Mono<HandlerResult>) mc.invokeOrigin()).toFuture(), request::convert);
             if (config.getServiceConfig().isResponseException()) {
                 mono = mono.doOnError(ex -> {

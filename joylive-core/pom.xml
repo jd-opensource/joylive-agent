@@ -13,9 +13,13 @@
     <name>joylive-core</name>
 
     <modules>
+        <module>joylive-core-openapi-spec</module>
+        <module>joylive-core-mcp-spec</module>
         <module>joylive-core-api</module>
-        <module>joylive-core-framework</module>
         <module>joylive-governance-api</module>
+        <module>joylive-core-framework</module>
+        <module>joylive-core-annotation</module>
+        <module>joylive-core-mcp-server</module>
     </modules>
 
     <dependencies>

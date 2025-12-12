@@ -21,10 +21,10 @@ import com.alibaba.fastjson2.codec.FieldInfo;
 import com.alibaba.fastjson2.modules.ObjectWriterAnnotationProcessor;
 import com.alibaba.fastjson2.modules.ObjectWriterModule;
 import com.alibaba.fastjson2.writer.ObjectWriter;
-import com.jd.live.agent.core.parser.json.JsonConverter;
-import com.jd.live.agent.core.parser.json.JsonField;
-import com.jd.live.agent.core.parser.json.JsonFormat;
-import com.jd.live.agent.core.parser.json.SerializeConverter;
+import com.jd.live.agent.core.parser.annotation.JsonConverter;
+import com.jd.live.agent.core.parser.annotation.JsonField;
+import com.jd.live.agent.core.parser.annotation.JsonFormat;
+import com.jd.live.agent.core.parser.annotation.SerializeConverter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;

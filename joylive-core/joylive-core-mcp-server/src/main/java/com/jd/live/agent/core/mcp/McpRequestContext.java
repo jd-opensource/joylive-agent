@@ -1,0 +1,220 @@
+/*
+ * Copyright © ${year} ${owner} (${email})
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.jd.live.agent.core.mcp;
+
+import com.jd.live.agent.core.mcp.version.McpVersion;
+import com.jd.live.agent.core.openapi.spec.v3.OpenApi;
+import com.jd.live.agent.core.parser.JsonSchemaParser;
+import com.jd.live.agent.core.parser.ObjectConverter;
+import lombok.Getter;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Context interface for MCP request parameter conversion.
+ *
+ * <p>Provides access to components needed for processing MCP requests,
+ * including parameter conversion, method resolution, and parameter parsing.
+ *
+ * @see ObjectConverter
+ */
+public interface McpRequestContext extends ObjectConverter {
+
+    /**
+     * Gets the request session.
+     *
+     * @return the request session
+     */
+    McpSession getSession();
+
+    /**
+     * Gets the converter for transforming request parameters.
+     *
+     * @return the object converter instance
+     */
+    ObjectConverter getConverter();
+
+    /**
+     * Returns the McpToolInterceptor for MCP tool method execution.
+     *
+     * @return The McpToolInterceptor instance
+     */
+    default McpToolInterceptor getInterceptor() {
+        return null;
+    }
+
+    /**
+     * Returns the JSON schema parser instance.
+     *
+     * @return A parser that can generate JSON schema definitions
+     */
+    JsonSchemaParser getJsonSchemaParser();
+
+    /**
+     * Retrieves the current MCP (Model Control Protocol) version.
+     *
+     * @return The MCP version implementation currently in use
+     */
+    McpVersion getVersion();
+
+    /**
+     * Retrieves all available MCP tool methods.
+     *
+     * @return a map of method names to their corresponding McpToolMethod objects
+     */
+    Map<String, McpToolMethod> getMethods();
+
+    /**
+     * Retrieves all available MCP tool methods.
+     *
+     * @return a map of method names to their corresponding McpToolMethod objects
+     */
+    Map<String, List<McpToolMethod>> getPaths();
+
+    /**
+     * Retrieves a tool method by its name.
+     *
+     * @param methodName the name of the method to retrieve
+     * @return the corresponding tool method
+     */
+    default McpToolMethod getToolMethodByName(String methodName) {
+        Map<String, McpToolMethod> methods = getMethods();
+        return methodName == null || methods == null ? null : methods.get(methodName);
+    }
+
+    /**
+     * Retrieves a tool method by its path identifier.
+     *
+     * @param path The path string that identifies the tool method
+     * @return The corresponding McpToolMethod object
+     */
+    default List<McpToolMethod> getToolMethodsByPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        Map<String, List<McpToolMethod>> methods = getPaths();
+        return methods == null ? null : methods.get(path);
+    }
+
+    /**
+     * Retrieves the value of the specified HTTP header.
+     *
+     * @param name the name of the header to retrieve
+     * @return the header value, or null if not present
+     */
+    Object getHeader(String name);
+
+    /**
+     * Returns all HTTP headers from the request.
+     *
+     * @return Map of header names to their values
+     */
+    Map<String, ? extends Object> getHeaders();
+
+    /**
+     * Returns all cookies from the request.
+     * @return Map of cookie names to their values
+     */
+    Map<String, ? extends Object> getCookies();
+
+    /**
+     * Gets a specific cookie value by name.
+     * @param name The cookie name
+     * @return The cookie value or null if not found
+     */
+    Object getCookie(String name);
+
+    /**
+     * Retrieves an attribute from the session.
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
+    Object getSessionAttribute(String name);
+
+    /**
+     * Retrieves an attribute from the request.
+     * @param name The attribute name
+     * @return The attribute value or null if not found
+     */
+    Object getRequestAttribute(String name);
+
+    /**
+     * Returns the IP address of the client that sent the request.
+     *
+     * @return The client's IP address as a string
+     */
+    String getRemoteAddr();
+
+    /**
+     * Retrieves OpenApi
+     *
+     * @return open api insance
+     */
+    default OpenApi getOpenApi() {
+        return null;
+    }
+
+    @Override
+    default <T> T convert(Object source, Class<T> type) {
+        return getConverter().convert(source, type);
+    }
+
+    @Override
+    default Object convert(Object source, Type type) {
+        return getConverter().convert(source, type);
+    }
+
+    @Getter
+    abstract class AbstractRequestContext implements McpRequestContext {
+
+        private final McpSession session;
+
+        private final Map<String, McpToolMethod> methods;
+
+        private final Map<String, List<McpToolMethod>> paths;
+
+        private final ObjectConverter converter;
+
+        private final McpToolInterceptor interceptor;
+
+        private final JsonSchemaParser jsonSchemaParser;
+
+        private final McpVersion version;
+
+        private final OpenApi openApi;
+
+        public AbstractRequestContext(McpSession session,
+                                      Map<String, McpToolMethod> methods,
+                                      Map<String, List<McpToolMethod>> paths,
+                                      ObjectConverter converter,
+                                      JsonSchemaParser jsonSchemaParser,
+                                      McpVersion version,
+                                      OpenApi openApi,
+                                      McpToolInterceptor interceptor) {
+            this.session = session;
+            this.methods = methods;
+            this.paths = paths;
+            this.converter = converter;
+            this.jsonSchemaParser = jsonSchemaParser;
+            this.version = version;
+            this.openApi = openApi;
+            this.interceptor = interceptor;
+        }
+
+    }
+}

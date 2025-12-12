@@ -15,11 +15,11 @@
  */
 package com.jd.live.agent.plugin.transmission.servlet.jakarta.definition;
 
-import com.jd.live.agent.bootstrap.classloader.ResourcerType;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.ExtensibleDesc;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
+import com.jd.live.agent.core.inject.annotation.ClassloaderType;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
@@ -50,7 +50,7 @@ public class HttpServletDefinition extends PluginDefinitionAdapter {
     private Propagation propagation;
 
     // lazy load header provider factory by ExtensibleDesc
-    @Inject(loader = ResourcerType.CORE_IMPL)
+    @Inject(loader = ClassloaderType.CORE_IMPL)
     private ExtensibleDesc<HeaderProviderFactory> extensibleDesc;
 
     public HttpServletDefinition() {

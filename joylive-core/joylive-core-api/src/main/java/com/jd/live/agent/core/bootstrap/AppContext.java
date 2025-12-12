@@ -22,7 +22,41 @@ package com.jd.live.agent.core.bootstrap;
  */
 public interface AppContext {
 
+    /**
+     * Gets configuration property.
+     *
+     * @param name property name
+     * @return property value
+     */
     String getProperty(String name);
 
+    /**
+     * Gets bean by type.
+     *
+     * @param type bean type
+     * @return bean instance
+     */
+    <T> T getBean(Class<T> type);
+
+    /**
+     * Registers a bean definition in the application context.
+     *
+     * @param definition the bean definition to register
+     */
+    void register(AppBeanDefinition definition);
+
+    /**
+     * Gets the web technology type of the application.
+     *
+     * @return the web type indicating the underlying web technology stack
+     */
+    WebType getWebType();
+
+    /**
+     * Unwraps and returns the underlying native application context object.
+     *
+     * @return the underlying application context implementation
+     */
+    Object unwrap();
 }
 

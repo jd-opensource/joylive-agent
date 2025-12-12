@@ -16,7 +16,7 @@
 package com.jd.live.agent.implement.parser.fastjson2;
 
 import com.jd.live.agent.core.exception.ParseException;
-import com.jd.live.agent.core.parser.json.JsonConverter;
+import com.jd.live.agent.core.parser.annotation.JsonConverter;
 
 import java.lang.reflect.Constructor;
 import java.util.Map;

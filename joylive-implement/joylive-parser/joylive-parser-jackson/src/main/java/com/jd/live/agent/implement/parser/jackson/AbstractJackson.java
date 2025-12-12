@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  * Abstract base class for Jackson-based JSON processing.
@@ -59,6 +60,10 @@ public abstract class AbstractJackson {
     protected ObjectMapper configure(ObjectMapper mapper) {
         return mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(MapperFeature.PROPAGATE_TRANSIENT_MARKER, true)
+                // disable pretty print for sse text stream event
+                .configure(SerializationFeature.INDENT_OUTPUT, false)
+                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .setAnnotationIntrospector(new JsonAnnotationIntrospector());
     }

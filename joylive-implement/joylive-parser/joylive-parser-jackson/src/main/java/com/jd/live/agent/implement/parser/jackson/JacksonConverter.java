@@ -25,11 +25,11 @@ public class JacksonConverter extends AbstractJackson implements ObjectConverter
 
     @Override
     public <T> T convert(Object source, Class<T> type) {
-        return mapper.convertValue(source, type);
+        return source == null ? null : mapper.convertValue(source, type);
     }
 
     @Override
     public Object convert(Object source, Type type) {
-        return mapper.convertValue(source, new SimpleTypeReference(type));
+        return source == null ? null : mapper.convertValue(source, new SimpleTypeReference(type));
     }
 }

@@ -15,19 +15,16 @@
  */
 package com.jd.live.agent.plugin.router.springweb.v5.request;
 
-import com.jd.live.agent.core.parser.JsonPathParser;
+import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.jsonrpc.JsonRpcRequest;
-import com.jd.live.agent.governance.mcp.McpToolMethod;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.governance.request.HeaderProvider;
 import org.springframework.web.method.HandlerMethod;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -47,20 +44,17 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
     private final Predicate<Class<?>> systemHanderPredicate;
     private final Predicate<String> systemPathPredicate;
     private final Predicate<String> mcpPathPredicate;
-    private final JsonPathParser parser;
 
     public ServletInboundRequest(HttpServletRequest request,
                                  Object[] arguments,
                                  Object handler,
-                                 GovernanceConfig config,
-                                 JsonPathParser parser) {
+                                 GovernanceConfig config) {
         super(request);
         this.arguments = arguments;
         this.handler = handler;
         this.systemHanderPredicate = config.getServiceConfig()::isSystemHandler;
         this.systemPathPredicate = config.getServiceConfig()::isSystemPath;
         this.mcpPathPredicate = config.getMcpConfig()::isMcpPath;
-        this.parser = parser;
         URI u = null;
         try {
             u = new URI(request.getRequestURI());
@@ -96,19 +90,14 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
         if (systemPathPredicate != null && systemPathPredicate.test(getPath())) {
             return true;
         }
+        if (isMcp()) {
+            return true;
+        }
         return super.isSystem();
     }
 
     public boolean isMcp() {
         return McpToolMethod.HANDLE_METHOD != null && mcpPathPredicate != null && mcpPathPredicate.test(getPath());
-    }
-
-    public Object getMcpRequestId() {
-        try {
-            return parser.read(request.getInputStream(), JsonRpcRequest.JSON_PATH_ID);
-        } catch (IOException e) {
-            return null;
-        }
     }
 
     @Override
