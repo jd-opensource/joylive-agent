@@ -22,6 +22,7 @@ import lombok.Getter;
 
 import java.io.StringReader;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -59,7 +60,9 @@ public abstract class ConfigFetcher<C> {
     /**
      * Current configuration value.
      */
-    protected final AtomicReference<String> valueRef = new AtomicReference<>();
+    protected final AtomicReference<ConfigVersion> config = new AtomicReference<>();
+
+    protected final AtomicLong version = new AtomicLong();
 
     public ConfigFetcher(C client, ConfigKey key, Application application, ObjectParser json) {
         this.client = client;
@@ -77,13 +80,13 @@ public abstract class ConfigFetcher<C> {
      * @throws Exception if configuration retrieval fails for any reason (network issues, parsing errors, etc.)
      */
     public String getConfig(long timeout) throws Exception {
-        String value = valueRef.get();
-        if (value == null) {
-            ConfigPolicy policy = parsePolicy(doGetConfig(keyPolicy, timeout));
-            ConfigKey key = policy == null ? keyRelease : new ConfigKey(policy.getName(), keyRelease.getGroup());
-            value = doGetConfig(key, timeout);
+        ConfigVersion ver = config.get();
+        if (ver != null) {
+            return ver.getValue();
         }
-        return value;
+        ConfigPolicy policy = parsePolicy(doGetConfig(keyPolicy, timeout));
+        ConfigKey key = policy == null ? keyRelease : new ConfigKey(policy.getName(), keyRelease.getGroup());
+        return doGetConfig(key, timeout);
     }
 
     /**
