@@ -11,7 +11,7 @@
 7. Added support for loading remote environment variables
 8. Added support for forwarding to grayscale and unit domain names
 9. Added support for environment variables encrypted with Jasypt
-10. Support for timely token refresh for Nacos client versions below 2.5
+10. Added Support for timely token refresh for Nacos client versions below 2.5
 11. Fixed class loading issues and conflicts with other Agent class loading
 12. Fixed Dubbo 3.0 compatibility issues
 13. Fixed Dubbo 2.7 registration issues
