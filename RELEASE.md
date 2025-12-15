@@ -2,26 +2,28 @@
 
 ## 1.9.0
 
-1. Support Spring cloud Dalston.SR1
-2. Support Spring cloud 2025.1
-3. Support Spring cloud gateway dynamic routing
-4. Support enabling coloring based on domain name
-5. Support loading remote environment variables
-6. Support forwarding to gray scale and unit domain names
-7. Support Jasypt encrypted environment variables
-8. Support timely token refresh for Nacos client versions below 2.5
-9. Support MCP protocol calls for Spring Web
-10. Fix class loading issues and conflicts with other Agent class loaders
-11. Fix Dubbo 3.0 compatibility issues
-12. Fix Dubbo 2.7 registration issues
-13. Fix Nacos gray scale configuration subscription issues
-14. Fix the issue where degradation is not effective for generic calls in Dubbo2, Dubbo3, and SofaRPC
-15. Fix Spring cloud gateway retry not working issue
-16. Fix Spring cloud gateway lane routing issues
-17. Fix stack overflow caused by Spring web request wrapping
-18. Fix Feign compatibility issues
-19. Fix Dubbo zookeeper registry null pointer exception
-20. Fix other issues
+1. Added support for exposing Spring Web services as MCP services
+2. Added support for Nacos grayscale configuration, supporting Nacos 1.x/2.x/3.x SDK
+3. Added support for Spring cloud Dalston.SR1
+4. Added support for Spring cloud 2025.1
+5. Added support for Spring cloud gateway dynamic routing
+6. Added support for enabling coloring based on domain name
+7. Added support for loading remote environment variables
+8. Added support for forwarding to grayscale and unit domain names
+9. Added support for environment variables encrypted with Jasypt
+10. Support for timely token refresh for Nacos client versions below 2.5
+11. Fixed class loading issues and conflicts with other Agent class loading
+12. Fixed Dubbo 3.0 compatibility issues
+13. Fixed Dubbo 2.7 registration issues
+14. Fixed grayscale configuration subscription issues for configuration injection
+15. Fixed generic calls for dubbo2, dubbo3 and sofarpc where degradation doesn't take effect
+16. Fixed Spring cloud gateway retry not taking effect issue
+17. Fixed Spring cloud gateway lane routing issues
+18. Fixed stack overflow issues caused by Spring web wrapped requests
+19. Fixed Feign compatibility issues
+20. Fixed token bucket rate limiting algorithm issues
+21. Fixed Dubbo zookeeper registry null pointer issues
+22. Fixed other issues
 
 ## 1.8.0
 

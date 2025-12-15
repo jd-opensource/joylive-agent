@@ -2,26 +2,28 @@
 
 # 1.9.0
 
-1. 支持 Spring cloud Dalston.SR1
-2. 支持 Spring cloud 2025.1
-3. 支持 Spring cloud gateway 动态路由
-4. 支持根据域名来开启染色
-5. 支持加载远端的环境变量
-6. 支持转发到灰度和单元域名
-7. 支持 Jasypt 加密的环境变量
-8. 支持 Nacos client 2.5 以下版本的令牌及时刷新
-9. 支持 Spring web 的MCP协议调用
-10. 修复类加载问题，以及和其它Agent类加载冲突问题
-11. 修复 Dubbo 3.0 兼容性问题
-12. 修复 Dubbo 2.7 注册问题
-13. 修复 Nacos 灰度配置订阅问题
-14. 修复 dubbo2、dubbo3和sofarpc 的泛化调用，降级不生效的问题
-15. 修复 Spring cloud gateway 重试不生效问题
-16. 修复 Spring cloud gateway 泳道路由问题
-17. 修复 Spring web 包装请求带来的堆栈溢出问题
-18. 修复 Feign 兼容性问题
-19. 修复 Dubbo zookeeper registry 空指针问题
-20. 修复其它问题
+1. 新增支持 Spring Web 服务暴露为MCP服务
+2. 新增支持 Nacos灰度配置，支持Nacos 1.x/2.x/3.x SDK
+3. 新增支持 Spring cloud Dalston.SR1
+4. 新增支持 Spring cloud 2025.1
+5. 新增支持 Spring cloud gateway 动态路由
+6. 新增支持 根据域名来开启染色
+7. 新增支持 加载远端的环境变量
+8. 新增支持 转发到灰度和单元域名
+9. 新增支持 采用Jasypt加密的环境变量
+10. 支持 Nacos client 2.5 以下版本的令牌及时刷新
+11. 修复 类加载以及和其它Agent类加载冲突问题
+12. 修复 Dubbo 3.0 兼容性问题
+13. 修复 Dubbo 2.7 注册问题
+14. 修复 配置注入的灰度配置订阅问题
+15. 修复 dubbo2、dubbo3和sofarpc 的泛化调用，降级不生效的问题
+16. 修复 Spring cloud gateway 重试不生效问题
+17. 修复 Spring cloud gateway 泳道路由问题
+18. 修复 Spring web 包装请求带来的堆栈溢出问题
+19. 修复 Feign 兼容性问题
+20. 修复 令牌桶限流算法问题
+21. 修复 Dubbo zookeeper registry 空指针问题
+22. 修复其它问题
 
 ## 1.8.0
 
