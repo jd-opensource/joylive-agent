@@ -1,4 +1,5 @@
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosConfigClientDefinition
+com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosConfigFactoryDefinition
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosDiscoveryPropertiesDefinition
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosInstancesChangeNotifierDefinition
 com.jd.live.agent.plugin.registry.nacos.v2_3.definition.NacosNamingClientProxyDelegateDefinition
