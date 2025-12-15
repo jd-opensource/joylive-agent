@@ -127,6 +127,7 @@ public class GovernanceConfig {
 
     public static final String CONFIG_CENTER = CONFIG_GOVERNANCE + ".configCenter";
     public static final String CONFIG_CENTER_ENABLED = CONFIG_CENTER + ENABLED;
+    public static final String CONFIG_CENTER_GRAY_ENABLED = CONFIG_CENTER + ".grayEnabled";
 
     public static final String CONFIG_PROBE = CONFIG_GOVERNANCE + ".probe";
     public static final String CONFIG_PROBE_ZOOKEEPER = CONFIG_PROBE + ".zookeeper";
