@@ -42,11 +42,7 @@ public class ConfigPolicy {
             return false;
         }
         String localIp = application.getLocation().getIp();
-        if (applications != null && !applications.isEmpty() && !applications.contains(application.getName())) {
-            return false;
-        } else if (ips != null && !ips.isEmpty() && !ips.contains(localIp)) {
-            return false;
-        }
-        return true;
+        return (applications == null || applications.isEmpty() || applications.contains(application.getName()))
+                && (ips == null || ips.isEmpty() || ips.contains(localIp));
     }
 }
