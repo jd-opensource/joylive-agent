@@ -21,12 +21,10 @@ import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.util.Locks;
 
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -55,16 +53,6 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
     protected static final int STATE_RELEASE = 2;
 
     /**
-     * Configuration change listeners.
-     */
-    protected final Set<L> listeners = new CopyOnWriteArraySet<>();
-
-    /**
-     * Current configuration state.
-     */
-    protected final AtomicInteger state = new AtomicInteger(STATE_INIT);
-
-    /**
      * Update event listener.
      */
     protected final L onUpdate;
@@ -73,6 +61,16 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
      * Policy event listener.
      */
     protected final L onPolicy;
+
+    /**
+     * Configuration change listeners.
+     */
+    protected final Set<ConfigListener<L>> listeners = new CopyOnWriteArraySet<>();
+
+    /**
+     * Current configuration state.
+     */
+    protected final AtomicInteger state = new AtomicInteger(STATE_INIT);
 
     /**
      * Subscription status flag.
@@ -93,11 +91,6 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
      * Beta configuration key.
      */
     protected ConfigKey keyBeta;
-
-    /**
-     * Current configuration value.
-     */
-    protected final AtomicReference<String> valueRef = new AtomicReference<>();
 
     public ConfigWatcher(C client, ConfigKey key, Application application, ObjectParser json) {
         super(client, key, application, json);
@@ -161,11 +154,9 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
             return false;
         }
         synchronized (mutex) {
-            if (listeners.add(listener) && isSubscribed()) {
-                String value = valueRef.get();
-                if (value != null) {
-                    onUpdateConfig(listener, value);
-                }
+            ConfigListener<L> configListener = new ConfigListener<>(listener);
+            if (listeners.add(configListener) && isSubscribed()) {
+                doUpdateConfig(configListener, config.get());
                 return true;
             }
             return false;
@@ -183,7 +174,7 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
             return false;
         }
         synchronized (mutex) {
-            return listeners.remove(listener);
+            return listeners.remove(new ConfigListener<>(listener));
         }
     }
 
@@ -318,14 +309,14 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
                 unsubscribe(keyBeta, onUpdate);
                 keyBeta = newKeyBeta;
                 subscribe(keyBeta, onUpdate);
-                doUpdateConfig(doGetConfig(keyBeta, 0));
+                //doUpdateConfig(new ConfigVersion(doGetConfig(keyBeta, 0), version.get() + 1));
             }
         } else if (state.compareAndSet(STATE_BETA, STATE_RELEASE)
                 || state.compareAndSet(STATE_INIT, STATE_RELEASE)) {
             logger.info("Subscribe release config {}@{}", keyRelease.getName(), keyRelease.getGroup());
             unsubscribe(keyBeta, onUpdate);
             subscribe(keyRelease, onUpdate);
-            doUpdateConfig(doGetConfig(keyRelease, 0));
+            //doUpdateConfig(new ConfigVersion(doGetConfig(keyRelease, 0), version.get() + 1));
         }
     }
 
@@ -338,7 +329,7 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
         Locks.read(lock, () -> {
             if (isSubscribed()) {
                 synchronized (mutex) {
-                    doUpdateConfig(value);
+                    doUpdateConfig(new ConfigVersion(value, version.incrementAndGet()));
                 }
             }
         });
@@ -347,13 +338,13 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
     /**
      * Updates current configuration value and notifies all listeners.
      *
-     * @param value new configuration value
+     * @param newer new configuration value
      */
-    protected void doUpdateConfig(String value) {
-        String old = valueRef.get();
-        if (!Objects.equals(old, value)) {
-            valueRef.set(value);
-            listeners.forEach(i -> onUpdateConfig(i, value));
+    protected void doUpdateConfig(ConfigVersion newer) {
+        ConfigVersion older = config.get();
+        if (older == null || newer.getVersion() > older.getVersion()) {
+            config.set(newer);
+            listeners.forEach(i -> doUpdateConfig(i, newer));
         }
     }
 
@@ -361,11 +352,15 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
      * Updates configuration for specified listener.
      *
      * @param listener target listener
-     * @param value    new configuration value
+     * @param version  new configuration value
      */
-    protected void onUpdateConfig(L listener, String value) {
+    protected void doUpdateConfig(ConfigListener<L> listener, ConfigVersion version) {
+        if (version == null || version.getVersion() <= listener.getVersion()) {
+            return;
+        }
         try {
-            doUpdateConfig(listener, value);
+            doUpdateConfig(listener.getListener(), version.getValue());
+            listener.setVersion(version.getVersion());
         } catch (Exception e) {
             logger.error("Failed to update config {} for listener {}, caused by {}", keyRelease, listener, e.getMessage(), e);
         }
