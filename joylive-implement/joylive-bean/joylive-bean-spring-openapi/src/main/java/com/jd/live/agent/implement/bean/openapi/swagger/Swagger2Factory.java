@@ -35,7 +35,6 @@ import com.jd.live.agent.core.openapi.spec.v3.security.SecurityScheme;
 import com.jd.live.agent.core.openapi.spec.v3.servers.Server;
 import com.jd.live.agent.core.openapi.spec.v3.tags.Tag;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.implement.bean.openapi.util.SpringUtils;
 import io.swagger.models.*;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.BasicAuthDefinition;
@@ -60,7 +59,7 @@ import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
 /**
  * Factory implementation for creating OpenApi objects from Swagger 2 specifications.
  */
-public class OpenApi2Factory implements OpenApiFactory {
+public class Swagger2Factory extends SwaggerFactory {
 
     private static final Set<String> EXCLUDE_KEYS = new HashSet<>(Arrays.asList("x-example", "x-examples", "x-nullable"));
 
@@ -71,7 +70,7 @@ public class OpenApi2Factory implements OpenApiFactory {
 
     private final LazyObject<OpenApi> openApi;
 
-    public OpenApi2Factory(Callable<Swagger> callable) {
+    public Swagger2Factory(Callable<Swagger> callable) {
         this.openApi = new LazyObject<>(() -> {
             try {
                 return build(callable.call());
@@ -84,11 +83,6 @@ public class OpenApi2Factory implements OpenApiFactory {
     @Override
     public OpenApi create() {
         return openApi.get();
-    }
-
-    @Override
-    public void addHiddenController(Class<?> type) {
-        SpringUtils.addOpenApiHiddenControllers(type);
     }
 
     /**

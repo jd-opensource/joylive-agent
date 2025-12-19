@@ -96,15 +96,16 @@ public class McpRegister extends AppListener.AppListenerAdapter {
     public void onStarted(AppContext context) {
         OpenApiFactory apiFactory = OpenApiFactory.INSTANCE_REF.get();
         if (apiFactory != null) {
+            ClassLoader classLoader = context.unwrap().getClass().getClassLoader();
             switch (context.getWebType()) {
                 case WEB_SERVLET_JAVAX:
-                    apiFactory.addHiddenController(JavaxWebMcpController.class);
+                    apiFactory.addHiddenController(JavaxWebMcpController.class, classLoader);
                     break;
                 case WEB_SERVLET_JAKARTA:
-                    apiFactory.addHiddenController(JakartaWebMcpController.class);
+                    apiFactory.addHiddenController(JakartaWebMcpController.class, classLoader);
                     break;
                 case WEB_REACTIVE:
-                    apiFactory.addHiddenController(ReactiveMcpController.class);
+                    apiFactory.addHiddenController(ReactiveMcpController.class, classLoader);
                     break;
             }
         }

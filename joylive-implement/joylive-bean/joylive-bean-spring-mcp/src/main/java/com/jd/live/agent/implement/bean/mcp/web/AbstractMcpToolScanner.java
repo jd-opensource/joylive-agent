@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.implement.bean.mcp.web;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.mcp.*;
 import com.jd.live.agent.core.mcp.McpToolParameter.Location;
 import com.jd.live.agent.core.mcp.McpToolParameter.McpToolParameterBuilder;
@@ -25,7 +26,6 @@ import com.jd.live.agent.core.util.type.AnnotationGetter.MethodAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.ParameterAnnotationGetter;
 import com.jd.live.agent.core.util.type.AnnotationGetter.TypeAnnotationGetter;
 import com.jd.live.agent.implement.bean.mcp.expression.SpringExpressionFactory;
-import com.jd.live.agent.implement.bean.mcp.util.SpringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -43,14 +43,18 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 
+import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
 import static com.jd.live.agent.core.util.CollectionUtils.cascadeAndGet;
 import static com.jd.live.agent.core.util.StringUtils.*;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 /**
  * Default implementation of McpToolScanner.
  * Scans Spring controllers and converts their methods to MCP tool methods.
  */
 public abstract class AbstractMcpToolScanner implements McpToolScanner {
+
+    private static final String TYPE_BEAN_FACTORY = "org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory";
 
     /**
      * Spring bean factory for accessing application context
@@ -75,7 +79,10 @@ public abstract class AbstractMcpToolScanner implements McpToolScanner {
     public AbstractMcpToolScanner(ConfigurableListableBeanFactory beanFactory) {
         this.beanFactory = beanFactory;
         this.expressionFactory = new SpringExpressionFactory(beanFactory);
-        this.nameDiscoverer = SpringUtils.getParameterNameDiscoverer(beanFactory);
+
+        Class<?> beanFactoryClass = loadClass(TYPE_BEAN_FACTORY, beanFactory.getBeanClassLoader());
+        FieldAccessor accessor = getAccessor(beanFactoryClass, "parameterNameDiscoverer");
+        this.nameDiscoverer = accessor == null ? null : (ParameterNameDiscoverer) accessor.get(beanFactory);
     }
 
     /**

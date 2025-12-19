@@ -20,15 +20,66 @@ import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApiFactory;
-import com.jd.live.agent.implement.bean.openapi.util.SpringUtils;
+import com.jd.live.agent.implement.bean.openapi.swagger.Swagger2Factory;
+import com.jd.live.agent.implement.bean.openapi.swagger.Swagger30Factory;
+import com.jd.live.agent.implement.bean.openapi.swagger.Swagger31Factory;
+import io.swagger.models.Swagger;
+import io.swagger.v3.oas.models.OpenAPI;
+
+import java.lang.reflect.Method;
+import java.util.Locale;
+import java.util.concurrent.Callable;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 @Extension(value = "OpenApiRegister", order = AppListener.ORDER_OPEN_API)
 @ConditionalOnClass("org.springframework.context.ConfigurableApplicationContext")
 public class OpenApiRegister extends AppListener.AppListenerAdapter {
 
+    private static final String TYPE_OPEN_API31 = "io.swagger.v3.oas.models.annotations.OpenAPI31";
+    private static final String TYPE_OPEN_API_RESOURCE = "org.springdoc.api.AbstractOpenApiResource";
+    private static final String TYPE_DOCUMENTATION_CACHE = "springfox.documentation.spring.web.DocumentationCache";
+    private static final String TYPE_SERVICE_MODEL_TO_SWAGGER2_MAPPER = "springfox.documentation.swagger2.mappers.ServiceModelToSwagger2Mapper";
+    private static final String TYPE_DOCUMENTATION = "springfox.documentation.service.Documentation";
+
     @Override
     public void onStarted(AppContext context) {
+        OpenApiFactory.INSTANCE_REF.set(getApiFactory(context));
+    }
 
-        OpenApiFactory.INSTANCE_REF.set(SpringUtils.getApiFactory(context));
+    private OpenApiFactory getApiFactory(AppContext context) {
+
+        ClassLoader classLoader = context.unwrap().getClass().getClassLoader();
+        Class<?> openApiV31Class = loadClass(TYPE_OPEN_API31, classLoader);
+        Class<?> openApiResourceClass = loadClass(TYPE_OPEN_API_RESOURCE, classLoader);
+        Method getOpenApiMethod = getDeclaredMethod(openApiResourceClass, "getOpenApi", new Class[]{Locale.class});
+        Class<?> documentationCacheClass = loadClass(TYPE_DOCUMENTATION_CACHE, classLoader);
+        Class<?> serviceModelToSwagger2MapperClass = loadClass(TYPE_SERVICE_MODEL_TO_SWAGGER2_MAPPER, classLoader);
+        Class<?> documentationClass = loadClass(TYPE_DOCUMENTATION, classLoader);
+        Method documentationByGroupMethod = getDeclaredMethod(documentationCacheClass, "documentationByGroup", new Class[]{String.class});
+        Method mapDocumentationMethod = getDeclaredMethod(serviceModelToSwagger2MapperClass, "mapDocumentation", new Class[]{documentationClass});
+
+        try {
+            if (openApiResourceClass != null && getOpenApiMethod != null) {
+                Object bean = context.getBean(openApiResourceClass);
+                Callable<OpenAPI> callable = () -> (io.swagger.v3.oas.models.OpenAPI) getOpenApiMethod.invoke(bean, Locale.getDefault());
+                return openApiV31Class != null ? new Swagger31Factory(callable) : new Swagger30Factory(callable);
+            } else if (documentationCacheClass != null && serviceModelToSwagger2MapperClass != null) {
+                Object documentCache = context.getBean(documentationCacheClass);
+                Object mapper = context.getBean(serviceModelToSwagger2MapperClass);
+                if (documentCache != null && mapper != null) {
+                    Object document = documentationByGroupMethod.invoke(documentCache, "default");
+                    if (document != null) {
+                        Callable<Swagger> callable = () -> (Swagger) mapDocumentationMethod.invoke(mapper, document);
+                        return new Swagger2Factory(callable);
+                    }
+                    return null;
+                }
+            }
+        } catch (Throwable ignore) {
+        }
+        // TODO add reflection factory
+        return null;
     }
 }

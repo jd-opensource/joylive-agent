@@ -34,8 +34,9 @@ public interface OpenApiFactory {
      * Adds a controller type to the hidden controllers list.
      * Hidden controllers will be excluded from the OpenAPI specification generation.
      *
-     * @param type the controller class type to hide
+     * @param type        the controller class type to hide
+     * @param classLoader the class loader
      */
-    void addHiddenController(Class<?> type);
+    void addHiddenController(Class<?> type, ClassLoader classLoader);
 
 }

@@ -37,7 +37,6 @@ import com.jd.live.agent.core.openapi.spec.v3.servers.Server;
 import com.jd.live.agent.core.openapi.spec.v3.servers.ServerVariable;
 import com.jd.live.agent.core.openapi.spec.v3.tags.Tag;
 import com.jd.live.agent.core.util.cache.LazyObject;
-import com.jd.live.agent.implement.bean.openapi.util.SpringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,11 +55,11 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
  * used by the application. It handles all aspects of the OpenAPI specification including paths,
  * operations, schemas, security definitions, and more.
  */
-public class OpenApi31Factory implements OpenApiFactory {
+public class Swagger31Factory extends SwaggerFactory {
 
     private final LazyObject<OpenApi> openApi;
 
-    public OpenApi31Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
+    public Swagger31Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
         this.openApi = new LazyObject<>(() -> {
             try {
                 return build(callable.call());
@@ -73,11 +72,6 @@ public class OpenApi31Factory implements OpenApiFactory {
     @Override
     public OpenApi create() {
         return openApi.get();
-    }
-
-    @Override
-    public void addHiddenController(Class<?> type) {
-        SpringUtils.addOpenApiHiddenControllers(type);
     }
 
     /**

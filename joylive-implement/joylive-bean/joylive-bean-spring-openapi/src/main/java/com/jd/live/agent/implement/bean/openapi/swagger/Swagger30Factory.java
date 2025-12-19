@@ -29,9 +29,9 @@ import static com.jd.live.agent.core.util.CollectionUtils.*;
 /**
  * Factory implementation for creating OpenApi objects from OpenAPI 3.1 specifications.
  */
-public class OpenApi30Factory extends OpenApi31Factory {
+public class Swagger30Factory extends Swagger31Factory {
 
-    public OpenApi30Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
+    public Swagger30Factory(Callable<io.swagger.v3.oas.models.OpenAPI> callable) {
         super(callable);
     }
 
