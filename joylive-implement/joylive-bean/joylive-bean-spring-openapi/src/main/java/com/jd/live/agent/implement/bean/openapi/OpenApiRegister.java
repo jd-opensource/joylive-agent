@@ -18,8 +18,10 @@ package com.jd.live.agent.implement.bean.openapi;
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
+import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.openapi.spec.v3.OpenApiFactory;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.implement.bean.openapi.swagger.Swagger2Factory;
 import com.jd.live.agent.implement.bean.openapi.swagger.Swagger30Factory;
 import com.jd.live.agent.implement.bean.openapi.swagger.Swagger31Factory;
@@ -34,6 +36,7 @@ import static com.jd.live.agent.core.util.type.ClassUtils.getDeclaredMethod;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 @Extension(value = "OpenApiRegister", order = AppListener.ORDER_OPEN_API)
+@ConditionalOnProperty(GovernanceConfig.CONFIG_MCP_ENABLED)
 @ConditionalOnClass("org.springframework.context.ConfigurableApplicationContext")
 public class OpenApiRegister extends AppListener.AppListenerAdapter {
 

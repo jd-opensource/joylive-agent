@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.implement.bean.mcp;
 
+import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
+import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.bootstrap.AppBeanDefinition;
 import com.jd.live.agent.core.bootstrap.AppContext;
 import com.jd.live.agent.core.bootstrap.AppListener;
@@ -33,12 +35,11 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.implement.bean.mcp.web.jakarta.JakartaWebMcpController;
 import com.jd.live.agent.implement.bean.mcp.web.javax.JavaxWebMcpController;
 import com.jd.live.agent.implement.bean.mcp.web.reactive.ReactiveMcpController;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 @Extension(value = "McpAppRegister", order = AppListener.ORDER_MCP)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_MCP_ENABLED)
@@ -64,12 +65,16 @@ public class McpRegister extends AppListener.AppListenerAdapter {
     @Override
     public void onContextPrepared(AppContext ctx) {
         Object delegate = ctx.unwrap();
-        if (!(delegate instanceof ConfigurableApplicationContext)) {
+        Class<?> delegateClass = delegate.getClass();
+        ClassLoader classLoader = delegateClass.getClassLoader();
+        Class<?> cls = loadClass("org.springframework.context.ConfigurableApplicationContext", classLoader);
+        if (cls == null || !cls.isInstance(delegate)) {
             return;
         }
-        ConfigurableApplicationContext ac = (ConfigurableApplicationContext) delegate;
-        ConfigurableListableBeanFactory beanFactory = ac.getBeanFactory();
-        if (!(beanFactory instanceof BeanDefinitionRegistry)) {
+        FieldAccessor accessor = FieldAccessorFactory.getAccessor(delegateClass, "beanFactory");
+        Object target = accessor.get(delegate);
+        Class<?> targetCls = loadClass("org.springframework.beans.factory.support.BeanDefinitionRegistry", classLoader);
+        if (target == null || targetCls == null || !targetCls.isInstance(target)) {
             return;
         }
         Map<String, Object> properties = new HashMap<>();
