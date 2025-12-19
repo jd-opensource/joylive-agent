@@ -65,8 +65,6 @@
                 <include>com.jd.live:joylive-parser-fastjson2</include>
                 <include>com.jd.live:joylive-parser-properties</include>
                 <include>com.jd.live:joylive-parser-jxpath</include>
-                <include>com.jd.live:joylive-bean-spring-openapi</include>
-                <include>com.jd.live:joylive-bean-spring-mcp</include>
                 <include>com.jd.live:joylive-servlet-tomcat9</include>
                 <include>com.jd.live:joylive-servlet-tomcat10</include>
                 <include>com.jd.live:joylive-servlet-undertow2</include>
@@ -106,7 +104,7 @@
             <outputDirectory>plugin/spring</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-application-springboot2</include>
+                <include>com.jd.live:joylive-application-springboot</include>
                 <include>com.jd.live:joylive-registry-springcloud1</include>
                 <include>com.jd.live:joylive-registry-springcloud2.1</include>
                 <include>com.jd.live:joylive-registry-springcloud2.2</include>

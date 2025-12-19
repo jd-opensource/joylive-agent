@@ -15,6 +15,8 @@
  */
 package com.jd.live.agent.core.bootstrap;
 
+import com.jd.live.agent.core.bootstrap.AppListener.CompositeAppListener;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -23,42 +25,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @since 1.6.0
  */
-public class AppListenerManager implements AppListenerSupervisor {
-
-    private final List<AppListener> listeners;
+public class AppListenerManager extends CompositeAppListener implements AppListenerSupervisor {
 
     public AppListenerManager(List<AppListener> listeners) {
-        this.listeners = listeners == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(listeners);
-    }
-
-    @Override
-    public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
-        listeners.forEach(listener -> listener.onLoading(classLoader, mainClass));
-    }
-
-    @Override
-    public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
-        listeners.forEach(listener -> listener.onEnvironmentPrepared(context, environment));
-    }
-
-    @Override
-    public void onContextPrepared(AppContext context) {
-        listeners.forEach(listener -> listener.onContextPrepared(context));
-    }
-
-    @Override
-    public void onStarted(AppContext context) {
-        listeners.forEach(listener -> listener.onStarted(context));
-    }
-
-    @Override
-    public void onReady(AppContext context) {
-        listeners.forEach(listener -> listener.onReady(context));
-    }
-
-    @Override
-    public void onCLose(AppContext context) {
-        listeners.forEach(listener -> listener.onCLose(context));
+        super(listeners == null ? new CopyOnWriteArrayList<>() : new CopyOnWriteArrayList<>(listeners));
     }
 
     @Override

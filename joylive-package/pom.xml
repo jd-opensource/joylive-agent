@@ -92,14 +92,6 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-bean-spring-openapi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
-            <artifactId>joylive-bean-spring-mcp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jd.live</groupId>
             <artifactId>joylive-servlet-tomcat9</artifactId>
         </dependency>
         <dependency>
@@ -200,7 +192,7 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-application-springboot2</artifactId>
+            <artifactId>joylive-application-springboot</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

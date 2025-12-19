@@ -17,6 +17,9 @@ package com.jd.live.agent.core.bootstrap;
 
 import com.jd.live.agent.core.extension.annotation.Extensible;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * An interface for listening to application events.
  *
@@ -115,6 +118,57 @@ public interface AppListener {
         public void onCLose(AppContext context) {
             // Do nothing
         }
+    }
+
+    class CompositeAppListener implements AppBooter {
+
+        protected final List<AppListener> listeners;
+
+        public CompositeAppListener(List<AppListener> listeners) {
+            this.listeners = listeners;
+        }
+
+        @Override
+        public void onLoading(ClassLoader classLoader, Class<?> mainClass) {
+            listeners.forEach(listener -> listener.onLoading(classLoader, mainClass));
+        }
+
+        @Override
+        public void onEnvironmentPrepared(AppBootstrapContext context, AppEnvironment environment) {
+            listeners.forEach(listener -> listener.onEnvironmentPrepared(context, environment));
+        }
+
+        @Override
+        public void onContextPrepared(AppContext context) {
+            listeners.forEach(listener -> listener.onContextPrepared(context));
+        }
+
+        @Override
+        public void onStarted(AppContext context) {
+            listeners.forEach(listener -> listener.onStarted(context));
+        }
+
+        @Override
+        public void onReady(AppContext context) {
+            listeners.forEach(listener -> listener.onReady(context));
+        }
+
+        @Override
+        public void onCLose(AppContext context) {
+            listeners.forEach(listener -> listener.onCLose(context));
+        }
+
+        public static CompositeAppListener composite(AppListener listener, List<? extends AppListener> listeners) {
+            List<AppListener> result = new LinkedList<>();
+            if (listener != null) {
+                result.add(listener);
+            }
+            if (listeners != null) {
+                result.addAll(listeners);
+            }
+            return new CompositeAppListener(result);
+        }
+
     }
 
 }

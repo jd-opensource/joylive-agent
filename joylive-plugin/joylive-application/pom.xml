@@ -13,7 +13,9 @@
     <name>joylive-application</name>
     <packaging>pom</packaging>
     <modules>
-        <module>joylive-application-springboot2</module>
+        <module>joylive-application-springboot</module>
+        <module>joylive-application-springboot-openapi</module>
+        <module>joylive-application-springboot-mcp</module>
     </modules>
 
 </project>

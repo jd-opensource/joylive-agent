@@ -136,16 +136,6 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-bean-spring-openapi</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
-                <artifactId>joylive-bean-spring-mcp</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.jd.live</groupId>
                 <artifactId>joylive-servlet-tomcat9</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -271,7 +261,17 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-application-springboot2</artifactId>
+                <artifactId>joylive-application-springboot</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-application-springboot-openapi</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jd.live</groupId>
+                <artifactId>joylive-application-springboot-mcp</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

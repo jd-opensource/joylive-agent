@@ -27,7 +27,6 @@
         <module>joylive-probe</module>
         <module>joylive-auth</module>
         <module>joylive-servlet</module>
-        <module>joylive-bean</module>
     </modules>
 
     <dependencies>
