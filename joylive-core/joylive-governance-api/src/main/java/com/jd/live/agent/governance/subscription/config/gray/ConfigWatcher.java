@@ -343,6 +343,7 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
     protected void doUpdateConfig(ConfigVersion newer) {
         ConfigVersion older = config.get();
         if (older == null || newer.getVersion() > older.getVersion()) {
+            logger.info("Received changed config, dataId: {}, version: {}, listeners:{}", keyRelease, newer.getVersion(), listeners.size());
             config.set(newer);
             listeners.forEach(i -> doUpdateConfig(i, newer));
         }
