@@ -30,7 +30,7 @@ public class NacosConfigService implements ConfigService {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final AtomicBoolean started = new AtomicBoolean();
+    private final AtomicBoolean started = new AtomicBoolean(true);
 
     public NacosConfigService(ConfigService delegate, Application application, ObjectParser json) {
         this.delegate = delegate;
