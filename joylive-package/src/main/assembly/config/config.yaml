@@ -204,7 +204,6 @@ agent:
     shutdownWaitTime: ${CONFIG_SHUTDOWN_WAIT_TIME:10000}
     service:
       localFirst: ${CONFIG_LOCAL_FIRST:true}
-      localFirstMode: ${CONFIG_LOCAL_FIRST_MODE:CELL}
       cellFailoverThresholds: ${CELL_FAILOVER_THRESHOLDS}
       serviceGroups: ${CONFIG_SERVICE_GROUPS:}
       serviceGroupOpen: ${CONFIG_SERVICE_GROUP_OPEN:true}

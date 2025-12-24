@@ -91,10 +91,9 @@ public class LocalFilter implements RouteFilter, LiveFilter {
                        Predicate<Endpoint> zonePredicate,
                        Predicate<Endpoint> clusterPredicate,
                        Integer threshold) {
-        threshold = threshold == null || threshold <= 0 ? 1 : threshold;
         RouteTarget target = invocation.getRouteTarget();
         int size = target.size();
-        if (size == 0 || size <= threshold) {
+        if (size == 0 || threshold != null && threshold > 0 && size <= threshold) {
             return;
         }
         List<Endpoint> localClusterEndpoints = new ArrayList<>(size / 2);
@@ -126,13 +125,22 @@ public class LocalFilter implements RouteFilter, LiveFilter {
         }
 
         List<Endpoint>[] candidates = new List[]{localClusterEndpoints, localZoneEndpoints, localRegionEndpoints, otherEndpoints};
-        int random = invocation.getRandom().nextInt(threshold);
-        int count = 0;
-        for (List<Endpoint> candidate : candidates) {
-            count += candidate.size();
-            if (count >= random) {
-                target.setEndpoints(candidate);
-                break;
+        if (threshold == null || threshold <= 1) {
+            for (List<Endpoint> candidate : candidates) {
+                if (!candidate.isEmpty()) {
+                    target.setEndpoints(candidate);
+                    return;
+                }
+            }
+        } else {
+            int random = invocation.getRandom().nextInt(threshold);
+            int count = 0;
+            for (List<Endpoint> candidate : candidates) {
+                count += candidate.size();
+                if (count >= random) {
+                    target.setEndpoints(candidate);
+                    return;
+                }
             }
         }
     }
