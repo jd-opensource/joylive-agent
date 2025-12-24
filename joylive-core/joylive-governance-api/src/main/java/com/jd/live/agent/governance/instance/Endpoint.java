@@ -400,6 +400,26 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
     }
 
     /**
+     * Determines if the region label matches the specified region.
+     *
+     * @param region The region to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isRegion(String region) {
+        return region != null && !region.isEmpty() && region.equals(getLabel(Constants.LABEL_REGION));
+    }
+
+    /**
+     * Determines if the zone label matches the specified zone.
+     *
+     * @param zone The zone to match.
+     * @return true if the unit matches, false otherwise.
+     */
+    default boolean isZone(String zone) {
+        return zone != null && !zone.isEmpty() && zone.equals(getLabel(Constants.LABEL_ZONE));
+    }
+
+    /**
      * Determines if the cloud label matches the specified cloud.
      *
      * @param cloud The cloud to match.

@@ -57,7 +57,9 @@ public interface RouteFilter {
 
     int ORDER_LIVE_CELL = ORDER_LANE + 100;
 
-    int ORDER_RETRY = ORDER_LIVE_CELL + 100;
+    int ORDER_LOCAL = ORDER_LIVE_CELL + 100;
+
+    int ORDER_RETRY = ORDER_LOCAL + 100;
 
     int ORDER_LOAD_BALANCE = ORDER_LIVE_CELL + 100;
 

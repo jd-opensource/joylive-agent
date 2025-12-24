@@ -219,14 +219,10 @@ public class Application {
     public void labelRegistry(BiConsumer<String, String> consumer) {
         if (consumer != null) {
             labelInstance(consumer);
-            if (location != null) {
-                labelZone(consumer);
-                labelLiveSpace(consumer);
-                labelLane(consumer);
-            }
-            if (meta != null) {
-                accept(consumer, Constants.LABEL_AGENT_VERSION, meta.get(Constants.LABEL_AGENT_VERSION));
-            }
+            labelZone(consumer);
+            labelLiveSpace(consumer);
+            labelLane(consumer);
+            labelAgentVersion(consumer);
             labelService(consumer);
         }
     }
@@ -239,15 +235,11 @@ public class Application {
     public void labelSync(BiConsumer<String, String> consumer) {
         if (consumer != null) {
             labelInstance(consumer);
-            if (location != null) {
-                labelZone(consumer);
-                labelLiveSpace(consumer);
-                labelLane(consumer);
-                accept(consumer, Constants.LABEL_INSTANCE_IP, location.getIp());
-            }
-            if (meta != null) {
-                accept(consumer, Constants.LABEL_AGENT_VERSION, meta.get(Constants.LABEL_AGENT_VERSION));
-            }
+            labelZone(consumer);
+            labelLiveSpace(consumer);
+            labelLane(consumer);
+            labelIp(consumer);
+            labelAgentVersion(consumer);
         }
     }
 
@@ -291,14 +283,15 @@ public class Application {
      * @param consumer the BiConsumer to use for labeling. It takes two parameters: the label key and the label value.
      */
     private void labelService(BiConsumer<String, String> consumer) {
-        if (service != null) {
-            accept(consumer, Constants.LABEL_WEIGHT, service.getWeight() == null ? null : service.getWeight().toString());
-            accept(consumer, Constants.LABEL_WARMUP, service.getWarmupDuration() == null ? null : service.getWarmupDuration().toString());
-            accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
-            Map<String, String> serviceMeta = service.getMeta();
-            if (serviceMeta != null) {
-                serviceMeta.forEach(consumer);
-            }
+        if (service == null) {
+            return;
+        }
+        accept(consumer, Constants.LABEL_WEIGHT, service.getWeight() == null ? null : service.getWeight().toString());
+        accept(consumer, Constants.LABEL_WARMUP, service.getWarmupDuration() == null ? null : service.getWarmupDuration().toString());
+        accept(consumer, Constants.LABEL_SERVICE_GROUP, service.getGroup());
+        Map<String, String> serviceMeta = service.getMeta();
+        if (serviceMeta != null) {
+            serviceMeta.forEach(consumer);
         }
     }
 
@@ -308,12 +301,13 @@ public class Application {
      * @param consumer the consumer to use for labeling
      */
     private void labelZone(BiConsumer<String, String> consumer) {
-        accept(consumer, Constants.LABEL_CLOUD, location.getCloud());
+        if (location == null) {
+            return;
+        }
         accept(consumer, Constants.LABEL_REGION, location.getRegion());
+        accept(consumer, Constants.LABEL_CLOUD, location.getCloud());
         accept(consumer, Constants.LABEL_ZONE, location.getZone());
         accept(consumer, Constants.LABEL_CLUSTER, location.getCluster());
-        // cell is useful for governance
-        accept(consumer, Constants.LABEL_CELL, location.getCell());
     }
 
     /**
@@ -322,11 +316,13 @@ public class Application {
      * @param consumer the consumer to use for labeling
      */
     private void labelLiveSpace(BiConsumer<String, String> consumer) {
-        if (!location.isLiveless()) {
-            accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
-            accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
-            accept(consumer, Constants.LABEL_UNIT, location.getUnit());
+        if (location == null || location.isLiveless()) {
+            return;
         }
+        accept(consumer, Constants.LABEL_LIVE_SPACE_ID, location.getLiveSpaceId());
+        accept(consumer, Constants.LABEL_RULE_ID, location.getUnitRuleId());
+        accept(consumer, Constants.LABEL_UNIT, location.getUnit());
+        accept(consumer, Constants.LABEL_CELL, location.getCell());
     }
 
     /**
@@ -335,10 +331,35 @@ public class Application {
      * @param consumer the consumer to use for labeling
      */
     private void labelLane(BiConsumer<String, String> consumer) {
-        if (!location.isLaneless()) {
-            accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
-            accept(consumer, Constants.LABEL_LANE, location.getLane());
+        if (location == null || location.isLaneless()) {
+            return;
         }
+        accept(consumer, Constants.LABEL_LANE_SPACE_ID, location.getLaneSpaceId());
+        accept(consumer, Constants.LABEL_LANE, location.getLane());
+    }
+
+    /**
+     * Labels the IP address using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelIp(BiConsumer<String, String> consumer) {
+        if (location == null) {
+            return;
+        }
+        accept(consumer, Constants.LABEL_INSTANCE_IP, location.getIp());
+    }
+
+    /**
+     * Labels the agent version using the provided consumer.
+     *
+     * @param consumer the consumer to use for labeling
+     */
+    private void labelAgentVersion(BiConsumer<String, String> consumer) {
+        if (meta == null) {
+            return;
+        }
+        accept(consumer, Constants.LABEL_AGENT_VERSION, meta.get(Constants.LABEL_AGENT_VERSION));
     }
 
     /**

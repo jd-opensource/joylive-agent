@@ -17,7 +17,7 @@ package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.instance.Location;
-import com.jd.live.agent.governance.annotation.ConditionalOnGovernanceEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnLiveEnabled;
 import com.jd.live.agent.governance.config.LocalFirstMode;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.instance.CellGroup;
@@ -47,12 +47,9 @@ import java.util.function.Function;
 
 /**
  * CellFilter filter cell instances
- *
- * @author Zhiguo.Chen
- * @since 1.0.0
  */
 @Extension(value = "CellFilter", order = RouteFilter.ORDER_LIVE_CELL)
-@ConditionalOnGovernanceEnabled
+@ConditionalOnLiveEnabled
 public class CellFilter implements RouteFilter, LiveFilter {
 
     @Override
@@ -85,7 +82,7 @@ public class CellFilter implements RouteFilter, LiveFilter {
                 (cellPolicy == CellPolicy.PREFER_LOCAL_CELL
                         ? livePolicy::getCellThreshold : serviceConfig::getCellFailoverThreshold);
         if (target.getUnit() == null) {
-            // unit policy is none. maybe not live request or route any.
+            // unit policy is none. route any.
             return routeAny(invocation, target, localFirstMode, thresholdFunc);
         }
         return routeUnit(invocation, target, localFirstMode, thresholdFunc);
@@ -200,60 +197,61 @@ public class CellFilter implements RouteFilter, LiveFilter {
         LiveMetadata liveMetadata = invocation.getLiveMetadata();
         LiveSpace targetSpace = liveMetadata != null ? liveMetadata.getTargetSpace() : null;
 
-        String preferCluster = localFirst == LocalFirstMode.CLUSTER ? invocation.getContext().getLocation().getCluster() : null;
-        String preferCloud = localFirst == LocalFirstMode.CLOUD ? invocation.getContext().getLocation().getCloud() : null;
-        String preferCellCode = localFirst == LocalFirstMode.CELL ? invocation.getContext().getLocation().getCell() : null;
+        Location location = invocation.getContext().getLocation();
+        String localCluster = localFirst == LocalFirstMode.CLUSTER ? location.getCluster() : null;
+        String localCloud = localFirst == LocalFirstMode.CLOUD ? location.getCloud() : null;
+        String localCellCode = localFirst == LocalFirstMode.CELL ? location.getCell() : null;
 
-        Unit preferUnit = localFirst != null && targetSpace != null ? targetSpace.getLocalUnit() : null;
+        Unit localUnit = localFirst != null && targetSpace != null ? targetSpace.getLocalUnit() : null;
         Unit centerUnit = targetSpace != null ? targetSpace.getCenter() : null;
-        Cell preferCell = localFirst != null && targetSpace != null ? targetSpace.getLocalCell() : null;
+        Cell localCell = localFirst != null && targetSpace != null ? targetSpace.getLocalCell() : null;
+        localCellCode = localCell == null ? localCellCode : localCell.getCode();
 
+        // unavailable cells
         Set<String> unavailableCells = getUnavailableCells(invocation);
         if (!unavailableCells.isEmpty()) {
+            // filter instances in unavailable cells
             target.filter(endpoint -> !unavailableCells.contains(endpoint.getCell()));
         }
+
+        Integer threshold = thresholdFunc == null ? null : thresholdFunc.apply(localCellCode);
+        int size = target.size();
+        if (size == 0 || size <= threshold) {
+            // not enough endpoints, return directly
+            return true;
+        }
+
         // prefer local cluster>local cell>local cloud>local unit>center unit>other unit
-        List<Endpoint> preferClusterEndpoints = new ArrayList<>();
-        List<Endpoint> preferCellEndpoints = new ArrayList<>();
-        List<Endpoint> preferCloudEndpoints = new ArrayList<>();
-        List<Endpoint> preferUnitEndpoints = new ArrayList<>();
+        List<Endpoint> localClusterEndpoints = new ArrayList<>();
+        List<Endpoint> localCellEndpoints = new ArrayList<>();
+        List<Endpoint> localCloudEndpoints = new ArrayList<>();
+        List<Endpoint> localUnitEndpoints = new ArrayList<>();
         List<Endpoint> centerUnitEndpoints = new ArrayList<>();
         List<Endpoint> otherUnitEndpoints = new ArrayList<>();
-        boolean liveEnabled = invocation.getContext().isLiveEnabled();
         for (Endpoint endpoint : target.getEndpoints()) {
-            if (liveEnabled) {
-                if (preferUnit != null && endpoint.isUnit(preferUnit.getCode())) {
-                    if (preferCell != null && endpoint.isCell(preferCell.getCode())) {
-                        if (preferCluster != null && endpoint.isCluster(preferCluster)) {
-                            preferClusterEndpoints.add(endpoint);
-                        } else {
-                            preferCellEndpoints.add(endpoint);
-                        }
-                    } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
-                        preferCloudEndpoints.add(endpoint);
+            if (localUnit != null && endpoint.isUnit(localUnit.getCode())) {
+                if (localCell != null && endpoint.isCell(localCell.getCode())) {
+                    if (localCluster != null && endpoint.isCluster(localCluster)) {
+                        localClusterEndpoints.add(endpoint);
                     } else {
-                        preferUnitEndpoints.add(endpoint);
+                        localCellEndpoints.add(endpoint);
                     }
-                } else if (centerUnit != null && endpoint.isUnit(centerUnit.getCode())) {
-                    centerUnitEndpoints.add(endpoint);
+                } else if (localCloud != null && endpoint.isCloud(localCloud)) {
+                    localCloudEndpoints.add(endpoint);
                 } else {
-                    otherUnitEndpoints.add(endpoint);
+                    localUnitEndpoints.add(endpoint);
                 }
-            } else if (preferCellCode != null && endpoint.isCell(preferCellCode)) {
-                preferCellEndpoints.add(endpoint);
-            } else if (preferCluster != null && endpoint.isCluster(preferCluster)) {
-                preferClusterEndpoints.add(endpoint);
-            } else if (preferCloud != null && endpoint.isCloud(preferCloud)) {
-                preferCloudEndpoints.add(endpoint);
+            } else if (centerUnit != null && endpoint.isUnit(centerUnit.getCode())) {
+                centerUnitEndpoints.add(endpoint);
             } else {
                 otherUnitEndpoints.add(endpoint);
             }
         }
         List<Endpoint>[] candidates = new List[]{
-                preferClusterEndpoints, preferCellEndpoints, preferCloudEndpoints,
-                preferUnitEndpoints, centerUnitEndpoints, otherUnitEndpoints
+                localClusterEndpoints, localCellEndpoints, localCloudEndpoints,
+                localUnitEndpoints, centerUnitEndpoints, otherUnitEndpoints
         };
-        Integer threshold = thresholdFunc == null ? null : thresholdFunc.apply(preferCell == null ? preferCellCode : preferCell.getCode());
+
         if (threshold == null || threshold <= 0) {
             for (List<Endpoint> candidate : candidates) {
                 if (!candidate.isEmpty()) {
@@ -262,11 +260,12 @@ public class CellFilter implements RouteFilter, LiveFilter {
                 }
             }
         } else {
+            // random weight selection
             int random = invocation.getRandom().nextInt(threshold);
-            int shortage = threshold;
+            int count = 0;
             for (List<Endpoint> candidate : candidates) {
-                shortage = shortage - candidate.size();
-                if (random >= shortage) {
+                count += candidate.size();
+                if (count >= random) {
                     target.setEndpoints(candidate);
                     break;
                 }

@@ -3,6 +3,7 @@ com.jd.live.agent.governance.invoke.filter.route.UnitFilter
 com.jd.live.agent.governance.invoke.filter.route.CellFilter
 com.jd.live.agent.governance.invoke.filter.route.TagRouteFilter
 com.jd.live.agent.governance.invoke.filter.route.LaneFilter
+com.jd.live.agent.governance.invoke.filter.route.LocalFilter
 com.jd.live.agent.governance.invoke.filter.route.LocalhostFilter
 com.jd.live.agent.governance.invoke.filter.route.RetryFilter
 com.jd.live.agent.governance.invoke.filter.route.LoadBalanceFilter
