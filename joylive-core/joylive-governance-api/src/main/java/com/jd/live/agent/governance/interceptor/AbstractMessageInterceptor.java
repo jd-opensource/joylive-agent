@@ -227,23 +227,27 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return the {@link MessageAction} indicating whether to consume or discard the message based on live space rules.
      */
     protected MessageAction consumeLive(Message message) {
-        GovernancePolicy policy = policySupplier.getPolicy();
+        if (!context.isLiveEnabled()) {
+            return MessageAction.CONSUME;
+        }
+        MqMode mode = governanceConfig.getMqConfig().getLiveMode(message.getTopic());
+        if (mode != MqMode.SHARED) {
+            return MessageAction.CONSUME;
+        }
         String targetLiveSpaceId = message.getLiveSpaceId();
         targetLiveSpaceId = targetLiveSpaceId == null || targetLiveSpaceId.isEmpty() ? null : message.getLocationLiveSpaceId();
+        if (targetLiveSpaceId == null || targetLiveSpaceId.isEmpty()) {
+            // not live message
+            return MessageAction.CONSUME;
+        }
         String targetUnitCode = message.getLocationUnit();
         String targetCellCode = message.getLocationCell();
         String localUnitCode = location.getUnit();
         String localCellCode = location.getCell();
         String localLiveSpaceId = location.getLiveSpaceId();
+        GovernancePolicy policy = policySupplier.getPolicy();
         LiveSpace localLiveSpace = policy == null ? null : policy.getLocalLiveSpace();
-        MqMode mode = governanceConfig.getMqConfig().getLiveMode(message.getTopic());
-        if (mode != MqMode.SHARED) {
-            return MessageAction.CONSUME;
-        } else if (!context.isLiveEnabled()) {
-            return MessageAction.CONSUME;
-        } else if (targetLiveSpaceId == null || targetLiveSpaceId.isEmpty()) {
-            return MessageAction.CONSUME;
-        } else if (!targetLiveSpaceId.equals(localLiveSpaceId)) {
+        if (!targetLiveSpaceId.equals(localLiveSpaceId)) {
             return MessageAction.DISCARD;
         } else if (localUnitCode == null || localUnitCode.isEmpty()) {
             return MessageAction.DISCARD;
@@ -291,6 +295,9 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return the {@link MessageAction} indicating whether to consume or discard the message based on lane rules.
      */
     protected MessageAction consumeLane(Message message) {
+        if (!context.isLaneEnabled()) {
+            return MessageAction.CONSUME;
+        }
         MqMode mode = governanceConfig.getMqConfig().getLaneMode(message.getTopic());
         if (mode != MqMode.SHARED) {
             return MessageAction.CONSUME;
