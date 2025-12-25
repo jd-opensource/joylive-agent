@@ -252,7 +252,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         } else if (localUnitCode == null || localUnitCode.isEmpty()) {
             return MessageAction.DISCARD;
         } else if (localLiveSpace == null) {
-            return MessageAction.CONSUME;
+            return MessageAction.DISCARD;
         } else {
             String targetFailoverUnitCode = null;
             Unit localUnit = localLiveSpace.getLocalUnit();
