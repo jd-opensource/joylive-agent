@@ -1,4 +1,5 @@
 com.jd.live.agent.core.bootstrap.env.config.ConfigEnvSupplier
 com.jd.live.agent.core.bootstrap.env.http.HttpEnvSupplier
+com.jd.live.agent.core.bootstrap.env.location.LocationIPSupplier
 com.jd.live.agent.core.bootstrap.env.node.NodeEnvSupplier
 com.jd.live.agent.core.bootstrap.env.spring.SpringEnvSupplier
