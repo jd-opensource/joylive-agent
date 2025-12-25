@@ -18,7 +18,6 @@ package com.jd.live.agent.core.inject.jbind.converter.supplier;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.jbind.*;
 import com.jd.live.agent.core.parser.ObjectParser;
-import com.jd.live.agent.core.parser.TypeReference;
 
 import java.io.StringReader;
 import java.lang.reflect.Modifier;
@@ -59,8 +58,7 @@ public class String2MapSupplier implements ConverterSupplier {
             } else if (value.startsWith("{") && value.endsWith("}")) {
                 // Support standard JSON format
                 ObjectParser parser = conversion.getComponent(ObjectParser.COMPONENT_JSON);
-                result = parser.read(new StringReader(value), new TypeReference<Map<String, Object>>() {
-                });
+                result = parser.read(new StringReader(value), typeInfo.getType());
             } else {
                 String[] parts = split(value, ';');
                 for (String part : parts) {
