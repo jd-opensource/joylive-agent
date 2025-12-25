@@ -38,6 +38,8 @@ public interface EnvSupplier {
 
     int ORDER_HTTP_ENV_SUPPLIER = ORDER_CONFIG_ENV_SUPPLIER + 10;
 
+    int ORDER_LOCATION_IP_SUPPLIER = ORDER_HTTP_ENV_SUPPLIER + 10;
+
     /**
      * Processes the application environment.
      *

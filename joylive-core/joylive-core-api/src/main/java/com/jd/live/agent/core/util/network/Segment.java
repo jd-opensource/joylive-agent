@@ -176,4 +176,8 @@ public class Segment {
     public boolean contains(final IpLong ip) {
         return ip != null && begin.compareTo(ip) <= 0 && end.compareTo(ip) >= 0;
     }
+
+    public static Segment parse(String ips) {
+        return new Segment(ips);
+    }
 }

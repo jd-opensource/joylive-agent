@@ -60,6 +60,12 @@ public class AppEnv implements ValueSupplier {
         }
     }
 
+    public void put(String key, Object value) {
+        if (key != null) {
+            envs.put(key, value);
+        }
+    }
+
     public void remove(String key) {
         if (key != null) {
             envs.remove(key);
