@@ -29,6 +29,8 @@ import java.util.Map;
  */
 public class MqConfig {
 
+    private static String DEFAULT_GROUP_EXPRESSION = "${group}${_!lane}${_!unit}";
+
     @Getter
     @Setter
     private MqMode liveMode = MqMode.ISOLATION_CLUSTER;
@@ -39,13 +41,17 @@ public class MqConfig {
 
     @Getter
     @Setter
-    private String groupExpression;
+    private boolean groupEnabled = true;
+
+    @Getter
+    @Setter
+    private String groupExpression = DEFAULT_GROUP_EXPRESSION;
 
     @Getter
     @Setter
     private Map<String, TopicConfig> topics;
 
-    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(groupExpression, 128));
+    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(groupExpression == null ? null : groupExpression.trim(), 128));
 
     /**
      * Gets the appropriate evaluator for group name generation.
@@ -54,6 +60,9 @@ public class MqConfig {
      * @return Evaluator for group name generation, preferring topic-specific configuration if available
      */
     public Evaluator getGroupTemplate(String topic) {
+        if (!groupEnabled) {
+            return null;
+        }
         TopicConfig config = topics == null || topic == null ? null : topics.get(topic);
         Evaluator evaluator = null;
         if (config != null) {
@@ -66,7 +75,10 @@ public class MqConfig {
     }
 
     public boolean isEnabled(String topic) {
-        return topic != null && !topic.isEmpty() && topics != null && topics.containsKey(topic);
+        if (topic == null || topic.isEmpty()) {
+            return false;
+        }
+        return topics == null || topics.isEmpty() || topics.containsKey(topic);
     }
 
     /**

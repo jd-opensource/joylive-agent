@@ -17,9 +17,13 @@ package com.jd.live.agent.core.inject.jbind.converter.supplier;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.inject.jbind.*;
+import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.parser.TypeReference;
 
+import java.io.StringReader;
 import java.lang.reflect.Modifier;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.jd.live.agent.core.util.StringUtils.split;
 
@@ -46,19 +50,26 @@ public class String2MapSupplier implements ConverterSupplier {
             TypeInfo typeInfo = conversion.getTargetType();
             Class<?> targetClass = typeInfo.getRawType();
             Map result = createMap(conversion.getField(), targetClass);
-            if (result != null) {
-                String value = conversion.getSource().toString();
-                if (value != null && !value.isEmpty()) {
-                    if (value.startsWith("{") && value.endsWith("}")) {
-                        // TODO Support standard JSON format
-                    } else {
-                        String[] keyValues = split(value, ';');
-                        for (String keyValue : keyValues) {
-                            int pos = keyValue.indexOf('=');
-                            if (pos > 0) {
-                                result.put(keyValue.substring(0, pos), keyValue.substring(pos + 1));
-                            }
-                        }
+            if (result == null) {
+                return null;
+            }
+            String value = conversion.getSource().toString();
+            if (value == null || value.isEmpty()) {
+                return result;
+            } else if (value.startsWith("{") && value.endsWith("}")) {
+                // Support standard JSON format
+                ObjectParser parser = conversion.getComponent(ObjectParser.COMPONENT_JSON);
+                result = parser.read(new StringReader(value), new TypeReference<Map<String, Object>>() {
+                });
+            } else {
+                String[] parts = split(value, ';');
+                for (String part : parts) {
+                    int pos = part.indexOf('=');
+                    // TODO convert key and value
+                    if (pos > 0) {
+                        result.put(part.substring(0, pos), part.substring(pos + 1));
+                    } else if (pos == -1 && !(result instanceof ConcurrentMap)) {
+                        result.put(part, null);
                     }
                 }
             }

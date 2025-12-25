@@ -35,7 +35,10 @@ public class TopicConfig {
     @Setter
     private String groupExpression;
 
-    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() -> new Template(groupExpression, 128));
+    private final LazyObject<Evaluator> groupTemplate = new LazyObject<>(() ->
+            groupExpression == null || groupExpression.isEmpty()
+                    ? null
+                    : new Template(groupExpression, 128));
 
     protected Evaluator getGroupTemplate() {
         return groupTemplate.get();

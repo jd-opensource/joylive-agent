@@ -16,14 +16,14 @@
 package com.jd.live.agent.plugin.router.rocketmq.v4.condition;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.governance.annotation.ConditionalOnOnlyRouteEnabled;
+import com.jd.live.agent.governance.annotation.ConditionalOnAnyRouteEnabled;
 
 import java.lang.annotation.*;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnOnlyRouteEnabled
+@ConditionalOnAnyRouteEnabled
 @ConditionalOnRocketmq4Enabled
 @ConditionalComposite
 public @interface ConditionalOnRocketmq4AnyRouteEnabled {

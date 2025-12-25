@@ -193,16 +193,14 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             LaneSpace space = policy == null ? null : policy.getLocalLaneSpace();
             lane = space == null ? null : space.getCurrentLane();
         }
-        if (unit == null || lane == null) {
+        if (unit == null && lane == null) {
             return group;
         }
         Map<String, String> map = new HashMap<>();
         map.put("group", group);
-        map.put("unit", unit.getCode());
-        map.put("lane", lane.getCode());
-        if (topic != null && !topic.isEmpty()) {
-            map.put("topic", topic);
-        }
+        map.put("unit", unit == null ? null : unit.getCode());
+        map.put("lane", lane == null ? null : lane.getCode());
+        map.put("topic", topic == null ? null : topic);
         String result = evaluator.render(map);
         return result == null || result.isEmpty() ? group : result;
     }

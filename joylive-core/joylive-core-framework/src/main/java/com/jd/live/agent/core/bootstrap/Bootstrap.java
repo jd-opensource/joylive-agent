@@ -135,6 +135,8 @@ public class Bootstrap implements AgentLifecycle {
      */
     private Option option;
 
+    private Map<String, ObjectParser> parsers;
+
     /**
      * Configuration for the agent itself.
      */
@@ -260,6 +262,7 @@ public class Bootstrap implements AgentLifecycle {
             option = MapOption.of(config); // option include bootstrap.properties.
             classLoaderConfig = createClassLoaderConfig(); //depend on env option
             classLoaderManager = createClassLoaderManager(); //depend on agentPath and env option
+            parsers = loadParser();
             supplyEnv(); //depend on classLoaderManager
             application = createApplication(); //depend on env option
             setupLogger(); //depend on extensionManager
@@ -409,6 +412,10 @@ public class Bootstrap implements AgentLifecycle {
                 output != null && !output.isEmpty() ? new File(output) : null); // Output path, null if not specified or empty
     }
 
+    protected Map<String, ObjectParser> loadParser() {
+        return extensionManager.loadExtensible(ObjectParser.class, classLoaderManager.getCoreImplLoader()).getExtensionMap();
+    }
+
     /**
      * Loads the configuration from a file and merges it with the bootstrap properties.
      * The configuration file is expected to be in YAML format.
@@ -494,6 +501,7 @@ public class Bootstrap implements AgentLifecycle {
                 ctx.add(CipherFactory.COMPONENT_CIPHER_FACTORY, cipherFactory);
                 ctx.add(Cipher.COMPONENT_CIPHER, cipher);
                 ctx.add(StringDecrypter.COMPONENT_STRING_DECRYPTER, stringDecrypter);
+                ctx.add(ObjectParser.JSON, parsers == null ? null : parsers.get(ObjectParser.COMPONENT_JSON));
                 ctx.add(AgentConfig.COMPONENT_AGENT_CONFIG, agentConfig);
                 ctx.add(EnhanceConfig.COMPONENT_ENHANCE_CONFIG, agentConfig == null ? null : agentConfig.getEnhanceConfig());
                 ctx.add(PluginConfig.COMPONENT_PLUGIN_CONFIG, agentConfig == null ? null : agentConfig.getPluginConfig());

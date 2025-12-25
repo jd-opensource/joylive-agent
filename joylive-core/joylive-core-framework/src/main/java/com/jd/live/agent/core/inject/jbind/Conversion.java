@@ -81,6 +81,10 @@ public class Conversion extends ConversionType implements ConverterSelector, Arr
         return context.getConverter(type);
     }
 
+    public <T> T getComponent(String name) {
+        return name == null || components == null ? null : (T) components.get(name);
+    }
+
     /**
      * Builds an Injection for the specified type using the context.
      *

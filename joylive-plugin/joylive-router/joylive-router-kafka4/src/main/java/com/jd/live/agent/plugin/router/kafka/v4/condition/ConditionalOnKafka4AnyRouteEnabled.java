@@ -18,8 +18,8 @@ package com.jd.live.agent.plugin.router.kafka.v4.condition;
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
+import com.jd.live.agent.governance.annotation.ConditionalOnAnyRouteEnabled;
 import com.jd.live.agent.governance.annotation.ConditionalOnMqEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnOnlyRouteEnabled;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
@@ -27,7 +27,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnOnlyRouteEnabled
+@ConditionalOnAnyRouteEnabled
 @ConditionalOnMqEnabled
 @ConditionalOnClass(ConditionalOnKafka4AnyRouteEnabled.TYPE_GROUP_PROTOCOL)
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_KAFKA_ENABLED, matchIfMissing = true)

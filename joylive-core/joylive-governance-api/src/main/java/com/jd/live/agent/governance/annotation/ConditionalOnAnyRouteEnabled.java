@@ -13,28 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.router.rocketmq.v5.condition;
+package com.jd.live.agent.governance.annotation;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
-import com.jd.live.agent.governance.annotation.ConditionalOnAnyRouteEnabled;
-import com.jd.live.agent.governance.annotation.ConditionalOnMqEnabled;
+import com.jd.live.agent.core.extension.annotation.ConditionalRelation;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
 import java.lang.annotation.*;
 
+/**
+ * An annotation used to mark a type as requiring either the live or lane feature to be enabled, and the flow control
+ * feature to be disabled.
+ * <p>
+ * This annotation is used to indicate that a type requires either the live or lane feature to be enabled, and the flow
+ * control feature to be disabled. The presence of this annotation on a type will trigger specific behavior in the
+ * governance processing logic.
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ConditionalOnAnyRouteEnabled
-@ConditionalOnMqEnabled
-@ConditionalOnProperty(value = GovernanceConfig.CONFIG_GOVERN_ROCKETMQ_ENABLED, matchIfMissing = true)
-@ConditionalOnClass(ConditionalOnRocketmq5AnyRouteEnabled.TYPE_ACK_CALLBACK)
+@ConditionalOnProperty(name = {
+        GovernanceConfig.CONFIG_LIVE_ENABLED,
+        GovernanceConfig.CONFIG_LANE_ENABLED
+}, matchIfMissing = true, relation = ConditionalRelation.OR)
 @ConditionalComposite
-public @interface ConditionalOnRocketmq5AnyRouteEnabled {
-
-    String TYPE_ACK_CALLBACK = "org.apache.rocketmq.client.consumer.AckCallback";
+public @interface ConditionalOnAnyRouteEnabled {
 
 }
-

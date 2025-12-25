@@ -32,6 +32,8 @@ import java.lang.reflect.Type;
 @Extensible("ObjectParser")
 public interface ObjectParser {
 
+    String COMPONENT_JSON = "json";
+
     /**
      * Represents the identifier for YAML format.
      */

@@ -23,6 +23,7 @@
 19. Fixed Feign compatibility issues
 20. Fixed token bucket rate limiting algorithm issues
 21. Fixed Dubbo zookeeper registry null pointer issues
+22. Fixed MQ lane and multi-active routing issues
 22. Fixed other issues
 
 ## 1.8.0
