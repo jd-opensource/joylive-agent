@@ -16,7 +16,6 @@
 package com.jd.live.agent.governance.annotation;
 
 import com.jd.live.agent.core.extension.annotation.ConditionalComposite;
-import com.jd.live.agent.core.extension.annotation.ConditionalOnMissingClass;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 
@@ -33,9 +32,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnProperty(value = GovernanceConfig.CONFIG_CENTER_ENABLED, matchIfMissing = true)
-@ConditionalOnMissingClass(ConditionalOnConfigCenterEnabled.TYPE_APOLLO)
-@ConditionalOnMissingClass(ConditionalOnConfigCenterEnabled.TYPE_NACOS)
-@ConditionalOnMissingClass(ConditionalOnConfigCenterEnabled.TYPE_DUCC)
+//@ConditionalOnMissingClass(ConditionalOnConfigCenterEnabled.TYPE_APOLLO)
+//@ConditionalOnMissingClass(ConditionalOnConfigCenterEnabled.TYPE_NACOS)
+//@ConditionalOnMissingClass(ConditionalOnConfigCenterEnabled.TYPE_DUCC)
 @ConditionalComposite
 public @interface ConditionalOnConfigCenterEnabled {
 
