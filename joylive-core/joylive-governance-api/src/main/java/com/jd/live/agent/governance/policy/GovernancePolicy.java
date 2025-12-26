@@ -26,12 +26,10 @@ import com.jd.live.agent.core.util.map.CaseInsensitiveMap;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.governance.policy.domain.Domain;
 import com.jd.live.agent.governance.policy.domain.DomainPolicy;
+import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneDomain;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.policy.live.LiveDomain;
-import com.jd.live.agent.governance.policy.live.LiveSpace;
-import com.jd.live.agent.governance.policy.live.LiveSpec;
-import com.jd.live.agent.governance.policy.live.UnitDomain;
+import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSpec;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabaseSupervisor;
@@ -161,6 +159,14 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
         return id == null ? null : liveSpaceCache.get(id);
     }
 
+    public Unit getLocalUnit() {
+        return localLiveSpace == null ? null : localLiveSpace.getLocalUnit();
+    }
+
+    public Cell getLocalCell() {
+        return localLiveSpace == null ? null : localLiveSpace.getLocalCell();
+    }
+
     /**
      * Retrieves a {@link LaneSpace} by its ID.
      *
@@ -173,6 +179,10 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
 
     public LaneSpace getDefaultLaneSpace() {
         return defaultLaneSpaceCache.get();
+    }
+
+    public Lane getLocalLane() {
+        return localLaneSpace == null ? null : localLaneSpace.getCurrentLane();
     }
 
     /**

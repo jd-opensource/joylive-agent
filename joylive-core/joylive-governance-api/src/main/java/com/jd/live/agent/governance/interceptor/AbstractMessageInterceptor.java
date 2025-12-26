@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.lane.Lane;
-import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import com.jd.live.agent.governance.policy.live.*;
 import com.jd.live.agent.governance.policy.live.db.LiveDatabase;
 import com.jd.live.agent.governance.policy.variable.UnitFunction;
@@ -129,33 +128,31 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
     protected Permission isProduceReady(String topic, String address, String[] nodes) {
         if (!context.isGovernReady()) {
             return Permission.failure("Application is not ready for producer");
-        } else if (!isEnabled(topic)) {
+        }
+        if (!isEnabled(topic)) {
             return Permission.success();
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        if (policy == null) {
+        LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
+        if (liveSpace == null) {
             return Permission.success();
         }
         LiveDatabase database = policy.getDatabase(nodes);
         if (database != null && !database.getAccessMode().isWriteable()) {
             return Permission.failure("MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address));
         }
-        LiveSpace liveSpace = policy.getLocalLiveSpace();
-        if (liveSpace != null) {
-            Unit unit = database != null && !isEmpty(database.getUnit())
-                    ? liveSpace.getUnit(database.getUnit())
-                    : liveSpace.getLocalUnit();
-            if (unit != null) {
-                if (!unit.getAccessMode().isWriteable()) {
-                    return Permission.failure("Unit of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", unit: " + unit.getCode());
-                }
-                Cell cell = database != null && !isEmpty(database.getCell())
-                        ? unit.getCell(database.getCell())
-                        : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
-                if (cell != null && !cell.getAccessMode().isWriteable()) {
-                    return Permission.failure("Cell of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", cell: " + cell.getCode());
-                }
-            }
+        Unit unit = database != null && !isEmpty(database.getUnit()) ? liveSpace.getUnit(database.getUnit()) : liveSpace.getLocalUnit();
+        if (unit == null) {
+            return Permission.success();
+        }
+        if (!unit.getAccessMode().isWriteable()) {
+            return Permission.failure("Unit of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", unit: " + unit.getCode());
+        }
+        Cell cell = database != null && !isEmpty(database.getCell())
+                ? unit.getCell(database.getCell())
+                : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
+        if (cell != null && !cell.getAccessMode().isWriteable()) {
+            return Permission.failure("Cell of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", cell: " + cell.getCode());
         }
         return Permission.success();
     }
@@ -183,16 +180,11 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
             return group;
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        Unit unit = null;
-        if (context.isLiveEnabled()) {
-            LiveSpace space = policy == null ? null : policy.getLocalLiveSpace();
-            unit = space == null ? null : space.getLocalUnit();
+        if (policy == null) {
+            return group;
         }
-        Lane lane = null;
-        if (context.isLaneEnabled()) {
-            LaneSpace space = policy == null ? null : policy.getLocalLaneSpace();
-            lane = space == null ? null : space.getCurrentLane();
-        }
+        Unit unit = !context.isLiveEnabled() ? null : policy.getLocalUnit();
+        Lane lane = !context.isLaneEnabled() ? null : policy.getLocalLane();
         if (unit == null && lane == null) {
             return group;
         }
