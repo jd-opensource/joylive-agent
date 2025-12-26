@@ -157,7 +157,21 @@ public class RequestContext {
      */
     public static <T> T getAttribute(String key) {
         Carrier carrier = CARRIER.get();
-        return carrier == null ? null : carrier.getAttribute(key);
+        return carrier == null || key == null ? null : carrier.getAttribute(key);
+    }
+
+    /**
+     * Gets an attribute value from the current request context or returns the default value if not found.
+     *
+     * @param <T>          the type of the attribute value
+     * @param key          the attribute key
+     * @param defaultValue the default value to return if the attribute is not found
+     * @return the attribute value if present, otherwise the default value
+     */
+    public static <T> T getAttributeOrDefault(String key, T defaultValue) {
+        Carrier carrier = CARRIER.get();
+        T result = carrier == null || key == null ? null : carrier.getAttribute(key);
+        return result == null ? defaultValue : result;
     }
 
     /**
@@ -168,7 +182,7 @@ public class RequestContext {
      */
     public static boolean hasAttribute(String key) {
         Carrier carrier = CARRIER.get();
-        return carrier == null ? false : carrier.hasAttribute(key);
+        return carrier == null || key == null ? false : carrier.hasAttribute(key);
     }
 
     /**
@@ -180,7 +194,7 @@ public class RequestContext {
      */
     public static <T> T removeAttribute(String key) {
         Carrier carrier = CARRIER.get();
-        return carrier == null ? null : carrier.removeAttribute(key);
+        return carrier == null || key == null ? null : carrier.removeAttribute(key);
     }
 
     /**
