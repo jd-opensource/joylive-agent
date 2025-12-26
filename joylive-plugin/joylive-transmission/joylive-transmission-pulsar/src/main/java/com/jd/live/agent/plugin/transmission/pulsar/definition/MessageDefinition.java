@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.pulsar.v3.definition;
+package com.jd.live.agent.plugin.transmission.pulsar.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,15 +26,15 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor.MessageInterceptor;
+import com.jd.live.agent.plugin.transmission.pulsar.interceptor.MessageInterceptor;
 
 @Injectable
-@Extension(value = "MessageDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "MessageDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(MessageDefinition.TYPE_MESSAGE)
 public class MessageDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_MESSAGE = "org.apache.pulsar.client.api.Message";
+    protected static final String TYPE_MESSAGE = "org.apache.pulsar.client.impl.MessageImpl";
 
     private static final String METHOD_GET_DATA = "getData";
 
@@ -44,7 +44,7 @@ public class MessageDefinition extends PluginDefinitionAdapter {
     private Propagation propagation;
 
     public MessageDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MESSAGE);
+        this.matcher = () -> MatcherBuilder.named(TYPE_MESSAGE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_GET_DATA, METHOD_GET_VALUE),

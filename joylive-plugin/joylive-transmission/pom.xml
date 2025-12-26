@@ -17,7 +17,7 @@
         <module>joylive-transmission-rocketmq4</module>
         <module>joylive-transmission-rocketmq5</module>
         <module>joylive-transmission-rabbitmq5</module>
-        <module>joylive-transmission-pulsar3</module>
+        <module>joylive-transmission-pulsar</module>
         <module>joylive-transmission-kafka3</module>
         <module>joylive-transmission-kafka4</module>
         <module>joylive-transmission-httpclient5</module>

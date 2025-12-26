@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.pulsar.v3.request;
+package com.jd.live.agent.plugin.transmission.pulsar.request;
 
 import com.jd.live.agent.governance.request.HeaderReader;
 import org.apache.pulsar.client.api.Message;

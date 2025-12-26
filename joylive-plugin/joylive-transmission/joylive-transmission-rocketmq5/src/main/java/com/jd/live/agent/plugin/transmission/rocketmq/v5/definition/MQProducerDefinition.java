@@ -34,7 +34,7 @@ import com.jd.live.agent.plugin.transmission.rocketmq.v5.interceptor.MQProducerI
 @ConditionalOnClass(MQProducerDefinition.TYPE_MQ_PRODUCER)
 public class MQProducerDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.producer.MQProducer";
+    protected static final String TYPE_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
 
     private static final String METHOD_SEND = "send";
 
@@ -48,7 +48,7 @@ public class MQProducerDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public MQProducerDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_MQ_PRODUCER);
+        this.matcher = () -> MatcherBuilder.named(TYPE_MQ_PRODUCER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_SEND), () -> new MQProducerInterceptor(context)),
                 new InterceptorDefinitionAdapter(MatcherBuilder.named(METHOD_REQUEST), () -> new MQProducerInterceptor(context)),

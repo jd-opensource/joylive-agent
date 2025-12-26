@@ -51,6 +51,11 @@ public class PublishInterceptor extends InterceptorAdaptor {
         }
     }
 
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        RequestContext.removeAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
+    }
+
     /**
      * Writes headers to the given {@link BasicProperties} object and returns the updated headers.
      *

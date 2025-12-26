@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.pulsar.v3.request;
+package com.jd.live.agent.plugin.transmission.pulsar.request;
 
 import com.jd.live.agent.governance.request.HeaderWriter;
-import org.apache.pulsar.client.api.TypedMessageBuilder;
-import org.apache.pulsar.client.impl.TypedMessageBuilderImpl;
 import org.apache.pulsar.common.api.proto.KeyValue;
 import org.apache.pulsar.common.api.proto.MessageMetadata;
 
@@ -60,7 +58,6 @@ public class MetadataWriter implements HeaderWriter {
 
     @Override
     public void setHeader(String key, String value) {
-        // TODO optimize
         for (KeyValue kv : metadata.getPropertiesList()) {
             if (kv.getKey().equals(key)) {
                 kv.setValue(value);
@@ -68,13 +65,5 @@ public class MetadataWriter implements HeaderWriter {
             }
         }
         metadata.addProperty().setValue(key).setValue(value);
-    }
-
-    public static MetadataWriter of(TypedMessageBuilder<?> builder) {
-        if (builder instanceof TypedMessageBuilderImpl) {
-            return new MetadataWriter(((TypedMessageBuilderImpl<?>) builder).getMetadataBuilder());
-        } else {
-            return null;
-        }
     }
 }

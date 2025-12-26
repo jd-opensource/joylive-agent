@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.pulsar.v3.definition;
+package com.jd.live.agent.plugin.transmission.pulsar.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnClass;
@@ -26,15 +26,15 @@ import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.annotation.ConditionalOnTransmissionEnabled;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor.SendInterceptor;
+import com.jd.live.agent.plugin.transmission.pulsar.interceptor.SendInterceptor;
 
 @Injectable
-@Extension(value = "MessageBuilderDefinition_v3", order = PluginDefinition.ORDER_TRANSMISSION)
+@Extension(value = "MessageBuilderDefinition", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnTransmissionEnabled
 @ConditionalOnClass(MessageBuilderDefinition.TYPE_TYPED_MESSAGE_BUILDER)
 public class MessageBuilderDefinition extends PluginDefinitionAdapter {
 
-    protected static final String TYPE_TYPED_MESSAGE_BUILDER = "org.apache.pulsar.client.api.TypedMessageBuilder";
+    protected static final String TYPE_TYPED_MESSAGE_BUILDER = "org.apache.pulsar.client.impl.TypedMessageBuilderImpl";
 
     private static final String METHOD_SEND = "send";
 
@@ -44,7 +44,7 @@ public class MessageBuilderDefinition extends PluginDefinitionAdapter {
     private InvocationContext context;
 
     public MessageBuilderDefinition() {
-        this.matcher = () -> MatcherBuilder.isImplement(TYPE_TYPED_MESSAGE_BUILDER);
+        this.matcher = () -> MatcherBuilder.named(TYPE_TYPED_MESSAGE_BUILDER);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.in(METHOD_SEND, METHOD_SEND_ASYNC),

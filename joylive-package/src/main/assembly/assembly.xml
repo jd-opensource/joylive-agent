@@ -191,7 +191,7 @@
             <outputDirectory>plugin/pulsar</outputDirectory>
             <unpack>false</unpack>
             <includes>
-                <include>com.jd.live:joylive-transmission-pulsar3</include>
+                <include>com.jd.live:joylive-transmission-pulsar</include>
             </includes>
         </dependencySet>
 

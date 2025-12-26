@@ -38,10 +38,10 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
     @SuppressWarnings("unchecked")
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Object argument = ctx.getArgument(0);
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
         Location location = context.isLiveEnabled() ? context.getLocation() : null;
         Propagation propagation = context.getPropagation();
+        Object argument = ctx.getArgument(0);
         if (argument instanceof Message) {
             Message message = (Message) argument;
             propagation.write(RequestContext.get(), location, new StringMapWriter(message.getProperties(), message::putUserProperty));
@@ -52,5 +52,10 @@ public class MQProducerInterceptor extends InterceptorAdaptor {
                 propagation.write(carrier, location, new StringMapWriter(message.getProperties(), message::putUserProperty));
             }
         }
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        RequestContext.removeAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
     }
 }

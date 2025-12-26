@@ -34,8 +34,8 @@ public class MessageInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
-        if (isProducer == null || !isProducer) {
+        Boolean isProducer = RequestContext.getAttributeOrDefault(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.FALSE);
+        if (!isProducer) {
             Message message = (Message) ctx.getTarget();
             String messageId = message instanceof MessageExt ? ((MessageExt) message).getMsgId() : null;
             String id = "Rocketmq5@" + message.getTopic() + "@" + messageId;

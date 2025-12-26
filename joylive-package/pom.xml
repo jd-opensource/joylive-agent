@@ -404,7 +404,7 @@
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
-            <artifactId>joylive-transmission-pulsar3</artifactId>
+            <artifactId>joylive-transmission-pulsar</artifactId>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>

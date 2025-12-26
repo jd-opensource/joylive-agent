@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor;
+package com.jd.live.agent.plugin.transmission.pulsar.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Location;
@@ -22,8 +22,8 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.invoke.InvocationContext;
-import com.jd.live.agent.plugin.transmission.pulsar.v3.request.MetadataWriter;
-import org.apache.pulsar.client.api.TypedMessageBuilder;
+import com.jd.live.agent.plugin.transmission.pulsar.request.MetadataWriter;
+import org.apache.pulsar.client.impl.TypedMessageBuilderImpl;
 
 public class SendInterceptor extends InterceptorAdaptor {
 
@@ -36,10 +36,15 @@ public class SendInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         RequestContext.setAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.TRUE);
-        TypedMessageBuilder<?> builder = (TypedMessageBuilder<?>) ctx.getTarget();
+        TypedMessageBuilderImpl<?> builder = (TypedMessageBuilderImpl<?>) ctx.getTarget();
         Location location = context.isLiveEnabled() ? context.getLocation() : null;
         Propagation propagation = context.getPropagation();
-        propagation.write(RequestContext.get(), location, MetadataWriter.of(builder));
+        propagation.write(RequestContext.get(), location, new MetadataWriter(builder.getMetadataBuilder()));
+    }
+
+    @Override
+    public void onExit(ExecutableContext ctx) {
+        RequestContext.removeAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
     }
 
 }

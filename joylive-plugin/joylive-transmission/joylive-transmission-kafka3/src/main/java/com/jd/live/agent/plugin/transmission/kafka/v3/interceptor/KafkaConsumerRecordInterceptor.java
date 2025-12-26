@@ -32,10 +32,7 @@ public class KafkaConsumerRecordInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        restoreCargo((ConsumerRecord<?, ?>) ctx.getTarget());
-    }
-
-    private void restoreCargo(ConsumerRecord<?, ?> record) {
+        ConsumerRecord<?, ?> record = (ConsumerRecord<?, ?>) ctx.getTarget();
         String messageId = record.partition() + "-" + record.offset();
         String id = "Kafka3@" + record.topic() + "@" + messageId;
         RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new KafkaHeaderParser(record.headers())));

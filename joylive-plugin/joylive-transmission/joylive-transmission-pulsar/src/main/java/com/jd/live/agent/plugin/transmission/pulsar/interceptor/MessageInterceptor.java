@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.pulsar.v3.interceptor;
+package com.jd.live.agent.plugin.transmission.pulsar.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.pulsar.v3.request.MessageReader;
+import com.jd.live.agent.plugin.transmission.pulsar.request.MessageReader;
 import org.apache.pulsar.client.api.Message;
 
 public class MessageInterceptor extends InterceptorAdaptor {
@@ -33,11 +33,11 @@ public class MessageInterceptor extends InterceptorAdaptor {
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        Boolean isProducer = RequestContext.getAttribute(Carrier.ATTRIBUTE_MQ_PRODUCER);
-        if (isProducer == null || !isProducer) {
+        Boolean isProducer = RequestContext.getAttributeOrDefault(Carrier.ATTRIBUTE_MQ_PRODUCER, Boolean.FALSE);
+        if (!isProducer) {
             Message<?> message = (Message<?>) ctx.getTarget();
             String messageId = message.getMessageId().toString();
-            String id = "Pulsar3@" + message.getTopicName() + "@" + messageId;
+            String id = "Pulsar@" + message.getTopicName() + "@" + messageId;
             RequestContext.restore(() -> id, carrier -> propagation.read(carrier, new MessageReader(message)));
         }
     }
