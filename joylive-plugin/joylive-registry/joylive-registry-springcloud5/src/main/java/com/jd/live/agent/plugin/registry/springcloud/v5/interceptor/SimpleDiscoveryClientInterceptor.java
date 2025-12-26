@@ -23,9 +23,11 @@ import com.jd.live.agent.governance.registry.CompositeRegistry;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.plugin.registry.springcloud.v5.instance.SpringEndpoint;
 import com.jd.live.agent.plugin.registry.springcloud.v5.registry.SimpleRegistryService;
-import org.springframework.cloud.client.DefaultServiceInstance;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.simple.InstanceProperties;
 import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryProperties;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,13 +50,52 @@ public class SimpleDiscoveryClientInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         SimpleDiscoveryProperties properties = ctx.getArgument(0);
-        Map<String, List<DefaultServiceInstance>> simples = properties.getInstances();
+        Map<String, List<InstanceProperties>> simples = properties.getInstances();
         Map<String, List<ServiceEndpoint>> instances = new HashMap<>(simples.size());
         simples.forEach((service, instance) -> {
             registry.register(service);
             logger.info("Found simple discovery client provider, service: {}", service);
-            instances.put(service, toList(instance, SpringEndpoint::new));
+            instances.put(service, toList(instance, i -> new SpringEndpoint(new SimpleInstance(i))));
         });
         registry.addSystemRegistry(new SimpleRegistryService(instances));
+    }
+
+    protected static class SimpleInstance implements ServiceInstance {
+
+        private final InstanceProperties instance;
+
+        public SimpleInstance(InstanceProperties instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public String getServiceId() {
+            return instance.getServiceId();
+        }
+
+        @Override
+        public String getHost() {
+            return instance.getHost();
+        }
+
+        @Override
+        public int getPort() {
+            return instance.getPort();
+        }
+
+        @Override
+        public boolean isSecure() {
+            return instance.isSecure();
+        }
+
+        @Override
+        public URI getUri() {
+            return instance.getUri();
+        }
+
+        @Override
+        public Map<String, String> getMetadata() {
+            return instance.getMetadata();
+        }
     }
 }
