@@ -35,7 +35,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @ConditionalOnFlowControlEnabled
-@ConditionalOnProperty(name = GovernanceConfig.CONFIG_CENTER_ENABLED, value = "false")
+@ConditionalOnConfigCenterDisabled
 @ConditionalOnProperty(GovernanceConfig.CONFIG_CENTER_GRAY_ENABLED)
 @ConditionalComposite
 public @interface ConditionalOnConfigGrayEnabled {

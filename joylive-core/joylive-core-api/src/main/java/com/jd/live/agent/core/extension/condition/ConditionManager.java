@@ -83,13 +83,14 @@ public class ConditionManager implements ConditionMatcher {
         if (type == null) {
             return false;
         }
+        classLoader = classLoader == null ? this.classLoader : classLoader;
         List<DelegateCondition> conditions = getConditions(type);
         Annotation annotation;
         for (DelegateCondition condition : conditions) {
             annotation = condition.getAnnotation();
             if (predicate == null || predicate.test(annotation)) {
-                if (annotation == null || !condition.match(new ConditionContext(
-                        type, annotation, classLoader == null ? this.classLoader : classLoader, optional))) {
+                ConditionContext context = new ConditionContext(type, annotation, classLoader, optional, this::parseAnnotation);
+                if (!condition.match(context)) {
                     return false;
                 }
             }
@@ -137,7 +138,7 @@ public class ConditionManager implements ConditionMatcher {
         Conditional conditional = annotationType.getAnnotation(Conditional.class);
         Condition condition = null;
         if (conditional != null) {
-            condition = newImplement(conditional.value(), annotationType.getSimpleName());
+            condition = newImplement(conditional.value(), annotationType);
         } else {
             ConditionalComposite composite = annotationType.getAnnotation(ConditionalComposite.class);
             if (composite != null) {
@@ -178,14 +179,18 @@ public class ConditionManager implements ConditionMatcher {
      * supports both explicit class names and a naming convention that infers the class name from the conditional
      * annotation name.
      *
-     * @param implementClass  The class name of the condition implementation.
-     * @param conditionalName The name of the conditional annotation.
+     * @param implementClass The class name of the condition implementation.
+     * @param annotationType The type of the conditional annotation.
      * @return A new instance of the condition implementation, or null if instantiation fails.
      */
-    private Condition newImplement(String implementClass, String conditionalName) {
+    private Condition newImplement(String implementClass, Class<?> annotationType) {
+        String conditionalName = annotationType.getSimpleName();
+        String candidateClass = null;
         if (implementClass == null || implementClass.isEmpty()) {
             if (conditionalName.startsWith(CONDITIONAL_PREFIX)) {
-                implementClass = CONDITION_PACKAGE + "." + conditionalName.substring(CONDITIONAL_PREFIX.length()) + CONDITION_SUFFIX;
+                String name = conditionalName.substring(CONDITIONAL_PREFIX.length()) + CONDITION_SUFFIX;
+                implementClass = CONDITION_PACKAGE + "." + name;
+                candidateClass = annotationType.getPackage().getName() + "." + name;
             }
         }
         if (implementClass != null && !implementClass.isEmpty()) {
@@ -193,7 +198,14 @@ public class ConditionManager implements ConditionMatcher {
                 Class<?> type = classLoader.loadClass(implementClass);
                 return (Condition) type.newInstance();
             } catch (Throwable e) {
-                logger.error("failed to instantiate " + conditionalName, e);
+                if (candidateClass != null) {
+                    try {
+                        Class<?> type = classLoader.loadClass(candidateClass);
+                        return (Condition) type.newInstance();
+                    } catch (Throwable e1) {
+                        logger.error("failed to instantiate " + conditionalName, e);
+                    }
+                }
             }
         } else {
             logger.error("failed to instantiate " + conditionalName);

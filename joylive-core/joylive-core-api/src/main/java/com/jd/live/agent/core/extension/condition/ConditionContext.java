@@ -57,6 +57,8 @@ public class ConditionContext {
      */
     private final Function<String, String> optional;
 
+    private final Function<Class<?>, Condition> condition;
+
     /**
      * Constructs a new ConditionContext with the provided type, annotation, class loader, and optional configuration.
      *
@@ -64,12 +66,18 @@ public class ConditionContext {
      * @param annotation  The annotation for this context.
      * @param classLoader The class loader for this context.
      * @param optional    A function to retrieve optional configuration values.
+     * @param condition   A function to retrieve a condition based on a class.
      */
-    public ConditionContext(Class<?> type, Annotation annotation, ClassLoader classLoader, Function<String, String> optional) {
+    public ConditionContext(Class<?> type,
+                            Annotation annotation,
+                            ClassLoader classLoader,
+                            Function<String, String> optional,
+                            Function<Class<?>, Condition> condition) {
         this.type = type;
         this.annotation = annotation;
         this.classLoader = classLoader;
         this.optional = optional;
+        this.condition = condition;
     }
 
     /**
@@ -83,6 +91,10 @@ public class ConditionContext {
         return optional == null ? null : optional.apply(key);
     }
 
+    public Condition getCondition(Class<?> type) {
+        return condition.apply(type);
+    }
+
     /**
      * Creates a new ConditionContext based on the current context but with a different annotation.
      *
@@ -90,7 +102,7 @@ public class ConditionContext {
      * @return A new ConditionContext with the updated annotation.
      */
     public ConditionContext create(Annotation annotation) {
-        return new ConditionContext(type, annotation, classLoader, optional);
+        return new ConditionContext(type, annotation, classLoader, optional, condition);
     }
 
 }
