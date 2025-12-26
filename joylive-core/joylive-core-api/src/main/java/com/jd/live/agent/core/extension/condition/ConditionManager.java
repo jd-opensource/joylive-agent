@@ -106,7 +106,14 @@ public class ConditionManager implements ConditionMatcher {
      * @return A list of conditional descriptors.
      */
     private List<DelegateCondition> getConditions(Class<?> type) {
-        return TYPE_CONDITIONS.computeIfAbsent(type, this::parseConditions);
+        // Fix potential deadlock by avoiding computeIfAbsent which holds lock during class loading
+        List<DelegateCondition> conditions = TYPE_CONDITIONS.get(type);
+        if (conditions != null) {
+            return conditions;
+        }
+        conditions = parseConditions(type);
+        List<DelegateCondition> old = TYPE_CONDITIONS.putIfAbsent(type, conditions);
+        return old != null ? old : conditions;
     }
 
     /**
