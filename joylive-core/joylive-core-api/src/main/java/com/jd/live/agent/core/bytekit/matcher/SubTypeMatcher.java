@@ -55,8 +55,14 @@ public class SubTypeMatcher<T extends TypeDesc> extends AbstractJunction<T> {
      * It now requires the target TypeDesc to access its TypePool for lookups.
      */
     private static <T extends TypeDesc> Set<String> getParentTypes(T target, BiPredicate<String, ClassLoader> exclusion) {
-        // The key is still the class name.
-        return PARENT_TYPES.computeIfAbsent(target.getActualName(), k -> loadParentTypes(target, exclusion));
+        // Fix deadlock issue by AI suggestion
+        Set<String> types = PARENT_TYPES.get(target.getActualName());
+        if (types != null) {
+            return types;
+        }
+        types = loadParentTypes(target, exclusion);
+        Set<String> olds = PARENT_TYPES.putIfAbsent(target.getActualName(), types);
+        return olds != null ? olds : types;
     }
 
     /**
