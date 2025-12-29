@@ -22,6 +22,7 @@ import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.config.MqMode;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.auth.Permission;
+import com.jd.live.agent.governance.policy.AccessMode;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySupplier;
 import com.jd.live.agent.governance.policy.lane.Lane;
@@ -32,6 +33,7 @@ import com.jd.live.agent.governance.request.Message;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.util.StringUtils.*;
 
@@ -63,48 +65,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return Permission result from the delegated check
      */
     protected Permission isConsumeReady(String topic, String address) {
-        return isConsumeReady(topic, address, split(address));
-    }
-
-    /**
-     * Checks if consumption is permitted for a topic from specified addresses.
-     *
-     * @param topic     the topic to check
-     * @param nodes cluster addresses to validate
-     * @return Permission result with success/failure and reason if denied
-     */
-    protected Permission isConsumeReady(String topic, String address, String[] nodes) {
-        if (!context.isGovernReady()) {
-            return Permission.failure("Application is not ready for consumer");
-        } else if (!isEnabled(topic)) {
-            return Permission.success();
-        }
-        GovernancePolicy policy = policySupplier.getPolicy();
-        if (policy == null) {
-            return Permission.success();
-        }
-        LiveDatabase database = policy.getDatabase(nodes);
-        if (database != null && !database.getAccessMode().isReadable()) {
-            return Permission.failure("MQ cluster is not readable, cluster:" + (address == null ? join(nodes) : address));
-        }
-        LiveSpace liveSpace = policy.getLocalLiveSpace();
-        if (liveSpace != null) {
-            Unit unit = database != null && !isEmpty(database.getUnit())
-                    ? liveSpace.getUnit(database.getUnit())
-                    : liveSpace.getLocalUnit();
-            if (unit != null) {
-                if (!unit.getAccessMode().isReadable()) {
-                    return Permission.failure("Unit is not readable, unit: " + unit.getCode());
-                }
-                Cell cell = database != null && !isEmpty(database.getCell())
-                        ? unit.getCell(database.getCell())
-                        : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
-                if (cell != null && !cell.getAccessMode().isReadable()) {
-                    return Permission.failure("Cell is not readable, cell: " + cell.getCode());
-                }
-            }
-        }
-        return Permission.success();
+        return isReady(topic, split(address), address, mode -> mode.isReadable(), "readable");
     }
 
     /**
@@ -115,44 +76,51 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return Permission result with success/failure and reason
      */
     protected Permission isProduceReady(String topic, String address) {
-        return isProduceReady(topic, address, split(address));
+        return isReady(topic, split(address), address, mode -> mode.isWriteable(), "writeable");
     }
 
     /**
-     * Checks if a topic can be produced to in the specified cluster.
+     * Evaluates whether the given topic operation is permitted under governance.
      *
-     * @param topic topic name to check
-     * @param nodes target cluster address
-     * @return Permission result with success/failure and reason
+     * @param topic     topic name under check
+     * @param nodes     candidate cluster nodes (used when address is null)
+     * @param address   resolved cluster address (may be null)
+     * @param predicate access-mode predicate to validate (e.g., read/write)
+     * @param message   human-readable access-mode description for denial messages
+     * @return success when permitted; failure with denial reason otherwise
      */
-    protected Permission isProduceReady(String topic, String address, String[] nodes) {
+    protected Permission isReady(String topic, String[] nodes, String address, Predicate<AccessMode> predicate, String message) {
         if (!context.isGovernReady()) {
-            return Permission.failure("Application is not ready for producer");
-        }
-        if (!isEnabled(topic)) {
+            return Permission.failure("Application is not ready");
+        } else if (!isEnabled(topic)) {
             return Permission.success();
         }
         GovernancePolicy policy = policySupplier.getPolicy();
-        LiveSpace liveSpace = policy == null ? null : policy.getLocalLiveSpace();
+        if (policy == null) {
+            return Permission.success();
+        }
+        LiveSpace liveSpace = policy.getLocalLiveSpace();
         if (liveSpace == null) {
             return Permission.success();
         }
         LiveDatabase database = policy.getDatabase(nodes);
-        if (database != null && !database.getAccessMode().isWriteable()) {
-            return Permission.failure("MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address));
+        if (database != null && !predicate.test(database.getAccessMode())) {
+            return Permission.failure("MQ cluster is not " + message + ", cluster:" + (address == null ? join(nodes) : address));
         }
-        Unit unit = database != null && !isEmpty(database.getUnit()) ? liveSpace.getUnit(database.getUnit()) : liveSpace.getLocalUnit();
+        Unit unit = database != null && !isEmpty(database.getUnit())
+                ? liveSpace.getUnit(database.getUnit())
+                : liveSpace.getLocalUnit();
         if (unit == null) {
             return Permission.success();
         }
-        if (!unit.getAccessMode().isWriteable()) {
-            return Permission.failure("Unit of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", unit: " + unit.getCode());
+        if (!predicate.test(unit.getAccessMode())) {
+            return Permission.failure("Unit is not " + message + ", unit: " + unit.getCode());
         }
         Cell cell = database != null && !isEmpty(database.getCell())
                 ? unit.getCell(database.getCell())
                 : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
-        if (cell != null && !cell.getAccessMode().isWriteable()) {
-            return Permission.failure("Cell of MQ cluster is not writeable, cluster:" + (address == null ? join(nodes) : address) + ", cell: " + cell.getCode());
+        if (cell != null && !predicate.test(cell.getAccessMode())) {
+            return Permission.failure("Cell is not " + message + ", unit: " + unit.getCode() + ", cell: " + cell.getCode());
         }
         return Permission.success();
     }
