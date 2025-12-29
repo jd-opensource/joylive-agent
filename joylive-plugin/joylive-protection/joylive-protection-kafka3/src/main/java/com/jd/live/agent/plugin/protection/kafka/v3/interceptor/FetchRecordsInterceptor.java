@@ -29,6 +29,7 @@ import org.apache.kafka.clients.consumer.internals.Fetcher;
 import org.apache.kafka.common.TopicPartition;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.core.util.StringUtils.join;
 import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 
 public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
@@ -45,7 +46,7 @@ public class FetchRecordsInterceptor extends AbstractMessageInterceptor {
             ConsumerNetworkClient networkClient = Accessors.networkClient.get(fetcher, ConsumerNetworkClient.class);
             KafkaClient kafkaClient = Accessors.kafkaClient.get(networkClient, KafkaClient.class);
             String[] addresses = kafkaClient instanceof LiveKafkaClient ? ((LiveKafkaClient) kafkaClient).getAddresses() : null;
-            Permission permission = isConsumeReady(partition.topic(), null, addresses);
+            Permission permission = isConsumeReady(partition.topic(), join(addresses));
             if (!permission.isSuccess()) {
                 ((MethodContext) ctx).skipWithResult(Fetch.empty());
             }
