@@ -37,10 +37,11 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         Object[] arguments = ctx.getArguments();
-        String group = (String) arguments[0];
-        arguments[0] = getGroup(group, null);
-        if (!arguments[0].equals(group)) {
-            logger.info("Change consumer group " + group + " to " + arguments[0]);
+        String oldGroup = (String) arguments[0];
+        String newGroup = getGroup(oldGroup, null);
+        if (!newGroup.equals(oldGroup)) {
+            arguments[0] = newGroup;
+            logger.info("Change consumer group " + oldGroup + " to " + arguments[0]);
         }
     }
 

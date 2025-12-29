@@ -38,8 +38,8 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
     public void onEnter(ExecutableContext ctx) {
         String oldGroup = ctx.getArgument(0);
         String newGroup = getGroup(oldGroup, null);
-        ctx.setArgument(0, newGroup);
         if (!newGroup.equals(oldGroup)) {
+            ctx.setArgument(0, newGroup);
             logger.info("Change consumer group " + oldGroup + " to " + newGroup);
         }
     }

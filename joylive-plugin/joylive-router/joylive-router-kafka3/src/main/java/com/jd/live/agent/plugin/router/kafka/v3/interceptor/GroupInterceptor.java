@@ -22,7 +22,6 @@ import com.jd.live.agent.governance.interceptor.AbstractMessageInterceptor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 
 import java.util.Map;
-import java.util.Properties;
 
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
 
@@ -42,30 +41,18 @@ public class GroupInterceptor extends AbstractMessageInterceptor {
     @Override
     @SuppressWarnings("unchecked")
     public void onEnter(ExecutableContext ctx) {
+        // ConsumerConfig(Map<String,Object>)
+        // ConsumerConfig(Properties)
+        // ConsumerConfig(Map<?, ?> props, boolean doLog)
         Object arg = ctx.getArgument(0);
-        if (arg instanceof Properties) {
-            configure((Properties) arg);
-        } else if (arg instanceof Map) {
-            configure((Map<String, Object>) arg);
+        if (arg instanceof Map) {
+            Map map = (Map) arg;
+            String oldGroup = (String) map.get(GROUP_ID_CONFIG);
+            String newGroup = getGroup(oldGroup, null);
+            if (!newGroup.equals(oldGroup)) {
+                map.put(GROUP_ID_CONFIG, newGroup);
+                logger.info("Change consumer group " + oldGroup + " to " + newGroup);
+            }
         }
     }
-
-    private void configure(Properties properties) {
-        String oldGroup = properties.getProperty(GROUP_ID_CONFIG);
-        String newGroup = getGroup(oldGroup, null);
-        properties.put(GROUP_ID_CONFIG, newGroup);
-        if (!newGroup.equals(oldGroup)) {
-            logger.info("Change consumer group " + oldGroup + " to " + newGroup);
-        }
-    }
-
-    private void configure(Map<String, Object> map) {
-        String oldGroup = (String) map.get(GROUP_ID_CONFIG);
-        String newGroup = getGroup(oldGroup, null);
-        map.put(GROUP_ID_CONFIG, newGroup);
-        if (!newGroup.equals(oldGroup)) {
-            logger.info("Change consumer group " + oldGroup + " to " + newGroup);
-        }
-    }
-
 }
