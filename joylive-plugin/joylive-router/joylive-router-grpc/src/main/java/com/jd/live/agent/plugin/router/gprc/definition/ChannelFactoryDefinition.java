@@ -28,6 +28,9 @@ import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.gprc.condition.ConditionalOnGrpcGovernanceEnabled;
 import com.jd.live.agent.plugin.router.gprc.interceptor.ChannelFactoryInterceptor;
 
+/**
+ * Plugin definition for intercepting gRPC channel creation and wrapping channels with governance logic.
+ */
 @Injectable
 @Extension(value = "ChannelFactoryDefinition", order = PluginDefinition.ORDER_ROUTER)
 @ConditionalOnGrpcGovernanceEnabled

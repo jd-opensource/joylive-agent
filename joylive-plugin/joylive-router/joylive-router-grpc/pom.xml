@@ -12,8 +12,8 @@
 
     <properties>
         <grpc.version>1.63.0</grpc.version>
-        <spring.cloud.version>3.1.8</spring.cloud.version>
-        <grpc-client-spring-boot.version>2.15.0.RELEASE</grpc-client-spring-boot.version>
+        <spring.cloud.version>4.0.0</spring.cloud.version>
+        <grpc-spring>3.1.0.RELEASE</grpc-spring>
         <protobuf.version>4.29.2</protobuf.version>
     </properties>
 
@@ -38,8 +38,8 @@
         </dependency>
         <dependency>
             <groupId>net.devh</groupId>
-            <artifactId>grpc-client-spring-boot-autoconfigure</artifactId>
-            <version>${grpc-client-spring-boot.version}</version>
+            <artifactId>grpc-spring-boot-starter</artifactId>
+            <version>${grpc-spring}</version>
         </dependency>
 
     </dependencies>

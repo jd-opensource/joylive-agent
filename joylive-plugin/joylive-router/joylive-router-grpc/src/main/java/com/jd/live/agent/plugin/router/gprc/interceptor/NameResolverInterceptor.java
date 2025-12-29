@@ -35,11 +35,11 @@ public class NameResolverInterceptor extends InterceptorAdaptor {
         MethodContext mc = (MethodContext) ctx;
         Attributes attributes = mc.getResult();
         ServiceInstance instance = mc.getArgument(0);
-        Attributes.Builder builder = attributes.toBuilder();
         if (instance.getMetadata() != null) {
+            Attributes.Builder builder = attributes.toBuilder();
             label(instance.getMetadata(), (key, value) -> builder.set(KEYS.computeIfAbsent(key, Key::create), value));
+            attributes = builder.build();
+            mc.setResult(attributes);
         }
-        attributes = builder.build();
-        mc.setResult(attributes);
     }
 }
