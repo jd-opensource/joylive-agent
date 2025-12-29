@@ -44,8 +44,8 @@ public abstract class AbstractOutboundThrower<
 
     @Override
     public Throwable createException(Throwable throwable, R request, E endpoint) {
-        if (throwable == null) {
-            return null;
+        if (!(throwable instanceof LiveException)) {
+            return throwable;
         } else if (throwable instanceof RejectUnreadyException) {
             return createUnReadyException((RejectUnreadyException) throwable, request);
         } else if (throwable instanceof RejectNoProviderException) {
@@ -56,11 +56,8 @@ public abstract class AbstractOutboundThrower<
             return createRejectException((RejectException) throwable, request);
         } else if (throwable instanceof FaultException) {
             return createFaultException((FaultException) throwable, request);
-        } else if (throwable instanceof LiveException) {
-            return createLiveException((LiveException) throwable, request, endpoint);
-        } else {
-            return throwable;
         }
+        return createLiveException((LiveException) throwable, request, endpoint);
     }
 
     @Override

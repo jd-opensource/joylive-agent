@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedExcep
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.invoke.exception.AbstractOutboundThrower;
+import com.jd.live.agent.plugin.router.gprc.exception.GrpcException.GrpcServerException;
 import com.jd.live.agent.plugin.router.gprc.instance.GrpcEndpoint;
 import com.jd.live.agent.plugin.router.gprc.request.GrpcRequest.GrpcOutboundRequest;
 import io.grpc.InternalStatus;
@@ -42,7 +43,10 @@ public class GrpcOutboundThrower extends AbstractOutboundThrower<GrpcOutboundReq
 
     @Override
     public Throwable createException(Throwable throwable, GrpcOutboundRequest request, GrpcEndpoint endpoint) {
-        if (throwable instanceof GrpcException.GrpcServerException) {
+        if (throwable instanceof StatusRuntimeException) {
+            return throwable;
+        }
+        if (throwable instanceof GrpcServerException) {
             return throwable.getCause();
         }
         return super.createException(throwable, request, endpoint);
