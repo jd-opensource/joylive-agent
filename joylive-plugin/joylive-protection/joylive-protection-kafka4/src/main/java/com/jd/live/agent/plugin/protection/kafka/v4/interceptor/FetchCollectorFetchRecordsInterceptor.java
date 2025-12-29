@@ -29,6 +29,7 @@ import org.apache.kafka.clients.consumer.internals.FetchConfig;
 import org.apache.kafka.common.TopicPartition;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
+import static com.jd.live.agent.core.util.StringUtils.join;
 
 public class FetchCollectorFetchRecordsInterceptor extends AbstractMessageInterceptor {
 
@@ -43,7 +44,7 @@ public class FetchCollectorFetchRecordsInterceptor extends AbstractMessageInterc
         TopicPartition partition = Accessor.partition.get(ctx.getArgument(0), TopicPartition.class);
         if (partition != null && fetchConfig instanceof LiveFetchConfig) {
             LiveFetchConfig cfg = (LiveFetchConfig) fetchConfig;
-            Permission permission = isConsumeReady(partition.topic(), null, cfg.getAddresses());
+            Permission permission = isConsumeReady(partition.topic(), join(cfg.getAddresses()));
             if (!permission.isSuccess()) {
                 ((MethodContext) ctx).skipWithResult(Fetch.empty());
             }
