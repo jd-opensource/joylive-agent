@@ -35,7 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import static com.jd.live.agent.core.util.StringUtils.*;
+import static com.jd.live.agent.core.util.StringUtils.isEmpty;
+import static com.jd.live.agent.core.util.StringUtils.split;
 
 /**
  * AbstractMessageInterceptor
@@ -65,7 +66,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return Permission result from the delegated check
      */
     protected Permission isConsumeReady(String topic, String address) {
-        return isReady(topic, split(address), address, mode -> mode.isReadable(), "readable");
+        return isReady(topic, address, AccessMode::isReadable, "readable");
     }
 
     /**
@@ -76,20 +77,19 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
      * @return Permission result with success/failure and reason
      */
     protected Permission isProduceReady(String topic, String address) {
-        return isReady(topic, split(address), address, mode -> mode.isWriteable(), "writeable");
+        return isReady(topic, address, AccessMode::isWriteable, "writeable");
     }
 
     /**
      * Evaluates whether the given topic operation is permitted under governance.
      *
-     * @param topic     topic name under check
-     * @param nodes     candidate cluster nodes (used when address is null)
-     * @param address   resolved cluster address (may be null)
-     * @param predicate access-mode predicate to validate (e.g., read/write)
-     * @param message   human-readable access-mode description for denial messages
+     * @param topic      topic name under check
+     * @param address    cluster address
+     * @param predicate  access-mode predicate to validate (e.g., read/write)
+     * @param permission human-readable access-mode description for denial messages
      * @return success when permitted; failure with denial reason otherwise
      */
-    protected Permission isReady(String topic, String[] nodes, String address, Predicate<AccessMode> predicate, String message) {
+    protected Permission isReady(String topic, String address, Predicate<AccessMode> predicate, String permission) {
         if (!context.isGovernReady()) {
             return Permission.failure("Application is not ready");
         } else if (!isEnabled(topic)) {
@@ -103,24 +103,22 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         if (liveSpace == null) {
             return Permission.success();
         }
-        LiveDatabase database = policy.getDatabase(nodes);
-        if (database != null && !predicate.test(database.getAccessMode())) {
-            return Permission.failure("MQ cluster is not " + message + ", cluster:" + (address == null ? join(nodes) : address));
+        String[] nodes = split(address);
+        LiveDatabase db = policy.getDatabase(nodes);
+        if (db != null && !predicate.test(db.getAccessMode())) {
+            return Permission.failure("MQ cluster is not " + permission + ", cluster:" + address);
         }
-        Unit unit = database != null && !isEmpty(database.getUnit())
-                ? liveSpace.getUnit(database.getUnit())
-                : liveSpace.getLocalUnit();
+        Unit unit = db != null && !isEmpty(db.getUnit()) ? liveSpace.getUnit(db.getUnit()) : liveSpace.getLocalUnit();
         if (unit == null) {
             return Permission.success();
         }
         if (!predicate.test(unit.getAccessMode())) {
-            return Permission.failure("Unit is not " + message + ", unit: " + unit.getCode());
+            return Permission.failure("Unit is not " + permission + ", unit: " + unit.getCode());
         }
-        Cell cell = database != null && !isEmpty(database.getCell())
-                ? unit.getCell(database.getCell())
-                : (unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null);
+        Cell localCell = unit == liveSpace.getLocalUnit() ? liveSpace.getLocalCell() : null;
+        Cell cell = db != null && !isEmpty(db.getCell()) ? unit.getCell(db.getCell()) : localCell;
         if (cell != null && !predicate.test(cell.getAccessMode())) {
-            return Permission.failure("Cell is not " + message + ", unit: " + unit.getCode() + ", cell: " + cell.getCode());
+            return Permission.failure("Cell is not " + permission + ", unit: " + unit.getCode() + ", cell: " + cell.getCode());
         }
         return Permission.success();
     }
@@ -160,7 +158,7 @@ public abstract class AbstractMessageInterceptor extends InterceptorAdaptor {
         map.put("group", group);
         map.put("unit", unit == null ? null : unit.getCode());
         map.put("lane", lane == null ? null : lane.getCode());
-        map.put("topic", topic == null ? null : topic);
+        map.put("topic", topic);
         String result = evaluator.render(map);
         return result == null || result.isEmpty() ? group : result;
     }
