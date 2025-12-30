@@ -23,6 +23,9 @@ import java.util.function.Supplier;
 public abstract class ClientIp {
 
     private static final String[] CUSTOM_CLIENT_IP_HEADERS = getCustomIpHeaders();
+    public static final String HEADER_FORWARDED = "Forwarded";
+    public static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
+    public static final String KEY_FOR_PREFIX = "for=";
 
     /**
      * Extracts client IP address from headers using header function.
@@ -82,7 +85,7 @@ public abstract class ClientIp {
      * @return client IP address or null if not found
      */
     private static String getIpByRfc7239(Function<String, String> headerFunc) {
-        String forwarded = headerFunc.apply("Forwarded");
+        String forwarded = headerFunc.apply(HEADER_FORWARDED);
         if (forwarded == null || forwarded.isEmpty()) {
             return null;
         }
@@ -99,7 +102,7 @@ public abstract class ClientIp {
         String part;
         while (pos != -1) {
             part = forwarded.substring(start, pos);
-            if (part.startsWith("for=")) {
+            if (isFor(part)) {
                 return getIpByFor(part);
             }
             start = pos + 1;
@@ -107,11 +110,22 @@ public abstract class ClientIp {
         }
         if (start < forwarded.length()) {
             part = forwarded.substring(start);
-            if (part.startsWith("for=")) {
+            if (isFor(part)) {
                 return getIpByFor(part);
             }
         }
         return null;
+    }
+
+    /**
+     * Checks if the part is "for="
+     *
+     * @param part the part
+     * @return true if the part is "for="
+     */
+    private static boolean isFor(String part) {
+        // case insensitive
+        return part.length() >= KEY_FOR_PREFIX.length() && KEY_FOR_PREFIX.equalsIgnoreCase(part.substring(0, KEY_FOR_PREFIX.length()));
     }
 
     /**
@@ -169,7 +183,7 @@ public abstract class ClientIp {
             }
         }
         if (result.isEmpty()) {
-            return new String[]{"X-Forwarded-For"};
+            return new String[]{HEADER_X_FORWARDED_FOR};
         }
         return result.toArray(new String[0]);
     }

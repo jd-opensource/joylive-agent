@@ -61,7 +61,7 @@ public class Ipv4Test {
         map.put("Forwarded", "by=192.168.1.2;for=192.168.1.1");
         Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
         map.clear();
-        map.put("Forwarded", "by=192.168.1.2;for=192.168.1.1;");
+        map.put("Forwarded", "by=192.168.1.2;FOR=192.168.1.1;");
         Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
         map.clear();
         map.put("Forwarded", ";for=192.168.1.1;");
