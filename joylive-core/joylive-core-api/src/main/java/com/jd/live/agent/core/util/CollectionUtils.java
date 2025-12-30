@@ -335,29 +335,92 @@ public class CollectionUtils {
      * @return a Delta object containing lists of added, removed, and updated elements
      */
     @SuppressWarnings("unchecked")
-    public static <T> Delta<T> getDelta(List<T> olds, List<T> news, Function<T, String> function) {
+    public static <T> Delta<T> diff(List<T> olds, List<T> news, Function<T, String> function) {
+        return diff(olds, news, function, null);
+    }
+
+    /**
+     * Computes the delta between two lists by comparing elements based on a key function.
+     * Returns added, removed, and updated elements based on key matching.
+     *
+     * @param <T>      the type of elements in the lists
+     * @param olds     the original list of elements
+     * @param news     the new list of elements to compare against
+     * @param function the function to extract the key from each element for comparison
+     * @param compare  the predicate to compare two elements
+     * @return a Delta object containing lists of added, removed, and updated elements
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Delta<T> diff(List<T> olds, List<T> news, Function<T, String> function, BiPredicate<T, T> compare) {
         news = news == null ? Collections.EMPTY_LIST : news;
         olds = olds == null ? Collections.EMPTY_LIST : olds;
-        int initialCapacity = news.size() / 2;
-        List<T> adds = new ArrayList<>(initialCapacity);
-        List<T> removes = new ArrayList<>(initialCapacity);
-        List<UpdateItem<T>> updates = new ArrayList<>(initialCapacity);
+        List<T> adds = new ArrayList<>();
+        List<T> removes = new ArrayList<>();
+        List<UpdateItem<T>> updates = new ArrayList<>();
+        List<T> unchanged = new ArrayList<>();
         Map<String, T> oldMaps = toMap(olds, function, v -> v);
         Map<String, T> newMaps = toMap(news, function, v -> v);
         newMaps.forEach((k, v) -> {
-            T old = oldMaps.get(k);
+            T old = oldMaps.remove(k);
             if (old == null) {
                 adds.add(v);
-            } else {
+            } else if (compare == null || compare.test(old, v)) {
                 updates.add(new UpdateItem<>(old, v));
+            } else {
+                unchanged.add(old);
+            }
+        });
+        removes.addAll(oldMaps.values());
+        return new Delta<>(adds, updates, removes, unchanged);
+    }
+
+    /**
+     * Computes delta between two lists using key-based comparison.
+     *
+     * @param <T>      element type
+     * @param olds     original list
+     * @param updates  new update list to compare
+     * @param deletes  keys to remove
+     * @param function key extractor
+     * @param compare  comparison predicate
+     * @return delta with added, removed, updated, and unchanged elements
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Delta<T> diff(List<T> olds,
+                                    List<T> updates,
+                                    Set<String> deletes,
+                                    Function<T, String> function,
+                                    BiPredicate<T, T> compare) {
+        updates = updates == null ? Collections.EMPTY_LIST : updates;
+        olds = olds == null ? Collections.EMPTY_LIST : olds;
+        List<T> adds = new ArrayList<>();
+        List<T> removes = new ArrayList<>();
+        List<UpdateItem<T>> changs = new ArrayList<>();
+        List<T> unchanged = new ArrayList<>();
+        Map<String, T> oldMaps = toMap(olds, function, v -> v);
+        Map<String, T> newMaps = toMap(updates, function, v -> v);
+        newMaps.forEach((k, v) -> {
+            T old = oldMaps.remove(k);
+            if (old == null) {
+                adds.add(v);
+            } else if (compare == null || compare.test(old, v)) {
+                changs.add(new UpdateItem<>(old, v));
+            } else {
+                unchanged.add(old);
             }
         });
         oldMaps.forEach((k, v) -> {
-            if (!newMaps.containsKey(k)) {
-                removes.add(v);
+            if (deletes != null) {
+                if (deletes.contains(k)) {
+                    removes.add(v);
+                } else {
+                    unchanged.add(v);
+                }
+            } else {
+                unchanged.add(v);
             }
         });
-        return new Delta<>(adds, updates, removes);
+        return new Delta<>(adds, changs, removes, unchanged);
     }
 
     /**
@@ -1313,18 +1376,25 @@ public class CollectionUtils {
         private final List<T> removes;
 
         /**
+         * List of elements that were unchanged (present in both collections).
+         */
+        private final List<T> unchanges;
+
+        /**
          * Creates a new Delta instance with the specified change lists.
          * Null lists are converted to empty lists for safety.
          *
-         * @param adds    elements that were added
-         * @param updates elements that were updated
-         * @param removes elements that were removed
+         * @param adds      elements that were added
+         * @param updates   elements that were updated
+         * @param removes   elements that were removed
+         * @param unchanges elements that were unchanged
          */
         @SuppressWarnings("unchecked")
-        public Delta(List<T> adds, List<UpdateItem<T>> updates, List<T> removes) {
+        public Delta(List<T> adds, List<UpdateItem<T>> updates, List<T> removes, List<T> unchanges) {
             this.adds = adds == null ? Collections.EMPTY_LIST : adds;
             this.updates = updates == null ? Collections.EMPTY_LIST : updates;
             this.removes = removes == null ? Collections.EMPTY_LIST : removes;
+            this.unchanges = unchanges == null ? Collections.EMPTY_LIST : unchanges;
         }
     }
 

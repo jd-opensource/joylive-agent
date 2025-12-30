@@ -40,9 +40,11 @@ public class ServiceOp {
      * @param newService The newer to apply
      * @param merger     The policy merger to handle merging
      * @param owner      The policy model identifier
+     * @return The updated service
      */
-    public static void onUpdate(Service oldService, Service newService, PolicyMerger merger, String owner) {
+    public static Service onUpdate(Service oldService, Service newService, PolicyMerger merger, String owner) {
         oldService.onUpdate(newService, merger, owner);
+        return oldService;
     }
 
     /**
@@ -51,9 +53,11 @@ public class ServiceOp {
      * @param service The target service
      * @param merger The policy merger to handle merging
      * @param owner The policy model identifier to add
+     * @return The added service
      */
-    public static void onAdd(Service service, PolicyMerger merger, String owner) {
+    public static Service onAdd(Service service, PolicyMerger merger, String owner) {
         service.onAdd(merger, owner);
+        return service;
     }
 }
 

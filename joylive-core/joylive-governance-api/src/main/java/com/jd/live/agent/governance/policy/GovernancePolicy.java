@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.policy;
 import com.jd.live.agent.core.instance.AppService;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.instance.Location;
+import com.jd.live.agent.core.util.CollectionUtils.Delta;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
@@ -38,6 +39,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.*;
+
+import static com.jd.live.agent.core.util.CollectionUtils.diff;
 
 /**
  * Represents the governance policy for managing resources and configurations.
@@ -358,54 +361,36 @@ public class GovernancePolicy implements LiveDatabaseSupervisor {
      *
      * @param updates The list of services to be updated from this policy model
      * @param deletes The set of service names to be removed from this policy model
-     * @param merger The policy merger to handle the merging logic across different policy models
-     * @param owner The identifier of the policy model source
-     * @return The list of services after applying updates from this policy model
+     * @param merger  The policy merger to handle the merging logic across different policy models
+     * @param owner   The identifier of the policy model source
+     * @return The reserved services list
      */
     public List<Service> onUpdate(List<Service> updates, Set<String> deletes, PolicyMerger merger, String owner) {
-        List<Service> result = new ArrayList<>();
-        Map<String, Service> updateMap = new HashMap<>(updates.size());
-        updates.forEach(o -> updateMap.put(o.getName(), o));
-        Set<String> olds = new HashSet<>();
-        if (services != null) {
-            for (Service old : services) {
-                olds.add(old.getName());
-                Service update = updateMap.get(old.getName());
-                if (update == null) {
-                    if (deletes == null || !deletes.contains(old.getName()) || ServiceOp.onDelete(old, merger, owner)) {
-                        // Not deleted, or still has other policy models after deletion
-                        result.add(old);
-                    }
-                } else if (old.getVersion() != update.getVersion()) {
-                    // Update
-                    ServiceOp.onUpdate(old, update, merger, owner);
-                    result.add(old);
-                } else {
-                    // No change
-                    result.add(old);
-                }
-            }
-        }
-        for (Service update : updates) {
-            if (!olds.contains(update.getName())) {
-                // Add
-                ServiceOp.onAdd(update, merger, owner);
-                result.add(update);
-            }
-        }
-        return result;
+        Delta<Service> delta = diff(services, updates, deletes, Service::getName, (o1, o2) -> o1.getVersion() != o2.getVersion());
+        return onUpdate(delta, merger, owner);
     }
 
     /**
-     * Updates a single service from a policy model.
+     * Processes service delta changes using ServiceOp operations.
+     * Handles removes, updates, adds and unchanged services.
      *
-     * @param service The service to update
-     * @param merger The policy merger to handle merging
-     * @param owner The policy model identifier
-     * @return The list of updated services
+     * @param delta  service changes to process
+     * @param merger policy merger for operations
+     * @param owner  policy model owner
+     * @return the reserved services list
      */
-    public List<Service> onUpdate(Service service, PolicyMerger merger, String owner) {
-        return onUpdate(Collections.singletonList(service), null, merger, owner);
+    public List<Service> onUpdate(Delta<Service> delta, PolicyMerger merger, String owner) {
+        List<Service> result = new ArrayList<>();
+        delta.getRemoves().forEach(o -> {
+            if (ServiceOp.onDelete(o, merger, owner)) {
+                // still has other policy models after deletion
+                result.add(o);
+            }
+        });
+        delta.getUpdates().forEach(o -> result.add(ServiceOp.onUpdate(o.getOldValue(), o.getNewValue(), merger, owner)));
+        delta.getAdds().forEach(o -> result.add(ServiceOp.onAdd(o, merger, owner)));
+        delta.getUnchanges().forEach(result::add);
+        return result;
     }
 
     /**

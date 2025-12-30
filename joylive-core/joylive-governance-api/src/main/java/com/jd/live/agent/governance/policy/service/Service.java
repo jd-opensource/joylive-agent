@@ -31,9 +31,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
-import static com.jd.live.agent.core.util.CollectionUtils.getDelta;
+import static com.jd.live.agent.core.util.CollectionUtils.diff;
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
@@ -45,6 +46,8 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
 public class Service extends PolicyOwner implements ServiceName {
 
     private static final URI SERVICE_URI = URI.builder().scheme("service").build();
+
+    public static final BiPredicate<Service, Service> VERSION_PREDICATE = (o1, o2) -> o1.getVersion() != o2.getVersion();
 
     @Getter
     @Setter
@@ -313,7 +316,7 @@ public class Service extends PolicyOwner implements ServiceName {
         merger.onUpdate(this, newService);
         owners.addOwner(owner);
         List<ServiceGroup> newGroups = new ArrayList<>();
-        Delta<ServiceGroup> delta = getDelta(groups, newService.groups, ServiceGroup::getName);
+        Delta<ServiceGroup> delta = diff(groups, newService.groups, ServiceGroup::getName);
         delta.getRemoves().forEach(v -> {
             if (v.onDelete(merger, owner)) {
                 // has other owners

@@ -18,6 +18,7 @@ package com.jd.live.agent.governance.subscription.policy.listener;
 import com.jd.live.agent.core.event.Event;
 import com.jd.live.agent.core.event.Publisher;
 import com.jd.live.agent.core.parser.ObjectParser;
+import com.jd.live.agent.core.util.CollectionUtils.Delta;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
 import com.jd.live.agent.governance.policy.PolicySubscription;
 import com.jd.live.agent.governance.policy.PolicySupervisor;
@@ -30,6 +31,10 @@ import lombok.Setter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.jd.live.agent.core.util.CollectionUtils.diff;
+import static com.jd.live.agent.core.util.CollectionUtils.singletonList;
+import static com.jd.live.agent.governance.policy.service.Service.VERSION_PREDICATE;
 
 /**
  * A listener class for service configuration updates that extends the AbstractListener class.
@@ -53,34 +58,15 @@ public class ServiceListener extends AbstractListener<Service> {
     @Override
     protected void updateItems(GovernancePolicy policy, List<Service> items, PolicyEvent event) {
         ServiceEvent se = (ServiceEvent) event;
-        Map<String, Long> newVersions = new HashMap<>(items == null ? 0 : items.size());
-        List<Service> oldServices = policy.getServices();
-        Map<String, Long> oldVersions = new HashMap<>(oldServices == null ? 0 : oldServices.size());
-        if (oldServices != null) {
-            oldServices.forEach(s -> oldVersions.put(s.getName(), s.getVersion()));
-        }
-        List<Service> updates = new ArrayList<>();
-        Set<String> deletes = new HashSet<>();
-        // AddOrUpdate
+        /// Update the loaded services
         if (items != null) {
             Set<String> loadedServices = se.getLoadedServices();
             for (Service item : items) {
                 loadedServices.add(item.getName());
-                newVersions.put(item.getName(), item.getVersion());
-                long oldVersion = oldVersions.getOrDefault(item.getName(), -1L);
-                if (item.getVersion() != oldVersion) {
-                    updates.add(item);
-                }
             }
         }
-        // Remove
-        for (String name : oldVersions.keySet()) {
-            if (!newVersions.containsKey(name)) {
-                deletes.add(name);
-            }
-        }
-
-        List<Service> newServices = policy.onUpdate(updates, deletes, se.getMergePolicy(), se.getWatcher());
+        Delta<Service> delta = diff(policy.getServices(), items, Service::getName, VERSION_PREDICATE);
+        List<Service> newServices = policy.onUpdate(delta, se.getMergePolicy(), se.getWatcher());
         policy.setServices(newServices);
     }
 
@@ -88,7 +74,7 @@ public class ServiceListener extends AbstractListener<Service> {
     protected void updateItem(GovernancePolicy policy, Service item, PolicyEvent event) {
         ServiceEvent se = (ServiceEvent) event;
         se.getLoadedServices().add(item.getName());
-        List<Service> newServices = policy.onUpdate(Collections.singletonList(item), null, se.getMergePolicy(), se.getWatcher());
+        List<Service> newServices = policy.onUpdate(singletonList(item), null, se.getMergePolicy(), se.getWatcher());
         policy.setServices(newServices);
     }
 
