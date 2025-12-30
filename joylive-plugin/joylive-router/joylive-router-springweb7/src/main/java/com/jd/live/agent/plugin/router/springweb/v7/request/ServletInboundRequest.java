@@ -18,7 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v7.request;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
-import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.core.util.network.ClientIp;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.governance.request.HeaderProvider;
@@ -71,7 +71,7 @@ public class ServletInboundRequest extends AbstractHttpInboundRequest<HttpServle
 
     @Override
     public String getClientIp() {
-        return Ipv4.getClientIp(this::getHeader, request::getRemoteAddr);
+        return ClientIp.getIp(this::getHeader, request::getRemoteAddr);
     }
 
     @Override

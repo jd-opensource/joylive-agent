@@ -19,7 +19,7 @@ import com.jd.live.agent.core.mcp.McpRequest;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.map.CaseInsensitiveLinkedMap;
-import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.core.util.network.ClientIp;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 
 import java.util.*;
@@ -55,7 +55,7 @@ public class McpInboundRequest extends AbstractHttpInboundRequest<McpRequest> {
 
     @Override
     public String getClientIp() {
-        return Ipv4.getClientIp(this::getHeader, request::getRemoteAddr);
+        return ClientIp.getIp(this::getHeader, request::getRemoteAddr);
     }
 
     @Override

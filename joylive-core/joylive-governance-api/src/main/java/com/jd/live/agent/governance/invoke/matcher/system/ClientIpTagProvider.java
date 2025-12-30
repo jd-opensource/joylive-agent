@@ -31,6 +31,6 @@ public class ClientIpTagProvider implements SystemTagProvider {
     @Override
     public List<String> getValues(ServiceRequest request) {
         String clientIp = request instanceof InboundRequest ? ((InboundRequest) request).getClientIp() : null;
-        return clientIp == null ? null : Collections.singletonList(clientIp);
+        return clientIp == null || clientIp.isEmpty() ? null : Collections.singletonList(clientIp);
     }
 }

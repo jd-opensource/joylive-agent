@@ -16,7 +16,7 @@
 package com.jd.live.agent.governance.request;
 
 import com.jd.live.agent.core.util.http.HttpMethod;
-import com.jd.live.agent.core.util.network.Ipv4;
+import com.jd.live.agent.core.util.network.ClientIp;
 
 import java.net.URI;
 import java.util.List;
@@ -136,7 +136,7 @@ public interface HttpRequest extends ServiceRequest, Portable {
 
         @Override
         default String getClientIp() {
-            return Ipv4.getClientIp(this::getHeader);
+            return ClientIp.getIp(this::getHeader);
         }
     }
 

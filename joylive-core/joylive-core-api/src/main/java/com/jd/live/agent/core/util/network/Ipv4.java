@@ -18,8 +18,6 @@ package com.jd.live.agent.core.util.network;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Utility class for working with IPv4 and IPv6 addresses.
@@ -100,8 +98,6 @@ public class Ipv4 {
     public static final IpLong IP_MIN;
 
     public static final IpLong IP_MAX;
-
-    public static final String[] CLIENT_IP_HEADERS = getClientIpHeaders();
 
     static {
         // Get default network card and management network from environment variables
@@ -657,62 +653,6 @@ public class Ipv4 {
         }
         InetAddress inetAddress = address.getAddress();
         return inetAddress == null ? address.getHostName() : toIp(inetAddress);
-    }
-
-    /**
-     * Extracts client IP address from headers using header function.
-     *
-     * @param headerFunc function to retrieve header value by name
-     * @return client IP address or null if not found
-     */
-    public static String getClientIp(Function<String, String> headerFunc) {
-        return getClientIp(headerFunc, null);
-    }
-
-    /**
-     * Extracts client IP address from headers using function.
-     *
-     * @param headerFunc      function to retrieve header value by name
-     * @param defaultSupplier function to retrieve default value if not found
-     * @return client IP address or null if not found
-     */
-    public static String getClientIp(Function<String, String> headerFunc, Supplier<String> defaultSupplier) {
-        String forwards;
-        for (String header : CLIENT_IP_HEADERS) {
-            forwards = headerFunc.apply(header);
-            if (forwards != null && !forwards.isEmpty() && !"unknown".equalsIgnoreCase(forwards)) {
-                // multiple forward ips, such as X-Forwarded-For: 192.168.1.1, 192.168.1.2
-                int pos = forwards.indexOf(',');
-                if (pos > 0) {
-                    return forwards.substring(0, pos);
-                }
-                return forwards;
-            }
-        }
-        return defaultSupplier == null ? null : defaultSupplier.get();
-    }
-
-    /**
-     * Get client ip headers
-     *
-     * @return client ip headers
-     */
-    private static String[] getClientIpHeaders() {
-        String headers = System.getenv("CONFIG_CLIENT_IP_HEADERS");
-        List<String> result = new ArrayList<>();
-        if (headers != null && !headers.isEmpty()) {
-            String[] parts = headers.split("[;,]");
-            for (String part : parts) {
-                part = part.trim();
-                if (!part.isEmpty()) {
-                    result.add(part);
-                }
-            }
-        }
-        if (result.isEmpty()) {
-            return new String[]{"X-Forwarded-For", "Proxy-Client-IP", "WL-Proxy-Client-IP", "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR"};
-        }
-        return result.toArray(new String[0]);
     }
 
 }
