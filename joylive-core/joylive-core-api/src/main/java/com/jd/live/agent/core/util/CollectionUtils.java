@@ -343,28 +343,31 @@ public class CollectionUtils {
      * Computes the delta between two lists by comparing elements based on a key function.
      * Returns added, removed, and updated elements based on key matching.
      *
-     * @param <T>      the type of elements in the lists
-     * @param olds     the original list of elements
-     * @param news     the new list of elements to compare against
-     * @param function the function to extract the key from each element for comparison
-     * @param compare  the predicate to compare two elements
+     * @param <T>              the type of elements in the lists
+     * @param olds             the original list of elements
+     * @param news             the new list of elements to compare against
+     * @param keyFunc          the function to extract the key from each element for comparison
+     * @param updatePredicate  the predicate to compare two elements
      * @return a Delta object containing lists of added, removed, and updated elements
      */
     @SuppressWarnings("unchecked")
-    public static <T> Delta<T> diff(List<T> olds, List<T> news, Function<T, String> function, BiPredicate<T, T> compare) {
+    public static <T> Delta<T> diff(List<T> olds,
+                                    List<T> news,
+                                    Function<T, String> keyFunc,
+                                    BiPredicate<T, T> updatePredicate) {
         news = news == null ? Collections.EMPTY_LIST : news;
         olds = olds == null ? Collections.EMPTY_LIST : olds;
         List<T> adds = new ArrayList<>();
         List<T> removes = new ArrayList<>();
         List<UpdateItem<T>> updates = new ArrayList<>();
         List<T> unchanged = new ArrayList<>();
-        Map<String, T> oldMaps = toMap(olds, function, v -> v);
-        Map<String, T> newMaps = toMap(news, function, v -> v);
+        Map<String, T> oldMaps = toMap(olds, keyFunc, v -> v);
+        Map<String, T> newMaps = toMap(news, keyFunc, v -> v);
         newMaps.forEach((k, v) -> {
             T old = oldMaps.remove(k);
             if (old == null) {
                 adds.add(v);
-            } else if (compare == null || compare.test(old, v)) {
+            } else if (updatePredicate == null || updatePredicate.test(old, v)) {
                 updates.add(new UpdateItem<>(old, v));
             } else {
                 unchanged.add(old);
@@ -377,45 +380,41 @@ public class CollectionUtils {
     /**
      * Computes delta between two lists using key-based comparison.
      *
-     * @param <T>      element type
-     * @param olds     original list
-     * @param updates  new update list to compare
-     * @param deletes  keys to remove
-     * @param function key extractor
-     * @param compare  comparison predicate
+     * @param <T>              element type
+     * @param olds             original list
+     * @param updates          new update list to compare
+     * @param deletes          keys to remove
+     * @param keyFunc          key extractor
+     * @param updatePredicate  comparison predicate
      * @return delta with added, removed, updated, and unchanged elements
      */
     @SuppressWarnings("unchecked")
     public static <T> Delta<T> diff(List<T> olds,
                                     List<T> updates,
                                     Set<String> deletes,
-                                    Function<T, String> function,
-                                    BiPredicate<T, T> compare) {
+                                    Function<T, String> keyFunc,
+                                    BiPredicate<T, T> updatePredicate) {
         updates = updates == null ? Collections.EMPTY_LIST : updates;
         olds = olds == null ? Collections.EMPTY_LIST : olds;
         List<T> adds = new ArrayList<>();
         List<T> removes = new ArrayList<>();
         List<UpdateItem<T>> changs = new ArrayList<>();
         List<T> unchanged = new ArrayList<>();
-        Map<String, T> oldMaps = toMap(olds, function, v -> v);
-        Map<String, T> newMaps = toMap(updates, function, v -> v);
+        Map<String, T> oldMaps = toMap(olds, keyFunc, v -> v);
+        Map<String, T> newMaps = toMap(updates, keyFunc, v -> v);
         newMaps.forEach((k, v) -> {
             T old = oldMaps.remove(k);
             if (old == null) {
                 adds.add(v);
-            } else if (compare == null || compare.test(old, v)) {
+            } else if (updatePredicate == null || updatePredicate.test(old, v)) {
                 changs.add(new UpdateItem<>(old, v));
             } else {
                 unchanged.add(old);
             }
         });
         oldMaps.forEach((k, v) -> {
-            if (deletes != null) {
-                if (deletes.contains(k)) {
-                    removes.add(v);
-                } else {
-                    unchanged.add(v);
-                }
+            if (deletes != null && deletes.contains(k)) {
+                removes.add(v);
             } else {
                 unchanged.add(v);
             }
