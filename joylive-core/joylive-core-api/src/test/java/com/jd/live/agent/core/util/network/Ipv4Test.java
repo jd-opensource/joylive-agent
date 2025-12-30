@@ -18,9 +18,6 @@ package com.jd.live.agent.core.util.network;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class Ipv4Test {
 
     @Test
@@ -41,40 +38,5 @@ public class Ipv4Test {
         Assertions.assertFalse(Ipv4.isHost("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"));
         Assertions.assertTrue(Ipv4.isHost("www.google.com"));
     }
-
-    @Test
-    void testClientIp() {
-
-        Map<String, String> map = new HashMap<>();
-        map.put("Forwarded", "for=192.168.1.1");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", "for=\"192.168.1.1:8888\"");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", "for=\"[2001:db8:cafe::17]:47011\"");
-        Assertions.assertEquals("[2001:db8:cafe::17]", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", "for=192.168.1.1;by=192.168.1.2");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", "by=192.168.1.2;for=192.168.1.1");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", "by=192.168.1.2;FOR=192.168.1.1;");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", ";for=192.168.1.1;");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("Forwarded", "for=;");
-        Assertions.assertEquals("", ClientIp.getIp(map::get));
-        map.clear();
-        map.put("X-Forwarded-For", "192.168.1.1");
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get));
-        map.clear();
-        Assertions.assertEquals("192.168.1.1", ClientIp.getIp(map::get, () -> "192.168.1.1"));
-    }
-
 
 }

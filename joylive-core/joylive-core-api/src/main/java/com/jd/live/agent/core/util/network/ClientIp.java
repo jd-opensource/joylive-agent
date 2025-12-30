@@ -67,10 +67,20 @@ public abstract class ClientIp {
         for (String header : CUSTOM_CLIENT_IP_HEADERS) {
             forwards = headerFunc.apply(header);
             if (forwards != null && !forwards.isEmpty()) {
+                forwards = forwards.trim();
                 // multiple forward ips, such as X-Forwarded-For: 192.168.1.1, 192.168.1.2
                 int pos = forwards.indexOf(',');
-                if (pos > 0) {
-                    return forwards.substring(0, pos);
+                if (pos != -1) {
+                    forwards = forwards.substring(0, pos).trim();
+                }
+                // ipv6 address
+                if (forwards.startsWith("[")) {
+                    pos = forwards.lastIndexOf(']');
+                    if (pos == -1) {
+                        // invalid format
+                        return "";
+                    }
+                    forwards = forwards.substring(0, pos + 1);
                 }
                 return forwards;
             }
