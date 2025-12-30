@@ -23,9 +23,9 @@ import java.util.function.Supplier;
 public abstract class ClientIp {
 
     private static final String[] CUSTOM_CLIENT_IP_HEADERS = getCustomIpHeaders();
-    public static final String HEADER_FORWARDED = "Forwarded";
-    public static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
-    public static final String KEY_FOR_PREFIX = "for=";
+    private static final String HEADER_FORWARDED = "Forwarded";
+    private static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
+    private static final String KEY_FOR_PREFIX = "for=";
 
     /**
      * Extracts client IP address from headers using header function.
