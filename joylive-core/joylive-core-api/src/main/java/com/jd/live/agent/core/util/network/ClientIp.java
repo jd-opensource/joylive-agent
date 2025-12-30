@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 public abstract class ClientIp {
 
-    private static final String[] CUSTOM_CLIENT_IP_HEADERS = getCustomClientIpHeaders();
+    private static final String[] CUSTOM_CLIENT_IP_HEADERS = getCustomIpHeaders();
 
     /**
      * Extracts client IP address from headers using header function.
@@ -42,11 +42,11 @@ public abstract class ClientIp {
      * @return client IP address or null if not found
      */
     public static String getIp(Function<String, String> headerFunc, Supplier<String> defaultSupplier) {
-        String ip = getClientIpByRfc7239(headerFunc);
+        String ip = getIpByRfc7239(headerFunc);
         if (ip != null) {
             return ip;
         }
-        ip = getClientIpByCustomHeaders(headerFunc);
+        ip = getIpByCustomHeaders(headerFunc);
         if (ip != null) {
             return ip;
         }
@@ -59,7 +59,7 @@ public abstract class ClientIp {
      * @param headerFunc function to retrieve header value by name
      * @return client IP address or null if not found
      */
-    private static String getClientIpByCustomHeaders(Function<String, String> headerFunc) {
+    private static String getIpByCustomHeaders(Function<String, String> headerFunc) {
         String forwards;
         for (String header : CUSTOM_CLIENT_IP_HEADERS) {
             forwards = headerFunc.apply(header);
@@ -81,7 +81,7 @@ public abstract class ClientIp {
      * @param headerFunc function to retrieve header value by name
      * @return client IP address or null if not found
      */
-    private static String getClientIpByRfc7239(Function<String, String> headerFunc) {
+    private static String getIpByRfc7239(Function<String, String> headerFunc) {
         String forwarded = headerFunc.apply("Forwarded");
         if (forwarded == null || forwarded.isEmpty()) {
             return null;
@@ -100,7 +100,7 @@ public abstract class ClientIp {
         while (pos != -1) {
             part = forwarded.substring(start, pos);
             if (part.startsWith("for=")) {
-                return getClientIpByFor(part);
+                return getIpByFor(part);
             }
             start = pos + 1;
             pos = forwarded.indexOf(';', start);
@@ -108,7 +108,7 @@ public abstract class ClientIp {
         if (start < forwarded.length()) {
             part = forwarded.substring(start);
             if (part.startsWith("for=")) {
-                return getClientIpByFor(part);
+                return getIpByFor(part);
             }
         }
         return null;
@@ -120,7 +120,7 @@ public abstract class ClientIp {
      * @param value the Forwarded header value part (e.g., "for=192.0.2.60" or "for=\"192.0.2.45:9999\"")
      * @return the extracted client IP address, or empty string if invalid format, or null for IPv6 parsing errors
      */
-    private static String getClientIpByFor(String value) {
+    private static String getIpByFor(String value) {
         String ip = value.substring(4);
         if (ip.isEmpty()) {
             // invalid format, ignore
@@ -156,7 +156,7 @@ public abstract class ClientIp {
      *
      * @return client ip headers
      */
-    private static String[] getCustomClientIpHeaders() {
+    private static String[] getCustomIpHeaders() {
         String headers = System.getenv("CONFIG_CLIENT_IP_HEADERS");
         List<String> result = new ArrayList<>();
         if (headers != null && !headers.isEmpty()) {
