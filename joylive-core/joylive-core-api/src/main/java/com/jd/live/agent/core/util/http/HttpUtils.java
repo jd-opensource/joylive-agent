@@ -60,7 +60,7 @@ public abstract class HttpUtils {
 
     public static final String ACCEPT_ENCODING_GZIP_DEFLATE = ENCODING_GZIP + "," + ENCODING_DEFLATE;
 
-    private static final LazyObject<URIConstructor> cache = new LazyObject<>(() -> {
+    private static final LazyObject<URIConstructor> CACHE = new LazyObject<>(() -> {
         try {
             return new URIConstructor();
         } catch (Throwable e) {
@@ -477,7 +477,7 @@ public abstract class HttpUtils {
         String u = (userInfo == null || userInfo.isEmpty()) && uri != null ? uri.getUserInfo() : userInfo;
         String q = (query == null || query.isEmpty()) && uri != null ? uri.getQuery() : query;
         String f = (fragment == null || fragment.isEmpty()) && uri != null ? uri.getFragment() : fragment;
-        URIConstructor constructor = cache.get();
+        URIConstructor constructor = CACHE.get();
         if (constructor != null) {
             try {
                 return constructor.create(s, u, h, p, t, q, f, string);

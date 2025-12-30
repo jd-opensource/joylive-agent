@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springweb.v7.request;
 import com.jd.live.agent.core.mcp.McpToolMethod;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.core.util.http.HttpUtils;
+import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.request.AbstractHttpRequest.AbstractHttpInboundRequest;
 import com.jd.live.agent.plugin.router.springweb.v7.util.CloudUtils;
@@ -32,7 +33,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -70,12 +70,7 @@ public class ReactiveInboundRequest extends AbstractHttpInboundRequest<ServerHtt
 
     @Override
     public String getClientIp() {
-        String result = super.getClientIp();
-        if (result != null && !result.isEmpty()) {
-            return result;
-        }
-        InetSocketAddress address = request.getRemoteAddress();
-        return address == null ? null : address.getAddress().getHostAddress();
+        return Ipv4.getClientIp(this::getHeader, () -> Ipv4.toIp(request.getRemoteAddress()));
     }
 
     @Override
