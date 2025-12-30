@@ -38,15 +38,6 @@ public class CollectionUtils {
     private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
 
     /**
-     * Field accessor for the internal map data ("m") in {@code UNMODIFIED_MAP_CLASS}.
-     */
-    private static final FieldAccessor MAP_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "m");
-
-    // private static final Class<?> UNMODIFIED_LIST_CLASS = Collections.unmodifiableList(new ArrayList<>()).getClass();
-
-    // private static final FieldAccessor LIST_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_LIST_CLASS, "list");
-
-    /**
      * Looks up indices in the list of values where the predicate evaluates to true.
      * Iterates through the list with a specified step and adds the index to the result
      * if the predicate is satisfied. The iteration stops when the index reaches the specified length.
@@ -1248,8 +1239,8 @@ public class CollectionUtils {
         if (sources == null) {
             return null;
         }
-        if (sources.getClass() == UNMODIFIED_MAP_CLASS && MAP_FIELD != null) {
-            sources = (Map<K, V>) MAP_FIELD.get(sources);
+        if (sources.getClass() == UNMODIFIED_MAP_CLASS && Accessor.MAP_FIELD != null) {
+            sources = (Map<K, V>) Accessor.MAP_FIELD.get(sources);
         }
         return sources;
     }
@@ -1283,6 +1274,18 @@ public class CollectionUtils {
 
     private static int computeMapInitialCapacity(int expectedSize) {
         return (int) Math.ceil(expectedSize / (double) DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Internal helper class providing field access to unmodified map's internal data.
+     */
+    private static class Accessor {
+        // Fix issue: module java.base does not "opens java.util" to unnamed module
+        /**
+         * Field accessor for the internal map data ("m") in {@code UNMODIFIED_MAP_CLASS}.
+         */
+        private static final FieldAccessor MAP_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "m");
+
     }
 
     /**
