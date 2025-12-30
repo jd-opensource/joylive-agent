@@ -17,6 +17,7 @@ package com.jd.live.agent.core.util;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
+import lombok.Getter;
 
 import java.util.*;
 import java.util.function.*;
@@ -36,7 +37,14 @@ public class CollectionUtils {
 
     private static final Class<?> UNMODIFIED_MAP_CLASS = Collections.unmodifiableMap(new HashMap<>()).getClass();
 
-    private static final Class<?> UNMODIFIED_LIST_CLASS = Collections.unmodifiableList(new ArrayList<>()).getClass();
+    /**
+     * Field accessor for the internal map data ("m") in {@code UNMODIFIED_MAP_CLASS}.
+     */
+    private static final FieldAccessor MAP_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "m");
+
+    // private static final Class<?> UNMODIFIED_LIST_CLASS = Collections.unmodifiableList(new ArrayList<>()).getClass();
+
+    // private static final FieldAccessor LIST_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_LIST_CLASS, "list");
 
     /**
      * Looks up indices in the list of values where the predicate evaluates to true.
@@ -326,6 +334,42 @@ public class CollectionUtils {
     }
 
     /**
+     * Computes the delta between two lists by comparing elements based on a key function.
+     * Returns added, removed, and updated elements based on key matching.
+     *
+     * @param <T>      the type of elements in the lists
+     * @param olds     the original list of elements
+     * @param news     the new list of elements to compare against
+     * @param function the function to extract the key from each element for comparison
+     * @return a Delta object containing lists of added, removed, and updated elements
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Delta<T> getDelta(List<T> olds, List<T> news, Function<T, String> function) {
+        news = news == null ? Collections.EMPTY_LIST : news;
+        olds = olds == null ? Collections.EMPTY_LIST : olds;
+        int initialCapacity = news.size() / 2;
+        List<T> adds = new ArrayList<>(initialCapacity);
+        List<T> removes = new ArrayList<>(initialCapacity);
+        List<UpdateItem<T>> updates = new ArrayList<>(initialCapacity);
+        Map<String, T> oldMaps = toMap(olds, function, v -> v);
+        Map<String, T> newMaps = toMap(news, function, v -> v);
+        newMaps.forEach((k, v) -> {
+            T old = oldMaps.get(k);
+            if (old == null) {
+                adds.add(v);
+            } else {
+                updates.add(new UpdateItem<>(old, v));
+            }
+        });
+        oldMaps.forEach((k, v) -> {
+            if (!newMaps.containsKey(k)) {
+                removes.add(v);
+            }
+        });
+        return new Delta<>(adds, updates, removes);
+    }
+
+    /**
      * Converts an Enumeration to an Iterator.
      *
      * @param <T>         the type of elements in the enumeration
@@ -368,6 +412,7 @@ public class CollectionUtils {
      * @return an Iterator of type {@code T} with elements transformed by the given function
      * @throws IllegalArgumentException if the function is null
      */
+    @SuppressWarnings("unused")
     public static <V, T> Iterator<T> toIterator(V[] arrays, Function<V, T> function) {
         if (function == null) {
             throw new IllegalArgumentException("function is null");
@@ -584,6 +629,7 @@ public class CollectionUtils {
      * @param valueFunction The function to apply to each value
      * @return A new link map with transformed keys and values, or null if the input map is null
      */
+    @SuppressWarnings("unused")
     public static <K1, V1, K2, V2> Map<K2, V2> toLinkMap(Map<K1, V1> map, Function<K1, K2> keyFunction, Function<V1, V2> valueFunction) {
         return toMap(map, keyFunction, valueFunction, HashMap::new);
     }
@@ -621,6 +667,7 @@ public class CollectionUtils {
      * @return a map where each entry's key is the result of applying the keyFunction to an element,
      * and each entry's value is the result of applying the valueFunction to the same element
      */
+    @SuppressWarnings("unused")
     public static <T, K, V> Map<K, V> toLinkMap(Iterable<T> iterable,
                                                 Predicate<T> predicate,
                                                 Function<T, K> keyFunction,
@@ -748,7 +795,7 @@ public class CollectionUtils {
      * For example, `{"a": {"b": {"c": "value", "0": "list_value"}}}`.
      * Returns `null` if the input `flatMap` is `null`.
      */
-    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap) {
+    public static Map<String, Object> cascade(Map<String, ?> flatMap) {
         return cascade(flatMap, (Predicate<String>) null, HashMap::new);
     }
 
@@ -759,7 +806,7 @@ public class CollectionUtils {
      * @param mapFunc factory function to create map instances
      * @return a nested map structure containing only keys with the specified prefix
      */
-    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap,
+    public static Map<String, Object> cascade(Map<String, ?> flatMap,
                                               Function<Integer, Map<String, Object>> mapFunc) {
         return cascade(flatMap, (Predicate<String>) null, mapFunc);
     }
@@ -772,7 +819,7 @@ public class CollectionUtils {
      * @param mapFunc factory function to create map instances
      * @return a nested map structure containing only keys with the specified prefix
      */
-    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap,
+    public static Map<String, Object> cascade(Map<String, ?> flatMap,
                                               String prefix,
                                               Function<Integer, Map<String, Object>> mapFunc) {
         Predicate<String> predicate = prefix == null || prefix.isEmpty()
@@ -791,7 +838,7 @@ public class CollectionUtils {
      * hierarchical objects and lists
      */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> cascade(Map<String, ? extends Object> flatMap,
+    public static Map<String, Object> cascade(Map<String, ?> flatMap,
                                               Predicate<String> predicate,
                                               Function<Integer, Map<String, Object>> mapFunc) {
         if (flatMap == null) {
@@ -800,7 +847,7 @@ public class CollectionUtils {
         mapFunc = mapFunc == null ? HashMap::new : mapFunc;
         Map<String, Object> result = mapFunc.apply(flatMap.size() / 2);
         Map<String, Object> parent;
-        for (Map.Entry<String, ? extends Object> entry : flatMap.entrySet()) {
+        for (Map.Entry<String, ?> entry : flatMap.entrySet()) {
             parent = result;
             String key = entry.getKey();
             if (predicate != null && !predicate.test(key)) {
@@ -813,7 +860,7 @@ public class CollectionUtils {
             Object v;
             List<Object> list;
             Integer index;
-            int max = 0;
+            int max;
             int pos;
             for (String part : parts) {
                 index = null;
@@ -872,7 +919,8 @@ public class CollectionUtils {
      * @param mapFunc factory function to create map instances
      * @return a nested map structure containing only keys with the specified prefix
      */
-    public static Object cascadeAndGet(Map<String, ? extends Object> flatMap,
+    @SuppressWarnings("unchecked")
+    public static Object cascadeAndGet(Map<String, ?> flatMap,
                                        String prefix,
                                        Function<Integer, Map<String, Object>> mapFunc) {
         Map<String, Object> cascaded = cascade(flatMap, prefix, mapFunc);
@@ -891,7 +939,7 @@ public class CollectionUtils {
         Map<String, Object> parent = cascaded;
         for (String part : parts) {
             result = parent.get(part);
-            if (i == size - 1) {
+            if (i++ == size - 1) {
                 return result;
             } else if (result == null) {
                 return null;
@@ -912,20 +960,19 @@ public class CollectionUtils {
      * @param source the source map to combine from
      * @param target the target map to combine into
      */
+    @SuppressWarnings("unchecked")
     public static <K, T> void combine(Map<K, T> source, Map<K, T> target) {
         if (source == null || target == null) {
             return;
         }
-        source.forEach((srcKey, scrValue) -> {
-            target.compute(srcKey, (targetKey, targetValue) -> {
-                if (targetValue instanceof Map && scrValue instanceof Map) {
-                    combine((Map<K, T>) scrValue, (Map<K, T>) targetValue);
-                    return targetValue;
-                } else {
-                    return scrValue;
-                }
-            });
-        });
+        source.forEach((srcKey, scrValue) -> target.compute(srcKey, (targetKey, targetValue) -> {
+            if (targetValue instanceof Map && scrValue instanceof Map) {
+                combine((Map<K, T>) scrValue, (Map<K, T>) targetValue);
+                return targetValue;
+            } else {
+                return scrValue;
+            }
+        }));
     }
 
     /**
@@ -1122,6 +1169,7 @@ public class CollectionUtils {
      * @param items  additional items to add (can be null or empty)
      * @return a new list containing source elements and additional items
      */
+    @SafeVarargs
     public static <T> List<T> copyAndAdd(Collection<T> source, T... items) {
         if (items == null) {
             return new ArrayList<>(source);
@@ -1200,8 +1248,8 @@ public class CollectionUtils {
         if (sources == null) {
             return null;
         }
-        if (sources.getClass() == UNMODIFIED_MAP_CLASS && Accessor.MAP_FIELD != null) {
-            sources = (Map<K, V>) Accessor.MAP_FIELD.get(sources);
+        if (sources.getClass() == UNMODIFIED_MAP_CLASS && MAP_FIELD != null) {
+            sources = (Map<K, V>) MAP_FIELD.get(sources);
         }
         return sources;
     }
@@ -1238,15 +1286,55 @@ public class CollectionUtils {
     }
 
     /**
-     * Internal helper class providing field access to unmodified map's internal data.
+     * Represents the difference between two collections, containing elements that were added, updated, or removed.
+     * This class is immutable and thread-safe.
+     *
+     * @param <T> the type of elements in the delta
      */
-    private static class Accessor {
-        /**
-         * Field accessor for the internal map data ("m") in {@code UNMODIFIED_MAP_CLASS}.
-         */
-        private static final FieldAccessor MAP_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "m");
+    @Getter
+    public static class Delta<T> {
 
-        private static final FieldAccessor LIST_FIELD = FieldAccessorFactory.getAccessor(UNMODIFIED_MAP_CLASS, "list");
+        /**
+         * List of elements that were added (present in new collection but not in old).
+         */
+        private final List<T> adds;
+
+        /**
+         * List of elements that were updated (present in both collections).
+         */
+        private final List<UpdateItem<T>> updates;
+
+        /**
+         * List of elements that were removed (present in old collection but not in new).
+         */
+        private final List<T> removes;
+
+        /**
+         * Creates a new Delta instance with the specified change lists.
+         * Null lists are converted to empty lists for safety.
+         *
+         * @param adds    elements that were added
+         * @param updates elements that were updated
+         * @param removes elements that were removed
+         */
+        @SuppressWarnings("unchecked")
+        public Delta(List<T> adds, List<UpdateItem<T>> updates, List<T> removes) {
+            this.adds = adds == null ? Collections.EMPTY_LIST : adds;
+            this.updates = updates == null ? Collections.EMPTY_LIST : updates;
+            this.removes = removes == null ? Collections.EMPTY_LIST : removes;
+        }
+    }
+
+    @Getter
+    public static class UpdateItem<T> {
+
+        private final T oldValue;
+        private final T newValue;
+
+        public UpdateItem(T oldValue, T newValue) {
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
     }
 
     /**

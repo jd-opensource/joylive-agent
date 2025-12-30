@@ -24,62 +24,31 @@ public enum MergePolicy implements PolicyMerger {
      * Represents a synchronization policy that includes all service policies.
      */
     ALL {
+
         @Override
         public void onAdd(ServicePolicy newPolicy) {
         }
 
         @Override
         public void onDelete(ServicePolicy oldPolicy) {
-            if (oldPolicy != null) {
-                oldPolicy.setLoadBalancePolicy(null);
-                oldPolicy.setClusterPolicy(null);
-                oldPolicy.setHealthPolicy(null);
-                oldPolicy.setRateLimitPolicies(null);
-                oldPolicy.setConcurrencyLimitPolicies(null);
-                oldPolicy.setLoadLimitPolicies(null);
-                oldPolicy.setRoutePolicies(null);
-                oldPolicy.setLivePolicy(null);
-                oldPolicy.setLanePolicies(null);
-                oldPolicy.setCircuitBreakPolicies(null);
-                oldPolicy.setPermissionPolicies(null);
-                oldPolicy.setFaultInjectionPolicies(null);
-            }
+            FLOW_CONTROL.onDelete(oldPolicy);
+            LIVE.onDelete(oldPolicy);
         }
 
         @Override
         public void onUpdate(ServicePolicy oldPolicy, ServicePolicy newPolicy) {
-            if (oldPolicy != null && newPolicy != null) {
-                oldPolicy.setLoadBalancePolicy(newPolicy.getLoadBalancePolicy());
-                oldPolicy.setClusterPolicy(newPolicy.getClusterPolicy());
-                oldPolicy.setHealthPolicy(newPolicy.getHealthPolicy());
-                oldPolicy.setRateLimitPolicies(newPolicy.getRateLimitPolicies());
-                oldPolicy.setConcurrencyLimitPolicies(newPolicy.getConcurrencyLimitPolicies());
-                oldPolicy.setLoadLimitPolicies(newPolicy.getLoadLimitPolicies());
-                oldPolicy.setRoutePolicies(newPolicy.getRoutePolicies());
-                oldPolicy.setLivePolicy(newPolicy.getLivePolicy());
-                oldPolicy.setLanePolicies(newPolicy.getLanePolicies());
-                oldPolicy.setCircuitBreakPolicies(newPolicy.getCircuitBreakPolicies());
-                oldPolicy.setPermissionPolicies(newPolicy.getPermissionPolicies());
-                oldPolicy.setFaultInjectionPolicies(newPolicy.getFaultInjectionPolicies());
-            }
+            FLOW_CONTROL.onUpdate(oldPolicy, newPolicy);
+            LIVE.onUpdate(oldPolicy, newPolicy);
         }
 
         @Override
         public void onDelete(Service service) {
-            if (service != null) {
-                service.setAuthorized(null);
-                service.setAuthPolicy(null);
-                service.setAuthPolicies(null);
-            }
+            FLOW_CONTROL.onDelete(service);
         }
 
         @Override
         public void onUpdate(Service oldService, Service newService) {
-            if (oldService != null && newService != null) {
-                oldService.setAuthorized(newService.getAuthorized());
-                oldService.setAuthPolicy(newService.getAuthPolicy());
-                oldService.setAuthPolicies(newService.getAuthPolicies());
-            }
+            FLOW_CONTROL.onUpdate(oldService, newService);
         }
     },
 
@@ -131,9 +100,11 @@ public enum MergePolicy implements PolicyMerger {
 
         @Override
         public void onDelete(Service service) {
-            service.setAuthorized(null);
-            service.setAuthPolicy(null);
-            service.setAuthPolicies(null);
+            if (service != null) {
+                service.setAuthorized(null);
+                service.setAuthPolicy(null);
+                service.setAuthPolicies(null);
+            }
         }
 
         @Override
@@ -152,22 +123,14 @@ public enum MergePolicy implements PolicyMerger {
     LIVE {
         @Override
         public void onAdd(ServicePolicy newPolicy) {
-            newPolicy.setClusterPolicy(null);
-            newPolicy.setLoadBalancePolicy(null);
-            newPolicy.setHealthPolicy(null);
-            newPolicy.setRateLimitPolicies(null);
-            newPolicy.setConcurrencyLimitPolicies(null);
-            newPolicy.setLoadLimitPolicies(null);
-            newPolicy.setRoutePolicies(null);
-            newPolicy.setLanePolicies(null);
-            newPolicy.setCircuitBreakPolicies(null);
-            newPolicy.setPermissionPolicies(null);
-            newPolicy.setFaultInjectionPolicies(null);
+            FLOW_CONTROL.onDelete(newPolicy);
         }
 
         @Override
         public void onDelete(ServicePolicy oldPolicy) {
-            oldPolicy.setLivePolicy(null);
+            if (oldPolicy != null) {
+                oldPolicy.setLivePolicy(null);
+            }
         }
 
         @Override
@@ -179,9 +142,7 @@ public enum MergePolicy implements PolicyMerger {
 
         @Override
         public void onAdd(Service service) {
-            service.setAuthorized(null);
-            service.setAuthPolicy(null);
-            service.setAuthPolicies(null);
+            FLOW_CONTROL.onDelete(service);
         }
-    };
+    }
 }

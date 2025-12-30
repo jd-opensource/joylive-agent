@@ -131,6 +131,20 @@ public class JWTPolicy extends PolicyId implements AuthStrategy, Serializable {
         return valid && time >= startTime && time < endTime;
     }
 
+    public JWTPolicy copy() {
+        JWTPolicy policy = new JWTPolicy();
+        policy.key = key;
+        policy.algorithm = algorithm;
+        policy.keyStore = keyStore;
+        policy.privateKey = privateKey;
+        policy.publicKey = publicKey;
+        policy.secretKey = secretKey;
+        policy.expireTime = expireTime;
+        policy.startTime = startTime;
+        policy.endTime = endTime;
+        return policy;
+    }
+
     protected void cache() {
         endTime = endTime <= 0 ? Long.MAX_VALUE : endTime;
         valid = (secretKey != null && !secretKey.isEmpty())

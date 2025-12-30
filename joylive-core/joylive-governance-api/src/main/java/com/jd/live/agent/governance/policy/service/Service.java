@@ -16,6 +16,7 @@
 package com.jd.live.agent.governance.policy.service;
 
 import com.jd.live.agent.core.Constants;
+import com.jd.live.agent.core.util.CollectionUtils.Delta;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
@@ -31,6 +32,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static com.jd.live.agent.core.util.CollectionUtils.getDelta;
+import static com.jd.live.agent.core.util.CollectionUtils.toList;
 
 /**
  * Service
@@ -176,7 +180,7 @@ public class Service extends PolicyOwner implements ServiceName {
     }
 
     public boolean authorized() {
-        return authorized == null ? false : authorized;
+        return authorized != null && authorized;
     }
 
     /**
@@ -258,32 +262,32 @@ public class Service extends PolicyOwner implements ServiceName {
         result.name = name;
         result.namespace = namespace;
         result.serviceType = serviceType;
+        result.aliases = aliases == null ? null : new HashSet<>(aliases);
         result.version = version;
-        result.groups = groups == null ? null : new ArrayList<>(groups.size());
-        if (groups != null) {
-            for (ServiceGroup group : groups) {
-                result.groups.add(group.copy());
-            }
-        }
+        result.authorized = authorized;
+        result.authPolicy = authPolicy == null ? null : authPolicy.copy();
+        result.authPolicies = toList(authPolicies, AuthPolicy::copy);
+        result.groups = toList(groups, ServiceGroup::copy);
         result.owners.addOwner(owners);
         return result;
     }
 
     @Override
     protected void own(BiConsumer<ServicePolicy, Owner> consumer) {
-        if (consumer != null && groups != null) {
-            List<ServiceGroup> newGroups = new ArrayList<>(groups.size());
-            for (ServiceGroup group : groups) {
-                group.own(consumer);
-                if (group.owners.hasOwner()) {
-                    newGroups.add(group);
-                }
+        if (consumer == null || groups == null) {
+            return;
+        }
+        List<ServiceGroup> newGroups = new ArrayList<>(groups.size());
+        for (ServiceGroup group : groups) {
+            group.own(consumer);
+            if (group.owners.hasOwner()) {
+                newGroups.add(group);
             }
-            if (newGroups.size() != groups.size()) {
-                groups = newGroups;
-                defaultGroup = null;
-                groupCache.clear();
-            }
+        }
+        if (newGroups.size() != groups.size()) {
+            groups = newGroups;
+            defaultGroup = null;
+            groupCache.clear();
         }
     }
 
@@ -308,35 +312,26 @@ public class Service extends PolicyOwner implements ServiceName {
     protected void onUpdate(Service newService, PolicyMerger merger, String owner) {
         merger.onUpdate(this, newService);
         owners.addOwner(owner);
-        List<ServiceGroup> targets = new ArrayList<>();
-        Set<String> olds = new HashSet<>();
-        if (groups != null) {
-            for (ServiceGroup old : groups) {
-                olds.add(old.getName());
-                ServiceGroup update = newService.getGroup(old.getName());
-                if (update == null) {
-                    if (old.onDelete(merger, owner)) {
-                        targets.add(old);
-                    }
-                } else {
-                    old.onUpdate(update, merger, owner);
-                    targets.add(old);
-                }
+        List<ServiceGroup> newGroups = new ArrayList<>();
+        Delta<ServiceGroup> delta = getDelta(groups, newService.groups, ServiceGroup::getName);
+        delta.getRemoves().forEach(v -> {
+            if (v.onDelete(merger, owner)) {
+                // has other owners
+                newGroups.add(v);
             }
-        }
-        if (newService.groups != null) {
-            for (ServiceGroup update : newService.groups) {
-                if (!olds.contains(update.getName())) {
-                    update.onAdd(merger, owner);
-                    targets.add(update);
-                }
-            }
-        }
+        });
+        delta.getUpdates().forEach(v -> {
+            v.getOldValue().onUpdate(v.getNewValue(), merger, owner);
+            newGroups.add(v.getOldValue());
+        });
+        delta.getAdds().forEach(v -> {
+            v.onAdd(merger, owner);
+            newGroups.add(v);
+        });
         version = newService.getVersion();
-        groups = targets;
+        groups = newGroups;
         defaultGroup = null;
         groupCache.clear();
         authPolicyCache.clear();
-        newService.groupCache.clear();
     }
 }

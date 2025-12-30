@@ -90,6 +90,15 @@ public class TokenPolicy extends PolicyId implements AuthStrategy, Serializable 
         return valid && time >= startTime && time < endTime;
     }
 
+    public TokenPolicy copy() {
+        TokenPolicy tokenPolicy = new TokenPolicy();
+        tokenPolicy.key = key;
+        tokenPolicy.token = token;
+        tokenPolicy.startTime = startTime;
+        tokenPolicy.endTime = endTime;
+        return tokenPolicy;
+    }
+
     protected void cache() {
         endTime = endTime <= 0 ? Long.MAX_VALUE : endTime;
         valid = token != null && !token.isEmpty();

@@ -117,6 +117,16 @@ public class AuthPolicy extends PolicyId implements Serializable {
         return this.application == null || this.application.isEmpty() || this.application.equals(application);
     }
 
+    public AuthPolicy copy() {
+        AuthPolicy authPolicy = new AuthPolicy();
+        authPolicy.application = application;
+        authPolicy.type = type;
+        authPolicy.tokenPolicies = toList(tokenPolicies, TokenPolicy::copy);
+        authPolicy.jwtPolicies = toList(jwtPolicies, JWTPolicy::copy);
+        authPolicy.params = params;
+        return authPolicy;
+    }
+
     public void cache() {
         if ((tokenPolicies == null || tokenPolicies.isEmpty()) && AUTH_TYPE_TOKEN.equals(type) && params != null && !params.isEmpty()) {
             tokenPolicies = toList(params, p -> {
