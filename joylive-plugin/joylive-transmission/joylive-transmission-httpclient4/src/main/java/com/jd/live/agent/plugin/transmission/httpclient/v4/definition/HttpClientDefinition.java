@@ -40,7 +40,7 @@ public class HttpClientDefinition extends PluginDefinitionAdapter {
             // 4.3+
             "org.apache.http.impl.client.MinimalHttpClient",
             // 4.3+
-            "oorg.apache.http.impl.client.DefaultRequestDirector"
+            "org.apache.http.impl.client.DefaultRequestDirector"
     };
 
     private static final String[] METHODS = {"execute", "doExecute"};
