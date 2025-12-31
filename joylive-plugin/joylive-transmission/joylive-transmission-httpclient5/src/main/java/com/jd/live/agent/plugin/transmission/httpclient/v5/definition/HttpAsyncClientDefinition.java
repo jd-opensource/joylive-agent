@@ -27,23 +27,29 @@ import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.httpclient.v5.contidion.ConditionalOnHttpClient5TransmissionEnabled;
 import com.jd.live.agent.plugin.transmission.httpclient.v5.interceptor.HttpAsyncClientInterceptor;
 
+/**
+ * HTTP async client plugin definition for transmission context propagation.
+ * Intercepts async HTTP client requests to inject tracing and context headers.
+ */
 @Injectable
 @Extension(value = "HttpAsyncClientDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
 @ConditionalOnHttpClient5TransmissionEnabled
 public class HttpAsyncClientDefinition extends PluginDefinitionAdapter {
 
-    private static final String TYPE_ABSTRACT_MINIMAL_HTTP_ASYNC_CLIENT_BASE = "org.apache.hc.client5.http.impl.async.AbstractMinimalHttpAsyncClientBase";
-    private static final String TYPE_INTERNAL_ABSTRACT_HTTP_ASYNC_CLIENT = "org.apache.hc.client5.http.impl.async.InternalAbstractHttpAsyncClient";
+    private static final String TYPE = "org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient";
 
-    private static final String[] TYPE_CLIENTS = {
-            TYPE_ABSTRACT_MINIMAL_HTTP_ASYNC_CLIENT_BASE,
-            TYPE_INTERNAL_ABSTRACT_HTTP_ASYNC_CLIENT
+    private static final String METHOD = "execute";
+
+    private static final String[] ARGUMENTS_0 = new String[]{
+            "org.apache.hc.core5.http.HttpHost",
+            "org.apache.hc.core5.http.nio.AsyncRequestProducer",
+            "org.apache.hc.core5.http.nio.AsyncResponseConsumer",
+            "org.apache.hc.core5.http.nio.HandlerFactory",
+            "org.apache.hc.core5.http.protocol.HttpContext",
+            "org.apache.hc.core5.concurrent.FutureCallback"
     };
 
-    private static final String METHOD = "doExecute";
-
-    private static final String[] ARGUMENTS = new String[]{
-            "org.apache.hc.core5.http.HttpHost",
+    private static final String[] ARGUMENTS_1 = new String[]{
             "org.apache.hc.core5.http.nio.AsyncRequestProducer",
             "org.apache.hc.core5.http.nio.AsyncResponseConsumer",
             "org.apache.hc.core5.http.nio.HandlerFactory",
@@ -55,10 +61,13 @@ public class HttpAsyncClientDefinition extends PluginDefinitionAdapter {
     private Propagation propagation;
 
     public HttpAsyncClientDefinition() {
-        this.matcher = () -> MatcherBuilder.in(TYPE_CLIENTS);
+        this.matcher = () -> MatcherBuilder.named(TYPE);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
-                        () -> new HttpAsyncClientInterceptor(propagation))};
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS_0)),
+                        () -> new HttpAsyncClientInterceptor(propagation, 1)),
+                new InterceptorDefinitionAdapter(
+                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS_1)),
+                        () -> new HttpAsyncClientInterceptor(propagation, 0))};
     }
 }

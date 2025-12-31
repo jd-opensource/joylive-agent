@@ -16,40 +16,100 @@
 package com.jd.live.agent.plugin.transmission.httpclient.v5.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.governance.context.RequestContext;
+import com.jd.live.agent.governance.context.bag.Carrier;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.plugin.transmission.httpclient.v5.request.HttpMessageWriter;
+import org.apache.hc.core5.http.EntityDetails;
+import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpRequest;
 import org.apache.hc.core5.http.nio.AsyncRequestProducer;
+import org.apache.hc.core5.http.nio.DataStreamChannel;
+import org.apache.hc.core5.http.nio.RequestChannel;
+import org.apache.hc.core5.http.protocol.HttpContext;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
 
 public class HttpAsyncClientInterceptor extends InterceptorAdaptor {
 
     private final Propagation propagation;
 
-    private final Map<Class<?>, CacheObject<FieldAccessor>> accessors = new ConcurrentHashMap<>();
+    private final int argument;
 
-    public HttpAsyncClientInterceptor(Propagation propagation) {
+    public HttpAsyncClientInterceptor(Propagation propagation, int argument) {
         this.propagation = propagation;
+        this.argument = argument;
     }
 
     @Override
     public void onEnter(ExecutableContext ctx) {
-        AsyncRequestProducer producer = ctx.getArgument(1);
-        CacheObject<FieldAccessor> cache = accessors.computeIfAbsent(producer.getClass(),
-                k -> CacheObject.of(FieldAccessorFactory.getAccessor(producer.getClass(), "request")));
-        FieldAccessor accessor = cache.get();
-        if (accessor != null) {
-            Object request = accessor.get(producer);
-            if (request instanceof HttpRequest) {
-                propagation.write(RequestContext.get(), new HttpMessageWriter((HttpRequest) request));
-            }
+        ctx.setArgument(argument, new LiveAsyncRequestProducer(ctx.getArgument(argument), propagation, RequestContext.get()));
+    }
+
+    private static class LiveAsyncRequestProducer implements AsyncRequestProducer {
+
+        private final AsyncRequestProducer delegate;
+
+        private final Propagation propagation;
+
+        private final Carrier carrier;
+
+        LiveAsyncRequestProducer(AsyncRequestProducer delegate, Propagation propagation, Carrier carrier) {
+            this.delegate = delegate;
+            this.propagation = propagation;
+            this.carrier = carrier;
+        }
+
+        @Override
+        public void sendRequest(RequestChannel channel, HttpContext context) throws HttpException, IOException {
+            delegate.sendRequest(new LiveRequestChannel(channel, propagation, carrier), context);
+        }
+
+        @Override
+        public boolean isRepeatable() {
+            return delegate.isRepeatable();
+        }
+
+        @Override
+        public void failed(Exception cause) {
+            delegate.failed(cause);
+        }
+
+        @Override
+        public int available() {
+            return delegate.available();
+        }
+
+        @Override
+        public void produce(DataStreamChannel channel) throws IOException {
+            delegate.produce(channel);
+        }
+
+        @Override
+        public void releaseResources() {
+            delegate.releaseResources();
+        }
+    }
+
+    private static class LiveRequestChannel implements RequestChannel {
+
+        private final RequestChannel delegate;
+
+        private final Propagation propagation;
+
+        private final Carrier carrier;
+
+        LiveRequestChannel(RequestChannel delegate, Propagation propagation, Carrier carrier) {
+            this.delegate = delegate;
+            this.propagation = propagation;
+            this.carrier = carrier;
+        }
+
+        @Override
+        public void sendRequest(HttpRequest request, EntityDetails entityDetails, HttpContext context) throws HttpException, IOException {
+            propagation.write(carrier, new HttpMessageWriter(request));
+            delegate.sendRequest(request, entityDetails, context);
         }
     }
 

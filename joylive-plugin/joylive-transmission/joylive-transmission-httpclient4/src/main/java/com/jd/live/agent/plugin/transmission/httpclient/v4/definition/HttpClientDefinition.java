@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.transmission.httpclient.v5.definition;
+package com.jd.live.agent.plugin.transmission.httpclient.v4.definition;
 
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
 import com.jd.live.agent.core.extension.annotation.Extension;
@@ -24,33 +24,31 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.context.bag.Propagation;
-import com.jd.live.agent.plugin.transmission.httpclient.v5.contidion.ConditionalOnHttpClient5TransmissionEnabled;
-import com.jd.live.agent.plugin.transmission.httpclient.v5.interceptor.HttpClientInterceptor;
+import com.jd.live.agent.plugin.transmission.httpclient.v4.contidion.ConditionalOnHttpClient4TransmissionEnabled;
+import com.jd.live.agent.plugin.transmission.httpclient.v4.interceptor.HttpClientInterceptor;
 
-/**
- * Plugin definition for Apache HttpClient v5 transmission context propagation.
- * Intercepts HTTP client execution to inject context headers for distributed tracing.
- */
 @Injectable
-@Extension(value = "HttpClientDefinition_v5", order = PluginDefinition.ORDER_TRANSMISSION)
-@ConditionalOnHttpClient5TransmissionEnabled
+@Extension(value = "HttpClientDefinition_v4", order = PluginDefinition.ORDER_TRANSMISSION)
+@ConditionalOnHttpClient4TransmissionEnabled
 public class HttpClientDefinition extends PluginDefinitionAdapter {
 
     private static final String[] TYPES = {
-            // 5.5+
-            "org.apache.hc.client5.http.impl.compat.ClassicToAsyncAdaptor",
-            // 5.0+
-            "org.apache.hc.client5.http.impl.classic.InternalHttpClient",
-            // 5.0+
-            "org.apache.hc.client5.http.impl.classic.MinimalHttpClient"
+            // 4.0+
+            "org.apache.http.impl.client.AbstractHttpClient",
+            // 4.3+
+            "org.apache.http.impl.client.InternalHttpClient",
+            // 4.3+
+            "org.apache.http.impl.client.MinimalHttpClient",
+            // 4.3+
+            "oorg.apache.http.impl.client.DefaultRequestDirector"
     };
 
-    private static final String METHOD = "doExecute";
+    private static final String[] METHODS = {"execute", "doExecute"};
 
     private static final String[] ARGUMENTS = new String[]{
-            "org.apache.hc.core5.http.HttpHost",
-            "org.apache.hc.core5.http.ClassicHttpRequest",
-            "org.apache.hc.core5.http.protocol.HttpContext"
+            "org.apache.http.HttpHost",
+            "org.apache.http.HttpRequest",
+            "org.apache.http.protocol.HttpContext"
     };
 
     @Inject(value = Propagation.COMPONENT_PROPAGATION, component = true)
@@ -60,7 +58,7 @@ public class HttpClientDefinition extends PluginDefinitionAdapter {
         this.matcher = () -> MatcherBuilder.in(TYPES);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
-                        MatcherBuilder.named(METHOD).and(MatcherBuilder.arguments(ARGUMENTS)),
+                        MatcherBuilder.in(METHODS).and(MatcherBuilder.arguments(ARGUMENTS)),
                         () -> new HttpClientInterceptor(propagation))};
     }
 }
