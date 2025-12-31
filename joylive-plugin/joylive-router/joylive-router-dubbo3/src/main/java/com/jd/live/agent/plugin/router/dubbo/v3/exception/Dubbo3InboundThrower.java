@@ -23,7 +23,7 @@ import com.jd.live.agent.plugin.router.dubbo.v3.request.DubboRequest.DubboInboun
 import org.apache.dubbo.rpc.RpcException;
 
 /**
- * A concrete implementation of the InboundThrower interface for Dubbo 2.7.x.
+ * A concrete implementation of the InboundThrower interface for Dubbo 3.x
  *
  * @see AbstractInboundThrower
  */

@@ -19,13 +19,13 @@ import com.alibaba.dubbo.config.AbstractInterfaceConfig;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.governance.registry.ServiceId;
 
 import java.util.Map;
-
-import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
+import java.util.function.Predicate;
 
 /**
  * AbstractConfigInterceptor
@@ -36,9 +36,12 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     protected final Registry registry;
 
-    public AbstractConfigInterceptor(Application application, Registry registry) {
+    protected final Predicate<String> systemPredicate;
+
+    public AbstractConfigInterceptor(Application application, Registry registry, GovernanceConfig config) {
         this.application = application;
         this.registry = registry;
+        this.systemPredicate = config::isSystemHandler;
     }
 
     @SuppressWarnings("unchecked")
@@ -47,7 +50,7 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         Map<String, String> map = getContext(ctx);
         T config = (T) ctx.getTarget();
         RegisterType info = getRegisterType(config);
-        if (!isDubboSystemService(info.getInterfaceName())) {
+        if (!systemPredicate.test(info.getInterfaceName())) {
             application.labelRegistry(map::putIfAbsent);
             subscribe(config, new ServiceId(info.getInterfaceName(), info.getGroup(), true));
         }

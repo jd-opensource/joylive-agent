@@ -28,8 +28,8 @@ import org.apache.dubbo.rpc.service.GenericException;
 import org.apache.dubbo.rpc.support.RpcUtils;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
 import static com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3InboundThrower.THROWER;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -55,8 +55,11 @@ public interface DubboRequest {
 
         private final String interfaceName;
 
-        public DubboInboundRequest(Invocation request) {
+        private final Predicate<String> systemPredicate;
+
+        public DubboInboundRequest(Invocation request, Predicate<String> systemPredicate) {
             super(request);
+            this.systemPredicate = systemPredicate;
             URL url = request.getInvoker().getUrl();
             this.interfaceName = url.getServiceInterface();
             boolean requestMode = SERVICE_REGISTRY_TYPE.equals(request.getAttachment(REGISTRY_TYPE_KEY));
@@ -83,7 +86,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return isDubboSystemService(interfaceName);
+            return systemPredicate.test(interfaceName);
         }
 
         /**
@@ -123,11 +126,14 @@ public interface DubboRequest {
 
         private final StickySessionFactory sessionFactory;
 
+        private final Predicate<String> systemPredicate;
+
         private final URL url;
 
-        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory) {
+        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory, Predicate<String> systemPredicate) {
             super(request);
             this.sessionFactory = sessionFactory;
+            this.systemPredicate = systemPredicate;
             this.url = request.getInvoker().getUrl();
             String providedBy = url.getParameter(PROVIDED_BY);
             this.interfaceName = url.getServiceInterface();
@@ -158,7 +164,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return isDubboSystemService(interfaceName);
+            return systemPredicate.test(interfaceName);
         }
 
         @Override

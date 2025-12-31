@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v3.exception.Dubbo3OutboundThrower;
 import com.jd.live.agent.plugin.router.dubbo.v3.instance.DubboEndpoint;
@@ -40,8 +41,11 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
+    private final GovernanceConfig config;
+
     public LoadBalanceInterceptor(InvocationContext context) {
         this.context = context;
+        this.config = context.getGovernanceConfig();
     }
 
     /**
@@ -57,7 +61,7 @@ public class LoadBalanceInterceptor extends InterceptorAdaptor {
         Object[] arguments = ctx.getArguments();
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[2];
         List<Invoker<?>> invoked = (List<Invoker<?>>) arguments[3];
-        DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1], null);
+        DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[1], null, config::isSystemHandler);
         if (!request.isSystem() && !request.isDisabled()) {
             try {
                 if (invoked != null) {

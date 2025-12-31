@@ -27,8 +27,8 @@ import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.service.GenericException;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
 import static com.jd.live.agent.plugin.router.dubbo.v2_7.exception.Dubbo27InboundThrower.THROWER;
 import static org.apache.dubbo.common.constants.RegistryConstants.*;
 
@@ -84,12 +84,11 @@ public interface DubboRequest {
 
         private final String interfaceName;
 
-        public DubboInboundRequest(Invocation request) {
-            this(request, null);
-        }
+        private final Predicate<String> systemPredicate;
 
-        public DubboInboundRequest(Invocation request, Invoker<?> invoker) {
+        public DubboInboundRequest(Invocation request, Invoker<?> invoker, Predicate<String> systemPredicate) {
             super(request);
+            this.systemPredicate = systemPredicate;
             invoker = invoker == null ? request.getInvoker() : invoker;
             URL url = invoker.getUrl();
             this.interfaceName = url.getServiceInterface();
@@ -119,7 +118,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return isDubboSystemService(interfaceName);
+            return systemPredicate.test(interfaceName);
         }
 
         /**
@@ -159,11 +158,14 @@ public interface DubboRequest {
 
         private final StickySessionFactory sessionFactory;
 
+        private final Predicate<String> systemPredicate;
+
         private final URL url;
 
-        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory) {
+        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory, Predicate<String> systemPredicate) {
             super(request);
             this.sessionFactory = sessionFactory;
+            this.systemPredicate = systemPredicate;
             this.url = request.getInvoker().getUrl();
             this.interfaceName = url.getServiceInterface();
             String providedBy = url.getParameter(PROVIDED_BY);
@@ -198,7 +200,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return isDubboSystemService(interfaceName);
+            return systemPredicate.test(interfaceName);
         }
 
         @Override

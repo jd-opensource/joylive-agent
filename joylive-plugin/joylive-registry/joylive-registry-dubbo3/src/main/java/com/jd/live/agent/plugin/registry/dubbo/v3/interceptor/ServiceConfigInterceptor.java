@@ -20,6 +20,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.instance.Application;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
@@ -39,8 +40,8 @@ public class ServiceConfigInterceptor extends AbstractConfigInterceptor<ServiceC
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceConfigInterceptor.class);
 
-    public ServiceConfigInterceptor(Application application, Registry registry) {
-        super(application, registry);
+    public ServiceConfigInterceptor(Application application, Registry registry, GovernanceConfig config) {
+        super(application, registry, config);
     }
 
     @Override

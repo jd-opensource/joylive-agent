@@ -25,9 +25,6 @@ import com.jd.live.agent.governance.policy.service.exception.ErrorParserPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -39,30 +36,6 @@ import static com.jd.live.agent.governance.exception.ErrorCause.cause;
 public class Predicates {
 
     private static final Logger logger = LoggerFactory.getLogger(Predicates.class);
-
-    private static final String DUBBO_APACHE_METADATA_SERVICE = "org.apache.dubbo.metadata.MetadataService";
-
-    private static final String DUBBO_APACHE_REGISTRY_SERVICE = "org.apache.dubbo.registry.RegistryService";
-
-    private static final String DUBBO_APACHE_MONITOR_SERVICE = "org.apache.dubbo.monitor.MonitorService";
-
-    private static final String DUBBO_ALIBABA_REGISTRY_SERVICE = "com.alibaba.dubbo.registry.RegistryService";
-
-    private static final String DUBBO_ALIBABA_MONITOR_SERVICE = "com.alibaba.dubbo.monitor.MonitorService";
-
-    private static final Set<String> DUBBO_SYSTEM_SERVICES = new HashSet<>(Arrays.asList(
-            DUBBO_APACHE_METADATA_SERVICE, DUBBO_APACHE_REGISTRY_SERVICE, DUBBO_APACHE_MONITOR_SERVICE,
-            DUBBO_ALIBABA_REGISTRY_SERVICE, DUBBO_ALIBABA_MONITOR_SERVICE));
-
-    /**
-     * Checks if the given service name is a system service for Dubbo.
-     *
-     * @param serviceName the name of the service to check.
-     * @return true if the service name is a system service for Dubbo, false otherwise.
-     */
-    public static boolean isDubboSystemService(String serviceName) {
-        return serviceName != null && DUBBO_SYSTEM_SERVICES.contains(serviceName);
-    }
 
     /**
      * Checks if the given ServiceResponse matches the specified ErrorPolicy.

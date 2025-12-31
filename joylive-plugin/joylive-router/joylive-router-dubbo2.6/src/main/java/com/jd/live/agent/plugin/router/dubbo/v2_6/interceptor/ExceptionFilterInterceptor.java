@@ -22,6 +22,7 @@ import com.alibaba.dubbo.rpc.filter.ExceptionFilter;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.request.invoke.DubboInvocation.DubboInboundInvocation;
@@ -33,8 +34,11 @@ public class ExceptionFilterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
+    private final GovernanceConfig config;
+
     public ExceptionFilterInterceptor(InvocationContext context) {
         this.context = context;
+        this.config = context.getGovernanceConfig();
     }
 
     /**
@@ -48,7 +52,7 @@ public class ExceptionFilterInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
         Invocation invocation = (Invocation) mc.getArguments()[1];
-        DubboInboundRequest request = new DubboInboundRequest(invocation);
+        DubboInboundRequest request = new DubboInboundRequest(invocation, config::isSystemHandler);
         Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::recover);
         mc.skipWithResult(result);
     }

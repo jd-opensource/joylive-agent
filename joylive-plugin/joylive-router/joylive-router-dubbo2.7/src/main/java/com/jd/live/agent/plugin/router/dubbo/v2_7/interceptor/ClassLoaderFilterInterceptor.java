@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.DubboRequest.DubboInboundRequest;
 import com.jd.live.agent.plugin.router.dubbo.v2_7.request.invoke.DubboInvocation.DubboInboundInvocation;
@@ -33,8 +34,11 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
 
     private final InvocationContext context;
 
+    private final GovernanceConfig config;
+
     public ClassLoaderFilterInterceptor(InvocationContext context) {
         this.context = context;
+        this.config = context.getGovernanceConfig();
     }
 
     /**
@@ -47,7 +51,7 @@ public class ClassLoaderFilterInterceptor extends InterceptorAdaptor {
     @Override
     public void onEnter(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        DubboInboundRequest request = new DubboInboundRequest(mc.getArgument(1), mc.getArgument(0));
+        DubboInboundRequest request = new DubboInboundRequest(mc.getArgument(1), mc.getArgument(0), config::isSystemHandler);
         if (!request.isSystem()) {
             Result result = context.inward(new DubboInboundInvocation(request, context), mc::invokeOrigin, request::recover);
             mc.skipWithResult(result);

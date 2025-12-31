@@ -22,6 +22,7 @@ import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.*;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v2_6.condition.ConditionalOnDubbo26GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.dubbo.v2_6.interceptor.ReferenceConfigInterceptor;
@@ -52,13 +53,16 @@ public class ReferenceConfigDefinition extends PluginDefinitionAdapter implement
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig config;
+
     public ReferenceConfigDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_REFERENCE_CONFIG);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_CREATE_PROXY).
                                 and(MatcherBuilder.arguments(ARGUMENT_CREATE_PROXY)),
-                        () -> new ReferenceConfigInterceptor(application, registry))
+                        () -> new ReferenceConfigInterceptor(application, registry, config))
         };
     }
 

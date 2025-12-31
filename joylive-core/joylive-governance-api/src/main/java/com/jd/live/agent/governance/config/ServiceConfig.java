@@ -51,6 +51,14 @@ public class ServiceConfig {
             "springfox.documentation.swagger2.web.Swagger2ControllerWebFlux"
     };
 
+    private static final String[] DUBBO_SYSTEM_HANDLERS = new String[]{
+            "org.apache.dubbo.metadata.MetadataService",
+            "org.apache.dubbo.registry.RegistryService",
+            "org.apache.dubbo.monitor.MonitorService",
+            "com.alibaba.dubbo.registry.RegistryService",
+            "com.alibaba.dubbo.monitor.MonitorService"
+    };
+
     /**
      * The name used to identify the service configuration component.
      */
@@ -158,7 +166,7 @@ public class ServiceConfig {
         return result;
     });
 
-    private transient final Map<Class, Boolean> systemHandlerCache = new ConcurrentHashMap<>();
+    private transient final Map<Class<?>, Boolean> systemHandlerCache = new ConcurrentHashMap<>();
 
     /**
      * Retrieves the failover threshold for a given unit.
@@ -246,12 +254,23 @@ public class ServiceConfig {
         });
     }
 
+    /**
+     * Checks if the given type is a system handler.
+     *
+     * @param type the class name to check
+     * @return true if the class is a system handler, false otherwise
+     */
+    public boolean isSystemHandler(String type) {
+        return type == null || systemHandlers == null || systemHandlers.isEmpty() ? false : systemHandlers.contains(type);
+    }
+
     protected void initialize() {
         loadLimiter.initialize();
         if (systemHandlers == null) {
             systemHandlers = new HashSet<>();
         }
         systemHandlers.addAll(Arrays.asList(SPRING_SYSTEM_HANDLERS));
+        systemHandlers.addAll(Arrays.asList(DUBBO_SYSTEM_HANDLERS));
     }
 }
 

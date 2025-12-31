@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A concrete implementation of the OutboundThrower interface for Dubbo 2.7.x.
+ * A concrete implementation of the OutboundThrower interface for Dubbo 3.x
  *
  * @see AbstractOutboundThrower
  */

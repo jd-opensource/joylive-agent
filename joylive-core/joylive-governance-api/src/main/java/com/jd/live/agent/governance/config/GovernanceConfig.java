@@ -202,6 +202,10 @@ public class GovernanceConfig {
         return liveConfig.isEnabled(host) || laneConfig.isEnabled(host);
     }
 
+    public boolean isSystemHandler(String type) {
+        return serviceConfig.isSystemHandler(type);
+    }
+
     public void initialize(Application application) {
         MonitorConfig monitorConfig = serviceConfig.getMonitor();
         if (monitorConfig == null) {

@@ -25,6 +25,7 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinition;
 import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.Registry;
 import com.jd.live.agent.plugin.registry.dubbo.v3.condition.ConditionalOnDubbo3GovernanceEnabled;
 import com.jd.live.agent.plugin.registry.dubbo.v3.interceptor.ReferenceConfigInterceptor;
@@ -48,13 +49,16 @@ public class ReferenceConfigDefinition extends PluginDefinitionAdapter {
     @Inject(Registry.COMPONENT_REGISTRY)
     private Registry registry;
 
+    @Inject(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG)
+    private GovernanceConfig config;
+
     public ReferenceConfigDefinition() {
         this.matcher = () -> MatcherBuilder.named(TYPE_REFERENCE_CONFIG);
         this.interceptors = new InterceptorDefinition[]{
                 new InterceptorDefinitionAdapter(
                         MatcherBuilder.named(METHOD_APPEND_CONFIG).
                                 and(MatcherBuilder.arguments(0)),
-                        () -> new ReferenceConfigInterceptor(application, registry))
+                        () -> new ReferenceConfigInterceptor(application, registry, config))
         };
     }
 }

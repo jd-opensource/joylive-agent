@@ -29,8 +29,8 @@ import com.jd.live.agent.governance.request.StickySessionFactory;
 
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
 import static com.jd.live.agent.plugin.router.dubbo.v2_6.exception.Dubbo26InboundThrower.THROWER;
 
 /**
@@ -53,8 +53,11 @@ public interface DubboRequest {
      */
     class DubboInboundRequest extends AbstractRpcInboundRequest<Invocation> implements DubboRequest {
 
-        public DubboInboundRequest(Invocation request) {
+        private final Predicate<String> systemPredicate;
+
+        public DubboInboundRequest(Invocation request, Predicate<String> systemPredicate) {
             super(request);
+            this.systemPredicate = systemPredicate;
             URL url = request.getInvoker().getUrl();
             this.service = url.getServiceInterface();
             this.group = url.getParameter(Constants.GROUP_KEY);
@@ -70,7 +73,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return isDubboSystemService(service);
+            return systemPredicate.test(service);
         }
 
         /**
@@ -110,9 +113,12 @@ public interface DubboRequest {
 
         private final URL url;
 
-        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory) {
+        private final Predicate<String> systemPredicate;
+
+        public DubboOutboundRequest(Invocation request, StickySessionFactory sessionFactory, Predicate<String> systemPredicate) {
             super(request);
             this.sessionFactory = sessionFactory;
+            this.systemPredicate = systemPredicate;
             this.url = request.getInvoker().getUrl();
             this.service = url.getServiceInterface();
             this.group = url.getParameter(Constants.GROUP_KEY);
@@ -152,7 +158,7 @@ public interface DubboRequest {
 
         @Override
         public boolean isSystem() {
-            return isDubboSystemService(service);
+            return systemPredicate.test(service);
         }
 
         @Override

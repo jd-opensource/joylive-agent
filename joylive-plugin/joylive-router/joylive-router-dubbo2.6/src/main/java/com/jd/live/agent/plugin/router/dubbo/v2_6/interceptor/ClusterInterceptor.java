@@ -22,6 +22,7 @@ import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.core.parser.ObjectParser;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.cluster.LiveCluster;
 import com.jd.live.agent.plugin.router.dubbo.v2_6.cluster.Dubbo26Cluster;
@@ -42,9 +43,12 @@ public class ClusterInterceptor extends InterceptorAdaptor {
 
     private final ObjectParser parser;
 
+    private final GovernanceConfig config;
+
     public ClusterInterceptor(InvocationContext context, ObjectParser parser) {
         this.context = context;
         this.parser = parser;
+        this.config = context.getGovernanceConfig();
     }
 
     /**
@@ -63,7 +67,7 @@ public class ClusterInterceptor extends InterceptorAdaptor {
                 invoker -> new Dubbo26Cluster(invoker, parser));
         List<Invoker<?>> invokers = (List<Invoker<?>>) arguments[1];
         List<DubboEndpoint<?>> instances = invokers.stream().map(DubboEndpoint::of).collect(Collectors.toList());
-        DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0], cluster);
+        DubboOutboundRequest request = new DubboOutboundRequest((Invocation) arguments[0], cluster, config::isSystemHandler);
         if (!request.isSystem() && !request.isDisabled()) {
             DubboOutboundInvocation invocation = new DubboOutboundInvocation(request, context);
             DubboOutboundResponse response = cluster.request(invocation, instances);

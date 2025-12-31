@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.registry.dubbo.v2_7.interceptor;
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
+import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.registry.RegisterMode;
 import com.jd.live.agent.governance.registry.RegisterType;
 import com.jd.live.agent.governance.registry.Registry;
@@ -25,8 +26,8 @@ import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.config.AbstractInterfaceConfig;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
-import static com.jd.live.agent.governance.util.Predicates.isDubboSystemService;
 import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_TYPE_KEY;
 
 /**
@@ -38,9 +39,12 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
 
     protected final Registry registry;
 
-    public AbstractConfigInterceptor(Application application, Registry registry) {
+    protected final Predicate<String> systemPredicate;
+
+    public AbstractConfigInterceptor(Application application, Registry registry, GovernanceConfig config) {
         this.application = application;
         this.registry = registry;
+        this.systemPredicate = config::isSystemHandler;
     }
 
     @SuppressWarnings("unchecked")
@@ -50,7 +54,7 @@ public abstract class AbstractConfigInterceptor<T extends AbstractInterfaceConfi
         // Fix for dubbo 2.7.8
         RegisterType info = getRegisterType(config);
         Map<String, String> map = getContext(ctx);
-        if (!isDubboSystemService(info.getInterfaceName())) {
+        if (!systemPredicate.test(info.getInterfaceName())) {
             subscribe(config, info, map);
         }
     }
