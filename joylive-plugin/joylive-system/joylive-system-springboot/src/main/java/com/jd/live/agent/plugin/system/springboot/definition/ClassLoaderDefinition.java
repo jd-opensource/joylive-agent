@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.system.springboot.v2.definition;
+package com.jd.live.agent.plugin.system.springboot.definition;
 
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.core.bytekit.matcher.MatcherBuilder;
@@ -27,8 +27,8 @@ import com.jd.live.agent.core.plugin.definition.InterceptorDefinitionAdapter;
 import com.jd.live.agent.core.plugin.definition.PluginDefinition;
 import com.jd.live.agent.core.plugin.definition.PluginDefinitionAdapter;
 import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.plugin.system.springboot.v2.interceptor.ClassLoaderFindResourceInterceptor;
-import com.jd.live.agent.plugin.system.springboot.v2.interceptor.ClassLoaderLoadClassInterceptor;
+import com.jd.live.agent.plugin.system.springboot.interceptor.ClassLoaderFindResourceInterceptor;
+import com.jd.live.agent.plugin.system.springboot.interceptor.ClassLoaderLoadClassInterceptor;
 
 @Injectable
 @Extension(value = "ClassLoaderDefinition", order = PluginDefinition.ORDER_SYSTEM)

@@ -9,7 +9,6 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>joylive-system-springboot2</artifactId>
-    <name>joylive-system-springboot2</name>
+    <artifactId>joylive-system-springboot</artifactId>
 
 </project>

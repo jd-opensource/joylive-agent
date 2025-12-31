@@ -13,26 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jd.live.agent.plugin.system.springboot.v2.interceptor;
+package com.jd.live.agent.plugin.system.springboot.interceptor;
 
 import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.classloader.Resourcer;
 import com.jd.live.agent.core.plugin.definition.InterceptorAdaptor;
 
-public class ClassLoaderFindResourceInterceptor extends InterceptorAdaptor {
+public class ClassLoaderLoadClassInterceptor extends InterceptorAdaptor {
 
     private final Resourcer resourcer;
 
-    public ClassLoaderFindResourceInterceptor(Resourcer resourcer) {
+    public ClassLoaderLoadClassInterceptor(Resourcer resourcer) {
         this.resourcer = resourcer;
     }
 
     @Override
-    public void onSuccess(ExecutableContext ctx) {
+    public void onError(ExecutableContext ctx) {
         MethodContext mc = (MethodContext) ctx;
-        if (mc.getResult() == null) {
-            mc.setResult(resourcer.findResource(mc.getArgument(0)));
+        String name = ctx.getArgument(0);
+        boolean resolve = mc.getArgument(1);
+        if (resourcer.test(name)) {
+            // This is joy live agent class
+            try {
+                mc.success(resourcer.loadClass(name, resolve));
+            } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            }
         }
     }
 }

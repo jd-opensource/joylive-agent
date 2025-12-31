@@ -251,7 +251,7 @@
             </dependency>
             <dependency>
                 <groupId>com.jd.live</groupId>
-                <artifactId>joylive-system-springboot2</artifactId>
+                <artifactId>joylive-system-springboot</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
