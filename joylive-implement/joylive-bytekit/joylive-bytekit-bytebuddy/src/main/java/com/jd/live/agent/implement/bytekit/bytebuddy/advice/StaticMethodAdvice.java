@@ -16,13 +16,14 @@
 package com.jd.live.agent.implement.bytekit.bytebuddy.advice;
 
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
-import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.bytekit.context.MethodContext;
 import com.jd.live.agent.bootstrap.bytekit.context.OriginStack;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 
 import java.lang.reflect.Method;
+
+import static com.jd.live.agent.bootstrap.bytekit.context.MethodContext.ORIGIN_METHOD_CONTEXT;
 
 /**
  * StaticMethodAdvice
@@ -36,40 +37,33 @@ public class StaticMethodAdvice {
 
     @SuppressWarnings("all")
     @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
-    public static boolean onEnter(@Advice.Origin Class<?> type,
-                                  @Advice.Origin Method method,
+    public static boolean onEnter(@Advice.Origin Method method,
                                   @Advice.Origin("#t\\##m#s") String methodDesc,
                                   @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] arguments,
-                                  @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                                   @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        Class<?> localType = type;
-        String localMehotdDesc = methodDesc;
-        // cache method to avoid reflection many times.
-        Method localMethod = method;
-        boolean origin = OriginStack.tryPop(null, localMethod);
-        MethodContext mc = new MethodContext(localType, null, localMethod, arguments, localMehotdDesc, origin);
-        adviceKey = origin ? null : new AdviceKey(localMehotdDesc, localType.getClassLoader());
-        context = mc;
-        if (!origin) {
-            // invoke enhanced method
-            AdviceHandler.onEnter(mc, adviceKey);
-            arguments = mc.getArguments();
-            return mc.isSkip();
+        if (OriginStack.tryPop(null, method)) {
+            // invoke origin method.
+            context = ORIGIN_METHOD_CONTEXT;
+            return false;
         }
-        // invoke origin method
-        return false;
+
+        MethodContext mc = new MethodContext(null, method, arguments, methodDesc);
+        context = mc;
+        AdviceHandler.onEnter(mc);
+        arguments = mc.getArguments();
+        // skipOn = Advice.OnNonDefaultValue.class
+        return mc.isSkip();
+
     }
 
     @Advice.OnMethodExit(onThrowable = Throwable.class)
     public static void onExit(@Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object result,
                               @Advice.Thrown(readOnly = false) Throwable throwable,
-                              @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                               @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         MethodContext mc = (MethodContext) context;
-        if (mc.isOrigin()) {
-            // invoke origin method
+        if (mc == ORIGIN_METHOD_CONTEXT) {
             return;
         }
         // invoke enhanced method
@@ -77,7 +71,7 @@ public class StaticMethodAdvice {
             mc.setResult(result);
             mc.setThrowable(throwable);
         }
-        AdviceHandler.onExit(mc, adviceKey);
+        AdviceHandler.onExit(mc);
         if (result != mc.getResult()) {
             result = mc.getResult();
         }

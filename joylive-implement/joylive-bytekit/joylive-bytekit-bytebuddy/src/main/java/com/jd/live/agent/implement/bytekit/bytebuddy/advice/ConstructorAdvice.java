@@ -16,7 +16,6 @@
 package com.jd.live.agent.implement.bytekit.bytebuddy.advice;
 
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
-import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.bytekit.context.ConstructorContext;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
@@ -35,30 +34,23 @@ public class ConstructorAdvice {
 
     @SuppressWarnings("all")
     @Advice.OnMethodEnter
-    public static void onEnter(@Advice.Origin Class<?> type,
-                               @Advice.Origin Constructor<?> constructor,
+    public static void onEnter(@Advice.Origin Constructor<?> constructor,
                                @Advice.Origin("#t\\##m#s") String methodDesc,
                                @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] arguments,
-                               @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                                @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        Class<?> localType = type;
-        Constructor<?> localConstructor = constructor;
-        String localMehotdDesc = methodDesc;
-        adviceKey = new AdviceKey(localMehotdDesc, localType.getClassLoader());
-        ConstructorContext cc = new ConstructorContext(localType, arguments, localConstructor, localMehotdDesc);
-        context = cc;
-        AdviceHandler.onEnter(cc, adviceKey);
-        arguments = cc.getArguments();
+        ConstructorContext mc = new ConstructorContext(constructor, arguments, methodDesc);
+        context = mc;
+        AdviceHandler.onEnter(mc);
+        arguments = mc.getArguments();
     }
 
     @Advice.OnMethodExit
     public static void onExit(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object result,
-                              @Advice.Local(value = "_ADVICE_KEY_$JOYLIVE_LOCAL") Object adviceKey,
                               @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
         ConstructorContext cc = (ConstructorContext) context;
         cc.setTarget(result);
-        AdviceHandler.onExit(cc, adviceKey);
+        AdviceHandler.onExit(cc);
     }
 }

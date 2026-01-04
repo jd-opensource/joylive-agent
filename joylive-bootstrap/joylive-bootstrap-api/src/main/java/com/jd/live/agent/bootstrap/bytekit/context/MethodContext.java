@@ -29,14 +29,13 @@ import java.util.function.Function;
  */
 public class MethodContext extends ExecutableContext {
 
+    public static final MethodContext ORIGIN_METHOD_CONTEXT = new MethodContext(null, null, null, null, null);
+
     /**
      * The Method instance representing the method to be executed.
      */
     @Getter
     private final Method method;
-
-    @Getter
-    private final boolean origin;
 
     /**
      * The result of the method execution.
@@ -58,14 +57,28 @@ public class MethodContext extends ExecutableContext {
      * @param method      The method to be executed.
      * @param arguments   The arguments to be passed to the method.
      * @param description A description of the execution context.
-     * @param origin      A flag to indicate that it will invoke origin method.
      */
-    public MethodContext(final Class<?> type, final Object target, final Method method,
-                         final Object[] arguments, final String description, final boolean origin) {
+    private MethodContext(final Class<?> type, final Object target, final Method method,
+                          final Object[] arguments, final String description) {
         super(type, arguments, description);
         this.target = target;
         this.method = method;
-        this.origin = origin;
+    }
+
+    /**
+     * Constructs a new MethodContext with specified details of the method execution.
+     *
+     * @param target      The instance on which the method will be executed.
+     * @param method      The method to be executed.
+     * @param arguments   The arguments to be passed to the method.
+     * @param description A description of the execution context.
+     */
+    public MethodContext(final Object target, final Method method,
+                         final Object[] arguments, final String description) {
+        // target is null in static method
+        super(target != null ? target.getClass() : method.getDeclaringClass(), arguments, description);
+        this.target = target;
+        this.method = method;
     }
 
     @Override
@@ -73,11 +86,6 @@ public class MethodContext extends ExecutableContext {
         return (MethodContext) super.setArgument(index, value);
     }
 
-    /**
-     * Checks if the method execution is set to be skipped.
-     *
-     * @see ExecutableContext#isSkip()
-     */
     @Override
     public boolean isSkip() {
         return skip;

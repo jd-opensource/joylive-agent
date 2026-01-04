@@ -15,6 +15,7 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.context;
 
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import lombok.Getter;
 import lombok.Setter;
@@ -61,6 +62,9 @@ public abstract class ExecutableContext extends AbstractAttributes {
     @Setter
     protected Throwable throwable;
 
+    @Getter
+    protected AdviceKey key;
+
     private LockContext lock;
 
     /**
@@ -74,6 +78,7 @@ public abstract class ExecutableContext extends AbstractAttributes {
         this.type = type;
         this.arguments = arguments;
         this.description = description;
+        this.key = type == null ? null : new AdviceKey(description, type.getClassLoader());
         this.id = COUNTER.incrementAndGet();
     }
 
@@ -93,6 +98,10 @@ public abstract class ExecutableContext extends AbstractAttributes {
      */
     public boolean isSuccess() {
         return throwable == null;
+    }
+
+    public ClassLoader getClassLoader() {
+        return type == null ? null : type.getClassLoader();
     }
 
     /**
