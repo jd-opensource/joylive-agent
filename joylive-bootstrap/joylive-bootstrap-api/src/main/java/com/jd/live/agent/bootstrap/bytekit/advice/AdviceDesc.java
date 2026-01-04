@@ -37,7 +37,7 @@ public class AdviceDesc implements PluginListener {
     @Getter
     private final Object key;
 
-    private AtomicReference<CopyOnWriteInterceptorList> interceptors = new AtomicReference<>();
+    private final AtomicReference<CopyOnWriteInterceptorList> interceptors = new AtomicReference<>();
 
     /**
      * Tracks unique interceptor names to prevent duplicates.
