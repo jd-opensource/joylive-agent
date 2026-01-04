@@ -222,11 +222,11 @@ public class AdviceDesc implements PluginListener {
         }
 
         /**
-         * Adds interceptor with duplicate prevention.
-         * Supports single interceptor optimization.
+         * Adds interceptor using copy-on-write pattern.
+         * Handles single interceptor optimization and array expansion.
          *
          * @param interceptor interceptor to add
-         * @return new advice interceptor
+         * @return new interceptor list with added interceptor
          */
         public CopyOnWriteInterceptorList add(Interceptor interceptor) {
             if (this.interceptor != null) {
