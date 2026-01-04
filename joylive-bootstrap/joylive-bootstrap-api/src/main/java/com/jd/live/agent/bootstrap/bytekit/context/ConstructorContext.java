@@ -36,17 +36,17 @@ public class ConstructorContext extends ExecutableContext {
      * Constructor for the ConstructorContext class.
      * Initializes the context with the given type, arguments, constructor, and description.
      *
-     * @param type        The Class object representing the type of the object being constructed.
-     * @param arguments   An array of Objects representing the arguments to be passed to the constructor.
      * @param constructor The Constructor object representing the constructor being invoked.
+     * @param arguments   An array of Objects representing the arguments to be passed to the constructor.
      * @param description A String providing a description of the constructor invocation context.
      */
-    public ConstructorContext(Class<?> type, Object[] arguments, Constructor<?> constructor, String description) {
-        super(type, arguments, description);
+    public ConstructorContext(Constructor<?> constructor, Object[] arguments, String description) {
+        super(constructor.getDeclaringClass(), arguments, description);
         this.constructor = constructor;
     }
 
-    public void setTarget(Object target) {
+    public ConstructorContext setTarget(Object target) {
         this.target = target;
+        return this;
     }
 }

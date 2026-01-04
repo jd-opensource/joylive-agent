@@ -27,9 +27,12 @@ public class AdviceKey {
 
     private final ClassLoader classLoader;
 
+    private final int hashCode;
+
     public AdviceKey(String description, ClassLoader classLoader) {
         this.description = description;
         this.classLoader = classLoader;
+        this.hashCode = description.hashCode();
     }
 
     @Override
@@ -43,6 +46,6 @@ public class AdviceKey {
 
     @Override
     public int hashCode() {
-        return description.hashCode();
+        return hashCode;
     }
 }

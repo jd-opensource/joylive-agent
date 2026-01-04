@@ -15,76 +15,145 @@
  */
 package com.jd.live.agent.bootstrap.bytekit.advice;
 
+import com.jd.live.agent.bootstrap.bytekit.context.ExecutableContext;
 import com.jd.live.agent.bootstrap.plugin.PluginEvent;
 import com.jd.live.agent.bootstrap.plugin.PluginListener;
 import com.jd.live.agent.bootstrap.plugin.PluginPublisher;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
 import lombok.Getter;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Represents a descriptor for advice, implementing the PluginListener interface.
- * This class is responsible for managing interceptors and ensuring thread-safe operations
- * related to plugin events.
+ * Manages advice interceptors with thread-safe operations.
+ * Optimized for single interceptor scenarios with copy-on-write list.
  */
 public class AdviceDesc implements PluginListener {
     /**
-     * A unique key identifying the advice.
+     * Unique advice identifier.
      */
     @Getter
     private final Object key;
 
-    /**
-     * A list of interceptors associated with this advice.
-     */
-    @Getter
-    private final List<Interceptor> interceptors = new CopyOnWriteArrayList<>();
+    private AtomicReference<CopyOnWriteInterceptorList> interceptors = new AtomicReference<>();
 
     /**
-     * An atomic reference used for thread-safe operations, primarily to manage the owner of this advice.
-     */
-    private final AtomicReference<Object> reference = new AtomicReference<>();
-
-    /**
-     * A set of interceptor names ensuring that each interceptor is unique.
+     * Tracks unique interceptor names to prevent duplicates.
      */
     private final Map<String, Boolean> names = new ConcurrentHashMap<>();
 
     /**
-     * Constructs a new AdviceDesc instance with a specified key.
+     * Thread-safe reference for locking operations.
+     */
+    private final AtomicReference<Object> reference = new AtomicReference<>();
+
+    /**
+     * Creates advice descriptor with specified key.
      *
-     * @param key the unique key for the advice
+     * @param key unique advice identifier
      */
     public AdviceDesc(Object key) {
         this.key = key;
     }
 
     /**
-     * Attempts to add an interceptor to this advice. Ensures that the interceptor is not null
-     * and that its name is unique before adding it to the list of interceptors.
+     * Adds interceptor with duplicate prevention.
+     * Supports single interceptor optimization.
      *
-     * @param interceptor the interceptor to be added
-     * @return true if the interceptor was added successfully, false otherwise
+     * @param interceptor interceptor to add
+     * @return true if added successfully
      */
     public boolean add(Interceptor interceptor) {
-        if (interceptor != null && add(interceptor.getClass().getCanonicalName())) {
-            interceptors.add(interceptor);
-            return true;
+        if (interceptor == null || names.putIfAbsent(interceptor.getClass().getCanonicalName(), Boolean.TRUE) != null) {
+            return false;
         }
-        return false;
+        while (true) {
+            CopyOnWriteInterceptorList older = interceptors.get();
+            CopyOnWriteInterceptorList newer;
+            if (older == null) {
+                newer = new CopyOnWriteInterceptorList(interceptor, null, 1);
+            } else {
+                newer = older.add(interceptor);
+            }
+            if (interceptors.compareAndSet(older, newer)) {
+                return true;
+            }
+        }
     }
 
     /**
-     * Locks this advice to a specific owner, ensuring that only the owner can perform certain operations.
-     * If the owner is an instance of PluginPublisher, it also registers this advice as a listener.
+     * Executes operation on all interceptors.
      *
-     * @param owner the object attempting to lock this advice
-     * @return true if the advice was successfully locked to the owner, false otherwise
+     * @param context execution context
+     * @param caller  operation to execute
+     * @throws Throwable if execution fails
+     */
+    public void iterate(ExecutableContext context, Caller caller) throws Throwable {
+        CopyOnWriteInterceptorList ai = interceptors.get();
+        if (ai == null) {
+            return;
+        }
+        if (ai.interceptor != null) {
+            caller.call(context, ai.interceptor);
+        } else if (ai.interceptors != null) {
+            for (int i = 0; i < ai.size; i++) {
+                caller.call(context, ai.interceptors[i]);
+            }
+        }
+    }
+
+    /**
+     * Executes operation with early termination support.
+     *
+     * @param context execution context
+     * @param caller  operation with skip support
+     * @throws Throwable if execution fails
+     */
+    public void iterate(ExecutableContext context, SkippableCaller caller) throws Throwable {
+        CopyOnWriteInterceptorList ai = interceptors.get();
+        if (ai == null) {
+            return;
+        }
+        if (ai.interceptor != null) {
+            caller.call(context, ai.interceptor);
+        } else if (ai.interceptors != null) {
+            for (int i = 0; i < ai.size; i++) {
+                if (caller.call(context, ai.interceptors[i])) {
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Executes operation in reverse order.
+     *
+     * @param context execution context
+     * @param caller  operation to execute
+     * @throws Throwable if execution fails
+     */
+    public void reverse(ExecutableContext context, Caller caller) throws Throwable {
+        CopyOnWriteInterceptorList ai = interceptors.get();
+        if (ai == null) {
+            return;
+        }
+        if (ai.interceptor != null) {
+            caller.call(context, ai.interceptor);
+        } else if (ai.interceptors != null) {
+            for (int i = ai.size - 1; i >= 0; i--) {
+                caller.call(context, ai.interceptors[i]);
+            }
+        }
+    }
+
+    /**
+     * Locks advice to specific owner.
+     * Registers as listener if owner is PluginPublisher.
+     *
+     * @param owner object attempting to lock
+     * @return true if locked successfully
      */
     public boolean lock(Object owner) {
         if (owner == null) {
@@ -100,29 +169,19 @@ public class AdviceDesc implements PluginListener {
     }
 
     /**
-     * Unlocks this advice, allowing it to be locked by another owner.
+     * Unlocks advice from current owner.
      *
-     * @param owner the current owner attempting to unlock
-     * @return true if successfully unlocked, false otherwise
+     * @param owner current owner
+     * @return true if unlocked successfully
      */
     protected boolean unlock(Object owner) {
         return owner != null && reference.compareAndSet(owner, null);
     }
 
     /**
-     * Adds an interceptor's name to the set of names, ensuring it is unique.
+     * Handles plugin uninstall events to remove advice.
      *
-     * @param interceptor the name of the interceptor to add
-     * @return true if the name was added successfully, false if it already exists
-     */
-    protected boolean add(String interceptor) {
-        return names.putIfAbsent(interceptor, Boolean.TRUE) == null;
-    }
-
-    /**
-     * Handles plugin events, specifically listening for uninstall events to remove the advice.
-     *
-     * @param event the plugin event that occurred
+     * @param event plugin event
      */
     @Override
     public void onEvent(PluginEvent event) {
@@ -130,5 +189,65 @@ public class AdviceDesc implements PluginListener {
             AdviceHandler.remove(getKey());
         }
     }
-}
 
+    /**
+     * Functional interface for interceptor execution.
+     */
+    public interface Caller {
+        void call(ExecutableContext context, Interceptor interceptor) throws Throwable;
+    }
+
+    /**
+     * Functional interface for skippable interceptor execution.
+     */
+    public interface SkippableCaller {
+        boolean call(ExecutableContext context, Interceptor interceptor) throws Throwable;
+    }
+
+    private static class CopyOnWriteInterceptorList {
+
+        private final Interceptor interceptor;
+
+        /**
+         * Thread-safe interceptor list using copy-on-write pattern.
+         */
+        private final Interceptor[] interceptors;
+
+        private final int size;
+
+        CopyOnWriteInterceptorList(Interceptor interceptor, Interceptor[] interceptors, int size) {
+            this.interceptor = interceptor;
+            this.interceptors = interceptors;
+            this.size = size;
+        }
+
+        /**
+         * Adds interceptor with duplicate prevention.
+         * Supports single interceptor optimization.
+         *
+         * @param interceptor interceptor to add
+         * @return new advice interceptor
+         */
+        public CopyOnWriteInterceptorList add(Interceptor interceptor) {
+            if (this.interceptor != null) {
+                Interceptor[] newArray = new Interceptor[4];
+                newArray[0] = this.interceptor;
+                newArray[1] = interceptor;
+                return new CopyOnWriteInterceptorList(null, newArray, 2);
+            } else if (interceptors == null) {
+                return new CopyOnWriteInterceptorList(interceptor, null, 1);
+            } else if (size >= interceptors.length) {
+                Interceptor[] newArray = new Interceptor[interceptors.length * 2];
+                System.arraycopy(interceptors, 0, newArray, 0, size);
+                newArray[size] = interceptor;
+                return new CopyOnWriteInterceptorList(null, newArray, size + 1);
+            } else {
+                Interceptor[] newArray = new Interceptor[interceptors.length];
+                System.arraycopy(interceptors, 0, newArray, 0, size);
+                newArray[size] = interceptor;
+                return new CopyOnWriteInterceptorList(null, newArray, size + 1);
+            }
+        }
+
+    }
+}

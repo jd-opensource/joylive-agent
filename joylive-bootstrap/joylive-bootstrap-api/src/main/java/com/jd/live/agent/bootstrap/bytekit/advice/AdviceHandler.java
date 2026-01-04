@@ -24,7 +24,6 @@ import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -54,24 +53,12 @@ public class AdviceHandler {
      * Handles the entry point for a given execution context and advice key.
      *
      * @param context   the execution context
-     * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static void onEnter(final ExecutableContext context, final Object adviceKey) throws Throwable {
-        if (context == null || adviceKey == null) {
-            return;
-        }
-        AdviceDesc adviceDesc = advices.get(adviceKey);
-        List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
-        int size = interceptors == null ? 0 : interceptors.size();
-        if (size == 1) {
-            onEnter(context, interceptors.get(0));
-        } else if (size > 1) {
-            for (Interceptor interceptor : interceptors) {
-                if (onEnter(context, interceptor)) {
-                    break;
-                }
-            }
+    public static void onEnter(final ExecutableContext context) throws Throwable {
+        AdviceDesc adviceDesc = advices.get(context.getKey());
+        if (adviceDesc != null) {
+            adviceDesc.iterate(context, (AdviceDesc.SkippableCaller) AdviceHandler::onEnter);
         }
     }
 
@@ -79,20 +66,13 @@ public class AdviceHandler {
      * Handles the exit point for a given execution context and advice key.
      *
      * @param context   the execution context
-     * @param adviceKey the unique key of the advice
      * @throws Throwable if any exception occurs during interception
      */
-    public static void onExit(final ExecutableContext context, final Object adviceKey) throws Throwable {
-        AdviceDesc adviceDesc = advices.get(adviceKey);
-        List<Interceptor> interceptors = adviceDesc == null ? null : adviceDesc.getInterceptors();
-        int size = interceptors == null ? 0 : interceptors.size();
-        if (size == 1) {
-            onExit(context, interceptors.get(0));
-        } else if (size > 1) {
+    public static void onExit(final ExecutableContext context) throws Throwable {
+        AdviceDesc adviceDesc = advices.get(context.getKey());
+        if (adviceDesc != null) {
             // reverse order
-            for (int i = size - 1; i >= 0; i--) {
-                onExit(context, interceptors.get(i));
-            }
+            adviceDesc.reverse(context, AdviceHandler::onExit);
         }
     }
 
@@ -105,9 +85,6 @@ public class AdviceHandler {
      * @throws Throwable if an error occurs during the execution of the interceptor's onEnter method
      */
     private static boolean onEnter(final ExecutableContext context, final Interceptor interceptor) throws Throwable {
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("enter [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
-        }
         handle(context, interceptor, EnterExecution.INSTANCE, "enter");
         return context.isSkip();
     }
@@ -120,9 +97,6 @@ public class AdviceHandler {
      * @throws Throwable if an error occurs during the execution of the interceptor's methods
      */
     private static void onExit(final ExecutableContext context, final Interceptor interceptor) throws Throwable {
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("exit [%s], interceptor is [%s].", context.getDescription(), interceptor.getClass().getName()));
-        }
         if (context.isSuccess()) {
             handle(context, interceptor, SuccessExecution.INSTANCE, "success");
         } else {
