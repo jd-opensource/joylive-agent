@@ -17,7 +17,6 @@ package com.jd.live.agent.bootstrap.bytekit.context;
 
 import lombok.AllArgsConstructor;
 
-import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -34,30 +33,30 @@ public class OriginStack {
     /**
      * Pushes a new origin method onto the stack.
      *
-     * @param target the target object of the method
-     * @param method the method itself
+     * @param target     the target object of the method
+     * @param methodDesc the description of the method
      */
-    public static void push(Object target, Method method) {
+    public static void push(Object target, String methodDesc) {
         Deque<OriginMethod> stack = INVOKE_ORIGIN_METHOD_STACK.get();
         if (stack == null) {
             stack = new ArrayDeque<>(8);
             INVOKE_ORIGIN_METHOD_STACK.set(stack);
         }
-        stack.push(new OriginMethod(target, method));
+        stack.push(new OriginMethod(target, methodDesc));
     }
 
     /**
      * Attempts to pop an origin method from the stack.
      *
-     * @param target the target object of the method
-     * @param method the method itself
+     * @param target     the target object of the method
+     * @param methodDesc the description of the method
      * @return true if the method was successfully popped, false otherwise
      */
-    public static boolean tryPop(Object target, Method method) {
+    public static boolean tryPop(Object target, String methodDesc) {
         Deque<OriginMethod> stack = INVOKE_ORIGIN_METHOD_STACK.get();
         OriginMethod result = stack == null ? null : stack.peek();
         // method is always a new instance in bytebuddy, so we use equals to compare
-        if (result != null && result.target == target && result.method.equals(method)) {
+        if (result != null && result.target == target && result.methodDesc.equals(methodDesc)) {
             stack.pop();
             return true;
         }
@@ -72,7 +71,7 @@ public class OriginStack {
 
         private Object target;
 
-        private Method method;
+        private String methodDesc;
 
     }
 }

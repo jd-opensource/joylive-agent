@@ -42,7 +42,7 @@ public class StaticMethodAdvice {
                                   @Advice.AllArguments(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object[] arguments,
                                   @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        if (OriginStack.tryPop(null, method)) {
+        if (OriginStack.tryPop(null, methodDesc)) {
             // invoke origin method.
             context = ORIGIN_METHOD_CONTEXT;
             return false;

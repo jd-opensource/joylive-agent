@@ -95,6 +95,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
         DbFailover redirect = connectionSupervisor.failover(candidate);
 
         Method method = mc.getMethod();
+        String methodDesc = mc.getDescription();
         mc.setResult(createConnection(() -> new LiveMongoClient(client, redirect, addr -> {
             try {
                 MongoClientSettings newSettings = MongoClientSettings.builder(settings)
@@ -105,7 +106,7 @@ public class MongoClientsInterceptor extends AbstractDbConnectionInterceptor<Liv
                                 builder.hosts(toList(Arrays.asList(addr.getNodes()), this::toServerAddress));
                             }
                         }).build();
-                return (MongoClient) invokeOrigin(null, method, new Object[]{newSettings, driverInfo});
+                return (MongoClient) invokeOrigin(null, method, methodDesc, new Object[]{newSettings, driverInfo});
             } catch (Exception ignore) {
                 // Without exception.
                 return null;
