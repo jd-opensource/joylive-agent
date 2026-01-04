@@ -55,7 +55,6 @@ public class OriginStack {
     public static boolean tryPop(Object target, String methodDesc) {
         Deque<OriginMethod> stack = INVOKE_ORIGIN_METHOD_STACK.get();
         OriginMethod result = stack == null ? null : stack.peek();
-        // method is always a new instance in bytebuddy, so we use equals to compare
         if (result != null && result.target == target && result.methodDesc.equals(methodDesc)) {
             stack.pop();
             return true;
@@ -71,6 +70,9 @@ public class OriginStack {
 
         private Object target;
 
+        /**
+         * Metho description(not null)
+         */
         private String methodDesc;
 
     }
