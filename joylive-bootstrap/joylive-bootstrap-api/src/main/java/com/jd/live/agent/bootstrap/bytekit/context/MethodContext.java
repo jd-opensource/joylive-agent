@@ -150,7 +150,7 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin() throws Exception {
-        return invokeOrigin(target, method, arguments, (Function<Throwable, Exception>) null);
+        return invokeOrigin(target, method, description, arguments, (Function<Throwable, Exception>) null);
     }
 
     /**
@@ -163,7 +163,7 @@ public class MethodContext extends ExecutableContext {
      * @throws E transformed or original exception if thrown during method invocation
      */
     public <T, E extends Exception> T invokeOrigin(Function<Throwable, E> thrower) throws E {
-        return (T) invokeOrigin(target, method, arguments, thrower);
+        return (T) invokeOrigin(target, method, description, arguments, thrower);
     }
 
     /**
@@ -174,36 +174,46 @@ public class MethodContext extends ExecutableContext {
      * @throws Exception if any exception occurs during the method invocation.
      */
     public Object invokeOrigin(final Object target) throws Exception {
-        return invokeOrigin(target, method, arguments, (Function<Throwable, Exception>) null);
+        return invokeOrigin(target, method, description, arguments, (Function<Throwable, Exception>) null);
     }
 
     /**
      * Invokes the original method on target object .
      *
-     * @param target    Target object to invoke method on
-     * @param method    Method to invoke (will be made accessible if needed)
-     * @param arguments Method arguments
+     * @param target     Target object to invoke method on
+     * @param method     Method to invoke (will be made accessible if needed)
+     * @param methodDesc the description of method
+     * @param arguments  Method arguments
      * @return Method return value
      * @throws Exception Original exception if thrown by target method
      */
-    public static Object invokeOrigin(final Object target, Method method, Object[] arguments) throws Exception {
-        return invokeOrigin(target, method, arguments, (Function<Throwable, Exception>) null);
+    public static Object invokeOrigin(final Object target,
+                                      final Method method,
+                                      final String methodDesc,
+                                      final Object[] arguments) throws Exception {
+        return invokeOrigin(target, method, methodDesc, arguments, (Function<Throwable, Exception>) null);
     }
 
     /**
      * Invokes the original method on target object with exception transformation support.
      *
-     * @param <T>       the type of exception that may be thrown
-     * @param target    the target object to invoke method on
-     * @param method    the method to invoke (will be made accessible if needed)
-     * @param arguments the method arguments
-     * @param thrower   function to transform exceptions, or null to use original exceptions
+     * @param <T>        the type of exception that may be thrown
+     * @param target     the target object to invoke method on
+     * @param method     the method to invoke (will be made accessible if needed)
+     * @param methodDesc the description of method
+     * @param arguments  the method arguments
+     * @param thrower    function to transform exceptions, or null to use original exceptions
      * @return the method return value
      * @throws T transformed or original exception if thrown by target method
      */
-    public static <T extends Exception> Object invokeOrigin(final Object target, Method method, Object[] arguments, Function<Throwable, T> thrower) throws T {
+    @SuppressWarnings("unchecked")
+    public static <T extends Exception> Object invokeOrigin(final Object target,
+                                                            final Method method,
+                                                            final String methodDesc,
+                                                            final Object[] arguments,
+                                                            final Function<Throwable, T> thrower) throws T {
         try {
-            OriginStack.push(target, method);
+            OriginStack.push(target, methodDesc);
             // method is always a copy object by java.lang.Class.getMethods
             // so we need to set accessible to true
             Accessible.setAccessible(method, true);
@@ -220,7 +230,7 @@ public class MethodContext extends ExecutableContext {
                 throw new RuntimeException(cause.getMessage(), cause);
             }
         } finally {
-            OriginStack.tryPop(target, method);
+            OriginStack.tryPop(target, methodDesc);
         }
     }
 
