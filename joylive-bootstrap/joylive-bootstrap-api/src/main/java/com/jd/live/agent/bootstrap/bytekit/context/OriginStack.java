@@ -71,7 +71,7 @@ public class OriginStack {
         private Object target;
 
         /**
-         * Metho description(not null)
+         * Method description(not null)
          */
         private String methodDesc;
 
