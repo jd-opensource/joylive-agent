@@ -58,7 +58,7 @@ public class AdviceHandler {
     public static void onEnter(final ExecutableContext context) throws Throwable {
         AdviceDesc adviceDesc = advices.get(context.getKey());
         if (adviceDesc != null) {
-            adviceDesc.iterate(context, (AdviceDesc.SkippableCaller) AdviceHandler::onEnter);
+            adviceDesc.onEnter(context, (AdviceDesc.SkippableCaller) AdviceHandler::onEnter);
         }
     }
 
@@ -71,8 +71,7 @@ public class AdviceHandler {
     public static void onExit(final ExecutableContext context) throws Throwable {
         AdviceDesc adviceDesc = advices.get(context.getKey());
         if (adviceDesc != null) {
-            // reverse order
-            adviceDesc.reverse(context, AdviceHandler::onExit);
+            adviceDesc.onExit(context, AdviceHandler::onSuccess, AdviceHandler::onError, AdviceHandler::onExit);
         }
     }
 
@@ -90,21 +89,38 @@ public class AdviceHandler {
     }
 
     /**
-     * Handles the exit point of an executable context by invoking the appropriate method of the given interceptor.
+     * Handles successful execution by invoking interceptor's onSuccess method.
      *
-     * @param context     the executable context
-     * @param interceptor the interceptor to be invoked
-     * @throws Throwable if an error occurs during the execution of the interceptor's methods
+     * @param context     the execution context
+     * @param interceptor the interceptor to invoke
+     * @throws Throwable if interceptor execution fails
      */
-    private static void onExit(final ExecutableContext context, final Interceptor interceptor) throws Throwable {
-        if (context.isSuccess()) {
-            handle(context, interceptor, SuccessExecution.INSTANCE, "success");
-        } else {
-            if (onException != null) {
-                onException.accept(context.getThrowable());
-            }
-            handle(context, interceptor, ErrorExecution.INSTANCE, "recover");
+    private static void onSuccess(ExecutableContext context, Interceptor interceptor) throws Throwable {
+        handle(context, interceptor, SuccessExecution.INSTANCE, "success");
+    }
+
+    /**
+     * Handles execution errors by invoking interceptor's onError method.
+     *
+     * @param context     the execution context
+     * @param interceptor the interceptor to invoke
+     * @throws Throwable if interceptor execution fails
+     */
+    private static void onError(ExecutableContext context, Interceptor interceptor) throws Throwable {
+        if (onException != null) {
+            onException.accept(context.getThrowable());
         }
+        handle(context, interceptor, ErrorExecution.INSTANCE, "recover");
+    }
+
+    /**
+     * Handles method exit by invoking interceptor's onExit method.
+     *
+     * @param context     the execution context
+     * @param interceptor the interceptor to invoke
+     * @throws Throwable if interceptor execution fails
+     */
+    private static void onExit(ExecutableContext context, Interceptor interceptor) throws Throwable {
         handle(context, interceptor, ExiteExecution.INSTANCE, "exit");
     }
 

@@ -22,9 +22,11 @@ import com.jd.live.agent.bootstrap.plugin.PluginPublisher;
 import com.jd.live.agent.bootstrap.plugin.definition.Interceptor;
 import lombok.Getter;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Manages advice interceptors with thread-safe operations.
@@ -37,7 +39,7 @@ public class AdviceDesc implements PluginListener {
     @Getter
     private final Object key;
 
-    private final AtomicReference<CopyOnWriteInterceptorList> interceptors = new AtomicReference<>();
+    private final AtomicReference<MethodInterceptor> interceptors = new AtomicReference<>();
 
     /**
      * Tracks unique interceptor names to prevent duplicates.
@@ -70,10 +72,10 @@ public class AdviceDesc implements PluginListener {
             return false;
         }
         while (true) {
-            CopyOnWriteInterceptorList older = interceptors.get();
-            CopyOnWriteInterceptorList newer;
+            MethodInterceptor older = interceptors.get();
+            MethodInterceptor newer;
             if (older == null) {
-                newer = new CopyOnWriteInterceptorList(interceptor, null, 1);
+                newer = new MethodInterceptor(interceptor);
             } else {
                 newer = older.add(interceptor);
             }
@@ -84,67 +86,56 @@ public class AdviceDesc implements PluginListener {
     }
 
     /**
-     * Executes operation on all interceptors.
-     *
-     * @param context execution context
-     * @param caller  operation to execute
-     * @throws Throwable if execution fails
-     */
-    public void iterate(ExecutableContext context, Caller caller) throws Throwable {
-        CopyOnWriteInterceptorList ai = interceptors.get();
-        if (ai == null) {
-            return;
-        }
-        if (ai.interceptor != null) {
-            caller.call(context, ai.interceptor);
-        } else if (ai.interceptors != null) {
-            for (int i = 0; i < ai.size; i++) {
-                caller.call(context, ai.interceptors[i]);
-            }
-        }
-    }
-
-    /**
-     * Executes operation with early termination support.
+     * Executes onEnter interceptors.
      *
      * @param context execution context
      * @param caller  operation with skip support
      * @throws Throwable if execution fails
      */
-    public void iterate(ExecutableContext context, SkippableCaller caller) throws Throwable {
-        CopyOnWriteInterceptorList ai = interceptors.get();
-        if (ai == null) {
+    public void onEnter(final ExecutableContext context, final SkippableCaller caller) throws Throwable {
+        MethodInterceptor interceptor = interceptors.get();
+        if (interceptor == null) {
             return;
         }
-        if (ai.interceptor != null) {
-            caller.call(context, ai.interceptor);
-        } else if (ai.interceptors != null) {
-            for (int i = 0; i < ai.size; i++) {
-                if (caller.call(context, ai.interceptors[i])) {
-                    return;
+        InterceptorList enter = interceptor.enter;
+        if (enter != null) {
+            if (enter.interceptor != null) {
+                caller.call(context, enter.interceptor);
+            } else if (enter.interceptors != null) {
+                for (int i = 0; i < enter.size; i++) {
+                    if (caller.call(context, enter.interceptors[i])) {
+                        return;
+                    }
                 }
             }
         }
     }
 
     /**
-     * Executes operation in reverse order.
+     * Executes onExit interceptors with success/error routing.
      *
-     * @param context execution context
-     * @param caller  operation to execute
+     * @param context   execution context
+     * @param onSuccess success callback
+     * @param onError   error callback
+     * @param onExit    exit callback
      * @throws Throwable if execution fails
      */
-    public void reverse(ExecutableContext context, Caller caller) throws Throwable {
-        CopyOnWriteInterceptorList ai = interceptors.get();
-        if (ai == null) {
+    public void onExit(final ExecutableContext context, final Caller onSuccess, final Caller onError, final Caller onExit) throws Throwable {
+        MethodInterceptor interceptor = interceptors.get();
+        if (interceptor == null) {
             return;
         }
-        if (ai.interceptor != null) {
-            caller.call(context, ai.interceptor);
-        } else if (ai.interceptors != null) {
-            for (int i = ai.size - 1; i >= 0; i--) {
-                caller.call(context, ai.interceptors[i]);
+        if (context.isSuccess()) {
+            if (interceptor.success != null) {
+                interceptor.success.reverse(context, onSuccess);
             }
+        } else {
+            if (interceptor.error != null) {
+                interceptor.error.reverse(context, onError);
+            }
+        }
+        if (interceptor.exit != null) {
+            interceptor.exit.reverse(context, onExit);
         }
     }
 
@@ -191,20 +182,135 @@ public class AdviceDesc implements PluginListener {
     }
 
     /**
-     * Functional interface for interceptor execution.
+     * Executes interceptor with context.
      */
     public interface Caller {
+
+        /**
+         * Executes interceptor operation.
+         *
+         * @param context     execution context
+         * @param interceptor interceptor to execute
+         * @throws Throwable if execution fails
+         */
         void call(ExecutableContext context, Interceptor interceptor) throws Throwable;
     }
 
     /**
-     * Functional interface for skippable interceptor execution.
+     * Executes interceptor with optional early termination.
      */
     public interface SkippableCaller {
+
+        /**
+         * Executes interceptor with skip support.
+         *
+         * @param context     execution context
+         * @param interceptor interceptor to execute
+         * @return true to stop iteration, false to continue
+         * @throws Throwable if execution fails
+         */
         boolean call(ExecutableContext context, Interceptor interceptor) throws Throwable;
+
     }
 
-    private static class CopyOnWriteInterceptorList {
+    /**
+     * Manages interceptor lifecycle with enter/success/error/exit phases.
+     */
+    private static class MethodInterceptor {
+
+        private InterceptorList enter;
+
+        private InterceptorList success;
+
+        private InterceptorList error;
+
+        private InterceptorList exit;
+
+        MethodInterceptor(InterceptorList enter, InterceptorList success, InterceptorList error, InterceptorList exit) {
+            this.enter = enter;
+            this.success = success;
+            this.error = error;
+            this.exit = exit;
+        }
+
+        MethodInterceptor(Interceptor interceptor) {
+            add(interceptor, i -> enter = i, i -> success = i, i -> error = i, i -> exit = i);
+        }
+
+        /**
+         * Adds interceptor to appropriate lifecycle phase.
+         *
+         * @param interceptor interceptor to add
+         */
+        public MethodInterceptor add(Interceptor interceptor) {
+            AtomicReference<InterceptorList> enterRef = new AtomicReference<>(enter);
+            AtomicReference<InterceptorList> successRef = new AtomicReference<>(success);
+            AtomicReference<InterceptorList> errorRef = new AtomicReference<>(error);
+            AtomicReference<InterceptorList> exitRef = new AtomicReference<>(exit);
+            add(interceptor, enterRef::set, successRef::set, errorRef::set, exitRef::set);
+            return new MethodInterceptor(enterRef.get(), successRef.get(), errorRef.get(), exitRef.get());
+        }
+
+        /**
+         * Checks if interceptor has specific method.
+         *
+         * @param interceptor interceptor to check
+         * @param methodName  method name to find
+         * @param runnable    action to run if method exists
+         */
+        private void exist(Interceptor interceptor, String methodName, Runnable runnable) {
+            try {
+                Method method = interceptor.getClass().getMethod(methodName, ExecutableContext.class);
+                if (method.getDeclaringClass() != Interceptor.class) {
+                    runnable.run();
+                }
+            } catch (NoSuchMethodException e) {
+                // ignore
+            }
+        }
+
+        /**
+         * Adds interceptor to list.
+         *
+         * @param target      existing list or null
+         * @param interceptor interceptor to add
+         * @return updated interceptor list
+         */
+        private InterceptorList add(InterceptorList target, Interceptor interceptor) {
+            if (target == null) {
+                return new InterceptorList(interceptor, null, 1);
+            }
+            return target.add(interceptor);
+        }
+
+        /**
+         * Adds interceptor to lifecycle event lists based on implemented methods.
+         * Checks if interceptor implements specific lifecycle methods and adds to corresponding lists.
+         *
+         * @param interceptor the interceptor to add
+         * @param onEnter     consumer for enter event list
+         * @param onSuccess   consumer for success event list
+         * @param onError     consumer for error event list
+         * @param onExit      consumer for exit event list
+         */
+        private void add(Interceptor interceptor,
+                         Consumer<InterceptorList> onEnter,
+                         Consumer<InterceptorList> onSuccess,
+                         Consumer<InterceptorList> onError,
+                         Consumer<InterceptorList> onExit) {
+            exist(interceptor, "onEnter", () -> onEnter.accept(add(enter, interceptor)));
+            exist(interceptor, "onSuccess", () -> onSuccess.accept(add(success, interceptor)));
+            exist(interceptor, "onError", () -> onError.accept(add(error, interceptor)));
+            exist(interceptor, "onExit", () -> onExit.accept(add(exit, interceptor)));
+        }
+
+    }
+
+    /**
+     * Thread-safe interceptor list implementing copy-on-write pattern for efficient concurrent access.
+     * Supports both single interceptor optimization and dynamic array expansion.
+     */
+    private static class InterceptorList {
 
         private final Interceptor interceptor;
 
@@ -215,7 +321,7 @@ public class AdviceDesc implements PluginListener {
 
         private final int size;
 
-        CopyOnWriteInterceptorList(Interceptor interceptor, Interceptor[] interceptors, int size) {
+        InterceptorList(Interceptor interceptor, Interceptor[] interceptors, int size) {
             this.interceptor = interceptor;
             this.interceptors = interceptors;
             this.size = size;
@@ -228,24 +334,41 @@ public class AdviceDesc implements PluginListener {
          * @param interceptor interceptor to add
          * @return new interceptor list with added interceptor
          */
-        public CopyOnWriteInterceptorList add(Interceptor interceptor) {
+        public InterceptorList add(Interceptor interceptor) {
             if (this.interceptor != null) {
                 Interceptor[] newArray = new Interceptor[4];
                 newArray[0] = this.interceptor;
                 newArray[1] = interceptor;
-                return new CopyOnWriteInterceptorList(null, newArray, 2);
+                return new InterceptorList(null, newArray, 2);
             } else if (interceptors == null) {
-                return new CopyOnWriteInterceptorList(interceptor, null, 1);
+                return new InterceptorList(interceptor, null, 1);
             } else if (size >= interceptors.length) {
                 Interceptor[] newArray = new Interceptor[interceptors.length * 2];
                 System.arraycopy(interceptors, 0, newArray, 0, size);
                 newArray[size] = interceptor;
-                return new CopyOnWriteInterceptorList(null, newArray, size + 1);
+                return new InterceptorList(null, newArray, size + 1);
             } else {
                 Interceptor[] newArray = new Interceptor[interceptors.length];
                 System.arraycopy(interceptors, 0, newArray, 0, size);
                 newArray[size] = interceptor;
-                return new CopyOnWriteInterceptorList(null, newArray, size + 1);
+                return new InterceptorList(null, newArray, size + 1);
+            }
+        }
+
+        /**
+         * Executes operation on all interceptors in reverse order.
+         *
+         * @param context execution context
+         * @param caller  operation to execute on each interceptor
+         * @throws Throwable if any interceptor execution fails
+         */
+        public void reverse(final ExecutableContext context, final Caller caller) throws Throwable {
+            if (interceptor != null) {
+                caller.call(context, interceptor);
+            } else if (interceptors != null) {
+                for (int i = size - 1; i >= 0; i--) {
+                    caller.call(context, interceptors[i]);
+                }
             }
         }
 

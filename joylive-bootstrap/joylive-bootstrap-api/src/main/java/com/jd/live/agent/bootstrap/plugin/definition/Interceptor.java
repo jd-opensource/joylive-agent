@@ -31,28 +31,40 @@ public interface Interceptor {
      *
      * @param ctx the executable context
      */
-    void onEnter(ExecutableContext ctx);
+    default void onEnter(ExecutableContext ctx) {
+        // Please do not implement any code, keep the methods empty,
+        // they will be used for interceptor call chain optimization.
+    }
 
     /**
      * Invoked after the method has successfully executed.
      *
      * @param ctx the executable context
      */
-    void onSuccess(ExecutableContext ctx);
+    default void onSuccess(ExecutableContext ctx) {
+        // Please do not implement any code, keep the methods empty,
+        // they will be used for interceptor call chain optimization.
+    }
 
     /**
      * Invoked when an error occurs during method execution.
      *
      * @param ctx the executable context
      */
-    void onError(ExecutableContext ctx);
+    default void onError(ExecutableContext ctx) {
+        // Please do not implement any code, keep the methods empty,
+        // they will be used for interceptor call chain optimization.
+    }
 
     /**
      * Invoked upon exiting the method execution.
      *
      * @param ctx the executable context
      */
-    void onExit(ExecutableContext ctx);
+    default void onExit(ExecutableContext ctx) {
+        // Please do not implement any code, keep the methods empty,
+        // they will be used for interceptor call chain optimization.
+    }
 
 }
 
