@@ -67,6 +67,29 @@ public abstract class Futures {
         return future;
     }
 
+    /**
+     * Executes a callable and returns its result as a CompletionStage.
+     * If the callable returns a CompletionStage, it is returned directly.
+     * Otherwise, the result is wrapped in a completed CompletionStage.
+     * If the callable throws an exception, the returned CompletionStage is completed exceptionally.
+     *
+     * @param callable the callable to execute
+     * @return a CompletionStage containing the callable's result or exception
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> CompletionStage<T> call(final Callable<Object> callable) {
+        try {
+            Object value = callable.call();
+            if (value instanceof CompletionStage) {
+                return (CompletionStage<T>) value;
+            } else {
+                return CompletableFuture.completedFuture((T) value);
+            }
+        } catch (Throwable e) {
+            return Futures.future(e);
+        }
+    }
+
     public static <T> CompletableFuture<Void> allOf(List<CompletableFuture<T>> futures) {
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }

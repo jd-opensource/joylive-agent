@@ -40,6 +40,7 @@ import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.HttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.cluster.ClusterInvoker;
 import com.jd.live.agent.governance.invoke.filter.*;
+import com.jd.live.agent.governance.invoke.filter.OutboundFilterChain.DefaultOutboundFilterChain;
 import com.jd.live.agent.governance.invoke.loadbalance.LoadBalancer;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -790,9 +791,7 @@ public interface InvocationContext {
                                                             final E endpoint,
                                                             final Callable<Object> callable) {
         try {
-            OutboundFilterChain chain = callable == null
-                    ? new OutboundFilterChain.Chain(getOutboundFilters())
-                    : new OutboundFilterChain.InvokerChain(getOutboundFilters(), callable);
+            OutboundFilterChain chain = new DefaultOutboundFilterChain(getOutboundFilters(), callable);
             return chain.filter(invocation, endpoint);
         } catch (RejectException e) {
             invocation.onReject(e);

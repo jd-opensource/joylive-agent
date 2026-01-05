@@ -90,7 +90,7 @@ public interface InboundFilterChain {
             if (index < filters.length) {
                 result = filters[index++].filter(invocation, this);
             } else if (index == filters.length) {
-                result = callable == null ? CompletableFuture.completedFuture(null) : call(callable);
+                result = callable == null ? CompletableFuture.completedFuture(null) : Futures.call(callable);
             }
             return result == null ? CompletableFuture.completedFuture(null) : result;
         }
@@ -103,19 +103,6 @@ public interface InboundFilterChain {
          */
         protected <T extends InboundRequest> CompletionStage<Object> invoke(InboundInvocation<T> invocation) {
             return CompletableFuture.completedFuture(null);
-        }
-
-        protected CompletionStage<Object> call(final Callable<Object> callable) {
-            try {
-                Object value = callable.call();
-                if (value instanceof CompletionStage) {
-                    return (CompletionStage<Object>) value;
-                } else {
-                    return CompletableFuture.completedFuture(value);
-                }
-            } catch (Throwable e) {
-                return Futures.future(e);
-            }
         }
     }
 }

@@ -21,7 +21,6 @@ import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -34,7 +33,7 @@ import java.util.concurrent.CompletionStage;
  * method of the chain.
  * </p>
  * <p>
- * The {@link OutboundFilterChain.Chain} inner class provides a concrete implementation of the {@code OutboundFilterChain}, managing the sequence
+ * The {@link DefaultOutboundFilterChain} inner class provides a concrete implementation of the {@code OutboundFilterChain}, managing the sequence
  * of filters and invoking them in order.
  * </p>
  *
@@ -59,7 +58,7 @@ public interface OutboundFilterChain {
     /**
      * A concrete implementation of the {@code OutboundFilterChain} that manages and invokes a sequence of outbound filters.
      */
-    class Chain implements OutboundFilterChain {
+    class DefaultOutboundFilterChain implements OutboundFilterChain {
 
         /**
          * Tracks the current position in the filter chain
@@ -71,13 +70,15 @@ public interface OutboundFilterChain {
          */
         private final OutboundFilter[] filters;
 
+        private final Callable<Object> callable;
+
         /**
-         * Constructs a chain with a list of outbound filters.
+         * Constructs a chain with an array of outbound filters.
          *
-         * @param filters A list of outbound filters. Can be null, in which case the chain will be empty.
+         * @param filters An array of outbound filters. Can be null, in which case the chain will be empty.
          */
-        public Chain(List<? extends OutboundFilter> filters) {
-            this.filters = filters == null ? new OutboundFilter[0] : filters.toArray(new OutboundFilter[0]);
+        public DefaultOutboundFilterChain(OutboundFilter... filters) {
+            this(filters, null);
         }
 
         /**
@@ -85,8 +86,9 @@ public interface OutboundFilterChain {
          *
          * @param filters An array of outbound filters. Can be null, in which case the chain will be empty.
          */
-        public Chain(OutboundFilter... filters) {
+        public DefaultOutboundFilterChain(OutboundFilter[] filters, Callable<Object> callable) {
             this.filters = filters == null ? new OutboundFilter[0] : filters;
+            this.callable = callable;
         }
 
         @Override
@@ -97,68 +99,9 @@ public interface OutboundFilterChain {
             if (index < filters.length) {
                 result = filters[index++].filter(invocation, endpoint, this);
             } else if (index == filters.length) {
-                result = invoke(invocation);
+                result = callable == null ? CompletableFuture.completedFuture(null) : Futures.call(callable);
             }
-            result = result == null ? CompletableFuture.completedFuture(null) : result;
-            return result;
-        }
-
-        /**
-         * Invokes the inbound request asynchronously.
-         *
-         * @param invocation The inbound invocation to invoke.
-         * @return A completion stage that represents the result of the invocation.
-         */
-        protected <R extends OutboundRequest, O extends OutboundResponse> CompletionStage<O> invoke(OutboundInvocation<R> invocation) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-    }
-
-    /**
-     * A chain of filters that invokes a callable object.
-     */
-    class InvokerChain extends Chain {
-
-        private final Callable<Object> invoker;
-
-        /**
-         * Creates a new instance of the InvokerChain with the specified filters and invoker.
-         *
-         * @param filters The list of filters to apply.
-         * @param invoker The callable object to invoke.
-         */
-        public InvokerChain(List<? extends OutboundFilter> filters, Callable<Object> invoker) {
-            super(filters);
-            this.invoker = invoker;
-        }
-
-        /**
-         * Creates a new instance of the InvokerChain with the specified filters and invoker.
-         *
-         * @param filters The array of filters to apply.
-         * @param invoker The callable object to invoke.
-         */
-        public InvokerChain(OutboundFilter[] filters, Callable<Object> invoker) {
-            super(filters);
-            this.invoker = invoker;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        protected <R extends OutboundRequest, O extends OutboundResponse> CompletionStage<O> invoke(OutboundInvocation<R> invocation) {
-            try {
-                if (invoker == null) {
-                    return CompletableFuture.completedFuture(null);
-                }
-                Object result = invoker.call();
-                if (result instanceof CompletionStage) {
-                    return (CompletionStage<O>) result;
-                }
-                return CompletableFuture.completedFuture((O) result);
-            } catch (Throwable e) {
-                return Futures.future(e);
-            }
+            return result == null ? CompletableFuture.completedFuture(null) : result;
         }
     }
 }
