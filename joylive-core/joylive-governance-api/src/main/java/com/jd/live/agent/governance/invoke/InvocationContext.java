@@ -477,10 +477,7 @@ public interface InvocationContext {
      */
     default <R extends InboundRequest> CompletionStage<Object> inbound(final InboundInvocation<R> invocation, final Callable<Object> callable) {
         try {
-            InboundFilter[] filters = getInboundFilters();
-            InboundFilterChain.Chain chain = callable == null
-                    ? new InboundFilterChain.Chain(filters)
-                    : new InboundFilterChain.InvokerChain(filters, callable);
+            InboundFilterChain chain = new InboundFilterChain.DefaultInboundFilterChain(getInboundFilters(), callable);
             return chain.filter(invocation).whenComplete((r, t) -> {
                 if (t == null) {
                     invocation.onForward();
