@@ -49,8 +49,6 @@ public class ConstructorAdvice {
     public static void onExit(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object result,
                               @Advice.Local(value = "_EXECUTABLE_CONTEXT_$JOYLIVE_LOCAL") Object context
     ) throws Throwable {
-        ConstructorContext cc = (ConstructorContext) context;
-        cc.setTarget(result);
-        AdviceHandler.onExit(cc);
+        AdviceHandler.onExit(((ConstructorContext) context).setTarget(result));
     }
 }

@@ -138,6 +138,11 @@ public class MethodContext extends ExecutableContext {
         setThrowable(null);
     }
 
+    public void update(Object result, Throwable throwable) {
+        this.result = result;
+        this.throwable = throwable;
+    }
+
     @Override
     public String toString() {
         return description;

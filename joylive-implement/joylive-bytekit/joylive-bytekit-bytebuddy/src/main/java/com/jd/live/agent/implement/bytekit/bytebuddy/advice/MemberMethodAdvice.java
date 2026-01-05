@@ -63,12 +63,12 @@ public class MemberMethodAdvice {
     ) throws Throwable {
         MethodContext mc = (MethodContext) context;
         if (mc == ORIGIN_METHOD_CONTEXT) {
-            // invoke origin method
+            // skip origin method
             return;
         }
         if (!mc.isSkip()) {
-            mc.setResult(result);
-            mc.setThrowable(throwable);
+            // update when method is not skipped by result or throwable.
+            mc.update(result, throwable);
         }
         AdviceHandler.onExit(mc);
         if (result != mc.getResult()) {
