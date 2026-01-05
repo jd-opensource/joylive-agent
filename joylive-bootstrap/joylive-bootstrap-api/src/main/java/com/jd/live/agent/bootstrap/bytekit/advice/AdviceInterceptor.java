@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  * Manages advice interceptors with thread-safe operations.
  * Optimized for single interceptor scenarios with copy-on-write list.
  */
-public class AdviceDesc implements PluginListener {
+public class AdviceInterceptor implements PluginListener {
     /**
      * Unique advice identifier.
      */
@@ -56,7 +56,7 @@ public class AdviceDesc implements PluginListener {
      *
      * @param key unique advice identifier
      */
-    public AdviceDesc(Object key) {
+    public AdviceInterceptor(Object key) {
         this.key = key;
     }
 

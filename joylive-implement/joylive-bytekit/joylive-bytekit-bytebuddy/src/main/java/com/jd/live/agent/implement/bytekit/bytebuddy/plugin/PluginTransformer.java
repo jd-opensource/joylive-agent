@@ -15,7 +15,7 @@
  */
 package com.jd.live.agent.implement.bytekit.bytebuddy.plugin;
 
-import com.jd.live.agent.bootstrap.bytekit.advice.AdviceDesc;
+import com.jd.live.agent.bootstrap.bytekit.advice.AdviceInterceptor;
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceHandler;
 import com.jd.live.agent.bootstrap.bytekit.advice.AdviceKey;
 import com.jd.live.agent.bootstrap.logger.Logger;
@@ -227,7 +227,7 @@ public class PluginTransformer implements AgentBuilder.RawMatcher, AgentBuilder.
                                                    Class<?> templateCls,
                                                    Object adviceKey)
             throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
-        AdviceDesc adviceDesc = AdviceHandler.getOrCreate(adviceKey);
+        AdviceInterceptor adviceDesc = AdviceHandler.getOrCreate(adviceKey);
         for (Interceptor interceptor : interceptors) {
             adviceDesc.add(interceptor);
         }

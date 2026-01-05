@@ -39,7 +39,7 @@ public class AdviceHandler {
     /**
      * A concurrent map that holds all advices identified by their unique keys.
      */
-    private static final Map<Object, AdviceDesc> advices = new ConcurrentHashMap<>(1000);
+    private static final Map<Object, AdviceInterceptor> advices = new ConcurrentHashMap<>(1000);
 
     public static Consumer<Throwable> onException;
 
@@ -56,9 +56,9 @@ public class AdviceHandler {
      * @throws Throwable if any exception occurs during interception
      */
     public static void onEnter(final ExecutableContext context) throws Throwable {
-        AdviceDesc adviceDesc = advices.get(context.getKey());
+        AdviceInterceptor adviceDesc = advices.get(context.getKey());
         if (adviceDesc != null) {
-            adviceDesc.onEnter(context, (AdviceDesc.SkippableCaller) AdviceHandler::onEnter);
+            adviceDesc.onEnter(context, (AdviceInterceptor.SkippableCaller) AdviceHandler::onEnter);
         }
     }
 
@@ -69,7 +69,7 @@ public class AdviceHandler {
      * @throws Throwable if any exception occurs during interception
      */
     public static void onExit(final ExecutableContext context) throws Throwable {
-        AdviceDesc adviceDesc = advices.get(context.getKey());
+        AdviceInterceptor adviceDesc = advices.get(context.getKey());
         if (adviceDesc != null) {
             adviceDesc.onExit(context, AdviceHandler::onSuccess, AdviceHandler::onError, AdviceHandler::onExit);
         }
@@ -151,8 +151,8 @@ public class AdviceHandler {
      * @param adviceKey the unique key of the advice
      * @return the AdviceDesc instance
      */
-    public static AdviceDesc getOrCreate(final Object adviceKey) {
-        return advices.computeIfAbsent(adviceKey, AdviceDesc::new);
+    public static AdviceInterceptor getOrCreate(final Object adviceKey) {
+        return advices.computeIfAbsent(adviceKey, AdviceInterceptor::new);
     }
 
     /**
