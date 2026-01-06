@@ -96,21 +96,21 @@ public class LaneMetadataParser implements LaneParser {
         Lane defaultLane = defaultSpace == null ? null : defaultSpace.getDefaultLane();
         String defaultLaneId = defaultLane == null ? null : defaultLane.getCode();
 
-        LaneMetadata metadata = LaneMetadata.builder()
-                .laneConfig(laneConfig)
-                .targetSpaceId(targetSpaceId)
-                .targetSpace(targetSpace)
-                .targetLaneId(targetLaneId)
-                .targetLane(targetLane)
-                .localSpaceId(localSpaceId)
-                .localSpace(localSpace)
-                .localLaneId(localLaneId)
-                .localLane(localLane)
-                .defaultSpaceId(defaultSpaceId)
-                .defaultSpace(defaultSpace)
-                .defaultLaneId(defaultLaneId)
-                .defaultLane(defaultLane)
-                .build();
+        LaneMetadata metadata = new LaneMetadata(
+                laneConfig,
+                targetSpaceId,
+                targetSpace,
+                targetLaneId,
+                targetLane,
+                localSpaceId,
+                localSpace,
+                localLaneId,
+                localLane,
+                defaultSpaceId,
+                defaultSpace,
+                defaultLaneId,
+                defaultLane
+        );
         inject(metadata);
         return metadata;
     }
@@ -122,11 +122,13 @@ public class LaneMetadataParser implements LaneParser {
      */
     protected String parseLaneSpace() {
         Cargo cargo = request.getCargo(Constants.LABEL_LANE_SPACE_ID);
-        String laneSpaceId = cargo == null ? null : cargo.getFirstValue();
-        if ((laneSpaceId == null || laneSpaceId.isEmpty()) && laneConfig.isFallbackLocationIfNoSpace()) {
-            laneSpaceId = application.getLocation().getLaneSpaceId();
+        if (cargo == null) {
+            return laneConfig.isFallbackLocationIfNoSpace() ? application.getLocation().getLaneSpaceId() : null;
         }
-        return laneSpaceId;
+        String laneSpaceId = cargo.getFirstValue();
+        return (laneSpaceId == null || laneSpaceId.isEmpty()) && laneConfig.isFallbackLocationIfNoSpace()
+                ? application.getLocation().getLaneSpaceId()
+                : laneSpaceId;
     }
 
     /**
@@ -156,8 +158,7 @@ public class LaneMetadataParser implements LaneParser {
      */
     protected void inject(LaneMetadata metadata) {
         Carrier carrier = request.getOrCreateCarrier();
-        if (metadata.getTargetSpaceId() != null
-                && !metadata.getTargetSpaceId().isEmpty()) {
+        if (metadata.getTargetSpaceId() != null && !metadata.getTargetSpaceId().isEmpty()) {
             addCargo(carrier, metadata);
         } else {
             removeCargo(carrier);

@@ -4,16 +4,16 @@ import com.jd.live.agent.governance.config.LaneConfig;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.ToString;
 
 /**
  * The {@code LaneMetadata} class encapsulates the metadata for a lane request.
  */
 @Getter
+@AllArgsConstructor
 @Builder
-@ToString
 public class LaneMetadata {
 
     /**
