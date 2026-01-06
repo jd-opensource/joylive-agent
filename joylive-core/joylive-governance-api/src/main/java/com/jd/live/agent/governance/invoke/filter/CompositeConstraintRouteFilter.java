@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.filter.ConstraintRouteFilter.Constraint;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -38,38 +39,6 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
      */
     public CompositeConstraintRouteFilter(ConstraintRouteFilter... filters) {
         this.filters = filters;
-    }
-
-    /**
-     * Composes route filters by grouping consecutive ConstraintRouteFilter instances.
-     *
-     * @param filters the array of route filters to compose
-     * @return composed array with grouped ConstraintRouteFilter instances
-     */
-    public static RouteFilter[] compose(RouteFilter[] filters) {
-        if (filters == null) {
-            return new RouteFilter[0];
-        } else if (filters.length < 2) {
-            return filters;
-        }
-        List<RouteFilter> result = new ArrayList<>(filters.length);
-        List<ConstraintRouteFilter> constraints = new ArrayList<>(4);
-        for (RouteFilter filter : filters) {
-            if (filter instanceof ConstraintRouteFilter) {
-                constraints.add((ConstraintRouteFilter) filter);
-            } else {
-                if (!constraints.isEmpty()) {
-                    if (constraints.size() == 1) {
-                        result.add(constraints.get(0));
-                    } else {
-                        result.add(new CompositeConstraintRouteFilter(constraints.toArray(new ConstraintRouteFilter[0])));
-                    }
-                    constraints.clear();
-                }
-                result.add(filter);
-            }
-        }
-        return result.toArray(new RouteFilter[0]);
     }
 
     @Override
@@ -99,6 +68,73 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
             }
         }
         return constraint;
+    }
+
+    /**
+     * Composes route filters by grouping consecutive ConstraintRouteFilter instances.
+     *
+     * @param filters the array of route filters to compose
+     * @return composed array with grouped ConstraintRouteFilter instances
+     */
+    public static RouteFilter[] compose(RouteFilter[] filters) {
+        if (filters == null) {
+            return new RouteFilter[0];
+        } else if (filters.length < 2) {
+            return filters;
+        }
+        List<RouteFilter> result = new ArrayList<>(filters.length);
+        List<ConstraintRouteFilter> constraints = new ArrayList<>(4);
+        for (RouteFilter filter : filters) {
+            if (isDefaultConstraintRouteFilter(filter)) {
+                constraints.add((ConstraintRouteFilter) filter);
+            } else if (!constraints.isEmpty()) {
+                result.add(compose(constraints));
+                result.add(filter);
+                constraints.clear();
+            } else {
+                result.add(filter);
+            }
+        }
+        return result.toArray(new RouteFilter[0]);
+    }
+
+    /**
+     * Composes multiple constraint route filters into a single filter.
+     * Returns null for empty list, the single filter for one element,
+     * or a composite filter for multiple elements.
+     *
+     * @param filters the list of constraint route filters to compose
+     * @return composed route filter, or null if filters is empty
+     */
+    private static RouteFilter compose(List<ConstraintRouteFilter> filters) {
+        switch (filters.size()) {
+            case 0:
+                return null;
+            case 1:
+                return filters.get(0);
+            default:
+                return new CompositeConstraintRouteFilter(filters.toArray(new ConstraintRouteFilter[0]));
+        }
+    }
+
+    /**
+     * Checks if the filter is a default ConstraintRouteFilter instance.
+     * A default instance has the filter method declared in ConstraintRouteFilter class itself.
+     *
+     * @param filter the route filter to check
+     * @return true if it's a default ConstraintRouteFilter, false otherwise
+     */
+    private static boolean isDefaultConstraintRouteFilter(RouteFilter filter) {
+        if (filter instanceof ConstraintRouteFilter) {
+            try {
+                Method method = filter.getClass().getMethod("filter", OutboundInvocation.class, RouteFilterChain.class);
+                if (method.getDeclaringClass() == ConstraintRouteFilter.class) {
+                    return true;
+                }
+            } catch (NoSuchMethodException ignored) {
+            }
+        }
+        return false;
     }
 
     /**
