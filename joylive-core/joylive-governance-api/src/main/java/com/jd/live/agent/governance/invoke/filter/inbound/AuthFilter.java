@@ -34,8 +34,6 @@ import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-import static com.jd.live.agent.core.util.StringUtils.isEmpty;
-
 /**
  * AuthFilter
  *
@@ -53,21 +51,29 @@ public class AuthFilter implements InboundFilter {
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServiceMetadata metadata = invocation.getServiceMetadata();
         Service service = metadata.getService();
-        if (service != null && service.authorized()) {
-            AuthPolicy authPolicy = service.getAuthPolicy(metadata.getConsumer());
-            if (authPolicy == null) {
-                return Futures.future(FaultType.UNAUTHORIZED.reject("the consumer is not authorized for service " + metadata.getServiceName()));
-            }
-            String authType = authPolicy.getType();
-            // check auth policy
-            Authenticate authenticate = isEmpty(authType) ? null : authenticates.get(authType);
-            if (authenticate != null) {
-                Permission permission = authenticate.authenticate(invocation.getRequest(), authPolicy,
-                        metadata.getServiceName(), metadata.getConsumer());
-                if (permission != null && !permission.isSuccess()) {
-                    return Futures.future(FaultType.UNAUTHORIZED.reject(permission.getMessage()));
-                }
-            }
+        if (service == null || !service.authorized()) {
+            return chain.filter(invocation);
+        }
+        AuthPolicy authPolicy = service.getAuthPolicy(metadata.getConsumer());
+        if (authPolicy == null) {
+            return Futures.future(FaultType.UNAUTHORIZED.reject("the consumer is not authorized for service " + metadata.getServiceName()));
+        }
+        String authType = authPolicy.getType();
+        if (authType == null || authType.isEmpty()) {
+            return chain.filter(invocation);
+        }
+        Authenticate authenticate = authenticates.get(authType);
+        if (authenticate == null) {
+            return chain.filter(invocation);
+        }
+        Permission permission = authenticate.authenticate(
+                invocation.getRequest(),
+                authPolicy,
+                metadata.getServiceName(),
+                metadata.getConsumer()
+        );
+        if (permission != null && !permission.isSuccess()) {
+            return Futures.future(FaultType.UNAUTHORIZED.reject(permission.getMessage()));
         }
         return chain.filter(invocation);
     }
