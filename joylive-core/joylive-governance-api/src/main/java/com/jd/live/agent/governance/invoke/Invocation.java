@@ -29,7 +29,6 @@ import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser;
-import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LaneParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.LiveParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
@@ -113,13 +112,16 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      */
     protected void parsePolicy() {
         ServiceParser serviceParser = createServiceParser();
-        LiveParser liveParser = !context.isLiveEnabled() ? null : createLiveParser();
-        MetadataParser<LaneMetadata> laneParser = !context.isLaneEnabled() ? null : createLaneParser();
-        ServiceMetadata serviceMetadata = serviceParser.parse();
-        LiveMetadata liveMetadata = liveParser == null ? null : liveParser.parse();
-        this.serviceMetadata = liveMetadata == null ? serviceMetadata : serviceParser.configure(serviceMetadata, liveMetadata.getRule());
-        this.liveMetadata = liveParser == null ? null : liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
-        this.laneMetadata = laneParser == null ? null : laneParser.parse();
+        serviceMetadata = serviceParser.parse();
+        if (context.isLiveEnabled()) {
+            LiveParser liveParser = createLiveParser();
+            liveMetadata = liveParser.parse();
+            serviceMetadata = serviceParser.configure(serviceMetadata, liveMetadata.getRule());
+            liveMetadata = liveParser.configure(liveMetadata, serviceMetadata.getServicePolicy());
+        }
+        if (context.isLaneEnabled()) {
+            laneMetadata = createLaneParser().parse();
+        }
     }
 
     /**
