@@ -89,13 +89,14 @@ public class ConcurrencyLimitPolicy extends AbstractLimitPolicy
         this.realizeType = realizeType;
     }
 
-    /**
-     * Supplements the current concurrency limit policy with another policy's details. This method is used
-     * to inherit or override attributes from another policy. If the current policy lacks specific attributes,
-     * they are filled in with the values from the source policy, specifically focusing on concurrency settings.
-     *
-     * @param source the source concurrency limit policy to supplement from
-     */
+    public int getMaxConcurrency(int defaultValue) {
+        return maxConcurrency == null ? defaultValue : maxConcurrency;
+    }
+
+    public String getRealizeType(String defaultValue) {
+        return realizeType == null || realizeType.isEmpty() ? defaultValue : realizeType;
+    }
+
     @Override
     public void supplement(ConcurrencyLimitPolicy source) {
         if (source == null) {

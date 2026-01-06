@@ -67,20 +67,21 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
     public <T extends InboundRequest> CompletionStage<Object> filter(InboundInvocation<T> invocation, InboundFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         List<ConcurrencyLimitPolicy> policies = servicePolicy == null ? null : servicePolicy.getConcurrencyLimitPolicies();
-        List<ConcurrencyLimiter> limiters = new ArrayList<>();
-        if (null != policies && !policies.isEmpty()) {
-            for (ConcurrencyLimitPolicy policy : policies) {
-                // match logic
-                if (policy.getMaxConcurrency() != null && policy.getMaxConcurrency() > 0 && policy.match(invocation)) {
-                    ConcurrencyLimiter limiter = getLimiter(policy);
-                    if (null != limiter && !limiter.acquire()) {
+        if (policies == null || policies.isEmpty()) {
+            return chain.filter(invocation);
+        }
+        List<ConcurrencyLimiter> limiters = new ArrayList<>(policies.size());
+        for (ConcurrencyLimitPolicy policy : policies) {
+            // match logic
+            if (policy.getMaxConcurrency(0) > 0 && policy.match(invocation)) {
+                ConcurrencyLimiter limiter = getLimiter(policy);
+                if (limiter != null) {
+                    if (!limiter.acquire()) {
                         release(limiters);
                         return Futures.future(FaultType.LIMIT.reject(
                                 "The request is rejected by concurrency limiter. maxConcurrency=" + policy.getMaxConcurrency()));
                     }
-                    if (limiter != null) {
-                        limiters.add(limiter);
-                    }
+                    limiters.add(limiter);
                 }
             }
         }
@@ -97,10 +98,12 @@ public class ConcurrencyLimitFilter implements InboundFilter, ExtensionInitializ
      * @return the concurrency limiter, or null if no factory is found for the policy type.
      */
     private ConcurrencyLimiter getLimiter(ConcurrencyLimitPolicy policy) {
-        String type = policy.getRealizeType() == null || policy.getRealizeType().isEmpty() ? defaultType : policy.getRealizeType();
-        ConcurrencyLimiterFactory factory = type != null ? factories.get(type) : null;
-        factory = factory == null ? defaultFactory : factory;
-        return factory == null ? null : factory.get(policy);
+        String type = policy.getRealizeType(defaultType);
+        ConcurrencyLimiterFactory factory = type == null ? null : factories.get(type);
+        if (factory == null) {
+            return defaultFactory == null ? null : defaultFactory.get(policy);
+        }
+        return factory.get(policy);
     }
 
     private void release(List<ConcurrencyLimiter> limiters) {
