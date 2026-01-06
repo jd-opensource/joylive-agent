@@ -19,6 +19,7 @@ import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.request.HostTransformer;
@@ -145,7 +146,7 @@ public class LiveGatewayFilter implements GatewayFilter {
                 // Handle multi-active and lane domains
                 GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri, transformer);
                 try {
-                    URI newUri = HttpForwardContext.of(context).route(request);
+                    URI newUri = HttpForwardContext.of(context).route(request, new GatewayHttpForwardInvocation(request, context));
                     if (newUri != uri) {
                         setURI(exchange, newUri);
                     }

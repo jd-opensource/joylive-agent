@@ -1139,7 +1139,19 @@ public interface InvocationContext {
          * @return the rewritten URI after domain transformation
          */
         public <R extends HttpOutboundRequest> URI route(final R request) {
-            route(new HttpForwardInvocation<>(request, this));
+            return route(request, new HttpForwardInvocation<>(request, this));
+        }
+
+        /**
+         * Routes the request with domain transformation and URL rewriting.
+         *
+         * @param <R>        the request type extending HttpOutboundRequest
+         * @param request    the outbound HTTP request to route
+         * @param invocation the invocation to route
+         * @return the rewritten URI after domain transformation
+         */
+        public <R extends HttpOutboundRequest> URI route(final R request, HttpForwardInvocation invocation) {
+            route(invocation);
             return request.getURI();
         }
 

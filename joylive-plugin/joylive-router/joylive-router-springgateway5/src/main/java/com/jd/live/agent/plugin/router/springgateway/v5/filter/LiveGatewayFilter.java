@@ -18,6 +18,7 @@ package com.jd.live.agent.plugin.router.springgateway.v5.filter;
 import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.InvocationContext.HttpForwardContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpForwardInvocation;
 import com.jd.live.agent.governance.invoke.OutboundInvocation.GatewayHttpOutboundInvocation;
 import com.jd.live.agent.governance.request.HostTransformer;
 import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
@@ -139,7 +140,7 @@ public class LiveGatewayFilter implements GatewayFilter {
                 // Handle multi-active and lane domains
                 GatewayForwardRequest request = new GatewayForwardRequest(exchange, uri, transformer);
                 try {
-                    URI newUri = HttpForwardContext.of(context).route(request);
+                    URI newUri = HttpForwardContext.of(context).route(request, new GatewayHttpForwardInvocation(request, context));
                     if (newUri != uri) {
                         setURI(exchange, newUri);
                     }
