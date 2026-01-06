@@ -74,7 +74,7 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
 
     @Override
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        CompositeConstraint constraints = geConstraints(invocation);
+        CompositeConstraint constraints = getConstraints(invocation);
         if (constraints != null) {
             RouteTarget target = invocation.getRouteTarget();
             constraints.forEach(c -> target.filter(c.getPredicate(), c.getMaxSize(), c.getProtect()));
@@ -89,7 +89,7 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
      * @param invocation the outbound invocation
      * @return combined constraints, or null if no constraints found
      */
-    private <T extends OutboundRequest> CompositeConstraint geConstraints(OutboundInvocation<T> invocation) {
+    private <T extends OutboundRequest> CompositeConstraint getConstraints(OutboundInvocation<T> invocation) {
         CompositeConstraint constraint = null;
         for (ConstraintRouteFilter filter : filters) {
             if (constraint == null) {
