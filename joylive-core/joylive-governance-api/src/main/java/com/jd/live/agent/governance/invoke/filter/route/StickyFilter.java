@@ -42,7 +42,7 @@ import com.jd.live.agent.governance.request.StickySessionFactory;
 public class StickyFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
+    public <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation) {
         T request = invocation.getRequest();
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         StickySessionFactory factory = servicePolicy == null ? null : servicePolicy.getLoadBalancePolicy();

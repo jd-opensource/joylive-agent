@@ -30,7 +30,7 @@ public interface ConstraintRouteFilter extends RouteFilter {
 
     @Override
     default <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        Constraint constraint = geConstraint(invocation);
+        Constraint constraint = getConstraint(invocation);
         if (constraint != null) {
             invocation.getRouteTarget().filter(constraint.predicate, constraint.maxSize, constraint.protect);
         }
@@ -43,7 +43,7 @@ public interface ConstraintRouteFilter extends RouteFilter {
      * @param invocation the outbound invocation
      * @return the constraint to apply
      */
-    <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation);
+    <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation);
 
     /**
      * Constraint definition containing predicate, size limit and nullability settings.

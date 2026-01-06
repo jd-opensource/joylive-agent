@@ -38,7 +38,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 public class HealthyFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
+    public <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         HealthPolicy healthPolicy = servicePolicy == null ? null : servicePolicy.getHealthPolicy();
         int healthyMinPercent = healthPolicy == null ? 0 : healthPolicy.getHealthyMinPercent(0);

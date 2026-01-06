@@ -39,7 +39,7 @@ import static com.jd.live.agent.governance.invoke.RouteTarget.NONE_NULL;
 public class RetryFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
+    public <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation) {
         // Get the set of attempted endpoint IDs from the request
         Set<String> attempts = invocation.getRequest().getAttempts();
         // If there have been previous attempts, filter out the endpoints that have already failed

@@ -92,9 +92,9 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
         CompositeConstraint constraint = null;
         for (ConstraintRouteFilter filter : filters) {
             if (constraint == null) {
-                constraint = new CompositeConstraint(filter.geConstraint(invocation));
+                constraint = new CompositeConstraint(filter.getConstraint(invocation));
             } else {
-                constraint.add(filter.geConstraint(invocation));
+                constraint.add(filter.getConstraint(invocation));
             }
         }
         return constraint;

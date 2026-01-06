@@ -34,7 +34,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 public class PortFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
+    public <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation) {
         T request = invocation.getRequest();
         if (!(request instanceof Portable)) {
             return null;

@@ -36,7 +36,7 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 public class LocalhostFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
+    public <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation) {
         String localIp = Ipv4.getLocalIp();
         if (localIp == null) {
             return null;
