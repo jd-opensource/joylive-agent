@@ -7,6 +7,7 @@ import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
+import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.policy.service.live.ServiceLivePolicy;
 import com.jd.live.agent.governance.policy.service.live.UnitPolicy;
 import lombok.AllArgsConstructor;
@@ -120,6 +121,10 @@ public class ServiceMetadata implements Cloneable {
      */
     public ServiceLivePolicy getServiceLivePolicy() {
         return servicePolicy == null ? null : servicePolicy.getLivePolicy();
+    }
+
+    public LanePolicy getLanePolicy(String laneSpaceId) {
+        return servicePolicy == null ? null : servicePolicy.getLanePolicy(laneSpaceId);
     }
 
     /**

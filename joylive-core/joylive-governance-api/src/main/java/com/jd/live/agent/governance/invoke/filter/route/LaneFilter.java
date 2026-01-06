@@ -25,10 +25,10 @@ import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.policy.lane.FallbackType;
 import com.jd.live.agent.governance.policy.lane.Lane;
-import com.jd.live.agent.governance.policy.lane.LaneSpace;
-import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
+
+import java.util.function.Function;
 
 /**
  * Filters route targets based on lane metadata. This filter ensures that only instances
@@ -43,62 +43,127 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 public class LaneFilter implements RouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        // Retrieve the current route target
-        RouteTarget target = invocation.getRouteTarget();
+    public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {
+        // Early return optimization - check null metadata first
         LaneMetadata metadata = invocation.getLaneMetadata();
-        String targetSpaceId = metadata == null ? null : metadata.getTargetSpaceId();
-        String targetLaneId = metadata == null ? null : metadata.getTargetLaneId();
-        LaneSpace targetSpace = metadata == null ? null : metadata.getTargetSpace();
-        String defaultSpaceId = metadata == null ? null : metadata.getDefaultSpaceId();
-        String defaultLaneId = metadata == null ? null : metadata.getDefaultLaneId();
-
-        // Check if a target lane is specified
-        if (targetSpace != null) {
-            // get service lane policy
-            ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-            LanePolicy lanePolicy = servicePolicy == null ? null : servicePolicy.getLanePolicy(targetSpaceId);
-            Lane targetLane = metadata.getTargetLane();
-
-            FallbackType fallbackType = null;
-            String fallbackLane = null;
-            // service fallback
-            if (lanePolicy != null) {
-                fallbackType = lanePolicy.getFallbackType();
-                fallbackLane = fallbackType == FallbackType.CUSTOM ? lanePolicy.getFallbackLane(targetLaneId) : null;
-            }
-            // lane fallback
-            if (fallbackType == null) {
-                fallbackType = targetLane == null ? FallbackType.DEFAULT : targetLane.getFallbackType();
-                fallbackLane = fallbackType == FallbackType.CUSTOM ? targetLane.getFallbackLane() : null;
-            }
-            if (targetLane != null) {
-                Lane defaultLane = targetSpace.getDefaultLane();
-                boolean redirectDefaultLane = defaultLane != null
-                        && targetLane != defaultLane
-                        && (FallbackType.DEFAULT == fallbackType || FallbackType.CUSTOM == fallbackType && fallbackLane == null);
-                boolean redirectFallbackLane = fallbackType == FallbackType.CUSTOM && fallbackLane != null && !fallbackLane.equals(targetLane.getCode());
-                String fallbackLaneCode = redirectFallbackLane ? fallbackLane : null;
-
-                // Filter the route target based on the lane space ID and route lane code
-                boolean nullable = !redirectDefaultLane && !redirectFallbackLane;
-                int count = target.filter(e -> e.isLane(targetSpaceId, targetLane.getCode(), defaultSpaceId, defaultLaneId), -1, nullable);
-                if (count <= 0 && redirectDefaultLane) {
-                    // If no matches and a default lane exists, use the defaultLane
-                    target.filter(e -> e.isLane(targetSpaceId, defaultLane.getCode(), defaultSpaceId, defaultLaneId), -1, true);
-                } else if (count <= 0 && redirectFallbackLane) {
-                    // If no matches and a fallback lane exists, use the fallbackLane
-                    target.filter(e -> e.isLane(targetSpaceId, fallbackLaneCode, defaultSpaceId, defaultLaneId), -1, true);
-                }
-            } else {
-                String code = fallbackLane == null ? targetLaneId : fallbackLane;
-                target.filter(e -> e.isLane(targetSpaceId, code, defaultSpaceId, defaultLaneId), -1, true);
-            }
-        } else {
-            // target space is not exists. or empty target space id and without default lane space.
-            target.filter(e -> e.isLane(targetSpaceId, targetLaneId, defaultSpaceId, defaultLaneId), -1, true);
+        if (metadata == null) {
+            chain.filter(invocation);
+            return;
         }
-        // Proceed with the next filter in the chain
+
+        // Cache frequently accessed objects to avoid repeated method calls
+        RouteTarget target = invocation.getRouteTarget();
+        String targetSpaceId = metadata.getTargetSpaceId();
+        String targetLaneId = metadata.getTargetLaneId();
+        String defaultSpaceId = metadata.getDefaultSpaceId();
+        String defaultLaneId = metadata.getDefaultLaneId();
+
+        // Fast path for no target space scenario
+        if (metadata.getTargetSpace() == null) {
+            target.filter(e -> e.isLane(targetSpaceId, targetLaneId, defaultSpaceId, defaultLaneId), -1, true);
+            chain.filter(invocation);
+            return;
+        }
+
+        // Get target lane and service policy
+        Lane targetLane = metadata.getTargetLane();
+        LanePolicy lanePolicy = invocation.getServiceMetadata().getLanePolicy(targetSpaceId);
+        // Determine fallback strategy efficiently
+        FallbackLane fallbackLane = fallback(lanePolicy, targetLane, targetLaneId, defaultLaneId);
+        // Handle the case when target lane is null
+        if (targetLane == null) {
+            target.filter(e -> e.isLane(targetSpaceId, fallbackLane.lane, defaultSpaceId, defaultLaneId), -1, true);
+            chain.filter(invocation);
+            return;
+        }
+
+        // Determine if fallback strategies are needed
+        boolean redirect = fallbackLane.redirect(targetLaneId);
+        // keep original instances when fallback
+        int count = target.filter(e -> e.isLane(targetSpaceId, targetLaneId, defaultSpaceId, defaultLaneId), -1, !redirect);
+        // Apply fallback strategies only when main filter returns no results
+        if (count <= 0 && redirect) {
+            target.filter(e -> e.isLane(targetSpaceId, fallbackLane.lane, defaultSpaceId, defaultLaneId), -1, true);
+        }
         chain.filter(invocation);
+    }
+
+    /**
+     * Determines the fallback strategy by checking service policy first, then lane configuration
+     */
+    private FallbackLane fallback(final LanePolicy lanePolicy,
+                                  final Lane targetLane,
+                                  final String targetLaneId,
+                                  final String defaultLaneId) {
+        FallbackType fallbackType = null;
+        String fallbackLane = null;
+        // Service-level fallback takes precedence
+        if (lanePolicy != null) {
+            fallbackType = lanePolicy.getFallbackType();
+            fallbackLane = getFallbackLane(fallbackType, defaultLaneId, targetLaneId, lanePolicy::getFallbackLane);
+        }
+        // Lane-level fallback as secondary option
+        if (fallbackType == null && targetLane != null) {
+            fallbackType = targetLane.getFallbackType();
+            fallbackLane = getFallbackLane(fallbackType, defaultLaneId, targetLaneId, i -> targetLane.getFallbackLane());
+        }
+        // Default fallback if nothing specified
+        if (fallbackType == null) {
+            fallbackType = FallbackType.DEFAULT;
+            fallbackLane = defaultLaneId;
+        }
+
+        return new FallbackLane(fallbackType, fallbackLane);
+    }
+
+    /**
+     * Determines the fallback lane ID based on the specified fallback type.
+     *
+     * @param type          the fallback type strategy
+     * @param defaultLaneId the default lane ID to use as fallback
+     * @param targetLaneId  the target lane ID
+     * @param customer      function to get custom lane ID for CUSTOM fallback type
+     * @return the fallback lane ID, or null if type is null
+     */
+    private String getFallbackLane(final FallbackType type,
+                                   final String defaultLaneId,
+                                   final String targetLaneId,
+                                   final Function<String, String> customer) {
+        if (type == null) {
+            return null;
+        }
+        switch (type) {
+            case CUSTOM:
+                String result = customer.apply(targetLaneId);
+                return result == null ? defaultLaneId : result;
+            case REJECT:
+                return targetLaneId;
+            default:
+                return defaultLaneId;
+        }
+    }
+
+    /**
+     * Configuration holder for fallback strategy
+     */
+    private static class FallbackLane {
+        final FallbackType type;
+        final String lane;
+
+        FallbackLane(FallbackType type, String lane) {
+            this.type = type;
+            this.lane = lane;
+        }
+
+        /**
+         * Determines if redirect should occur based on fallback type and target lane comparison.
+         * Redirect is allowed when fallback type is not REJECT and target lane differs from current lane.
+         *
+         * @param targetLane the target lane identifier to compare against current lane
+         * @return true if redirect should occur, false otherwise
+         */
+        public boolean redirect(String targetLane) {
+            return type != FallbackType.REJECT && !targetLane.equals(lane);
+        }
     }
 }
