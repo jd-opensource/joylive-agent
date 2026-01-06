@@ -79,6 +79,7 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
             RouteTarget target = invocation.getRouteTarget();
             constraints.forEach(c -> target.filter(c.getPredicate(), c.getMaxSize(), c.getProtect()));
         }
+        chain.filter(invocation);
     }
 
     /**
