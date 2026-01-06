@@ -34,4 +34,8 @@ public class HealthPolicy extends PolicyId implements PolicyInheritWithId<Health
             healthyMinPercent = source.getHealthyMinPercent();
         }
     }
+
+    public int getHealthyMinPercent(int defaultValue) {
+        return healthyMinPercent == null ? defaultValue : healthyMinPercent;
+    }
 }

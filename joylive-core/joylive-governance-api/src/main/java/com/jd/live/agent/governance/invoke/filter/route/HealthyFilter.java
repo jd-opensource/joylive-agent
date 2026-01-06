@@ -42,7 +42,7 @@ public class HealthyFilter implements RouteFilter {
     public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         HealthPolicy healthPolicy = servicePolicy == null ? null : servicePolicy.getHealthPolicy();
-        int healthyMinPercent = healthPolicy == null || healthPolicy.getHealthyMinPercent() == null ? 0 : healthPolicy.getHealthyMinPercent();
+        int healthyMinPercent = healthPolicy == null ? 0 : healthPolicy.getHealthyMinPercent(0);
         RouteTarget target = invocation.getRouteTarget();
         target.filter(Endpoint::isAccessible, -1, healthyMinPercent <= 0 ? null : new MinPercentPredicate(healthyMinPercent));
         chain.filter(invocation);
