@@ -95,6 +95,9 @@ public class CompositeConstraintRouteFilter implements RouteFilter {
                 result.add(filter);
             }
         }
+        if (!constraints.isEmpty()) {
+            result.add(compose(constraints));
+        }
         return result.toArray(new RouteFilter[0]);
     }
 
