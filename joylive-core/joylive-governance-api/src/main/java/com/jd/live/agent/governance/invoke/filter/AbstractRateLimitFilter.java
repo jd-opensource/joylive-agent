@@ -19,12 +19,12 @@ import com.jd.live.agent.core.extension.ExtensionInitializer;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.Invocation;
+import com.jd.live.agent.governance.invoke.auth.Permission;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiter;
 import com.jd.live.agent.governance.invoke.ratelimit.RateLimiterFactory;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.limit.RateLimitPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest;
-import com.jd.live.agent.governance.invoke.auth.Permission;
 
 import java.util.List;
 import java.util.Map;
@@ -85,10 +85,12 @@ public class AbstractRateLimitFilter implements ExtensionInitializer {
      * @return the rate limiter instance based on the given policy.
      */
     private RateLimiter getRateLimiter(RateLimitPolicy policy) {
-        String type = policy.getRealizeType() == null || policy.getRealizeType().isEmpty() ? defaultType : policy.getRealizeType();
+        String type = policy.getRealizeType(defaultType);
         RateLimiterFactory factory = type != null ? factories.get(type) : null;
-        factory = factory == null ? defaultFactory : factory;
-        return factory == null ? null : factory.get(policy);
+        if (factory == null) {
+            return defaultFactory == null ? null : defaultFactory.get(policy);
+        }
+        return factory.get(policy);
     }
 
 }

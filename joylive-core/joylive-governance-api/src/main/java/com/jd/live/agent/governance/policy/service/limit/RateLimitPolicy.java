@@ -131,6 +131,10 @@ public class RateLimitPolicy extends AbstractLimitPolicy
         return name + "-" + suffix;
     }
 
+    public String getRealizeType(String defaultValue) {
+        return realizeType == null || realizeType.isEmpty() ? defaultValue : realizeType;
+    }
+
     /**
      * Supplements the current rate limit policy with another policy's details. If the current
      * policy does not have sliding windows defined, it inherits them from the specified source policy.
