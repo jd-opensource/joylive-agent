@@ -80,8 +80,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
     @Override
     protected ServiceParser createServiceParser() {
-        return new InboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
-                context.getApplication(), governancePolicy);
+        return new InboundServiceMetadataParser(request, governancePolicy, context);
     }
 
     @Override
@@ -230,8 +229,7 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
 
         @Override
         protected ServiceParser createServiceParser() {
-            return new GatewayInboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
-                    context.getApplication(), governancePolicy);
+            return new GatewayInboundServiceMetadataParser(request, governancePolicy, context);
         }
 
         @Override

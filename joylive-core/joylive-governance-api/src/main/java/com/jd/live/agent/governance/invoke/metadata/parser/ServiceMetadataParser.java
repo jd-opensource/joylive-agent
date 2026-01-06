@@ -3,9 +3,11 @@ package com.jd.live.agent.governance.invoke.metadata.parser;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.Application;
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.core.util.http.HttpMethod;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.context.bag.Cargo;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.invoke.metadata.parser.MetadataParser.ServiceParser;
 import com.jd.live.agent.governance.policy.GovernancePolicy;
@@ -38,9 +40,14 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     protected final ServiceRequest request;
 
     /**
+     * The governance policy which defines the rules for service interaction.
+     */
+    protected final GovernancePolicy policy;
+
+    /**
      * The service configuration containing parameters and settings for the service.
      */
-    protected final ServiceConfig serviceConfig;
+    protected final ServiceConfig config;
 
     /**
      * The application context which may provide additional service information.
@@ -48,47 +55,48 @@ public abstract class ServiceMetadataParser implements ServiceParser {
     protected final Application application;
 
     /**
-     * The governance policy which defines the rules for service interaction.
+     * A flag indicating whether live policy is enabled.
      */
-    protected final GovernancePolicy governancePolicy;
+    protected final boolean liveEnabled;
 
     /**
      * Constructs a new instance of {@code ServiceMetadataParser} with the specified parameters.
      *
-     * @param request          the service request to be parsed
-     * @param serviceConfig    the service configuration with parameters and settings
-     * @param application      the application context providing additional service information
-     * @param governancePolicy the governance policy defining rules for service interaction
+     * @param request  the service request to be parsed
+     * @param policy   the governance policy defining rules for service interaction
+     * @param context  the invocation context providing additional information
      */
-    public ServiceMetadataParser(ServiceRequest request,
-                                 ServiceConfig serviceConfig,
-                                 Application application,
-                                 GovernancePolicy governancePolicy) {
+    public ServiceMetadataParser(ServiceRequest request, GovernancePolicy policy, InvocationContext context) {
         this.request = request;
-        this.serviceConfig = serviceConfig;
-        this.application = application;
-        this.governancePolicy = governancePolicy;
+        this.policy = policy;
+        this.config = context.getGovernanceConfig().getServiceConfig();
+        this.application = context.getApplication();
+        this.liveEnabled = context.isLiveEnabled();
     }
 
     @Override
     public ServiceMetadata parse() {
-        String consumer = parseConsumer();
         String serviceName = parseServiceName();
         String serviceGroup = parseServiceGroup(serviceName);
         Service service = parseService(serviceName);
         String path = service == null ? parsePath() : service.getServiceType().normalize(parsePath());
         String method = parseMethod();
         ServicePolicy servicePolicy = parseServicePolicy(service, serviceGroup, path, method);
-        boolean writeProtect = parseWriteProtect(servicePolicy);
 
-        Map<String, String> parameters = new HashMap<>(4);
-        parameters.put(KEY_SERVICE_METHOD, method);
-        if (serviceGroup != null && !serviceGroup.isEmpty()) {
-            parameters.put(KEY_SERVICE_GROUP, serviceGroup);
-        }
-        URI uri = new URI(null, serviceName, null, path, parameters);
+        // improve performance by lazy loading consumer, writeProtect and uri
+        LazyObject<String> consumer = LazyObject.of(this::parseConsumer);
+        LazyObject<Boolean> writeProtect = LazyObject.of(() -> parseWriteProtect(servicePolicy));
+        LazyObject<URI> uri = LazyObject.of(() -> {
+            Map<String, String> parameters = new HashMap<>(4);
+            parameters.put(KEY_SERVICE_METHOD, method);
+            if (serviceGroup != null && !serviceGroup.isEmpty()) {
+                parameters.put(KEY_SERVICE_GROUP, serviceGroup);
+            }
+            return new URI(null, serviceName, null, path, parameters);
+        });
 
-        return new ServiceMetadata(serviceConfig, serviceName, serviceGroup, path, method, writeProtect, service, consumer, servicePolicy, uri);
+
+        return new ServiceMetadata(config, serviceName, serviceGroup, path, method, service, servicePolicy, consumer, writeProtect, uri);
     }
 
     /**
@@ -138,7 +146,7 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      * @return the retrieved service object
      */
     protected Service parseService(String serviceName) {
-        return governancePolicy == null ? null : governancePolicy.getService(serviceName);
+        return policy == null ? null : policy.getService(serviceName);
     }
 
     /**
@@ -160,10 +168,12 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      * @param servicePolicy the service policy from which to parse the write protection status
      * @return {@code true} if write protection is enabled, {@code false} otherwise
      */
-    protected boolean parseWriteProtect(ServicePolicy servicePolicy) {
-        ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
-        Boolean result = livePolicy != null ? livePolicy.isWriteProtect(request.getMethod()) : null;
-        return result != null && result;
+    protected Boolean parseWriteProtect(final ServicePolicy servicePolicy) {
+        if (servicePolicy == null) {
+            return null;
+        }
+        ServiceLivePolicy livePolicy = servicePolicy.getLivePolicy();
+        return livePolicy == null ? null : livePolicy.isWriteProtect(request.getMethod());
     }
 
     /**
@@ -173,9 +183,8 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      */
     public static class OutboundServiceMetadataParser extends ServiceMetadataParser {
 
-        public OutboundServiceMetadataParser(ServiceRequest request, ServiceConfig serviceConfig,
-                                             Application application, GovernancePolicy governancePolicy) {
-            super(request, serviceConfig, application, governancePolicy);
+        public OutboundServiceMetadataParser(ServiceRequest request, GovernancePolicy policy, InvocationContext context) {
+            super(request, policy, context);
         }
 
         @Override
@@ -190,11 +199,10 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseServiceGroup(String serviceName) {
+        protected String parseServiceGroup(final String serviceName) {
             String group = request.getGroup();
             if (group == null || group.isEmpty()) {
-                Map<String, String> groups = serviceConfig.getServiceGroups();
-                group = groups == null ? null : groups.get(serviceName);
+                group = config.getGroup(serviceName);
             }
             return group;
         }
@@ -224,9 +232,8 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      */
     public static class InboundServiceMetadataParser extends ServiceMetadataParser {
 
-        public InboundServiceMetadataParser(ServiceRequest request, ServiceConfig serviceConfig,
-                                            Application application, GovernancePolicy governancePolicy) {
-            super(request, serviceConfig, application, governancePolicy);
+        public InboundServiceMetadataParser(ServiceRequest request, GovernancePolicy policy, InvocationContext context) {
+            super(request, policy, context);
         }
 
         @Override
@@ -238,23 +245,22 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         @Override
         protected String parseServiceName() {
             String result = application.getService().getName();
-            result = result != null ? result : request.getService();
-            return result;
+            return result != null && !result.isEmpty() ? result : request.getService();
         }
 
         @Override
-        protected String parseServiceGroup(String serviceName) {
-            String group = application.getService().getGroup();
-            return group == null || group.isEmpty() ? request.getGroup() : group;
+        protected String parseServiceGroup(final String serviceName) {
+            String result = application.getService().getGroup();
+            return result != null && !result.isEmpty() ? result : request.getGroup();
         }
 
         @Override
-        protected Service parseService(String serviceName) {
-            if (governancePolicy == null) {
+        protected Service parseService(final String serviceName) {
+            if (policy == null) {
                 return null;
             }
-            Service localService = governancePolicy.getLocalService();
-            return localService != null && localService.getName().equals(serviceName) ? localService : governancePolicy.getService(serviceName);
+            Service localService = policy.getLocalService();
+            return localService != null && localService.getName().equals(serviceName) ? localService : policy.getService(serviceName);
         }
     }
 
@@ -265,22 +271,14 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      */
     public static class HttpInboundServiceMetadataParser extends InboundServiceMetadataParser {
 
-        public HttpInboundServiceMetadataParser(ServiceRequest request,
-                                                ServiceConfig serviceConfig,
-                                                Application application,
-                                                GovernancePolicy governancePolicy) {
-            super(request, serviceConfig, application, governancePolicy);
+        public HttpInboundServiceMetadataParser(ServiceRequest request, GovernancePolicy policy, InvocationContext context) {
+            super(request, policy, context);
         }
 
         @Override
-        protected boolean parseWriteProtect(ServicePolicy servicePolicy) {
-            ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
-            Boolean result = livePolicy != null ? livePolicy.getWriteProtect() : null;
-            if (result != null) {
-                return result;
-            } else {
-                return isWriteMethod();
-            }
+        protected Boolean parseWriteProtect(ServicePolicy servicePolicy) {
+            Boolean result = super.parseWriteProtect(servicePolicy);
+            return result != null ? result : isWriteMethod();
         }
 
         /**
@@ -290,7 +288,10 @@ public abstract class ServiceMetadataParser implements ServiceParser {
          * @return true if the request method is a write method, false otherwise
          */
         protected boolean isWriteMethod() {
-            HttpMethod httpMethod = request == null ? null : ((HttpRequest) request).getHttpMethod();
+            if (request == null) {
+                return false;
+            }
+            HttpMethod httpMethod = ((HttpRequest) request).getHttpMethod();
             return httpMethod != null && httpMethod.isWrite();
         }
     }
@@ -302,23 +303,29 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      */
     public static class GatewayInboundServiceMetadataParser extends HttpInboundServiceMetadataParser {
 
-        public GatewayInboundServiceMetadataParser(ServiceRequest request,
-                                                   ServiceConfig serviceConfig,
-                                                   Application application,
-                                                   GovernancePolicy governancePolicy) {
-            super(request, serviceConfig, application, governancePolicy);
+        public GatewayInboundServiceMetadataParser(ServiceRequest request, GovernancePolicy policy, InvocationContext context) {
+            super(request, policy, context);
         }
 
         @Override
         protected ServicePolicy parseServicePolicy(Service service, String serviceGroup, String path, String method) {
             ServicePolicy result = super.parseServicePolicy(service, serviceGroup, path, method);
-            result = result != null ? result.clone() : new ServicePolicy();
-            ServiceLivePolicy livePolicy = new ServiceLivePolicy();
-            livePolicy.setUnitPolicy(UnitPolicy.NONE);
-            livePolicy.setCellPolicy(CellPolicy.ANY);
-            livePolicy.setWriteProtect(isWriteMethod());
-            result.setLivePolicy(livePolicy);
+            if (result == null) {
+                return new ServicePolicy(new ServiceLivePolicy(UnitPolicy.NONE, CellPolicy.ANY));
+            } else if (!liveEnabled) {
+                return result;
+            } else if (isValidLivePolicy(result.getLivePolicy())) {
+                return result;
+            }
+            result = result.clone();
+            result.setLivePolicy(new ServiceLivePolicy(UnitPolicy.NONE, CellPolicy.ANY));
             return result;
+        }
+
+        protected boolean isValidLivePolicy(final ServiceLivePolicy livePolicy) {
+            return livePolicy != null
+                    && (livePolicy.getUnitPolicy() == null || livePolicy.getUnitPolicy() == UnitPolicy.NONE)
+                    && (livePolicy.getCellPolicy() == null || livePolicy.getCellPolicy() == CellPolicy.ANY);
         }
     }
 
@@ -329,31 +336,32 @@ public abstract class ServiceMetadataParser implements ServiceParser {
      */
     public static class GatewayOutboundServiceMetadataParser extends OutboundServiceMetadataParser {
 
-        public GatewayOutboundServiceMetadataParser(ServiceRequest request,
-                                                    ServiceConfig serviceConfig,
-                                                    Application application,
-                                                    GovernancePolicy governancePolicy) {
-            super(request, serviceConfig, application, governancePolicy);
+        public GatewayOutboundServiceMetadataParser(ServiceRequest request, GovernancePolicy policy, InvocationContext context) {
+            super(request, policy, context);
         }
 
         @Override
         public ServiceMetadata configure(ServiceMetadata metadata, UnitRule unitRule) {
-            if (unitRule == null || unitRule.getLiveType() == LiveType.ONE_REGION_LIVE) {
+            if (!liveEnabled) {
+                return metadata;
+            } else if (unitRule == null || unitRule.getLiveType() == LiveType.ONE_REGION_LIVE) {
                 return metadata;
             }
-            ServiceLivePolicy livePolicy = metadata.getServiceLivePolicy();
-            UnitPolicy unitPolicy = livePolicy == null ? null : livePolicy.getUnitPolicy();
-            if (unitPolicy != null) {
+            ServicePolicy servicePolicy = metadata.getServicePolicy();
+            ServiceLivePolicy livePolicy = servicePolicy == null ? null : servicePolicy.getLivePolicy();
+            if (isValidLivePolicy(livePolicy)) {
                 return metadata;
             }
-            // TODO policyId with new ServiceLivePolicy & ServicePolicy;
             livePolicy = livePolicy != null ? livePolicy.clone() : new ServiceLivePolicy();
             livePolicy.setUnitPolicy(UnitPolicy.PREFER_LOCAL_UNIT);
             livePolicy.setWriteProtect(metadata.isWriteProtect());
-            ServicePolicy policy = metadata.getServicePolicy();
-            policy = policy != null ? policy.clone() : new ServicePolicy();
-            policy.setLivePolicy(livePolicy);
-            return metadata.copyWith(policy);
+            servicePolicy = servicePolicy != null ? servicePolicy.clone() : new ServicePolicy();
+            servicePolicy.setLivePolicy(livePolicy);
+            return metadata.copyWith(servicePolicy);
+        }
+
+        protected boolean isValidLivePolicy(final ServiceLivePolicy livePolicy) {
+            return livePolicy != null && livePolicy.getUnitPolicy() != null;
         }
     }
 }

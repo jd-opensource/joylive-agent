@@ -99,6 +99,11 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
     public ServicePolicy() {
     }
 
+    public ServicePolicy(ServiceLivePolicy livePolicy) {
+        // for gateway
+        this.livePolicy = livePolicy;
+    }
+
     @Override
     public void supplement(ServicePolicy source) {
         // ensure loadBalancePolicy is not null to hold stick id.

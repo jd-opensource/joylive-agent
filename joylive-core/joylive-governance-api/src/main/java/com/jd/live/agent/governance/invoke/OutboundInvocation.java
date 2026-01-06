@@ -89,8 +89,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
     @Override
     protected ServiceParser createServiceParser() {
-        return new OutboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
-                context.getApplication(), governancePolicy);
+        return new OutboundServiceMetadataParser(request, governancePolicy, context);
     }
 
     @Override
@@ -361,8 +360,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         protected ServiceParser createServiceParser() {
-            return new GatewayOutboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
-                    context.getApplication(), governancePolicy);
+            return new GatewayOutboundServiceMetadataParser(request, governancePolicy, context);
         }
 
         @Override
@@ -381,10 +379,6 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      */
     public static class GatewayRpcOutboundInvocation<T extends RpcOutboundRequest> extends RpcOutboundInvocation<T> {
 
-        public GatewayRpcOutboundInvocation(T request, InvocationContext context) {
-            super(request, context);
-        }
-
         public GatewayRpcOutboundInvocation(T request, Invocation<?> invocation) {
             super(request, invocation);
         }
@@ -396,8 +390,7 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
 
         @Override
         protected ServiceParser createServiceParser() {
-            return new GatewayOutboundServiceMetadataParser(request, context.getGovernanceConfig().getServiceConfig(),
-                    context.getApplication(), governancePolicy);
+            return new GatewayOutboundServiceMetadataParser(request, governancePolicy, context);
         }
 
         @Override

@@ -124,6 +124,14 @@ public class ServiceLivePolicy implements LiveStrategy, Cloneable, PolicyInherit
 
     private transient Inclusion inclusion;
 
+    public ServiceLivePolicy() {
+    }
+
+    public ServiceLivePolicy(UnitPolicy unitPolicy, CellPolicy cellPolicy) {
+        this.unitPolicy = unitPolicy;
+        this.cellPolicy = cellPolicy;
+    }
+
     /**
      * Retrieves the threshold for a specific unit based on its name.
      * If the unit is not found, returns the default unit threshold.

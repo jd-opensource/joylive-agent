@@ -1,6 +1,7 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
 import com.jd.live.agent.core.util.URI;
+import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.policy.PolicyId;
@@ -15,7 +16,6 @@ import lombok.Getter;
 /**
  * The {@code ServiceMetadata} class encapsulates the metadata for a service request.
  */
-@Getter
 @AllArgsConstructor
 @Builder
 public class ServiceMetadata implements Cloneable {
@@ -23,52 +23,72 @@ public class ServiceMetadata implements Cloneable {
     /**
      * The service configuration for this invocation.
      */
+    @Getter
     private ServiceConfig serviceConfig;
 
     /**
      * The name of the service being invoked.
      */
+    @Getter
     private String serviceName;
 
     /**
      * The group of the service being invoked.
      */
+    @Getter
     private String serviceGroup;
 
     /**
      * The path of the service being invoked.
      */
+    @Getter
     private String path;
 
     /**
      * The HTTP method of the service request.
      */
+    @Getter
     private String method;
-
-    /**
-     * Indicates if the service request is a write operation.
-     */
-    private boolean writeProtect;
 
     /**
      * The service metadata for this invocation.
      */
+    @Getter
     private Service service;
-
-    /**
-     * The consumer for this service.
-     */
-    private String consumer;
 
     /**
      * The service policy applicable to this invocation.
      */
+    @Getter
     private ServicePolicy servicePolicy;
 
-    private URI uri;
+    /**
+     * The consumer for this service.
+     */
+    private LazyObject<String> consumer;
+
+    /**
+     * Indicates if the service request is a write operation.
+     */
+    private LazyObject<Boolean> writeProtect;
+
+    private LazyObject<URI> uri;
 
     public boolean isService() {
         return serviceName != null && !serviceName.isEmpty();
+    }
+
+    public String getConsumer() {
+        return consumer == null ? null : consumer.get();
+    }
+
+    public boolean isWriteProtect() {
+        Boolean result = writeProtect == null ? null : writeProtect.get();
+        return result == null ? false : result;
+    }
+
+    public URI getUri() {
+        return uri == null ? null : uri.get();
     }
 
     /**
@@ -142,7 +162,7 @@ public class ServiceMetadata implements Cloneable {
             return (ServiceMetadata) super.clone();
         } catch (CloneNotSupportedException e) {
             return new ServiceMetadata(serviceConfig, serviceName, serviceGroup, path,
-                    method, writeProtect, service, consumer, servicePolicy, uri);
+                    method, service, servicePolicy, consumer, writeProtect, uri);
         }
     }
 
