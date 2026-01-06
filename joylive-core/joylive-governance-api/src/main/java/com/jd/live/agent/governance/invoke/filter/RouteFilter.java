@@ -39,15 +39,15 @@ public interface RouteFilter {
 
     int ORDER_GROUP = ORDER_READY + 100;
 
-    int ORDER_CIRCUIT_BREAKER = ORDER_GROUP + 100;
-
-    int ORDER_STICKY = ORDER_CIRCUIT_BREAKER + 100;
+    int ORDER_STICKY = ORDER_GROUP + 100;
 
     int ORDER_LOCALHOST = ORDER_STICKY + 100;
 
     int ORDER_PORT = ORDER_LOCALHOST + 100;
 
     int ORDER_HEALTH = ORDER_PORT + 100;
+
+    int ORDER_CIRCUIT_BREAKER = ORDER_HEALTH + 100;
 
     int ORDER_LIVE_UNIT = ORDER_HEALTH + 100;
 
@@ -61,7 +61,7 @@ public interface RouteFilter {
 
     int ORDER_RETRY = ORDER_LOCAL + 100;
 
-    int ORDER_LOAD_BALANCE = ORDER_LIVE_CELL + 100;
+    int ORDER_LOAD_BALANCE = ORDER_RETRY + 100;
 
     /**
      * Applies the filter logic to the given outbound invocation. This method is called as part of a

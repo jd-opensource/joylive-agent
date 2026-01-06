@@ -20,9 +20,8 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.governance.config.GovernanceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.RouteTarget;
+import com.jd.live.agent.governance.invoke.filter.ConstraintRouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 /**
@@ -34,15 +33,14 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  */
 @Extension(value = "LocalhostFilter", order = RouteFilter.ORDER_LOCALHOST)
 @ConditionalOnProperty(GovernanceConfig.CONFIG_LOCALHOST_ENABLED)
-public class LocalhostFilter implements RouteFilter {
+public class LocalhostFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        RouteTarget target = invocation.getRouteTarget();
+    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
         String localIp = Ipv4.getLocalIp();
-        if (localIp != null) {
-            target.filter(endpoint -> endpoint.getHost().equals(localIp));
+        if (localIp == null) {
+            return null;
         }
-        chain.filter(invocation);
+        return new Constraint(e -> localIp.equals(e.getHost()));
     }
 }

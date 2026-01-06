@@ -16,13 +16,11 @@
 package com.jd.live.agent.governance.invoke.filter.route;
 
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Injectable;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.config.ServiceConfig;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.RouteTarget;
+import com.jd.live.agent.governance.invoke.filter.ConstraintRouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.invoke.metadata.ServiceMetadata;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -31,27 +29,25 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  *
  * @since 1.4.0
  */
-@Injectable
 @Extension(value = "GroupFilter", order = RouteFilter.ORDER_GROUP)
 @ConditionalOnFlowControlEnabled
-public class GroupFilter implements RouteFilter {
+public class GroupFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
-        if (!invocation.getRequest().isNativeGroup()) {
-            ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
-            ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
-            String group = serviceMetadata.getServiceGroup();
-            RouteTarget target = invocation.getRouteTarget();
-            if (group != null && !group.isEmpty()) {
-                // target group
-                target.filter(endpoint -> endpoint.isGroup(group));
-            } else if (serviceConfig != null && !serviceConfig.isServiceGroupOpen()) {
-                // default group
-                target.filter(endpoint -> endpoint.isGroup(null));
-            }
+    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
+        if (invocation.getRequest().isNativeGroup()) {
+            return null;
         }
-        chain.filter(invocation);
+        ServiceMetadata serviceMetadata = invocation.getServiceMetadata();
+        String group = serviceMetadata.getServiceGroup();
+        if (group != null && !group.isEmpty()) {
+            return new Constraint(e -> e.isGroup(group));
+        }
+        ServiceConfig serviceConfig = serviceMetadata.getServiceConfig();
+        if (serviceConfig != null && !serviceConfig.isServiceGroupOpen()) {
+            // default group
+            return new Constraint(e -> e.isGroup(null));
+        }
+        return null;
     }
-
 }

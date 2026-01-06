@@ -19,10 +19,9 @@ import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.RouteTarget;
 import com.jd.live.agent.governance.invoke.RouteTarget.MinPercentPredicate;
+import com.jd.live.agent.governance.invoke.filter.ConstraintRouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.health.HealthPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
@@ -36,15 +35,17 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  */
 @Extension(value = "HealthyFilter", order = RouteFilter.ORDER_HEALTH)
 @ConditionalOnFlowControlEnabled
-public class HealthyFilter implements RouteFilter {
+public class HealthyFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
         HealthPolicy healthPolicy = servicePolicy == null ? null : servicePolicy.getHealthPolicy();
         int healthyMinPercent = healthPolicy == null ? 0 : healthPolicy.getHealthyMinPercent(0);
-        RouteTarget target = invocation.getRouteTarget();
-        target.filter(Endpoint::isAccessible, -1, healthyMinPercent <= 0 ? null : new MinPercentPredicate(healthyMinPercent));
-        chain.filter(invocation);
+        if (healthyMinPercent <= 0) {
+            return new Constraint(Endpoint::isAccessible);
+        } else {
+            return new Constraint(Endpoint::isAccessible, -1, new MinPercentPredicate(healthyMinPercent));
+        }
     }
 }

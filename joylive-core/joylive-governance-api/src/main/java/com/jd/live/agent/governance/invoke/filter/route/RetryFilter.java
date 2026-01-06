@@ -18,12 +18,13 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
-import com.jd.live.agent.governance.invoke.RouteTarget;
+import com.jd.live.agent.governance.invoke.filter.ConstraintRouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
 import java.util.Set;
+
+import static com.jd.live.agent.governance.invoke.RouteTarget.NONE_NULL;
 
 /**
  * RetryFilter is a filter that excludes endpoints that have previously failed
@@ -35,18 +36,16 @@ import java.util.Set;
  */
 @Extension(value = "RetryFilter", order = RouteFilter.ORDER_RETRY)
 @ConditionalOnFlowControlEnabled
-public class RetryFilter implements RouteFilter {
+public class RetryFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(final OutboundInvocation<T> invocation, final RouteFilterChain chain) {
-        RouteTarget target = invocation.getRouteTarget();
+    public <T extends OutboundRequest> Constraint geConstraint(OutboundInvocation<T> invocation) {
         // Get the set of attempted endpoint IDs from the request
         Set<String> attempts = invocation.getRequest().getAttempts();
         // If there have been previous attempts, filter out the endpoints that have already failed
-        if (attempts != null && !attempts.isEmpty()) {
-            // Can retry on failed instances
-            target.filter(endpoint -> !attempts.contains(endpoint.getId()), -1, false);
+        if (attempts == null || attempts.isEmpty()) {
+            return null;
         }
-        chain.filter(invocation);
+        return new Constraint(endpoint -> !attempts.contains(endpoint.getId()), -1, NONE_NULL);
     }
 }
