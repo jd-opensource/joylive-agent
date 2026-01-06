@@ -13,19 +13,20 @@
 9. 新增支持 采用Jasypt加密的环境变量
 10. 新增支持 Nacos client 2.5 以下版本的令牌及时刷新
 11. 新增支持 根据环境变量中的IP段来确定地域/可用区/单元/分区
-12. 修复 类加载以及和其它Agent类加载冲突问题
-13. 修复 Dubbo 3.0 兼容性问题
-14. 修复 Dubbo 2.7 注册问题
-15. 修复 配置注入的灰度配置订阅问题
-16. 修复 dubbo2、dubbo3和sofarpc 的泛化调用，降级不生效的问题
-17. 修复 Spring cloud gateway 重试不生效问题
-18. 修复 Spring cloud gateway 泳道路由问题
-19. 修复 Spring web 包装请求带来的堆栈溢出问题
-20. 修复 Feign 兼容性问题
-21. 修复 令牌桶限流算法问题
-22. 修复 Dubbo zookeeper registry 空指针问题
-23. 修复 MQ 泳道和多活路由问题
-24. 修复其它问题
+12. 性能优化
+13. 修复 类加载以及和其它Agent类加载冲突问题
+14. 修复 Dubbo 3.0 兼容性问题
+15. 修复 Dubbo 2.7 注册问题
+16. 修复 配置注入的灰度配置订阅问题
+17. 修复 dubbo2、dubbo3和sofarpc 的泛化调用，降级不生效的问题
+18. 修复 Spring cloud gateway 重试不生效问题
+19. 修复 Spring cloud gateway 泳道路由问题
+20. 修复 Spring web 包装请求带来的堆栈溢出问题
+21. 修复 Feign 兼容性问题
+22. 修复 令牌桶限流算法问题
+23. 修复 Dubbo zookeeper registry 空指针问题
+24. 修复 MQ 泳道和多活路由问题
+25. 修复其它问题
 
 ## 1.8.0
 
