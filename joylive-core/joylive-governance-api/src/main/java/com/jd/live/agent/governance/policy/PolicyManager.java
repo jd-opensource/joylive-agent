@@ -69,7 +69,6 @@ import com.jd.live.agent.governance.subscription.policy.listener.LaneSpaceListen
 import com.jd.live.agent.governance.subscription.policy.listener.LiveDatabaseListener;
 import com.jd.live.agent.governance.subscription.policy.listener.LiveSpaceListener;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceListener;
-import lombok.Builder;
 import lombok.Getter;
 
 import java.util.*;
@@ -81,6 +80,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jd.live.agent.core.util.CollectionUtils.toList;
+import static com.jd.live.agent.governance.invoke.filter.CompositeConstraintRouteFilter.compose;
 import static com.jd.live.agent.governance.policy.service.ServiceName.getUniqueName;
 import static com.jd.live.agent.governance.subscription.policy.PolicyWatcher.*;
 
@@ -240,63 +240,6 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     public PolicyManager() {
     }
 
-    @Builder
-    public PolicyManager(Publisher<PolicySubscription> policyPublisher,
-                         Publisher<AgentEvent> systemPublisher,
-                         Publisher<TrafficEvent> trafficPublisher,
-                         Application application,
-                         ObjectParser objectParser,
-                         boolean liveEnabled,
-                         boolean laneEnabled,
-                         boolean flowControlEnabled,
-                         GovernanceConfig governanceConfig,
-                         Map<String, UnitFunction> unitFunctions,
-                         Map<String, VariableFunction> variableFunctions,
-                         Map<String, VariableParser<?, ?>> variableParsers,
-                         Map<String, TagMatcher> tagMatchers,
-                         Map<String, LoadBalancer> loadBalancers,
-                         LoadBalancer loadBalancer,
-                         Map<String, ClusterInvoker> clusterInvokers,
-                         ClusterInvoker clusterInvoker,
-                         InboundFilter[] inboundFilters,
-                         RouteFilter[] routeFilters,
-                         OutboundFilter[] outboundFilters,
-                         RouteFilter[] unitFilters,
-                         Timer timer,
-                         Map<String, Propagation> propagations,
-                         List<Propagation> propagationList,
-                         Propagation propagation,
-                         CounterManager counterManager,
-                         List<String> serviceSyncers) {
-        this.policyPublisher = policyPublisher;
-        this.systemPublisher = systemPublisher;
-        this.trafficPublisher = trafficPublisher;
-        this.application = application;
-        this.objectParser = objectParser;
-        this.liveEnabled = liveEnabled;
-        this.laneEnabled = laneEnabled;
-        this.flowControlEnabled = flowControlEnabled;
-        this.governanceConfig = governanceConfig;
-        this.unitFunctions = unitFunctions;
-        this.variableFunctions = variableFunctions;
-        this.variableParsers = variableParsers;
-        this.tagMatchers = tagMatchers;
-        this.loadBalancers = loadBalancers;
-        this.loadBalancer = loadBalancer;
-        this.clusterInvokers = clusterInvokers;
-        this.clusterInvoker = clusterInvoker;
-        this.inboundFilters = inboundFilters;
-        this.routeFilters = routeFilters;
-        this.outboundFilters = outboundFilters;
-        this.unitFilters = unitFilters;
-        this.timer = timer;
-        this.propagations = propagations;
-        this.propagationList = propagationList;
-        this.propagation = propagation;
-        this.counterManager = counterManager;
-        this.serviceSyncers = serviceSyncers;
-    }
-
     @Override
     public PolicySupplier getPolicySupplier() {
         return this;
@@ -435,6 +378,8 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof UnitLiveFilter ? filter : null);
         unitFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
+        // compose after creating unit filters
+        routeFilters = compose(routeFilters);
 
         governanceConfig = governanceConfig == null ? new GovernanceConfig() : governanceConfig;
         governanceConfig.initialize(application);

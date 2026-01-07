@@ -18,8 +18,8 @@ package com.jd.live.agent.governance.invoke.filter.route;
 import com.jd.live.agent.core.extension.annotation.Extension;
 import com.jd.live.agent.governance.annotation.ConditionalOnFlowControlEnabled;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
+import com.jd.live.agent.governance.invoke.filter.ConstraintRouteFilter;
 import com.jd.live.agent.governance.invoke.filter.RouteFilter;
-import com.jd.live.agent.governance.invoke.filter.RouteFilterChain;
 import com.jd.live.agent.governance.request.Portable;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 
@@ -31,17 +31,18 @@ import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
  */
 @Extension(value = "PortFilter", order = RouteFilter.ORDER_PORT)
 @ConditionalOnFlowControlEnabled
-public class PortFilter implements RouteFilter {
+public class PortFilter implements ConstraintRouteFilter {
 
     @Override
-    public <T extends OutboundRequest> void filter(OutboundInvocation<T> invocation, RouteFilterChain chain) {
+    public <T extends OutboundRequest> Constraint getConstraint(OutboundInvocation<T> invocation) {
         T request = invocation.getRequest();
-        if (request instanceof Portable) {
-            Integer port = ((Portable) request).getPort();
-            if (port != null) {
-                invocation.getRouteTarget().filter(e -> e.isPort(port));
-            }
+        if (!(request instanceof Portable)) {
+            return null;
         }
-        chain.filter(invocation);
+        Integer port = ((Portable) request).getPort();
+        if (port == null) {
+            return null;
+        }
+        return new Constraint(e -> e.isPort(port));
     }
 }
