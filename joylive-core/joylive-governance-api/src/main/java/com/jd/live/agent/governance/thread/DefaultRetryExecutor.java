@@ -59,24 +59,6 @@ public class DefaultRetryExecutor implements RetryExecutor, ExtensionInitializer
         }
     }
 
-    /**
-     * Shuts down the executor gracefully.
-     */
-    public void shutdown() {
-        if (scheduler == null) {
-            return;
-        }
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
-    }
-
     @Override
     public void initialize() {
         // retry config is not null.
