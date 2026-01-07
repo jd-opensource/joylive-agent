@@ -43,7 +43,7 @@ import java.util.Set;
 @Consumer
 public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy>, ErrorPolicy {
 
-    public static final long DEFAULT_RETRY_INTERVAL = 2000L;
+    public static final long DEFAULT_RETRY_INTERVAL = 100L;
 
     /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
