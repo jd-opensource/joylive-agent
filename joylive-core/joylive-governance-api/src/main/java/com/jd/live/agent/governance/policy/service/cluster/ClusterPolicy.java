@@ -45,9 +45,13 @@ public class ClusterPolicy extends PolicyId implements PolicyInheritWithId<Clust
     @Override
     public void supplement(ClusterPolicy source) {
         supplementId(retryPolicy);
-        if (source != null) {
-            retryPolicy = supplement(source.retryPolicy, retryPolicy, r -> new RetryPolicy());
+        if (source == null) {
+            return;
         }
+        if (type == null) {
+            type = source.type;
+        }
+        retryPolicy = supplement(source.retryPolicy, retryPolicy, r -> new RetryPolicy());
     }
 
     public void cache() {
