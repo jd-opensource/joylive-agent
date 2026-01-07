@@ -163,7 +163,7 @@ public class LaneFilter implements RouteFilter {
          * @return true if redirect should occur, false otherwise
          */
         public boolean redirect(String targetLane) {
-            return type != FallbackType.REJECT && !targetLane.equals(lane);
+            return type != FallbackType.REJECT && targetLane != null && !targetLane.equals(lane);
         }
     }
 }
