@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.exception.RetryException.RetryExhaustedExcep
 import com.jd.live.agent.governance.exception.RetryException.RetryTimeoutException;
 import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
+import com.jd.live.agent.governance.invoke.InvocationContext;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
@@ -37,10 +38,11 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import static com.jd.live.agent.governance.exception.ErrorCause.cause;
+import static com.jd.live.agent.governance.policy.service.cluster.RetryPolicy.DEFAULT_RETRY_INTERVAL;
 import static com.jd.live.agent.governance.util.Predicates.isError;
 
 /**
@@ -59,24 +61,32 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
-                                                           OutboundInvocation<R> invocation,
-                                                           ClusterPolicy defaultPolicy) {
+            E extends Endpoint> CompletionStage<O> execute(final LiveCluster<R, O, E> cluster,
+                                                           final OutboundInvocation<R> invocation,
+                                                           final ClusterPolicy defaultPolicy) {
         ServicePolicy servicePolicy = invocation.getServiceMetadata().getServicePolicy();
-        ClusterPolicy clusterPolicy = servicePolicy == null ? null : servicePolicy.getClusterPolicy();
-        RetryPolicy retryPolicy = clusterPolicy == null ? null : clusterPolicy.getRetryPolicy();
-        retryPolicy = retryPolicy == null && defaultPolicy != null ? defaultPolicy.getRetryPolicy() : retryPolicy;
-        R request = invocation.getRequest();
-        request.setAttribute(Request.KEY_FAILOVER_REQUEST, Boolean.TRUE);
-        request.addErrorPolicy(retryPolicy);
-        RetryContext<R, O, E> retryContext = new RetryContext<>(codeParsers, retryPolicy, cluster);
-        Supplier<CompletionStage<O>> supplier = () -> invoke(cluster, invocation, retryContext.getAndIncrement());
-        cluster.onStart(request);
-
+        RetryPolicy defaultRetryPolicy = defaultPolicy == null ? null : defaultPolicy.getRetryPolicy();
+        RetryPolicy retryPolicy = servicePolicy == null ? defaultRetryPolicy : servicePolicy.getRetryPolicy(defaultRetryPolicy);
+        if (!isRetryable(retryPolicy, invocation.getRequest())) {
+            // Retry is disabled, so we can just execute the request directly.
+            return super.execute(cluster, invocation, defaultPolicy);
+        }
+        RetryContext<R, O, E> retryContext = new RetryContext<>(cluster, invocation, retryPolicy, codeParsers);
         // TODO test degrade when retry
-        return retryContext.execute(invocation, supplier)
+        return retryContext.execute()
                 .exceptionally(e ->
-                        cluster.createResponse(cluster.createException(e, invocation), request, null));
+                        cluster.createResponse(cluster.createException(e, invocation), invocation.getRequest(), null));
+    }
+
+    /**
+     * Checks if retry is enabled for the request based on policy.
+     *
+     * @param retryPolicy retry policy configuration
+     * @param request     outbound request
+     * @return true if retry is enabled and applicable, false otherwise
+     */
+    protected boolean isRetryable(final RetryPolicy retryPolicy, final OutboundRequest request) {
+        return retryPolicy != null && retryPolicy.isEnabled() && retryPolicy.containsMethod(request.getMethod());
     }
 
     /**
@@ -93,33 +103,41 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
      * @param <O> The type of the outbound response that extends {@link OutboundResponse}.
      * @param <E> The type of the endpoint to which requests are routed.
      */
-    private static class RetryContext<R extends OutboundRequest,
+    protected static class RetryContext<R extends OutboundRequest,
             O extends OutboundResponse,
             E extends Endpoint> {
-
-        private final Map<String, ErrorParser> errorParsers;
-
-        /**
-         * The retry policy defining the rules for retrying the operation.
-         */
-        private final RetryPolicy retryPolicy;
 
         /**
          * The cluster managing the distribution and processing of the request
          */
-        private final LiveCluster<R, O, E> cluster;
+        protected final LiveCluster<R, O, E> cluster;
+
+        protected final OutboundInvocation<R> invocation;
+
+        protected final InvocationContext context;
+
+        protected final R request;
+
+        protected final Thread thread;
+
+        /**
+         * The retry policy defining the rules for retrying the operation.
+         */
+        protected final RetryPolicy retryPolicy;
+
+        protected final Map<String, ErrorParser> errorParsers;
 
         /**
          * A counter tracking the number of retry attempts made.
          */
-        private final AtomicInteger counter;
+        protected final AtomicInteger counter = new AtomicInteger(0);
 
         /**
          * The deadline timestamp in milliseconds by which the operation should complete.
          */
-        private final long deadline;
+        protected final long deadline;
 
-        private final Object mutex = new Object();
+        protected final long retryInterval;
 
         /**
          * Constructs a new {@code RetryContext} with the specified retry policy and response function.
@@ -127,70 +145,68 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * @param retryPolicy The {@link RetryPolicy} to govern retry behavior.
          * @param cluster     The {@link LiveCluster} managing the distribution and processing of the request
          */
-        RetryContext(Map<String, ErrorParser> errorParsers, RetryPolicy retryPolicy, LiveCluster<R, O, E> cluster) {
-            this.errorParsers = errorParsers;
-            this.retryPolicy = retryPolicy;
+        RetryContext(LiveCluster<R, O, E> cluster,
+                     OutboundInvocation<R> invocation,
+                     RetryPolicy retryPolicy,
+                     Map<String, ErrorParser> errorParsers) {
             this.cluster = cluster;
-            this.counter = new AtomicInteger(0);
-            this.deadline = retryPolicy == null ? 0 : retryPolicy.getDeadline(System.currentTimeMillis());
+            this.invocation = invocation;
+            this.context = invocation.getContext();
+            this.request = invocation.getRequest();
+            this.retryPolicy = retryPolicy;
+            this.errorParsers = errorParsers;
+            this.deadline = retryPolicy.getDeadline(System.currentTimeMillis());
+            this.thread = Thread.currentThread();
+            this.retryInterval = retryPolicy.getRetryInterval(DEFAULT_RETRY_INTERVAL);
         }
 
         /**
          * Initiates the execution of the operation with retry logic.
-         * <p>
-         * This method attempts to execute the provided operation. If the operation fails and
-         * meets the criteria for retrying as defined by the {@link RetryPolicy}, it will be
-         * retried until the policy's conditions are no longer met.
-         * </p>
          *
-         * @param invocation  The {@link OutboundInvocation} representing the specific request and its routing information.
-         * @param supplier    A supplier providing the operation to be executed as a {@link CompletionStage}.
          * @return A {@link CompletionStage} representing the eventual completion of the operation,
          * either successfully or with an error.
          */
-        public CompletionStage<O> execute(OutboundInvocation<R> invocation, Supplier<CompletionStage<O>> supplier) {
+        public CompletionStage<O> execute() {
+            onStartRequest();
             CompletableFuture<O> result = new CompletableFuture<>();
-            doExecute(invocation, supplier, result);
+            doExecute(result);
             return result;
+        }
 
+        /**
+         * Prepares request for failover retry by setting failover flag and error policy.
+         */
+        protected void onStartRequest() {
+            request.setAttribute(Request.KEY_FAILOVER_REQUEST, Boolean.TRUE);
+            request.addErrorPolicy(retryPolicy);
+            cluster.onStart(request);
         }
 
         /**
          * Recursively executes the operation, applying retry logic and completing the future
          * based on the outcome of each attempt.
          *
-         * @param invocation  The {@link OutboundInvocation} representing the specific request and its routing information.
-         * @param supplier    A supplier providing the operation to be executed.
          * @param future     The {@link CompletableFuture} to be completed with the operation's result.
          */
-        private void doExecute(OutboundInvocation<R> invocation, Supplier<CompletionStage<O>> supplier, CompletableFuture<O> future) {
-            int count = counter.get();
-            R request = invocation.getRequest();
-            if (count > 0) {
-                invocation.resetOnRetry();
+        protected void doExecute(final CompletableFuture<O> future) {
+            if (!isReady()) {
+                onUnready(future);
+                return;
             }
-            cluster.onRetry(request, count);
-            CompletionStage<O> stage = supplier.get();
-            stage.whenComplete((v, e) -> {
+            int count = onExecute();
+            doInvoke().whenComplete((v, e) -> {
                 ServiceError se = v == null ? null : v.getError();
-                Throwable throwable = se == null ? e : se.getThrowable();
-                // not retry when empty instance
-                int size = invocation.getInstances() == null ? 0 : invocation.getInstances().size();
-                RetryType retryType = size == 0 ? RetryType.NONE : isRetryable(request, v, e, count);
+                Throwable throwable = e != null || se == null ? e : se.getThrowable();
+                RetryType retryType = isRetryable(request, v, e, count);
                 switch (retryType) {
                     case RETRY:
-                        Throwable ex = checkAndAwait(request, throwable);
-                        if (ex != null) {
-                            cluster.onRetryComplete(future, request, null, ex);
-                        } else {
-                            doExecute(invocation, supplier, future);
-                        }
+                        onRetry(future, throwable);
                         break;
                     case EXHAUSTED:
-                        cluster.onRetryComplete(future, request, null, new RetryExhaustedException("max retries is reached out.", throwable, retryPolicy.getRetry()));
+                        onExhausted(future, throwable);
                         break;
                     case TIMEOUT:
-                        cluster.onRetryComplete(future, request, null, new RetryTimeoutException("retry is timeout.", throwable, retryPolicy.getTimeout()));
+                        onTimeout(future, throwable);
                         break;
                     default:
                         cluster.onRetryComplete(future, request, v, e);
@@ -199,58 +215,92 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
         }
 
         /**
-         * Checks if the request is ready and waits if necessary.
+         * Checks system availability for retry operations.
          *
-         * @param request the request to check
-         * @param cause   the cause of the previous failure, or null if this is the first attempt
-         * @return the exception that occurred during the check or wait, or null if the request is ready
+         * @return true if cluster is not destroyed and application is ready, false otherwise
          */
-        private Throwable checkAndAwait(R request, Throwable cause) {
-            Throwable result = checkReady(request);
-            if (result == null) {
-                result = await(cause);
-                if (result == null) {
-                    result = checkReady(request);
-                }
-            }
-            return result;
+        protected boolean isReady() {
+            return !cluster.isDestroyed() && context.isReady();
         }
 
         /**
-         * Checks if the cluster is destroyed and returns an exception if it is.
-         *
-         * @param request the request to check
-         * @return an exception if the cluster is destroyed, or null if it is not
+         * Executes invocation with incremented retry counter.
          */
-        private Throwable checkReady(R request) {
-            return cluster.isDestroyed() ? cluster.createException(new RejectUnreadyException(), request) : null;
+        protected CompletionStage<O> doInvoke() {
+            return new Invoker<>(cluster, invocation, counter.getAndIncrement()).execute();
         }
 
         /**
-         * Waits for a specified interval before retrying the request.
+         * Handles cluster unavailability by completing the future with a reject exception.
+         * Called when cluster is destroyed or application is not ready for retry operations.
          *
-         * @param cause the cause of the previous failure, or null if this is the first attempt
-         * @return an exception if the retry timed out, or null if the wait was successful
+         * @param future the completable future to complete with rejection
          */
-        private Throwable await(Throwable cause) {
-            Long interval = retryPolicy == null ? null : retryPolicy.getInterval();
-            if (interval != null && interval > 0) {
-                if (interval + System.currentTimeMillis() > deadline) {
-                    return new RetryTimeoutException("retry is timeout.", cause, retryPolicy.getTimeout());
-                }
-                synchronized (mutex) {
-                    try {
-                        mutex.wait(interval);
-                    } catch (InterruptedException e) {
-                        return new RetryTimeoutException("retry is timeout.", cause, retryPolicy.getTimeout());
-                    }
-                }
-            }
-            return null;
+        protected void onUnready(CompletableFuture<O> future) {
+            cluster.onRetryComplete(future, request, null, cluster.createException(new RejectUnreadyException(), request));
         }
 
-        private int getAndIncrement() {
-            return counter.getAndIncrement();
+        /**
+         * Handles retry attempt preparation and notification.
+         *
+         * @return the current retry count
+         */
+        protected int onExecute() {
+            int count = counter.get();
+            if (count > 0) {
+                invocation.resetOnRetry();
+            }
+            cluster.onRetry(request, count);
+            return count;
+        }
+
+        /**
+         * Handles retry attempt scheduling.
+         * Checks cluster status and deadline before scheduling next retry.
+         *
+         * @param future    completable future to complete
+         * @param throwable current exception
+         */
+        protected void onRetry(CompletableFuture<O> future, Throwable throwable) {
+            if (!isReady()) {
+                onUnready(future);
+            } else if (retryInterval + System.currentTimeMillis() > deadline) {
+                onTimeout(future, throwable);
+            } else if (Thread.currentThread() != thread) {
+                // async
+                context.getRetryExecutor().submit(() -> doExecute(future), retryInterval, TimeUnit.MILLISECONDS);
+            } else {
+                // sync
+                try {
+                    Thread.sleep(retryInterval);
+                    doExecute(future);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    onTimeout(future, throwable);
+                }
+            }
+        }
+
+        /**
+         * Handles retry timeout completion.
+         * Completes future with timeout exception when retry deadline is exceeded.
+         *
+         * @param future    completable future to complete
+         * @param throwable current exception
+         */
+        protected void onTimeout(CompletableFuture<O> future, Throwable throwable) {
+            cluster.onRetryComplete(future, request, null, new RetryTimeoutException("retry is timeout.", throwable, retryPolicy.getTimeout()));
+        }
+
+        /**
+         * Handles retry exhaustion completion.
+         * Completes future when maximum retry attempts are reached.
+         *
+         * @param future    completable future to complete
+         * @param throwable current exception
+         */
+        protected void onExhausted(CompletableFuture<O> future, Throwable throwable) {
+            cluster.onRetryComplete(future, request, null, new RetryExhaustedException("max retries is reached out.", throwable, retryPolicy.getRetry()));
         }
 
         /**
@@ -263,12 +313,11 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
          * @param count    The retry counter.
          * @return {@code true} if the operation should be retried, {@code false} otherwise.
          */
-        private RetryType isRetryable(R request, O response, Throwable e, int count) {
-            if (retryPolicy == null || !retryPolicy.isEnabled()) {
+        protected RetryType isRetryable(R request, O response, Throwable e, int count) {
+            if (invocation.isEmpty()) {
+                // not retry when empty instance
                 return RetryType.NONE;
             } else if (e instanceof Unretryable) {
-                return RetryType.NONE;
-            } else if (!retryPolicy.containsMethod(request.getMethod())) {
                 return RetryType.NONE;
             } else {
                 ErrorCause cause = cause(e, request.getErrorFunction(), response == null ? null : response.getRetryPredicate());
@@ -292,7 +341,7 @@ public class FailoverClusterInvoker extends AbstractClusterInvoker {
      * This enumeration is used to categorize the results of an operation attempt, guiding the subsequent
      * retry logic on how to proceed based on the type of failure encountered.
      */
-    private enum RetryType {
+    protected enum RetryType {
 
         /**
          * Indicates that no retry should be attempted.

@@ -25,7 +25,6 @@ import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -47,26 +46,37 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
-                                                            OutboundInvocation<R> invocation,
-                                                            ClusterPolicy defaultPolicy) {
+            E extends Endpoint> CompletionStage<O> execute(final LiveCluster<R, O, E> cluster,
+                                                           final OutboundInvocation<R> invocation,
+                                                           final ClusterPolicy defaultPolicy) {
         return invoke(cluster, invocation, 0);
     }
 
     @Override
     protected <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> void onException(LiveCluster<R, O, E> cluster,
-                                                  OutboundInvocation<R> invocation,
-                                                  O response,
-                                                  ServiceError error,
-                                                  E endpoint,
-                                                  CompletableFuture<O> result) {
-        logger.error("Failsafe ignore exception: " + error.getErrorMessage());
-        R request = invocation.getRequest();
-        invocation.onFailure(endpoint, error.getThrowable());
-        response = cluster.createResponse(null, request, null);
-        cluster.onSuccess(response, request, endpoint);
-        result.complete(response);
+            E extends Endpoint> CompletionStage<O> invoke(final LiveCluster<R, O, E> cluster,
+                                                          final OutboundInvocation<R> invocation,
+                                                          final int counter) {
+        return new FailsafeInvoker<>(cluster, invocation, counter).execute();
+    }
+
+    protected static class FailsafeInvoker<
+            R extends OutboundRequest,
+            O extends OutboundResponse,
+            E extends Endpoint> extends Invoker<R, O, E> {
+
+        public FailsafeInvoker(LiveCluster<R, O, E> cluster, OutboundInvocation<R> invocation, int counter) {
+            super(cluster, invocation, counter);
+        }
+
+        @Override
+        protected void onException(ServiceError error) {
+            Throwable e = error.getThrowable();
+            logger.warn("Failsafe ignore exception: " + e.getMessage());
+            invocation.onFailure(endpoint, e);
+            response = cluster.createResponse(null, request, null);
+            cluster.onSuccess(response, request, endpoint);
+        }
     }
 }

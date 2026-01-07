@@ -69,6 +69,7 @@ import com.jd.live.agent.governance.subscription.policy.listener.LaneSpaceListen
 import com.jd.live.agent.governance.subscription.policy.listener.LiveDatabaseListener;
 import com.jd.live.agent.governance.subscription.policy.listener.LiveSpaceListener;
 import com.jd.live.agent.governance.subscription.policy.listener.ServiceListener;
+import com.jd.live.agent.governance.thread.RetryExecutor;
 import lombok.Getter;
 
 import java.util.*;
@@ -205,6 +206,10 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Inject
     private Timer timer;
 
+    @Getter
+    @Inject
+    private RetryExecutor retryExecutor;
+
     @Inject
     private Map<String, Propagation> propagations;
 
@@ -238,6 +243,11 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     private final AtomicBoolean warmup = new AtomicBoolean(false);
 
     public PolicyManager() {
+    }
+
+    @Override
+    public boolean isReady() {
+        return application.isReady();
     }
 
     @Override
@@ -486,7 +496,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
             Set<String> warmups = governanceConfig.getServiceConfig().getWarmups();
             if (warmups != null && !warmups.isEmpty()) {
                 // only subscribe policy
-                warmups.forEach(v -> subscribe(v));
+                warmups.forEach(this::subscribe);
             }
             // warmup host to service
             Map<String, String> hosts = governanceConfig.getRegistryConfig().getHostConfig().getServices();

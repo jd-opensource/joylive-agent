@@ -224,6 +224,8 @@ agent:
       loadLimiter:
         cpuUsage: ${CONFIG_MAX_CPU_USAGE:}
         loadUsage: ${CONFIG_MAX_LOAD_USAGE:}
+      retry:
+        threads: ${CONFIG_RETRY_THREADS:0}
       circuitBreaker:
         type: Resilience4j
         cleanInterval: 30000

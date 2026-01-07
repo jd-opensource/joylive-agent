@@ -42,6 +42,9 @@ import java.util.Set;
  */
 @Consumer
 public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPolicy>, ErrorPolicy {
+
+    public static final long DEFAULT_RETRY_INTERVAL = 2000L;
+
     /**
      * The number of retry attempts that should be made in case of a failure. This parameter allows the system
      * to attempt to recover from transient failures by retrying the failed operation.
@@ -154,6 +157,10 @@ public class RetryPolicy extends PolicyId implements PolicyInheritWithId<RetryPo
 
     public long getDeadline(long startTime) {
         return timeout != null && timeout > 0 ? startTime + timeout : 0;
+    }
+
+    public long getRetryInterval(long defaultValue) {
+        return interval != null && interval > 0 ? interval : defaultValue;
     }
 
     @Override
