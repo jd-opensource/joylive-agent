@@ -18,7 +18,6 @@ package com.jd.live.agent.governance.invoke.cluster;
 import com.jd.live.agent.bootstrap.logger.Logger;
 import com.jd.live.agent.bootstrap.logger.LoggerFactory;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.governance.exception.ServiceError;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.OutboundInvocation;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
@@ -71,12 +70,13 @@ public class FailsafeClusterInvoker extends AbstractClusterInvoker {
         }
 
         @Override
-        protected void onException(ServiceError error) {
-            Throwable e = error.getThrowable();
+        protected void onException(InvokeResult<O, E> result) {
+            Throwable e = result.error.getThrowable();
             logger.warn("Failsafe ignore exception: " + e.getMessage());
-            invocation.onFailure(endpoint, e);
-            response = cluster.createResponse(null, request, null);
-            cluster.onSuccess(response, request, endpoint);
+            invocation.onFailure(result.endpoint, e);
+            result.response = cluster.createResponse(null, request, null);
+            cluster.onSuccess(result.response, request, result.endpoint);
         }
+
     }
 }

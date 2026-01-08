@@ -703,10 +703,12 @@ public interface InvocationContext {
             invocation.setInstances(instances);
         }
         try {
-            RouteFilterChain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
-            chain.filter(invocation);
-            List<? extends Endpoint> endpoints = invocation.getEndpoints();
-            Endpoint endpoint = endpoints != null && !endpoints.isEmpty() ? endpoints.get(0) : null;
+            Endpoint endpoint = null;
+            if (!invocation.isEmpty()) {
+                RouteFilterChain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
+                chain.filter(invocation);
+                endpoint = invocation.getEndpoint();
+            }
             if (endpoint != null || !invocation.getRequest().isInstanceSensitive()) {
                 invocation.onForward(endpoint);
                 return (E) endpoint;

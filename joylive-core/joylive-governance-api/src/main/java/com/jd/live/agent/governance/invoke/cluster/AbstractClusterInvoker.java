@@ -30,10 +30,8 @@ import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
-
-import static com.jd.live.agent.core.util.Futures.SUCCESS;
 
 /**
  * Abstract implementation of {@link ClusterInvoker} that manages the invocation of services
@@ -82,25 +80,18 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
     @Getter
     protected static class Invoker<R extends OutboundRequest, O extends OutboundResponse, E extends Endpoint> {
 
-        protected static final Consumer<Object> NOOP = o -> {
-        };
         protected final LiveCluster<R, O, E> cluster;
         protected final OutboundInvocation<R> invocation;
         protected final int counter;
         protected final InvocationContext context;
         protected final R request;
-        protected List<E> endpoints;
-        protected E endpoint;
-        protected O response;
 
-        @SuppressWarnings("unchecked")
         Invoker(final LiveCluster<R, O, E> cluster, final OutboundInvocation<R> invocation, final int counter) {
             this.cluster = cluster;
             this.invocation = invocation;
             this.counter = counter;
             this.context = invocation.getContext();
             this.request = invocation.getRequest();
-            this.endpoints = (List<E>) invocation.getEndpoints();
         }
 
         /**
@@ -110,146 +101,135 @@ public abstract class AbstractClusterInvoker implements ClusterInvoker {
          * @return completion stage with the service response
          */
         public CompletionStage<O> execute() {
-            return discover()
-                    .thenCompose(this::route)
-                    .thenCompose(this::onStartRequest)
-                    .thenCompose(this::invoke)
-                    .handle(this::complete);
-        }
-
-        /**
-         * Discovers available endpoints if not cached or on retry attempts.
-         *
-         * @return void completion stage when endpoints are available
-         */
-        protected CompletionStage<Void> discover() {
-            if (endpoints == null || endpoints.isEmpty() || counter > 0) {
-                return cluster.route(invocation.getRequest()).thenAccept(this::onDiscovery);
-            }
-            return SUCCESS;
+            return route().thenCompose(this::invoke).handle(this::complete);
         }
 
         /**
          * Routes request to target endpoint using context routing or pre-routed request.
          *
-         * @param v void parameter for composition
          * @return void completion stage when routing is complete
          */
-        protected CompletionStage<Void> route(Void v) {
-            endpoint = request instanceof RoutedRequest ? ((RoutedRequest) request).getEndpoint() : context.route(invocation, endpoints);
-            return SUCCESS;
+        @SuppressWarnings("unchecked")
+        protected CompletionStage<E> route() {
+            if (request instanceof RoutedRequest) {
+                return CompletableFuture.completedFuture(((RoutedRequest) request).getEndpoint());
+            } else if (invocation.isEmpty() || counter > 0) {
+                // discover and route
+                return cluster.route(request).thenApply(v -> context.route(invocation, v));
+            } else {
+                return CompletableFuture.completedFuture(context.route(invocation, (List<E>) invocation.getInstances()));
+            }
         }
 
         /**
          * Invokes service on selected endpoint with async support.
          *
-         * @param v void parameter for composition
+         * @param endpoint Selected endpoint for service invocation
          * @return void completion stage when invocation completes
-         */
-        protected CompletionStage<Void> invoke(Void v) {
-            return context.outbound(invocation, endpoint, this::doInvoke).thenCompose(this::onResponse);
-        }
-
-        /**
-         * Updates available endpoints for service invocation.
-         *
-         * @param endpoints discovered service endpoints
-         */
-        protected void onDiscovery(List<E> endpoints) {
-            this.endpoints = endpoints;
-        }
-
-        /**
-         * Invokes service on selected endpoint with async support.
-         *
-         * @return void completion stage when invocation completes
-         */
-        protected CompletionStage<O> doInvoke() {
-            return cluster.invoke(request, endpoint);
-        }
-
-        /**
-         * Handles asynchronous response processing with automatic future resolution.
-         *
-         * @param r the outbound response containing potential async future
-         * @return completion stage for async processing
          */
         @SuppressWarnings("unchecked")
-        protected CompletionStage<Void> onResponse(OutboundResponse r) {
-            response = (O) r;
-            CompletionStage<Object> stage = r instanceof Asyncable ? ((Asyncable) r).getFuture() : null;
-            if (stage == null) {
-                return SUCCESS;
-            }
-            return stage.thenAccept(NOOP);
+        protected CompletionStage<InvokeResult<O, E>> invoke(E endpoint) {
+            cluster.onStartRequest(request, endpoint);
+            return context
+                    .outbound(invocation, endpoint, () -> cluster.invoke(request, endpoint))
+                    .thenCompose(r -> {
+                        CompletionStage<Object> stage = r instanceof Asyncable ? ((Asyncable) r).getFuture() : null;
+                        if (stage == null) {
+                            return CompletableFuture.completedFuture(new InvokeResult<>((O) r, endpoint));
+                        }
+                        return stage
+                                .thenApply(v -> new InvokeResult<>((O) r, endpoint))
+                                .exceptionally(e -> new InvokeResult<>(new ServiceError(e, false), endpoint));
+                    })
+                    .exceptionally(e -> new InvokeResult<>(new ServiceError(e, false), endpoint));
         }
 
         /**
          * Handles invocation completion with success/error callbacks.
          *
-         * @param v         void parameter
+         * @param result    invoke result
          * @param throwable exception if invocation failed, null otherwise
          * @return final response
          */
-        protected O complete(Void v, Throwable throwable) {
-            ServiceError error = throwable != null ? new ServiceError(throwable, false) : response.getError();
+        protected O complete(InvokeResult<O, E> result, Throwable throwable) {
+            if (throwable != null) {
+                // result is null when exception occurred
+                result = new InvokeResult<>(new ServiceError(throwable, false));
+            }
             try {
-                if (error != null && error.hasException()) {
-                    onException(error);
+                if (result.hasException()) {
+                    // degrade when exception occurred, will create exception response.
+                    onException(result);
                 } else {
-                    onSuccess();
+                    onSuccess(result);
                 }
             } catch (Throwable e) {
                 logger.warn("Exception occurred when complete, caused by " + e.getMessage(), e);
             }
-            return response;
-        }
-
-        /**
-         * Notifies cluster of request start before actual invocation.
-         *
-         * @param v void parameter for composition
-         * @return void completion stage
-         */
-        protected CompletionStage<Void> onStartRequest(Void v) {
-            cluster.onStartRequest(request, endpoint);
-            return SUCCESS;
+            return result.response;
         }
 
         /**
          * Handles successful response with success callbacks to invocation and cluster.
+         * @param result Invoke result
          */
-        protected void onSuccess() {
-            invocation.onSuccess(endpoint, response);
-            cluster.onSuccess(response, request, endpoint);
+        protected void onSuccess(InvokeResult<O, E> result) {
+            invocation.onSuccess(result.endpoint, result.response);
+            cluster.onSuccess(result.response, request, result.endpoint);
         }
 
         /**
          * Handles service errors with appropriate callbacks and error categorization.
          *
-         * @param error service error containing failure details
+         * @param result Invoke result
          */
-        protected void onException(ServiceError error) {
-            Throwable e = error.getThrowable();
+        protected void onException(InvokeResult<O, E> result) {
+            Throwable e = result.error.getThrowable();
             logger.error("Exception occurred, caused by " + e.getMessage(), e instanceof LiveException ? null : e);
-            if (response == null || !error.isServerError()) {
+            if (result.response == null || !result.error.isServerError()) {
                 // convert client response error.
-                response = cluster.createResponse(e, request, endpoint);
+                result.response = cluster.createResponse(e, request, result.endpoint);
                 // degrade maybe changed error
-                error = response.getError();
+                result.error = result.response.getError();
             }
-            invocation.onFailure(endpoint, e);
-            if (error == null) {
+            invocation.onFailure(result.endpoint, e);
+            if (result.error == null) {
                 // Request was recover successfully by degrade
                 invocation.onRecover();
-                cluster.onRecover(response, request, endpoint);
+                cluster.onRecover(result.response, request, result.endpoint);
             } else if (e instanceof LiveException) {
                 // Request did not go off box
                 cluster.onDiscard(request);
             } else {
                 // Request reached the server but failed
-                cluster.onError(error.getThrowable(), request, endpoint);
+                cluster.onError(result.error.getThrowable(), request, result.endpoint);
             }
+        }
+    }
+
+    protected static class InvokeResult<O extends OutboundResponse, E extends Endpoint> {
+
+        protected O response;
+        protected E endpoint;
+        protected ServiceError error;
+
+        public InvokeResult(ServiceError error) {
+            this.error = error;
+        }
+
+        public InvokeResult(ServiceError error, E endpoint) {
+            this.error = error;
+            this.endpoint = endpoint;
+        }
+
+        public InvokeResult(O response, E endpoint) {
+            this.response = response;
+            this.endpoint = endpoint;
+            this.error = response.getError();
+        }
+
+        public boolean hasException() {
+            return error != null && error.hasException();
         }
     }
 }

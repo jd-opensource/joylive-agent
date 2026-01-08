@@ -213,6 +213,14 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         return routeTarget == null ? new ArrayList<>(0) : routeTarget.getEndpoints();
     }
 
+    public Endpoint getEndpoint() {
+        if (routeTarget == null) {
+            return null;
+        }
+        List<? extends Endpoint> endpoints = routeTarget.getEndpoints();
+        return endpoints == null || endpoints.isEmpty() ? null : endpoints.get(0);
+    }
+
     /**
      * Get the routing target. When the routing target is empty, the default routing target is returned.
      *
