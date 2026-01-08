@@ -114,9 +114,6 @@ public class TagCondition extends Tag {
      * @return {@code true} if at least one value in the list satisfies the tag condition; {@code false} otherwise.
      */
     public boolean match(List<String> targets) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Matching opType:{}, tag value:{}, request value:{}", opType, values, targets);
-        }
         return opType.match(values, targets);
     }
 }
