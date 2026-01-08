@@ -269,10 +269,10 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      * @return The configured traffic event.
      */
     protected TrafficEvent configure(TrafficEvent event, Endpoint endpoint) {
-        return configure(event)
-                .targetLane(endpoint == null ? null : endpoint.getLane())
-                .targetUnit(endpoint == null ? null : endpoint.getUnit())
-                .targetCell(endpoint == null ? null : endpoint.getCell());
+        if (endpoint == null) {
+            return configure(event);
+        }
+        return configure(event).targetLane(endpoint.getLane()).targetUnit(endpoint.getUnit()).targetCell(endpoint.getCell());
     }
 
     /**
