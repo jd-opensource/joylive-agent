@@ -21,6 +21,7 @@ import com.jd.live.agent.governance.context.RequestContext;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.request.HeaderReader.MultiValueMapReader;
 import com.jd.live.agent.plugin.transmission.springweb.v7.util.CloudUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -38,7 +39,8 @@ public class WebHandlerDecoratorInterceptor extends InterceptorAdaptor {
     public void onEnter(ExecutableContext ctx) {
         // for inbound traffic
         ServerWebExchange exchange = ctx.getArgument(0);
-        propagation.read(RequestContext.create(), new MultiValueMapReader(CloudUtils.writable(exchange.getRequest().getHeaders()).asMultiValueMap()));
+        HttpHeaders headers = CloudUtils.writable(exchange.getRequest().getHeaders());
+        propagation.read(RequestContext.create(), new MultiValueMapReader(headers.asMultiValueMap()));
     }
 
 }
