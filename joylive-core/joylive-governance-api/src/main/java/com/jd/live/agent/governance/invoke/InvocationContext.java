@@ -67,6 +67,7 @@ import com.jd.live.agent.governance.request.HttpRequest.HttpOutboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.InboundRequest;
 import com.jd.live.agent.governance.request.ServiceRequest.OutboundRequest;
 import com.jd.live.agent.governance.response.ServiceResponse.OutboundResponse;
+import com.jd.live.agent.governance.thread.RetryExecutor;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -208,6 +209,13 @@ public interface InvocationContext {
     }
 
     /**
+     * Checks if the application is ready
+     *
+     * @return {@code true} if the application is ready, {@code false} otherwise
+     */
+    boolean isReady();
+
+    /**
      * Checks if the live feature is enabled.
      *
      * @return {@code true} if the live feature is enabled, {@code false} otherwise
@@ -259,6 +267,13 @@ public interface InvocationContext {
      * @return A timer instance that can be used to measure and record event durations.
      */
     Timer getTimer();
+
+    /**
+     * Gets the retry executor instance.
+     *
+     * @return the retry executor instance
+     */
+    RetryExecutor getRetryExecutor();
 
     /**
      * Retrieves a publisher for database events.
@@ -688,10 +703,12 @@ public interface InvocationContext {
             invocation.setInstances(instances);
         }
         try {
-            RouteFilterChain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
-            chain.filter(invocation);
-            List<? extends Endpoint> endpoints = invocation.getEndpoints();
-            Endpoint endpoint = endpoints != null && !endpoints.isEmpty() ? endpoints.get(0) : null;
+            Endpoint endpoint = null;
+            if (!invocation.isEmpty()) {
+                RouteFilterChain chain = new RouteFilterChain.Chain(filters == null || filters.length == 0 ? getRouteFilters() : filters);
+                chain.filter(invocation);
+                endpoint = invocation.getEndpoint();
+            }
             if (endpoint != null || !invocation.getRequest().isInstanceSensitive()) {
                 invocation.onForward(endpoint);
                 return (E) endpoint;
@@ -892,6 +909,11 @@ public interface InvocationContext {
         }
 
         @Override
+        public boolean isReady() {
+            return delegate.isReady();
+        }
+
+        @Override
         public boolean isLiveEnabled() {
             return delegate.isLiveEnabled();
         }
@@ -919,6 +941,11 @@ public interface InvocationContext {
         @Override
         public Timer getTimer() {
             return delegate.getTimer();
+        }
+
+        @Override
+        public RetryExecutor getRetryExecutor() {
+            return delegate.getRetryExecutor();
         }
 
         @Override

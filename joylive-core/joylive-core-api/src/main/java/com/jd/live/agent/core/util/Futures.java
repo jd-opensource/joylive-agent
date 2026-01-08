@@ -24,6 +24,8 @@ import java.util.function.BiFunction;
  */
 public abstract class Futures {
 
+    public static final CompletableFuture<Void> SUCCESS = CompletableFuture.completedFuture(null);
+
     /**
      * Completes a CompletableFuture with either an exception or a value.
      *

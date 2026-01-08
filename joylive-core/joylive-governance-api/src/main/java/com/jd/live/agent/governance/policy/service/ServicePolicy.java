@@ -25,6 +25,7 @@ import com.jd.live.agent.governance.policy.PolicyInherit.PolicyInheritWithIdGen;
 import com.jd.live.agent.governance.policy.service.auth.PermissionPolicy;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
 import com.jd.live.agent.governance.policy.service.cluster.ClusterPolicy;
+import com.jd.live.agent.governance.policy.service.cluster.RetryPolicy;
 import com.jd.live.agent.governance.policy.service.fault.FaultInjectionPolicy;
 import com.jd.live.agent.governance.policy.service.health.HealthPolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
@@ -154,6 +155,14 @@ public class ServicePolicy extends PolicyId implements Cloneable, PolicyInheritW
 
     public LanePolicy getLanePolicy(String laneSpaceId) {
         return lanePolicyCache.get(laneSpaceId);
+    }
+
+    public RetryPolicy getRetryPolicy(RetryPolicy defaultPolicy) {
+        if (clusterPolicy == null) {
+            return defaultPolicy;
+        }
+        RetryPolicy retryPolicy = clusterPolicy.getRetryPolicy();
+        return retryPolicy == null ? defaultPolicy : retryPolicy;
     }
 
     @Override

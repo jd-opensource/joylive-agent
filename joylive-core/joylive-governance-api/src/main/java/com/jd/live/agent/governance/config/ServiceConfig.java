@@ -92,6 +92,10 @@ public class ServiceConfig {
     @Setter
     private Set<String> warmups;
 
+    @Getter
+    @Setter
+    private RetryConfig retryConfig = new RetryConfig();
+
     /**
      * The config of circuit breaker
      */
@@ -271,6 +275,9 @@ public class ServiceConfig {
         }
         systemHandlers.addAll(Arrays.asList(SPRING_SYSTEM_HANDLERS));
         systemHandlers.addAll(Arrays.asList(DUBBO_SYSTEM_HANDLERS));
+        if (retryConfig.getThreads() <= 0) {
+            retryConfig.setThreads(Runtime.getRuntime().availableProcessors() * 2);
+        }
     }
 }
 

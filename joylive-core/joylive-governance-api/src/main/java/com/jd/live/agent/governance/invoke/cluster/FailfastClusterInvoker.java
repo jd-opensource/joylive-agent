@@ -44,9 +44,9 @@ public class FailfastClusterInvoker extends AbstractClusterInvoker {
     @Override
     public <R extends OutboundRequest,
             O extends OutboundResponse,
-            E extends Endpoint> CompletionStage<O> execute(LiveCluster<R, O, E> cluster,
-                                                            OutboundInvocation<R> invocation,
-                                                            ClusterPolicy defaultPolicy) {
+            E extends Endpoint> CompletionStage<O> execute(final LiveCluster<R, O, E> cluster,
+                                                           final OutboundInvocation<R> invocation,
+                                                           final ClusterPolicy defaultPolicy) {
         return invoke(cluster, invocation, 0);
     }
 }
