@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.response;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpHeader;
 import com.jd.live.agent.governance.exception.ErrorPredicate;
 import com.jd.live.agent.governance.exception.ServiceError;
@@ -24,6 +23,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static com.jd.live.agent.core.util.StringUtils.EMPTY_STRING;
+import static java.util.Collections.EMPTY_MAP;
 
 /**
  * AbstractHttpResponse
@@ -45,12 +47,12 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected CacheObject<Map<String, List<String>>> cookies;
+    protected Map<String, List<String>> cookies;
 
     /**
      * Lazily evaluated HTTP headers from the request.
      */
-    protected CacheObject<Map<String, List<String>>> headers;
+    protected Map<String, List<String>> headers;
 
     /**
      * The URI of the HTTP request.
@@ -60,19 +62,19 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     /**
      * Lazily evaluated port number of the request URI.
      */
-    protected CacheObject<Integer> port;
+    protected Integer port;
 
     /**
      * Lazily evaluated host of the request URI.
      */
-    protected CacheObject<String> host;
+    protected String host;
 
     /**
      * Lazily evaluated scheme of the request URI.
      */
-    protected CacheObject<String> schema;
+    protected String schema;
 
-    protected CacheObject<String> contentType;
+    protected String contentType;
 
     /**
      * Constructs an instance of {@code AbstractHttpResponse} with the original response object.
@@ -123,27 +125,27 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     @Override
     public String getSchema() {
         if (schema == null) {
-            schema = new CacheObject<>(parseScheme());
+            String v = parseScheme();
+            schema = v == null ? EMPTY_STRING : v;
         }
-        String result = schema.get();
-        return result == null || result.isEmpty() ? null : result;
+        return schema.isEmpty() ? null : schema;
     }
 
     @Override
     public int getPort() {
         if (port == null) {
-            port = new CacheObject<>(parsePort());
+            port = parsePort();
         }
-        return port.get();
+        return port;
     }
 
     @Override
     public String getHost() {
         if (host == null) {
-            host = new CacheObject<>(parseHost());
+            String v = parseHost();
+            host = v == null ? EMPTY_STRING : v;
         }
-        String result = host.get();
-        return result == null || result.isEmpty() ? null : result;
+        return host.isEmpty() ? null : host;
     }
 
     @Override
@@ -152,35 +154,41 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getHeaders() {
         if (headers == null) {
-            headers = new CacheObject<>(parseHeaders());
+            Map<String, List<String>> map = parseHeaders();
+            // not null
+            headers = map == null ? EMPTY_MAP : headers;
         }
-        return headers.get();
+        return headers;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getCookies() {
         if (cookies == null) {
-            cookies = new CacheObject<>(parseCookies());
+            Map<String, List<String>> map = parseCookies();
+            // not null
+            cookies = map == null ? EMPTY_MAP : map;
         }
-        return cookies.get();
+        return cookies;
     }
 
     @Override
     public String getCookie(String key) {
         if (key == null) return null;
-        Map<String, List<String>> cookies = getCookies();
-        List<String> values = cookies == null ? null : cookies.get(key);
+        List<String> values = getCookies().get(key);
         return values == null || values.isEmpty() ? null : values.get(0);
     }
 
     @Override
     public String getContentType() {
         if (contentType == null) {
-            contentType = new CacheObject<>(getHeader(HttpHeader.CONTENT_TYPE));
+            String header = getHeader(HttpHeader.CONTENT_TYPE);
+            contentType = header == null ? EMPTY_STRING : header;
         }
-        return contentType.get();
+        return contentType.isEmpty() ? null : contentType;
     }
 
     /**

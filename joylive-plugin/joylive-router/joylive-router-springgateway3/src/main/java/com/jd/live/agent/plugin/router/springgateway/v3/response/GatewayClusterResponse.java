@@ -36,6 +36,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -59,8 +60,6 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
 
     public GatewayClusterResponse(ServerHttpResponse response, Supplier<ServiceError> errorSupplier, Supplier<String> bodySupplier) {
         super(response, errorSupplier, null);
-        this.headers = new UnsafeLazyObject<>(response::getHeaders);
-        this.cookies = new UnsafeLazyObject<>(() -> HttpUtils.parseCookie(response.getCookies(), ResponseCookie::getValue));
         this.body = new UnsafeLazyObject<>(bodySupplier);
     }
 
@@ -105,6 +104,16 @@ public class GatewayClusterResponse extends AbstractHttpOutboundResponse<ServerH
     @Override
     public HttpHeaders getHttpHeaders() {
         return response == null ? new HttpHeaders() : response.getHeaders();
+    }
+
+    @Override
+    protected Map<String, List<String>> parseHeaders() {
+        return response == null ? null : response.getHeaders();
+    }
+
+    @Override
+    protected Map<String, List<String>> parseCookies() {
+        return response == null ? null : HttpUtils.parseCookie(response.getCookies(), ResponseCookie::getValue);
     }
 
     /**
