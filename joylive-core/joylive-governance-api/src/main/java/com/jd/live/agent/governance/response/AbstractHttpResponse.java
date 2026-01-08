@@ -159,7 +159,7 @@ public abstract class AbstractHttpResponse<T> extends AbstractServiceResponse<T>
         if (headers == null) {
             Map<String, List<String>> map = parseHeaders();
             // not null
-            headers = map == null ? EMPTY_MAP : headers;
+            headers = map == null ? EMPTY_MAP : map;
         }
         return headers;
     }
