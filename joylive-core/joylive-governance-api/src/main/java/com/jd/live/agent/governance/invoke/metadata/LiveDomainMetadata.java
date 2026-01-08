@@ -1,6 +1,6 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -45,8 +45,8 @@ public class LiveDomainMetadata extends LiveMetadata {
     private String bizVariable;
 
     @Override
-    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        return super.configure(builder).liveBizVariable(bizVariable);
+    public TrafficEvent configure(TrafficEvent event) {
+        return super.configure(event).liveBizVariable(bizVariable);
     }
 
     private static final class LiveDomainMetadataBuilderImpl extends LiveDomainMetadataBuilder<LiveDomainMetadata, LiveDomainMetadataBuilderImpl> {

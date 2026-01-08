@@ -23,7 +23,6 @@ import com.jd.live.agent.core.util.matcher.Matcher;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ActionType;
 import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.matcher.TagMatcher;
 import com.jd.live.agent.governance.invoke.metadata.LaneMetadata;
 import com.jd.live.agent.governance.invoke.metadata.LiveMetadata;
@@ -234,16 +233,13 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     }
 
     /**
-     * Publishes a live event to a specified publisher using a configured live event builder.
+     * Publishes a traffic event to a specified publisher.
      *
-     * @param builder   The live event builder used to configure and build the live event.
+     * @param event The traffic event.
      */
-    protected void publish(TrafficEventBuilder builder) {
-        if (builder != null) {
-            TrafficEvent event = configure(builder).build();
-            if (event != null) {
-                context.publish(event);
-            }
+    protected void publish(TrafficEvent event) {
+        if (event != null) {
+            context.publish(configure(event));
         }
     }
 
@@ -251,7 +247,7 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * Handles a forward event.
      */
     protected void onForwardEvent() {
-        publish(TrafficEvent.builder().actionType(ActionType.FORWARD).requests(1));
+        publish(TrafficEvent.build().actionType(ActionType.FORWARD).requests(1));
     }
 
     /**
@@ -260,26 +256,26 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @param type the type of reject
      */
     protected void onRejectEvent(RejectType type) {
-        publish(TrafficEvent.builder().actionType(ActionType.REJECT).rejectType(type).requests(1));
+        publish(TrafficEvent.build().actionType(ActionType.REJECT).rejectType(type).requests(1));
     }
 
     /**
      * Configures a live event builder with details from the current invocation context.
      *
-     * @param builder The live event builder to configure.
+     * @param event The traffict event to configure.
      * @return The configured live event builder.
      */
-    protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
+    protected TrafficEvent configure(TrafficEvent event) {
         if (liveMetadata != null) {
-            builder = liveMetadata.configure(builder);
+            event = liveMetadata.configure(event);
         }
         if (laneMetadata != null) {
-            builder = laneMetadata.configure(builder);
+            event = laneMetadata.configure(event);
         }
         if (serviceMetadata != null) {
-            builder = serviceMetadata.configure(builder);
+            event = serviceMetadata.configure(event);
         }
-        return builder;
+        return event;
     }
 
     /**

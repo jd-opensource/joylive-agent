@@ -16,8 +16,8 @@
 package com.jd.live.agent.governance.event;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
@@ -26,95 +26,95 @@ import java.util.Map;
  * about network traffic for monitoring, logging, or analysis purposes.
  */
 @Getter
-@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class TrafficEvent {
 
     /**
      * The type of component that generated the traffic event.
      */
-    private final ComponentType componentType;
+    private ComponentType componentType;
 
     /**
      * The direction of the traffic with respect to the component.
      */
-    private final Direction direction;
+    private Direction direction;
 
     /**
      * The ID of the live space associated with the event.
      */
-    private final String liveSpaceId;
+    private String liveSpaceId;
 
     /**
      * The ID of the unit rule associated with the event.
      */
-    private final String unitRuleId;
+    private String unitRuleId;
 
     /**
      * The local unit involved in the traffic event.
      */
-    private final String localUnit;
+    private String localUnit;
 
     /**
      * The local cell within the network where the event occurred.
      */
-    private final String localCell;
+    private String localCell;
 
     /**
      * The local lane within the network where the event occurred.
      */
-    private final String localLane;
+    private String localLane;
 
     /**
      * The target unit of the traffic event.
      */
-    private final String targetUnit;
+    private String targetUnit;
 
     /**
      * The target cell where the traffic is destined.
      */
-    private final String targetCell;
+    private String targetCell;
 
-    private final String liveDomain;
+    private String liveDomain;
 
-    private final String livePath;
+    private String livePath;
 
-    private final String liveBizVariable;
+    private String liveBizVariable;
 
     /**
      * The ID of the lane space associated with the event.
      */
-    private final String laneSpaceId;
+    private String laneSpaceId;
 
     /**
      * The ID of the lane rule associated with the event.
      */
-    private final String laneRuleId;
+    private String laneRuleId;
 
     /**
      * The target lane where the traffic is destined.
      */
-    private final String targetLane;
+    private String targetLane;
 
     /**
      * The service that is involved in the traffic event.
      */
-    private final String service;
+    private String service;
 
     /**
      * The group to which the traffic event belongs.
      */
-    private final String group;
+    private String group;
 
     /**
      * The path associated with the traffic event.
      */
-    private final String path;
+    private String path;
 
     /**
      * The method that was called or is associated with the traffic event.
      */
-    private final String method;
+    private String method;
 
     /**
      * The unique id of policy uri which representing the path where the policy takes effect. such as: <br/>
@@ -126,31 +126,151 @@ public class TrafficEvent {
      * <li>gateway://domain/path</li>
      * <li>gateway://domain/path?variable=xxxx</li>
      */
-    private final Long policyId;
+    private Long policyId;
 
     /**
      * A map of policy tags that are associated with the traffic event.
      */
-    private final Map<String, String> policyTags;
+    private Map<String, String> policyTags;
 
     /**
      * The action taken or to be taken for the traffic event, such as FORWARD or REJECT.
      */
-    private final ActionType actionType;
+    private ActionType actionType;
 
-    private final RejectType rejectType;
+    private RejectType rejectType;
 
     /**
      * The number of requests associated with the traffic event.
      */
-    private final int requests;
+    private int requests;
+
+    public TrafficEvent componentType(ComponentType componentType) {
+        this.componentType = componentType;
+        return this;
+    }
+
+    public TrafficEvent direction(Direction direction) {
+        this.direction = direction;
+        return this;
+    }
+
+    public TrafficEvent liveSpaceId(String liveSpaceId) {
+        this.liveSpaceId = liveSpaceId;
+        return this;
+    }
+
+    public TrafficEvent unitRuleId(String unitRuleId) {
+        this.unitRuleId = unitRuleId;
+        return this;
+    }
+
+    public TrafficEvent localUnit(String localUnit) {
+        this.localUnit = localUnit;
+        return this;
+    }
+
+    public TrafficEvent localCell(String localCell) {
+        this.localCell = localCell;
+        return this;
+    }
+
+    public TrafficEvent localLane(String localLane) {
+        this.localLane = localLane;
+        return this;
+    }
+
+    public TrafficEvent targetUnit(String targetUnit) {
+        this.targetUnit = targetUnit;
+        return this;
+    }
+
+    public TrafficEvent targetCell(String targetCell) {
+        this.targetCell = targetCell;
+        return this;
+    }
+
+    public TrafficEvent liveDomain(String liveDomain) {
+        this.liveDomain = liveDomain;
+        return this;
+    }
+
+    public TrafficEvent livePath(String livePath) {
+        this.livePath = livePath;
+        return this;
+    }
+
+    public TrafficEvent liveBizVariable(String liveBizVariable) {
+        this.liveBizVariable = liveBizVariable;
+        return this;
+    }
+
+    public TrafficEvent laneSpaceId(String laneSpaceId) {
+        this.laneSpaceId = laneSpaceId;
+        return this;
+    }
+
+    public TrafficEvent laneRuleId(String laneRuleId) {
+        this.laneRuleId = laneRuleId;
+        return this;
+    }
+
+    public TrafficEvent targetLane(String targetLane) {
+        this.targetLane = targetLane;
+        return this;
+    }
+
+    public TrafficEvent service(String service) {
+        this.service = service;
+        return this;
+    }
+
+    public TrafficEvent group(String group) {
+        this.group = group;
+        return this;
+    }
+
+    public TrafficEvent path(String path) {
+        this.path = path;
+        return this;
+    }
+
+    public TrafficEvent method(String method) {
+        this.method = method;
+        return this;
+    }
+
+    public TrafficEvent policyId(Long policyId) {
+        this.policyId = policyId;
+        return this;
+    }
+
+    public TrafficEvent policyTags(Map<String, String> policyTags) {
+        this.policyTags = policyTags;
+        return this;
+    }
+
+    public TrafficEvent actionType(ActionType actionType) {
+        this.actionType = actionType;
+        return this;
+    }
+
+    public TrafficEvent rejectType(RejectType rejectType) {
+        this.rejectType = rejectType;
+        return this;
+    }
+
+    public TrafficEvent requests(int requests) {
+        this.requests = requests;
+        return this;
+    }
 
     public String getRejectTypeName() {
         return rejectType == null ? null : rejectType.name();
     }
 
-    public static TrafficEventBuilder builder() {
-        return new TrafficEventBuilder();
+    public static TrafficEvent build() {
+        return new TrafficEvent();
     }
 
     /**
@@ -267,10 +387,6 @@ public class TrafficEvent {
          * The traffic event is rejected because degrade has been triggered.
          */
         REJECT_DEGRADE,
-    }
-
-    public static class TrafficEventBuilder {
-
     }
 
 }

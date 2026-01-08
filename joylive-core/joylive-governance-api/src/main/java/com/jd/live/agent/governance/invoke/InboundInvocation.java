@@ -18,9 +18,9 @@ package com.jd.live.agent.governance.invoke;
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.instance.GatewayRole;
 import com.jd.live.agent.governance.context.bag.Carrier;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.GatewayInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LaneMetadataParser.HttpInboundLaneMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.GatewayInboundLiveMetadataParser;
@@ -90,8 +90,8 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
     }
 
     @Override
-    protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        return super.configure(builder).componentType(ComponentType.SERVICE).direction(Direction.INBOUND);
+    protected TrafficEvent configure(TrafficEvent event) {
+        return super.configure(event).componentType(ComponentType.SERVICE).direction(Direction.INBOUND);
     }
 
     /**
@@ -240,8 +240,8 @@ public abstract class InboundInvocation<T extends InboundRequest> extends Invoca
         }
 
         @Override
-        protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
+        protected TrafficEvent configure(TrafficEvent event) {
+            return super.configure(event).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }

@@ -1,7 +1,7 @@
 package com.jd.live.agent.governance.invoke.metadata;
 
 import com.jd.live.agent.governance.config.LaneConfig;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.policy.lane.Lane;
 import com.jd.live.agent.governance.policy.lane.LaneSpace;
 import lombok.AllArgsConstructor;
@@ -86,12 +86,12 @@ public class LaneMetadata {
     }
 
     /**
-     * Configures a live event builder with details from the current invocation context.
+     * Configures a traffic event builder with details from the current invocation context.
      *
-     * @param builder The live event builder to configure.
-     * @return The configured live event builder.
+     * @param event The traffic event builder to configure.
+     * @return The configured traffic event builder.
      */
-    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        return builder.laneSpaceId(targetSpaceId).localLane(localLaneId).targetLane(targetLaneId);
+    public TrafficEvent configure(TrafficEvent event) {
+        return event.laneSpaceId(targetSpaceId).localLane(localLaneId).targetLane(targetLaneId);
     }
 }

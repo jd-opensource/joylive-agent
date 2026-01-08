@@ -60,14 +60,14 @@ public class URI extends MapOption<String> {
         super(null);
     }
 
-    private URI(String scheme,
-                String user,
-                String password,
-                String host,
-                Integer port,
-                String path,
-                Map<String, String> parameters,
-                String url) {
+    protected URI(final String scheme,
+                final String user,
+                final String password,
+                final String host,
+                final Integer port,
+                final String path,
+                final Map<String, String> parameters,
+                final String url) {
         super(parameters);
         this.scheme = scheme;
         this.user = user;
@@ -136,7 +136,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated scheme.
      */
     public URI scheme(String scheme) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -147,7 +147,7 @@ public class URI extends MapOption<String> {
      */
     @Deprecated
     public URI schema(String schema) {
-        return new URI(schema, user, password, host, port, path, parameters);
+        return create(schema, user, password, host, port, path, parameters);
     }
 
     /**
@@ -157,7 +157,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated user component
      */
     public URI user(String user) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -167,7 +167,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated password component
      */
     public URI password(String password) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -177,7 +177,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated host.
      */
     public URI host(String host) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -187,7 +187,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated port.
      */
     public URI port(Integer port) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -198,7 +198,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated host.
      */
     public URI address(String host, Integer port) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -208,7 +208,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated path.
      */
     public URI path(String path) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -218,7 +218,7 @@ public class URI extends MapOption<String> {
      * @return a new URI instance with the updated path.
      */
     public URI parameters(Map<String, String> parameters) {
-        return new URI(scheme, user, password, host, port, path, parameters);
+        return create(scheme, user, password, host, port, path, parameters);
     }
 
     /**
@@ -251,7 +251,7 @@ public class URI extends MapOption<String> {
             }
             newUrl = builder.toString();
         }
-        return new URI(scheme, user, password, host, port, path, newParameters, newUrl);
+        return create(scheme, user, password, host, port, path, newParameters, newUrl);
     }
 
     /**
@@ -364,6 +364,27 @@ public class URI extends MapOption<String> {
     @Override
     public String toString() {
         return getUri();
+    }
+
+    protected URI create(final String scheme,
+                         final String user,
+                         final String password,
+                         final String host,
+                         final Integer port,
+                         final String path,
+                         final Map<String, String> parameters) {
+        return new URI(scheme, user, password, host, port, path, parameters, null);
+    }
+
+    protected URI create(final String scheme,
+                         final String user,
+                         final String password,
+                         final String host,
+                         final Integer port,
+                         final String path,
+                         final Map<String, String> parameters,
+                         final String url) {
+        return new URI(scheme, user, password, host, port, path, parameters, url);
     }
 
     private static boolean isIpv6(String host) {
