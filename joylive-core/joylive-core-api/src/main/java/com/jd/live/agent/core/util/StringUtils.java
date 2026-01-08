@@ -114,7 +114,7 @@ public class StringUtils {
     /**
      * The empty String {@code ""}.
      */
-    public static final String EMPTY = "";
+    public static final String EMPTY_STRING = "";
 
     /**
      * Checks if the given character sequence is empty (null or has a length of 0).
@@ -601,7 +601,7 @@ public class StringUtils {
      */
     public static String join(String[] values, char separator) {
         if (values == null || values.length == 0) {
-            return EMPTY;
+            return EMPTY_STRING;
         }
         return join(Arrays.asList(values), null, separator, (char) 0, (char) 0, false);
     }
@@ -686,7 +686,7 @@ public class StringUtils {
      */
     public static <T> String join(Iterable<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values == null) {
-            return EMPTY;
+            return EMPTY_STRING;
         } else if (values instanceof List) {
             return joinList((List<T>) values, converter, separator, prefix, suffix, singleSurrounding);
         } else if (values instanceof Collection) {
@@ -716,7 +716,7 @@ public class StringUtils {
      */
     private static <T> String joinList(List<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values.isEmpty()) {
-            return EMPTY;
+            return EMPTY_STRING;
         } else if (values.size() == 1) {
             Object value = values.get(0);
             String str = value.toString();
@@ -746,7 +746,7 @@ public class StringUtils {
      */
     private static <T> String joinCollection(Collection<T> values, Function<T, String> converter, char separator, char prefix, char suffix, boolean singleSurrounding) {
         if (values.isEmpty()) {
-            return EMPTY;
+            return EMPTY_STRING;
         } else if (values.size() == 1) {
             Object value = values.iterator().next();
             String str = value.toString();
@@ -779,7 +779,7 @@ public class StringUtils {
         int right = suffix == 0 ? 0 : 1;
         int counter = 0;
         StringBuilder sb = new StringBuilder();
-        sb.append(left == 0 ? EMPTY : prefix);
+        sb.append(left == 0 ? EMPTY_STRING : prefix);
         String str;
         for (T value : values) {
             str = converter == null ? (value == null ? null : value.toString()) : converter.apply(value);
@@ -790,10 +790,10 @@ public class StringUtils {
                 sb.append(str);
             }
         }
-        sb.append(right == 0 ? EMPTY : suffix);
+        sb.append(right == 0 ? EMPTY_STRING : suffix);
         switch (counter) {
             case 0:
-                return EMPTY;
+                return EMPTY_STRING;
             case 1:
                 return singleSurrounding ? sb.toString() : sb.substring(left, sb.length() - right);
             default:

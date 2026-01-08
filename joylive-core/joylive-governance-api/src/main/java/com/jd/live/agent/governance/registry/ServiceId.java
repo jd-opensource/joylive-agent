@@ -178,12 +178,12 @@ public class ServiceId implements Serializable {
      */
     public static String getServiceName(String serviceNameWithGroup, String splitter, int index) {
         if (serviceNameWithGroup == null || serviceNameWithGroup.isEmpty()) {
-            return StringUtils.EMPTY;
+            return StringUtils.EMPTY_STRING;
         } else if (splitter == null || splitter.isEmpty()) {
             return serviceNameWithGroup;
         }
         List<String> parts = splitList(serviceNameWithGroup, splitter);
-        return index < 0 || index >= parts.size() ? StringUtils.EMPTY : parts.get(index);
+        return index < 0 || index >= parts.size() ? StringUtils.EMPTY_STRING : parts.get(index);
     }
 
 }

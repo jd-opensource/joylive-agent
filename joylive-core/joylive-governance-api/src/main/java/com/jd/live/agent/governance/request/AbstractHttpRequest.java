@@ -15,7 +15,6 @@
  */
 package com.jd.live.agent.governance.request;
 
-import com.jd.live.agent.core.util.cache.CacheObject;
 import com.jd.live.agent.core.util.http.HttpHeader;
 import com.jd.live.agent.core.util.http.HttpUtils;
 import com.jd.live.agent.core.util.network.Ipv4;
@@ -28,8 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.jd.live.agent.core.util.StringUtils.EMPTY_STRING;
 import static com.jd.live.agent.core.util.http.HttpHeader.HOST;
 import static com.jd.live.agent.core.util.http.HttpUtils.newURI;
+import static java.util.Collections.EMPTY_MAP;
 
 /**
  * Provides an abstract base class for HTTP requests, implementing the {@link HttpRequest} interface.
@@ -50,17 +51,17 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated, parsed cookies from the HTTP request.
      */
-    protected CacheObject<Map<String, List<String>>> cookies;
+    protected Map<String, List<String>> cookies;
 
     /**
      * Lazily evaluated, parsed query parameters from the HTTP request URL.
      */
-    protected CacheObject<Map<String, List<String>>> queries;
+    protected Map<String, List<String>> queries;
 
     /**
      * Lazily evaluated HTTP headers from the request.
      */
-    protected CacheObject<Map<String, List<String>>> headers;
+    protected Map<String, List<String>> headers;
 
     /**
      * The URI of the HTTP request.
@@ -70,12 +71,12 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     /**
      * Lazily evaluated host of the request URI.
      */
-    protected CacheObject<Address> address;
+    protected Address address;
 
     /**
      * Lazily evaluated scheme of the request URI.
      */
-    protected CacheObject<String> schema;
+    protected String schema;
 
     /**
      * Constructs an instance of {@code AbstractHttpRequest} with the original request object.
@@ -99,22 +100,20 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     @Override
     public String getSchema() {
         if (schema == null) {
-            schema = new CacheObject<>(parseScheme());
+            String v = parseScheme();
+            schema = v == null ? EMPTY_STRING : v;
         }
-        String result = schema.get();
-        return result == null || result.isEmpty() ? null : result;
+        return schema.isEmpty() ? null : schema;
     }
 
     @Override
     public Integer getPort() {
-        Address addr = getAddress();
-        return addr == null ? null : addr.getPort();
+        return getAddress().getPort();
     }
 
     @Override
     public String getHost() {
-        Address addr = getAddress();
-        return addr == null ? null : addr.getHost();
+        return getAddress().getHost();
     }
 
     @Override
@@ -123,27 +122,33 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getHeaders() {
         if (headers == null) {
-            headers = new CacheObject<>(parseHeaders());
+            Map<String, List<String>> map = parseHeaders();
+            headers = map == null ? EMPTY_MAP : map;
         }
-        return headers.get();
+        return headers;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getQueries() {
         if (queries == null) {
-            queries = new CacheObject<>(parseQueries());
+            Map<String, List<String>> map = parseQueries();
+            queries = map == null ? EMPTY_MAP : map;
         }
-        return queries.get();
+        return queries;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getCookies() {
         if (cookies == null) {
-            cookies = new CacheObject<>(parseCookies());
+            Map<String, List<String>> map = parseCookies();
+            cookies = map == null ? EMPTY_MAP : map;
         }
-        return cookies.get();
+        return cookies;
     }
 
     @Override
@@ -163,9 +168,10 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
     protected Address getAddress() {
         if (address == null) {
-            address = new CacheObject<>(parseAddress());
+            Address v = parseAddress();
+            address = v == null ? Address.EMPTY : v;
         }
-        return address.get();
+        return address;
     }
 
     /**
@@ -287,6 +293,8 @@ public abstract class AbstractHttpRequest<T> extends AbstractServiceRequest<T> i
 
     @Getter
     protected static class Address {
+
+        public static final Address EMPTY = new Address(null, null);
 
         private final String host;
 
