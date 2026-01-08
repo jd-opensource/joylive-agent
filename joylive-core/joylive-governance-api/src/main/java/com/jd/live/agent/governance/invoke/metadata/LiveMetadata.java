@@ -2,7 +2,7 @@ package com.jd.live.agent.governance.invoke.metadata;
 
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.governance.config.LiveConfig;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.policy.PolicyId;
 import com.jd.live.agent.governance.policy.live.Cell;
 import com.jd.live.agent.governance.policy.live.LiveSpace;
@@ -98,21 +98,21 @@ public class LiveMetadata {
     /**
      * Configures a live event builder with details from the current invocation context.
      *
-     * @param builder The live event builder to configure.
+     * @param event The traffic event builder to configure.
      * @return The configured live event builder.
      */
-    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
+    public TrafficEvent configure(TrafficEvent event) {
         Unit localUnit = getLocalUnit();
         Cell localCell = getLocalCell();
-        builder = builder.liveSpaceId(targetSpaceId)
+        event = event.liveSpaceId(targetSpaceId)
                 .unitRuleId(ruleId)
                 .localUnit(localUnit == null ? null : localUnit.getCode())
                 .localCell(localCell == null ? null : localCell.getCode());
         URI uri = policyId == null ? null : policyId.getUri();
         if (uri != null) {
-            builder = builder.liveDomain(uri.getHost()).livePath(uri.getPath());
+            event = event.liveDomain(uri.getHost()).livePath(uri.getPath());
         }
-        return builder;
+        return event;
     }
 
     private static final class LiveMetadataBuilderImpl extends LiveMetadataBuilder<LiveMetadata, LiveMetadataBuilderImpl> {

@@ -3,8 +3,9 @@ package com.jd.live.agent.governance.invoke.metadata;
 import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.LazyObject;
 import com.jd.live.agent.governance.config.ServiceConfig;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
+import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.policy.PolicyId;
+import com.jd.live.agent.governance.policy.PolicyURI;
 import com.jd.live.agent.governance.policy.service.Service;
 import com.jd.live.agent.governance.policy.service.ServicePolicy;
 import com.jd.live.agent.governance.policy.service.lane.LanePolicy;
@@ -128,21 +129,24 @@ public class ServiceMetadata implements Cloneable {
     }
 
     /**
-     * Configures a live event builder with details from the current invocation context.
+     * Configures a traffic event builder with details from the current invocation context.
      *
-     * @param builder The live event builder to configure.
-     * @return The configured live event builder.
+     * @param event The traffic event builder to configure.
+     * @return The configured traffic event builder.
      */
-    public TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        builder = builder.policyId(servicePolicy == null ? null : servicePolicy.getId());
+    public TrafficEvent configure(TrafficEvent event) {
+        event = event.policyId(servicePolicy == null ? null : servicePolicy.getId());
         URI uri = servicePolicy == null ? null : servicePolicy.getUri();
-        if (uri != null) {
-            builder = builder.service(uri.getHost())
+        if (uri instanceof PolicyURI) {
+            PolicyURI u = (PolicyURI) uri;
+            event = event.service(uri.getHost()).group(u.getServiceGroup()).path(uri.getPath()).method(u.getServiceMethod());
+        } else if (uri != null) {
+            event = event.service(uri.getHost())
                     .group(uri.getParameter(PolicyId.KEY_SERVICE_GROUP))
                     .path(uri.getPath())
                     .method(uri.getParameter(PolicyId.KEY_SERVICE_METHOD));
         }
-        return builder;
+        return event;
     }
 
     /**

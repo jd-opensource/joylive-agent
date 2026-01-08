@@ -17,11 +17,11 @@ package com.jd.live.agent.governance.policy.service;
 
 import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.CollectionUtils.Delta;
-import com.jd.live.agent.core.util.URI;
 import com.jd.live.agent.core.util.cache.Cache;
 import com.jd.live.agent.core.util.cache.MapCache;
 import com.jd.live.agent.core.util.map.ListBuilder;
 import com.jd.live.agent.core.util.map.ListBuilder.LowercaseListBuilder;
+import com.jd.live.agent.governance.policy.PolicyURI;
 import com.jd.live.agent.governance.policy.service.auth.AuthPolicy;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,7 +45,7 @@ import static com.jd.live.agent.core.util.CollectionUtils.toList;
  */
 public class Service extends PolicyOwner implements ServiceName {
 
-    private static final URI SERVICE_URI = URI.builder().scheme("service").build();
+    private static final PolicyURI SERVICE_URI = new PolicyURI("service", null, null, null, null);
 
     public static final BiPredicate<Service, Service> VERSION_PREDICATE = (o1, o2) -> o1.getVersion() != o2.getVersion();
 

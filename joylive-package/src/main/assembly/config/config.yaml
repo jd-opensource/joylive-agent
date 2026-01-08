@@ -36,6 +36,7 @@ agent:
     addOpens:
       com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory:
         - java.util.Map
+        - java.net.URI
         - jdk.internal.misc.Unsafe
         - sun.misc.Unsafe
       com.jd.live.agent.governance.invoke.Invocation:

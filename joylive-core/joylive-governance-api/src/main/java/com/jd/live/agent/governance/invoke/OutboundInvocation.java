@@ -20,7 +20,6 @@ import com.jd.live.agent.governance.event.TrafficEvent;
 import com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 import com.jd.live.agent.governance.event.TrafficEvent.Direction;
 import com.jd.live.agent.governance.event.TrafficEvent.RejectType;
-import com.jd.live.agent.governance.event.TrafficEvent.TrafficEventBuilder;
 import com.jd.live.agent.governance.instance.Endpoint;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.OutboundLiveMetadataParser;
 import com.jd.live.agent.governance.invoke.metadata.parser.LiveMetadataParser.RpcOutboundLiveMetadataParser;
@@ -242,41 +241,35 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
      * Handles a forward event.
      */
     protected void onForwardEvent(Endpoint endpoint) {
-        publish(TrafficEvent.builder().actionType(TrafficEvent.ActionType.FORWARD).requests(1), endpoint);
+        publish(TrafficEvent.build().actionType(TrafficEvent.ActionType.FORWARD).requests(1), endpoint);
     }
 
     /**
-     * Publishes a live event to a specified publisher using a configured live event builder.
+     * Publishes a traffic event to a specified publisher.
      *
-     * @param builder  The live event builder used to configure and build the live event. If {@code null}, no action is taken.
-     * @param endpoint The endpoint associated with the live event. This parameter is currently unused in the method.
+     * @param event  The traffic event.
+     * @param endpoint The endpoint associated with the event.
      */
-    protected void publish(TrafficEventBuilder builder, Endpoint endpoint) {
-        if (builder != null) {
-            TrafficEvent event = configure(builder, endpoint).build();
-            if (event != null) {
-                context.publish(event);
-            }
+    protected void publish(TrafficEvent event, Endpoint endpoint) {
+        if (event != null) {
+            context.publish(configure(event, endpoint));
         }
     }
 
     @Override
-    protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-        return super.configure(builder).componentType(ComponentType.SERVICE).direction(Direction.OUTBOUND);
+    protected TrafficEvent configure(TrafficEvent event) {
+        return super.configure(event).componentType(ComponentType.SERVICE).direction(Direction.OUTBOUND);
     }
 
     /**
-     * Configures a live event builder with details from the current invocation context and associated metadata.
-     * This method populates the builder with information such as live space, unit rule, local unit, local cell,
-     * lane space, local lane, target lane, policy ID, and service-related details extracted from the URI.
-     * If any metadata or URI is null, the corresponding fields in the builder are set to null.
+     * Configures a traffic event
      *
-     * @param builder  The live event builder to configure. Must not be null.
-     * @param endpoint The endpoint associated with the current invocation. Used to provide additional context.
-     * @return The configured live event builder, populated with relevant details from the invocation context.
+     * @param event  The traffic event builder to configure..
+     * @param endpoint The endpoint associated with the current invocation. .
+     * @return The configured traffic event.
      */
-    protected TrafficEventBuilder configure(TrafficEventBuilder builder, Endpoint endpoint) {
-        return configure(builder)
+    protected TrafficEvent configure(TrafficEvent event, Endpoint endpoint) {
+        return configure(event)
                 .targetLane(endpoint == null ? null : endpoint.getLane())
                 .targetUnit(endpoint == null ? null : endpoint.getUnit())
                 .targetCell(endpoint == null ? null : endpoint.getCell());
@@ -372,8 +365,8 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
 
         @Override
-        protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
+        protected TrafficEvent configure(TrafficEvent event) {
+            return super.configure(event).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }
@@ -402,8 +395,8 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
 
         @Override
-        protected TrafficEventBuilder configure(TrafficEventBuilder builder) {
-            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
+        protected TrafficEvent configure(TrafficEvent event) {
+            return super.configure(event).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }
@@ -432,8 +425,8 @@ public abstract class OutboundInvocation<T extends OutboundRequest> extends Invo
         }
 
         @Override
-        protected TrafficEventBuilder configure(TrafficEventBuilder builder, Endpoint endpoint) {
-            return super.configure(builder).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
+        protected TrafficEvent configure(TrafficEvent event, Endpoint endpoint) {
+            return super.configure(event).componentType(context.getGatewayRole() == GatewayRole.FRONTEND
                     ? ComponentType.FRONTEND_GATEWAY
                     : ComponentType.BACKEND_GATEWAY);
         }
