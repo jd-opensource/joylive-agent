@@ -48,8 +48,10 @@ public abstract class AbstractServiceEndpoint extends AbstractEndpoint implement
 
     @Override
     public boolean isSecure() {
-        if (secure == null) {
-            secure = Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
+        Boolean result = secure;
+        if (result == null) {
+            result = Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
+            secure = result;
         }
         return secure;
     }
