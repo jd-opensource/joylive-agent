@@ -44,9 +44,6 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
 
     protected volatile String zone;
 
-    // original weight
-    protected volatile Integer weight;
-
     // adjusted weight
     protected volatile Reweight reweight;
 
