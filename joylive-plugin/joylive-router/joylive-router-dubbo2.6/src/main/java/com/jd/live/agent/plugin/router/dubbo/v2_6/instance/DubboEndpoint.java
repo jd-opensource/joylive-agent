@@ -17,13 +17,14 @@ package com.jd.live.agent.plugin.router.dubbo.v2_6.instance;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.rpc.Invoker;
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.core.util.option.Converts;
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
 import static com.alibaba.dubbo.common.Constants.REMOTE_TIMESTAMP_KEY;
+import static com.jd.live.agent.core.Constants.LABEL_TIMESTAMP;
+import static com.jd.live.agent.core.Constants.LABEL_WEIGHT;
 
 /**
  * Represents a network endpoint in a Dubbo RPC system, wrapping an {@link Invoker} instance.
@@ -62,21 +63,17 @@ public class DubboEndpoint<T> extends AbstractEndpoint {
     }
 
     @Override
-    public Long getTimestamp() {
-        String timestamp = getLabel(REMOTE_TIMESTAMP_KEY);
-        if (timestamp == null || timestamp.isEmpty()) {
-            timestamp = getLabel(Constants.LABEL_TIMESTAMP);
-        }
-        return Converts.getLong(timestamp, null);
+    public long getTimestamp() {
+        return Converts.getLong(getLabel(REMOTE_TIMESTAMP_KEY, LABEL_TIMESTAMP, null), 0L);
     }
 
     @Override
     public Integer getWeight(ServiceRequest request) {
-        String weight = url.getMethodParameter(request.getMethod(), Constants.LABEL_WEIGHT, null);
-        if (weight == null || weight.isEmpty()) {
-            weight = url.getParameter(Constants.LABEL_WEIGHT);
+        String value = url.getMethodParameter(request.getMethod(), LABEL_WEIGHT, null);
+        if (value == null || value.isEmpty()) {
+            value = url.getParameter(LABEL_WEIGHT);
         }
-        return Converts.getInteger(weight, DEFAULT_WEIGHT);
+        return getWeight(Converts.getDouble(value, DEFAULT_WEIGHT * 1.0));
     }
 
     @Override

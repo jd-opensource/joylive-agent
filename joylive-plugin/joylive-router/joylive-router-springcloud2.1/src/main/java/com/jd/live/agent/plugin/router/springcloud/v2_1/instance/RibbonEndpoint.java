@@ -16,14 +16,13 @@
 package com.jd.live.agent.plugin.router.springcloud.v2_1.instance;
 
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
-import com.jd.live.agent.core.util.cache.CacheObject;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 import com.netflix.loadbalancer.Server;
 import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAccessor;
@@ -32,9 +31,7 @@ import static com.jd.live.agent.core.util.type.ClassUtils.loadClass;
 /**
  * A class that represents a service endpoint in the context of Ribbon load balancing.
  */
-public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
-
-    private final String service;
+public class RibbonEndpoint extends AbstractServiceEndpoint implements ServiceInstance {
 
     private final Server server;
 
@@ -42,7 +39,7 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
 
     private volatile URI uri;
 
-    private volatile CacheObject<Map<String, String>> metadata;
+    private volatile Map<String, String> metadata;
 
     public RibbonEndpoint(String service, Server server) {
         this.service = service;
@@ -57,11 +54,6 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
 
     @Override
     public String getServiceId() {
-        return service;
-    }
-
-    @Override
-    public String getService() {
         return service;
     }
 
@@ -104,11 +96,13 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, String> getMetadata() {
         if (metadata == null) {
-            metadata = new CacheObject<>(Accessor.getMetadata(server));
+            Map<String, String> map = Accessor.getMetadata(server);
+            metadata = map == null ? Collections.EMPTY_MAP : map;
         }
-        return metadata.get();
+        return metadata;
     }
 
     private static class Accessor {

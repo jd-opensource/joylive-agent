@@ -19,6 +19,8 @@ import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.core.util.cache.UnsafeLazyObject;
 import com.jd.live.agent.governance.request.ServiceRequest;
 
+import static com.jd.live.agent.core.util.StringUtils.emptyIfNull;
+
 /**
  * An abstract implementation of the {@link Endpoint} interface that provides caching for
  * various properties. This class uses {@link UnsafeLazyObject} to lazily cache the values
@@ -26,74 +28,115 @@ import com.jd.live.agent.governance.request.ServiceRequest;
  */
 public abstract class AbstractEndpoint extends AbstractAttributes implements Endpoint {
 
-    private String liveSpaceId;
+    protected volatile String group;
 
-    private String unit;
+    protected volatile String liveSpaceId;
 
-    private String cell;
+    protected volatile String unit;
 
-    private String laneSpaceId;
+    protected volatile String cell;
 
-    private String lane;
+    protected volatile String laneSpaceId;
 
-    // Endpoint is request level
-    private Integer weight;
+    protected volatile String lane;
 
-    private Double weightRatio;
+    protected volatile String region;
+
+    protected volatile String zone;
+
+    // original weight
+    protected volatile Integer weight;
+
+    // adjusted weight
+    protected volatile Reweight reweight;
+
+    protected Double weightRatio;
+
+    public AbstractEndpoint() {
+    }
+
+    public AbstractEndpoint(String group) {
+        this.group = group;
+    }
 
     @Override
     public String getLiveSpaceId() {
-        if (liveSpaceId == null) {
-            liveSpaceId = Endpoint.super.getLiveSpaceId();
-            if (liveSpaceId == null) {
-                liveSpaceId = "";
-            }
+        String result = liveSpaceId;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getLiveSpaceId());
+            liveSpaceId = result;
         }
-        return liveSpaceId;
+        return result;
     }
 
     @Override
     public String getUnit() {
-        if (unit == null) {
-            unit = Endpoint.super.getUnit();
-            if (unit == null) {
-                unit = "";
-            }
+        String result = unit;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getUnit());
+            unit = result;
         }
-        return unit;
+        return result;
     }
 
     @Override
     public String getCell() {
-        if (cell == null) {
-            cell = Endpoint.super.getCell();
-            if (cell == null) {
-                cell = "";
-            }
+        String result = cell;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getCell());
+            cell = result;
         }
-        return cell;
+        return result;
     }
 
     @Override
     public String getLaneSpaceId() {
-        if (laneSpaceId == null) {
-            laneSpaceId = Endpoint.super.getLaneSpaceId();
-            if (laneSpaceId == null) {
-                laneSpaceId = "";
-            }
+        String result = laneSpaceId;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getLaneSpaceId());
+            laneSpaceId = result;
         }
-        return laneSpaceId;
+        return result;
     }
 
     @Override
     public String getLane() {
-        if (lane == null) {
-            lane = Endpoint.super.getLane();
-            if (lane == null) {
-                lane = "";
-            }
+        String result = lane;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getLane());
+            lane = result;
         }
-        return lane;
+        return result;
+    }
+
+    @Override
+    public String getRegion() {
+        String result = region;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getRegion());
+            region = result;
+        }
+        return result;
+    }
+
+    @Override
+    public String getZone() {
+        String result = zone;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getZone());
+            zone = result;
+        }
+        return result;
+    }
+
+    @Override
+    public String getGroup() {
+        String result = group;
+        if (result == null) {
+            result = emptyIfNull(Endpoint.super.getGroup());
+            group = result;
+        }
+        return result;
     }
 
     @Override
@@ -107,10 +150,87 @@ public abstract class AbstractEndpoint extends AbstractAttributes implements End
     }
 
     @Override
-    public Integer reweight(ServiceRequest request) {
-        if (weight == null) {
-            weight = Endpoint.super.reweight(request);
+    public int reweight(ServiceRequest request) {
+        Reweight result = reweight;
+        if (result == null) {
+            result = new Reweight(getWarmup(), getTimestamp(), getWeight(request));
+            reweight = result;
         }
-        return weight;
+        return result.getWeight(getWeightRatio(), System.currentTimeMillis());
+    }
+
+    /**
+     * Weight calculator with warmup support and caching.
+     */
+    private static class Reweight {
+
+        private final int warmup;
+
+        private final long timestamp;
+
+        private final int weight;
+
+        private volatile long lastTime;
+
+        private volatile int lastWeight;
+
+        Reweight(int warmup, long timestamp, int weight) {
+            this.warmup = warmup;
+            this.timestamp = timestamp;
+            this.weight = weight;
+        }
+
+        /**
+         * Calculates effective weight with ratio applied and caching.
+         *
+         * @param ratio weight ratio multiplier
+         * @param now   current timestamp
+         * @return effective weight value
+         */
+        public int getWeight(final Double ratio, final long now) {
+            if (weight <= 0) {
+                return 0;
+            }
+            // first read time, then weight
+            long cacheTime = lastTime;
+            int cacheWeight = lastWeight;
+            if (now - cacheTime < 50) {
+                // cache 50ms
+                return cacheWeight;
+            }
+            int value = getWeight(weight, timestamp, warmup, now);
+            if (ratio != null) {
+                value = (int) (value * ratio);
+            }
+            value = value < 0 ? 0 : Math.max(1, value);
+            cacheWeight = value;
+            // first set weight, then time
+            lastWeight = cacheWeight;
+            lastTime = now;
+            return cacheWeight;
+        }
+
+        /**
+         * Calculates weight based on warmup progression.
+         *
+         * @param weight    initial weight
+         * @param timestamp start time
+         * @param duration  warmup duration
+         * @param now       current time
+         * @return calculated weight
+         */
+        private int getWeight(int weight, long timestamp, int duration, long now) {
+            if (timestamp <= 0 || duration <= 0) {
+                return weight;
+            }
+            long span = now - timestamp;
+            if (span <= 0) {
+                return -1;
+            } else if (span < duration) {
+                return (int) (span / ((float) duration / weight));
+            }
+            return weight;
+        }
+
     }
 }

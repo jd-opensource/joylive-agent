@@ -18,13 +18,14 @@ package com.jd.live.agent.plugin.router.springcloud.v2_2.instance;
 import com.jd.live.agent.bootstrap.util.AbstractAttributes;
 import com.jd.live.agent.bootstrap.util.type.FieldAccessor;
 import com.jd.live.agent.core.util.cache.CacheObject;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.netflix.loadbalancer.Server;
 import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,12 +37,10 @@ import static com.jd.live.agent.bootstrap.util.type.FieldAccessorFactory.getAcce
  * providing a unified representation of a service endpoint that can be used for load balancing.
  * It extends {@link AbstractAttributes} to support additional attributes associated with the endpoint.
  */
-public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
+public class RibbonEndpoint extends AbstractServiceEndpoint implements ServiceInstance {
 
     private static final Map<Class<?>, CacheObject<FieldAccessor>> ACCESSOR_MAP = new ConcurrentHashMap<>();
     private static final String FIELD_METADATA = "metadata";
-
-    private final String service;
 
     private final Server server;
 
@@ -49,7 +48,7 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
 
     private volatile URI uri;
 
-    private volatile CacheObject<Map<String, String>> metadata;
+    private volatile Map<String, String> metadata;
 
     public RibbonEndpoint(String service, Server server) {
         this.service = service;
@@ -64,11 +63,6 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
 
     @Override
     public String getServiceId() {
-        return service;
-    }
-
-    @Override
-    public String getService() {
         return service;
     }
 
@@ -124,8 +118,8 @@ public class RibbonEndpoint extends AbstractEndpoint implements ServiceEndpoint,
                     result = (Map<String, String>) target;
                 }
             }
-            metadata = new CacheObject<>(result);
+            metadata = result == null ? Collections.EMPTY_MAP : result;
         }
-        return metadata.get();
+        return metadata;
     }
 }

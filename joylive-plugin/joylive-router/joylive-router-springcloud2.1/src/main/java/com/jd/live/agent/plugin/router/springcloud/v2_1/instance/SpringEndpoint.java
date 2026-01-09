@@ -17,7 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v2_1.instance;
 
 import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
@@ -28,19 +28,16 @@ import static com.jd.live.agent.core.Constants.LABEL_STATE;
 /**
  * A concrete implementation of {@link AbstractEndpoint}
  */
-public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint, ServiceInstance {
-
-    private final String service;
+public class SpringEndpoint extends AbstractServiceEndpoint implements ServiceInstance {
 
     private final ServiceInstance instance;
 
     public SpringEndpoint(ServiceInstance instance) {
-        this.service = instance.getServiceId();
-        this.instance = instance;
+        this(instance.getServiceId(), instance);
     }
 
     public SpringEndpoint(String service, ServiceInstance instance) {
-        this.service = service;
+        super(service, null, instance.isSecure());
         this.instance = instance;
     }
 
@@ -56,18 +53,8 @@ public class SpringEndpoint extends AbstractEndpoint implements ServiceEndpoint,
     }
 
     @Override
-    public String getService() {
-        return service;
-    }
-
-    @Override
     public String getScheme() {
         return instance.getScheme();
-    }
-
-    @Override
-    public boolean isSecure() {
-        return instance.isSecure();
     }
 
     @Override

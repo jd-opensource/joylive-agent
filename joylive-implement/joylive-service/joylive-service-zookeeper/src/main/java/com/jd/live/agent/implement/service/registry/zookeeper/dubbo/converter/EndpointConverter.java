@@ -71,14 +71,7 @@ public class EndpointConverter implements BiConverter<ServiceId, ChildData, Dubb
         boolean version2 = params != null && params.contains("\"release\":\"2");
         String protocol = version2 ? getProtocol2(params, parser) : getProtocol3(params, parser);
         protocol = protocol == null || protocol.isEmpty() ? DUBBO : protocol;
-        return DubboZookeeperEndpoint.builder()
-                .scheme(protocol)
-                .service(serviceId.getService())
-                .group(group)
-                .host(instance.getAddress())
-                .port(instance.getPort())
-                .metadata(parameters)
-                .build();
+        return new DubboZookeeperEndpoint(serviceId.getService(), group, protocol, instance.getAddress(), instance.getPort(), parameters);
     }
 
     /**
@@ -134,13 +127,6 @@ public class EndpointConverter implements BiConverter<ServiceId, ChildData, Dubb
         Map<String, String> parameters = uri.getParameters();
         String group = uri.getParameter(GROUP);
         group = group == null || group.isEmpty() ? serviceId.getGroup() : group;
-        return DubboZookeeperEndpoint.builder()
-                .service(serviceId.getService())
-                .group(group)
-                .scheme(uri.getScheme())
-                .host(uri.getHost())
-                .port(uri.getPort())
-                .metadata(parameters == null ? null : new HashMap<>(parameters))
-                .build();
+        return new DubboZookeeperEndpoint(serviceId.getService(), group, uri.getScheme(), uri.getHost(), uri.getPort(), parameters == null ? null : new HashMap<>(parameters));
     }
 }

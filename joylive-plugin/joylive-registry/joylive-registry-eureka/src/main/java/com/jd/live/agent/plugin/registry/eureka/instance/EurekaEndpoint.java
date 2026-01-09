@@ -15,12 +15,8 @@
  */
 package com.jd.live.agent.plugin.registry.eureka.instance;
 
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.appinfo.InstanceInfo.InstanceStatus;
 
@@ -29,7 +25,7 @@ import java.util.Map;
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class EurekaEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class EurekaEndpoint extends AbstractServiceEndpoint {
 
     /**
      * The instance associated with this endpoint.
@@ -42,22 +38,14 @@ public class EurekaEndpoint extends AbstractEndpoint implements ServiceEndpoint 
      * @param instance the instance associated with this endpoint
      */
     public EurekaEndpoint(InstanceInfo instance) {
+        super(instance.getAppName(), instance.getAppGroupName(),
+                instance.isPortEnabled(InstanceInfo.PortType.SECURE) && !instance.isPortEnabled(InstanceInfo.PortType.UNSECURE));
         this.instance = instance;
     }
 
     @Override
     public String getId() {
         return instance.getInstanceId();
-    }
-
-    @Override
-    public String getService() {
-        return instance.getAppName();
-    }
-
-    @Override
-    public String getGroup() {
-        return instance.getAppGroupName();
     }
 
     @Override
@@ -71,20 +59,8 @@ public class EurekaEndpoint extends AbstractEndpoint implements ServiceEndpoint 
     }
 
     @Override
-    public boolean isSecure() {
-        return instance.isPortEnabled(InstanceInfo.PortType.SECURE)
-                && !instance.isPortEnabled(InstanceInfo.PortType.UNSECURE);
-    }
-
-    @Override
     public Map<String, String> getMetadata() {
         return instance.getMetadata();
-    }
-
-    @Override
-    public String getLabel(String key) {
-        Map<String, String> metadata = instance.getMetadata();
-        return metadata == null ? null : metadata.get(key);
     }
 
     @Override
@@ -110,10 +86,5 @@ public class EurekaEndpoint extends AbstractEndpoint implements ServiceEndpoint 
             }
         }
         return EndpointState.HEALTHY;
-    }
-
-    @Override
-    public Integer getWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), DEFAULT_WEIGHT);
     }
 }

@@ -15,9 +15,7 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v3.instance;
 
-import com.jd.live.agent.core.Constants;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
 import com.jd.live.agent.governance.registry.ServiceId;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.registry.client.InstanceAddressURL;
@@ -30,7 +28,7 @@ import static com.jd.live.agent.plugin.registry.dubbo.v3.util.UrlUtils.toService
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class DubboEndpoint extends AbstractDubboEndpoint implements ServiceEndpoint {
+public class DubboEndpoint extends AbstractDubboEndpoint {
 
     private final URL url;
 
@@ -59,11 +57,6 @@ public class DubboEndpoint extends AbstractDubboEndpoint implements ServiceEndpo
     @Override
     public int getPort() {
         return url.getPort();
-    }
-
-    @Override
-    public boolean isSecure() {
-        return Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
     }
 
     @Override

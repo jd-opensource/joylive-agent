@@ -16,19 +16,15 @@
 package com.jd.live.agent.implement.service.registry.nacos;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 
 import java.util.Map;
 
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class NacosEndpoint extends AbstractServiceEndpoint {
 
     /**
      * The instance associated with this endpoint.
@@ -41,17 +37,13 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
      * @param instance the instance associated with this endpoint
      */
     public NacosEndpoint(Instance instance) {
+        super(instance.getServiceName(), null, null);
         this.instance = instance;
     }
 
     @Override
     public String getId() {
         return instance.getInstanceId();
-    }
-
-    @Override
-    public String getService() {
-        return instance.getServiceName();
     }
 
     @Override
@@ -62,11 +54,6 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
     @Override
     public int getPort() {
         return instance.getPort();
-    }
-
-    @Override
-    public boolean isSecure() {
-        return Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
     }
 
     @Override
@@ -86,10 +73,5 @@ public class NacosEndpoint extends AbstractEndpoint implements ServiceEndpoint {
             return EndpointState.DISABLE;
         }
         return instance.isHealthy() ? EndpointState.HEALTHY : EndpointState.WEAK;
-    }
-
-    @Override
-    public Integer getWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), (int) (instance.getWeight() * DEFAULT_WEIGHT));
     }
 }

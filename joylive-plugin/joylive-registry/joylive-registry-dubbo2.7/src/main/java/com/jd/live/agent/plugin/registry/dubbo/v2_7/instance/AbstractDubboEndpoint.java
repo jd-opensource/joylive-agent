@@ -15,43 +15,19 @@
  */
 package com.jd.live.agent.plugin.registry.dubbo.v2_7.instance;
 
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
-
-import java.util.Map;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 
 import static com.jd.live.agent.core.Constants.LABEL_GROUP;
 import static com.jd.live.agent.core.Constants.LABEL_SERVICE_GROUP;
+import static com.jd.live.agent.core.util.StringUtils.EMPTY_STRING;
 
-public abstract class AbstractDubboEndpoint extends AbstractEndpoint implements ServiceEndpoint {
-
-    protected String service;
-
-    protected String group;
-
-    protected Integer weight;
-
-    @Override
-    public String getService() {
-        return service;
-    }
+public abstract class AbstractDubboEndpoint extends AbstractServiceEndpoint {
 
     @Override
     public String getGroup() {
         if (group == null) {
-            Map<String, String> metadata = getMetadata();
-            if (metadata != null) {
-                group = metadata.getOrDefault(LABEL_GROUP, "");
-                if (group.isEmpty()) {
-                    group = metadata.getOrDefault(LABEL_SERVICE_GROUP, "");
-                }
-            } else {
-                group = "";
-            }
+            group = getLabel(LABEL_GROUP, LABEL_SERVICE_GROUP, EMPTY_STRING);
         }
         return group;
     }
@@ -66,18 +42,4 @@ public abstract class AbstractDubboEndpoint extends AbstractEndpoint implements 
         return EndpointState.HEALTHY;
     }
 
-    @Override
-    public Integer getWeight(ServiceRequest request) {
-        if (weight != null) {
-            Double value = Converts.getDouble(Constants.LABEL_WEIGHT);
-            if (value == null || value < 0) {
-                weight = DEFAULT_WEIGHT;
-            } else if (value < 1) {
-                weight = (int) (value * 100);
-            } else {
-                weight = value.intValue();
-            }
-        }
-        return weight;
-    }
 }

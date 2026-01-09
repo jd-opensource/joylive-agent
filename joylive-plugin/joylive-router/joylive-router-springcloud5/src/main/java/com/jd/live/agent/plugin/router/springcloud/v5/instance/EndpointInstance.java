@@ -17,6 +17,7 @@ package com.jd.live.agent.plugin.router.springcloud.v5.instance;
 
 import com.jd.live.agent.governance.instance.EndpointState;
 import com.jd.live.agent.governance.registry.ServiceEndpoint;
+import com.jd.live.agent.governance.request.ServiceRequest;
 import org.springframework.cloud.client.ServiceInstance;
 
 import java.net.URI;
@@ -36,6 +37,16 @@ public class EndpointInstance implements ServiceEndpoint, ServiceInstance {
 
     public EndpointInstance(ServiceEndpoint endpoint) {
         this.endpoint = endpoint;
+    }
+
+    @Override
+    public String getId() {
+        return endpoint.getId();
+    }
+
+    @Override
+    public String getInstanceId() {
+        return endpoint.getId();
     }
 
     @Override
@@ -78,6 +89,70 @@ public class EndpointInstance implements ServiceEndpoint, ServiceInstance {
         return endpoint.getMetadata();
     }
 
+    @Override
+    public Double getWeightRatio() {
+        return endpoint.getWeightRatio();
+    }
+
+    @Override
+    public void setWeightRatio(Double weightRatio) {
+        endpoint.setWeightRatio(weightRatio);
+    }
+
+    @Override
+    public Integer getWeight(ServiceRequest request) {
+        return endpoint.getWeight(request);
+    }
+
+    @Override
+    public int reweight(ServiceRequest request) {
+        return endpoint.reweight(request);
+    }
+
+    @Override
+    public String getLiveSpaceId() {
+        return endpoint.getLiveSpaceId();
+    }
+
+    @Override
+    public String getUnit() {
+        return endpoint.getUnit();
+    }
+
+    @Override
+    public String getCell() {
+        return endpoint.getCell();
+    }
+
+    @Override
+    public String getCloud() {
+        return endpoint.getCloud();
+    }
+
+    @Override
+    public String getRegion() {
+        return endpoint.getRegion();
+    }
+
+    @Override
+    public String getZone() {
+        return endpoint.getZone();
+    }
+
+    @Override
+    public String getLaneSpaceId() {
+        return endpoint.getLaneSpaceId();
+    }
+
+    @Override
+    public String getLane() {
+        return endpoint.getLane();
+    }
+
+    @Override
+    public String getGroup() {
+        return endpoint.getGroup();
+    }
 
     @Override
     public EndpointState getState() {

@@ -15,12 +15,8 @@
  */
 package com.jd.live.agent.plugin.registry.polaris.v2.instance;
 
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
 import com.tencent.polaris.api.pojo.Instance;
 
 import java.util.Map;
@@ -28,7 +24,7 @@ import java.util.Map;
 /**
  * A class that represents an endpoint in the Nacos registry.
  */
-public class PolarisEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class PolarisEndpoint extends AbstractServiceEndpoint {
 
     /**
      * The instance associated with this endpoint.
@@ -41,17 +37,13 @@ public class PolarisEndpoint extends AbstractEndpoint implements ServiceEndpoint
      * @param instance the instance associated with this endpoint
      */
     public PolarisEndpoint(Instance instance) {
+        super(instance.getService(), null, null);
         this.instance = instance;
     }
 
     @Override
     public String getId() {
         return instance.getId();
-    }
-
-    @Override
-    public String getService() {
-        return instance.getService();
     }
 
     @Override
@@ -70,12 +62,6 @@ public class PolarisEndpoint extends AbstractEndpoint implements ServiceEndpoint
     }
 
     @Override
-    public String getLabel(String key) {
-        Map<String, String> metadata = instance.getMetadata();
-        return metadata == null ? null : metadata.get(key);
-    }
-
-    @Override
     public EndpointState getState() {
         if (instance.isIsolated()) {
             return EndpointState.DISABLE;
@@ -84,10 +70,5 @@ public class PolarisEndpoint extends AbstractEndpoint implements ServiceEndpoint
         } else {
             return EndpointState.HEALTHY;
         }
-    }
-
-    @Override
-    public Integer getWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), instance.getWeight());
     }
 }

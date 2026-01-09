@@ -181,6 +181,10 @@ public class StringUtils {
         return cs1 == null || cs1.isEmpty() ? cs2 : cs1;
     }
 
+    public static String emptyIfNull(final String value) {
+        return value == null ? EMPTY_STRING : value;
+    }
+
     /**
      * Returns the first non-null and non-empty string from the given array.
      *

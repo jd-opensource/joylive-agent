@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.jd.live.agent.core.Constants.*;
+import static com.jd.live.agent.core.util.StringUtils.EMPTY_STRING;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 
 /**
@@ -50,7 +51,7 @@ public class UrlUtils {
      */
     public static ServiceId toServiceId(URL url) {
         String service = url.getServiceInterface();
-        String group = choose(url.getParameter(LABEL_GROUP), () -> url.getParameter(LABEL_SERVICE_GROUP));
+        String group = choose(url.getParameter(LABEL_GROUP), () -> url.getParameter(LABEL_SERVICE_GROUP, EMPTY_STRING));
         return new ServiceId(service, group, true);
     }
 
