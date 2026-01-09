@@ -15,13 +15,10 @@
  */
 package com.jd.live.agent.implement.service.registry.zookeeper.dubbo;
 
-import com.jd.live.agent.core.Constants;
-import com.jd.live.agent.core.util.option.Converts;
-import com.jd.live.agent.governance.instance.AbstractEndpoint;
 import com.jd.live.agent.governance.instance.EndpointState;
-import com.jd.live.agent.governance.registry.ServiceEndpoint;
-import com.jd.live.agent.governance.request.ServiceRequest;
-import lombok.*;
+import com.jd.live.agent.governance.registry.AbstractServiceEndpoint;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Map;
 
@@ -30,16 +27,9 @@ import java.util.Map;
  */
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class DubboZookeeperEndpoint extends AbstractEndpoint implements ServiceEndpoint {
+public class DubboZookeeperEndpoint extends AbstractServiceEndpoint {
 
     private String scheme;
-
-    private String service;
-
-    private String group;
 
     private String host;
 
@@ -47,14 +37,15 @@ public class DubboZookeeperEndpoint extends AbstractEndpoint implements ServiceE
 
     private Map<String, String> metadata;
 
-    @Override
-    public boolean isSecure() {
-        return Boolean.parseBoolean(getLabel(Constants.LABEL_SECURE));
+    public DubboZookeeperEndpoint() {
     }
 
-    @Override
-    public String getLabel(String key) {
-        return metadata == null ? null : metadata.get(key);
+    public DubboZookeeperEndpoint(String service, String group, String scheme, String host, int port, Map<String, String> metadata) {
+        super(service, group);
+        this.scheme = scheme;
+        this.host = host;
+        this.port = port;
+        this.metadata = metadata;
     }
 
     @Override
@@ -62,8 +53,4 @@ public class DubboZookeeperEndpoint extends AbstractEndpoint implements ServiceE
         return EndpointState.HEALTHY;
     }
 
-    @Override
-    public Integer getWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT));
-    }
 }

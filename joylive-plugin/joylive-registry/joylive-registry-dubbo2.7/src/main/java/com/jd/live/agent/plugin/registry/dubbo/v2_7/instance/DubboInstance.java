@@ -26,11 +26,7 @@ public class DubboInstance extends AbstractDubboEndpoint {
 
     public DubboInstance(ServiceInstance instance) {
         this.instance = instance;
-    }
-
-    @Override
-    public String getService() {
-        return instance.getServiceName();
+        this.service = instance.getServiceName();
     }
 
     @Override

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static com.jd.live.agent.core.Constants.LABEL_WEIGHT;
 import static com.jd.live.agent.core.Constants.SAME_GROUP_PREDICATE;
 import static com.jd.live.agent.core.util.StringUtils.choose;
 import static com.jd.live.agent.core.util.StringUtils.isEqualsOrEmpty;
@@ -113,10 +114,10 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * Gets the timestamp associated with the endpoint.
      * This can be used for various purposes, such as versioning or timing.
      *
-     * @return The timestamp, or null if not available.
+     * @return The timestamp, or zero if not available.
      */
-    default Long getTimestamp() {
-        return Converts.getLong(getLabel(Constants.LABEL_TIMESTAMP), null);
+    default long getTimestamp() {
+        return Converts.getLong(getLabel(Constants.LABEL_TIMESTAMP), 0L);
     }
 
     /**
@@ -124,7 +125,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      *
      * @return the warm-up time in seconds, or the default value if not specified
      */
-    default Integer getWarmup() {
+    default int getWarmup() {
         return Converts.getInteger(getLabel(Constants.LABEL_WARMUP), DEFAULT_WARMUP);
     }
 
@@ -151,17 +152,7 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @param request the service request for which to get the weight
      * @return the weight for this endpoint
      */
-    default Integer reweight(ServiceRequest request) {
-        int weight = getWeight(request);
-        if (weight > 0) {
-            long now = System.currentTimeMillis();
-            Double ratio = getWeightRatio();
-            weight = getWeight(weight, getTimestamp(), getWarmup(), now);
-            weight = ratio != null ? (int) (weight * ratio) : weight;
-            return weight < 0 ? 0 : Math.max(1, weight);
-        }
-        return 0;
-    }
+    int reweight(ServiceRequest request);
 
     /**
      * Calculates the effective weight of a resource based on its uptime and warmup period.
@@ -196,7 +187,24 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return the origin weight, or the default value if not specified
      */
     default Integer getWeight(ServiceRequest request) {
-        return Converts.getInteger(getLabel(Constants.LABEL_WEIGHT), DEFAULT_WEIGHT);
+        // compatible with the dubbo
+        return getWeight(Converts.getDouble(getLabel(LABEL_WEIGHT), DEFAULT_WEIGHT * 1.0));
+    }
+
+    /**
+     * Gets the origin weight for the specified service request.
+     *
+     * @param value the double weight value
+     * @return the int weight value
+     */
+    default int getWeight(Double value) {
+        // compatible with the dubbo
+        if (value == null || value < 0) {
+            return DEFAULT_WEIGHT;
+        } else if (value < 1) {
+            return (int) (value * 100);
+        }
+        return value.intValue();
     }
 
     /**
@@ -477,6 +485,25 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      */
     default String getLabel(String key, String defaultValue) {
         return choose(getLabel(key), defaultValue);
+    }
+
+    /**
+     * Gets a label's value based on the specified key, returning a default value if the label is not found.
+     *
+     * @param key          The key of the label to retrieve.
+     * @param another      The another key of the label to retrieve.
+     * @param defaultValue The default value to return if the label is not found.
+     * @return The value of the label, or the default value if not found.
+     */
+    default String getLabel(String key, String another, String defaultValue) {
+        String value = getLabel(key);
+        if (value == null || value.isEmpty()) {
+            value = getLabel(another);
+            if (value == null || value.isEmpty()) {
+                return defaultValue;
+            }
+        }
+        return value;
     }
 
     /**

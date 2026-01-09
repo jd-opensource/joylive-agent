@@ -67,6 +67,9 @@ public interface ServiceEndpoint extends Endpoint {
 
     @Override
     default String getLabel(String key) {
+        if (key == null) {
+            return null;
+        }
         Map<String, String> metadata = getMetadata();
         return metadata == null ? null : metadata.get(key);
     }
