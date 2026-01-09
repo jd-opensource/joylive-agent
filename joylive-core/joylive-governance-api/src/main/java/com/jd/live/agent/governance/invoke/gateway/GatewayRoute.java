@@ -42,13 +42,16 @@ public class GatewayRoute<R> {
 
     @SuppressWarnings("unchecked")
     public <T> T getOrCreate(BiFunction<R, Long, T> function) {
-        if (reference == null) {
+        Object result = reference;
+        if (result == null) {
             synchronized (mutex) {
-                if (reference == null) {
-                    reference = function.apply(route, version);
+                result = reference;
+                if (result == null) {
+                    result = function.apply(route, version);
+                    reference = result;
                 }
             }
         }
-        return (T) reference;
+        return (T) result;
     }
 }

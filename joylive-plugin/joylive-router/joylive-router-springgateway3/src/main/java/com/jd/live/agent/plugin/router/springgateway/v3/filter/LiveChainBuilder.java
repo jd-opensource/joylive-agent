@@ -114,7 +114,7 @@ public class LiveChainBuilder {
      * @return a new GatewayFilterChain instance
      */
     public GatewayFilterChain create(ServerWebExchange exchange) {
-        Route route = exchange.getRequiredAttribute(GATEWAY_ROUTE_ATTR);
+        Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);
         GatewayRoute<Route> gatewayRoute = GatewayRoutes.get(route.getId());
         LiveRouteFilter filter = gatewayRoute.getOrCreate(this::createRouteFilter);
         return filter.build(exchange);
@@ -221,9 +221,9 @@ public class LiveChainBuilder {
 
     private static class FilterDescriptor {
         @Getter
-        private List<GatewayFilter> filters;
+        private final List<GatewayFilter> filters;
 
-        private GatewayConfig config;
+        private final GatewayConfig config;
 
         @Getter
         @Setter
@@ -239,7 +239,6 @@ public class LiveChainBuilder {
             }
         }
 
-        @SuppressWarnings("deprecation")
         protected void parse(GatewayFilter filter) {
             GatewayFilter delegate = filter;
             if (filter instanceof OrderedGatewayFilter) {
