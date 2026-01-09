@@ -75,14 +75,11 @@ public interface LiveGatewayFilterChain extends GatewayFilterChain {
         @Override
         public Mono<Void> filter(ServerWebExchange exchange) {
             final int idx = index++;
-            return Mono.defer(() -> {
-                if (idx < filters.size()) {
-                    GatewayFilter filter = filters.get(idx);
-                    return filter.filter(exchange, this);
-                } else {
-                    return Mono.empty(); // complete
-                }
-            });
+            if (idx >= filters.size()) {
+                return Mono.empty();
+            }
+            GatewayFilter filter = filters.get(idx);
+            return filter.filter(exchange, this);
         }
 
         @Override
