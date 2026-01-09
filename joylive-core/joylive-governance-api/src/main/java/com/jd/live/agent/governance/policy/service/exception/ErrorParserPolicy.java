@@ -15,8 +15,8 @@
  */
 package com.jd.live.agent.governance.policy.service.exception;
 
-import com.jd.live.agent.core.parser.json.CaseInsensitiveSetJsonConverter;
 import com.jd.live.agent.core.parser.annotation.DeserializeConverter;
+import com.jd.live.agent.core.parser.json.CaseInsensitiveSetJsonConverter;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -97,9 +97,11 @@ public class ErrorParserPolicy implements Cloneable {
     }
 
     public boolean isValid() {
-        if (valid == null) {
-            valid = parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
+        Boolean result = valid;
+        if (result == null) {
+            result = parser != null && expression != null && !parser.isEmpty() && !expression.isEmpty();
+            valid = result;
         }
-        return valid;
+        return result;
     }
 }
