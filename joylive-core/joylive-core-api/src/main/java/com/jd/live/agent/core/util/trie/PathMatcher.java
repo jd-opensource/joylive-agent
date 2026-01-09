@@ -30,6 +30,7 @@ import java.util.function.Supplier;
  */
 public class PathMatcher<T> {
     private static final String VARIABLE = ":";
+    private static final String PATH_DELIMITER = "/";
     private final TrieNode<T> root;
     private final char delimiter;
 
@@ -97,7 +98,7 @@ public class PathMatcher<T> {
      * @return number of successfully processed segments
      */
     private int split(String path, Consumer<Matcher> consumer) {
-        if (path.equals("/")) {
+        if (path.equals(PATH_DELIMITER)) {
             consumer.accept(new Matcher("", 0, Matched.SUCCESS, 0));
             return 0;
         }

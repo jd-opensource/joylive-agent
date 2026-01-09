@@ -31,9 +31,7 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
 
     private final Supplier<List<T>> supplier;
 
-    private volatile Map<String, T> cache;
-
-    private volatile PathMatcher<T> matcher;
+    private volatile Cache<T> cache;
 
     /**
      * Constructs a {@code PathMatcherTrie} with the default delimiter.
@@ -65,16 +63,9 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
         this.supplier = supplier;
     }
 
-    /**
-     * Matches a given path against the Trie and returns the corresponding path object.
-     *
-     * @param path The path to be matched.
-     * @param type The type of path matching to be performed.
-     * @return The matched path object of type {@code T}, or {@code null} if no match is found.
-     */
     @Override
     public T match(String path, PathMatchType type) {
-        PathMatcher.MatchResult<T> result = getMatcher().match(path);
+        PathMatcher.MatchResult<T> result = getCache().match(path);
         if (result == null) {
             return null;
         } else if (type == null || type == PathMatchType.PREFIX) {
@@ -84,15 +75,9 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
         }
     }
 
-    /**
-     * Retrieves the path object associated with the given path.
-     *
-     * @param path The path whose associated path object is to be returned.
-     * @return The path object associated with the specified path, or {@code null} if no such path is found.
-     */
     @Override
     public T get(String path) {
-        return path == null ? null : getCache().get(path);
+        return path == null ? null : getCache().getPath(path);
     }
 
     /**
@@ -100,7 +85,7 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
      */
     @Override
     public void clear() {
-        matcher = null;
+        cache = null;
     }
 
     /**
@@ -108,45 +93,65 @@ public class PathMatcherTrie<T extends Path> implements PathTrie<T> {
      *
      * @return The cache of paths.
      */
-    private Map<String, T> getCache() {
-        if (cache == null) {
-            synchronized (this) {
-                if (cache == null) {
-                    Map<String, T> map = new HashMap<>();
-                    if (supplier != null) {
-                        List<T> paths = supplier.get();
-                        if (paths != null) {
-                            paths.forEach(path -> map.put(path.getPath(), path));
-                        }
-                    }
-                    cache = map;
-                }
+    private Cache<T> getCache() {
+        Cache<T> result = cache;
+        if (result != null) {
+            return result;
+        }
+        synchronized (this) {
+            result = cache;
+            if (result == null) {
+                result = new Cache<>(supplier, delimiter.get());
+                cache = result;
             }
         }
-        return cache;
+        return result;
     }
 
-    /**
-     * Lazily initializes and returns the underlying {@link PathMatcher}.
-     *
-     * @return The initialized {@link PathMatcher}.
-     */
-    private PathMatcher<T> getMatcher() {
-        if (matcher == null) {
-            synchronized (this) {
-                if (matcher == null) {
-                    PathMatcher<T> result = new PathMatcher<>(delimiter.get());
-                    if (supplier != null) {
-                        List<T> paths = supplier.get();
-                        if (paths != null) {
-                            paths.forEach(path -> result.addPath(path.getPath(), path));
-                        }
+    private static class Cache<T extends Path> {
+
+        private final Map<String, T> paths;
+
+        private final PathMatcher<T> matcher;
+
+        Cache(Supplier<List<T>> supplier, Character delimiter) {
+            paths = createPaths(supplier);
+            matcher = createMatcher(supplier, delimiter);
+        }
+
+        public T getPath(String path) {
+            return path == null ? null : paths.get(path);
+        }
+
+        public PathMatcher.MatchResult<T> match(String path) {
+            return path == null ? null : matcher.match(path);
+        }
+
+        private Map<String, T> createPaths(Supplier<List<T>> supplier) {
+            Map<String, T> result = new HashMap<>();
+            if (supplier != null) {
+                List<T> paths = supplier.get();
+                if (paths != null) {
+                    for (T path : paths) {
+                        result.put(path.getPath(), path);
                     }
-                    matcher = result;
                 }
             }
+            return result;
         }
-        return matcher;
+
+        private PathMatcher<T> createMatcher(Supplier<List<T>> supplier, Character delimiter) {
+            PathMatcher<T> result = new PathMatcher<>(delimiter);
+            if (supplier != null) {
+                List<T> paths = supplier.get();
+                if (paths != null) {
+                    for (T path : paths) {
+                        result.addPath(path.getPath(), path);
+                    }
+                }
+            }
+            return result;
+        }
     }
 }
 
