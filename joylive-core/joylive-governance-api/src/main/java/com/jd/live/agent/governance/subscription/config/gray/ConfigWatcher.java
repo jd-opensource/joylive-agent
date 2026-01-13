@@ -210,9 +210,11 @@ public abstract class ConfigWatcher<C, L> extends ConfigFetcher<C> {
         if (subscribed.compareAndSet(false, true)) {
             logger.info("Subscribe gray policy {}@{}", keyPolicy.getName(), keyPolicy.getGroup());
             try {
+                // nacos will not fire event when beta-policy config is not exists.
+                // so we need to get it first.
+                String value = doGetConfig(keyPolicy, 0);
+                onUpdatePolicy(value);
                 subscribe(keyPolicy, onPolicy);
-                //String value = doGetConfig(keyPolicy, 0);
-                //onUpdatePolicy(value);
             } catch (Exception e) {
                 subscribed.set(false);
                 doUnsubscribe();
