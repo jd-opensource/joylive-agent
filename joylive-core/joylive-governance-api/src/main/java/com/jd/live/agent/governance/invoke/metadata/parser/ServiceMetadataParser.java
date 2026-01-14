@@ -188,8 +188,14 @@ public abstract class ServiceMetadataParser implements ServiceParser {
         }
 
         @Override
-        protected String parseConsumer() {
+        public ServiceMetadata parse() {
+            // add consumer name into carrier
             request.getOrCreateCarrier().setCargo(Constants.LABEL_SERVICE_CONSUMER, application.getName());
+            return super.parse();
+        }
+
+        @Override
+        protected String parseConsumer() {
             return application.getName();
         }
 
