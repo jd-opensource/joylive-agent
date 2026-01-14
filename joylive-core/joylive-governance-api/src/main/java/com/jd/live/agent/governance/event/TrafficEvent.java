@@ -145,6 +145,14 @@ public class TrafficEvent {
      */
     private int requests;
 
+    public boolean inbound() {
+        return direction == Direction.INBOUND;
+    }
+
+    public boolean outbound() {
+        return direction == Direction.OUTBOUND;
+    }
+
     public TrafficEvent componentType(ComponentType componentType) {
         this.componentType = componentType;
         return this;

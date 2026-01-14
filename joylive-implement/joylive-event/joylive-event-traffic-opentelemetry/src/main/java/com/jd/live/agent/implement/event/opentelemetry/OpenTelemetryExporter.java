@@ -19,7 +19,6 @@ import com.jd.live.agent.core.event.*;
 import com.jd.live.agent.core.event.AgentEvent.EventType;
 import com.jd.live.agent.core.extension.annotation.ConditionalOnProperty;
 import com.jd.live.agent.core.extension.annotation.Extension;
-import com.jd.live.agent.core.inject.annotation.Config;
 import com.jd.live.agent.core.inject.annotation.Configurable;
 import com.jd.live.agent.core.inject.annotation.Inject;
 import com.jd.live.agent.core.inject.annotation.Injectable;
@@ -47,7 +46,7 @@ public class OpenTelemetryExporter implements Subscriber {
     private static final String LIVE_SCOPE = "com.jd.live";
     private static final String SERVICE_NAME = "service.name";
 
-    @Config(ExporterConfig.CONFIG_EXPORTER)
+    @Inject(ExporterConfig.COMPONENT_EXPORTER_CONFIG)
     private ExporterConfig config;
 
     @Inject(Application.COMPONENT_APPLICATION)

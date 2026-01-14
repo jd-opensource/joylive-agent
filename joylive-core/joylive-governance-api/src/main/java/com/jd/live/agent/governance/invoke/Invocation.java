@@ -233,21 +233,12 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
     }
 
     /**
-     * Publishes a traffic event to a specified publisher.
-     *
-     * @param event The traffic event.
-     */
-    protected void publish(TrafficEvent event) {
-        if (event != null) {
-            context.publish(configure(event));
-        }
-    }
-
-    /**
      * Handles a forward event.
      */
     protected void onForwardEvent() {
-        publish(TrafficEvent.build().actionType(ActionType.FORWARD).requests(1));
+        if (context.getExporterConfig().isTrafficEnabled()) {
+            context.publish(configure(TrafficEvent.build().actionType(ActionType.FORWARD).requests(1)));
+        }
     }
 
     /**
@@ -256,13 +247,15 @@ public abstract class Invocation<T extends ServiceRequest> implements Matcher<Ta
      * @param type the type of reject
      */
     protected void onRejectEvent(RejectType type) {
-        publish(TrafficEvent.build().actionType(ActionType.REJECT).rejectType(type).requests(1));
+        if (context.getExporterConfig().isTrafficEnabled()) {
+            context.publish(configure(TrafficEvent.build().actionType(ActionType.REJECT).rejectType(type).requests(1)));
+        }
     }
 
     /**
      * Configures a live event builder with details from the current invocation context.
      *
-     * @param event The traffict event to configure.
+     * @param event The traffic event to configure.
      * @return The configured live event builder.
      */
     protected TrafficEvent configure(TrafficEvent event) {

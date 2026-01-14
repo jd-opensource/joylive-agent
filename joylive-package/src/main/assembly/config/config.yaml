@@ -414,17 +414,16 @@ agent:
     enabled: ${CONFIG_EXPORTER_ENABLED:true}
     type: ${CONFIG_EXPORTER_TYPE:${CONFIG_COUNTER_EXPORTER_TYPE:logging}}
     endpoint: ${CONFIG_EXPORTER_ENDPOINT:${CONFIG_COUNTER_EXPORTER_ENDPOINT:}}
-    timeout: 5000
-    readerInterval: 1000
+    port: ${CONFIG_EXPORTER_PORT:${CONFIG_COUNTER_EXPORTER_PORT:9494}}
+    timeout: ${CONFIG_EXPORTER_TIMEOUT:5000}
+    readerInterval: ${CONFIG_EXPORTER_READER_INTERVAL:60000}
     traffic:
       enabled: ${CONFIG_EXPORTER_TRAFFIC_ENABLED:true}
-      gatewayEnabled: true
-      serviceEnabled: true
-    document:
-      enabled: ${CONFIG_EXPORTER_DOCUMENT_ENABLED:false}
+      gatewayEnabled: ${CONFIG_EXPORTER_GATEWAY_ENABLED:true}
+      serviceEnabled: ${CONFIG_EXPORTER_SERVICE_ENABLED:true}
     exception:
       enabled: ${CONFIG_EXPORTER_EXCEPTION_ENABLED:true}
-      maxDepth: 20
+      maxDepth: ${CONFIG_EXPORTER_EXCEPTION_MAX_DEPTH:20}
       stackTracePrefixes:
         - java.
         - javax.

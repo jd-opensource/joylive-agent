@@ -26,10 +26,7 @@ import com.jd.live.agent.core.util.ExceptionUtils;
 import com.jd.live.agent.core.util.Futures;
 import com.jd.live.agent.core.util.network.Ipv4;
 import com.jd.live.agent.core.util.time.Timer;
-import com.jd.live.agent.governance.config.GovernanceConfig;
-import com.jd.live.agent.governance.config.HostConfig;
-import com.jd.live.agent.governance.config.LaneConfig;
-import com.jd.live.agent.governance.config.LiveConfig;
+import com.jd.live.agent.governance.config.*;
 import com.jd.live.agent.governance.context.bag.Propagation;
 import com.jd.live.agent.governance.counter.CounterManager;
 import com.jd.live.agent.governance.db.DbConnectionSupervisor;
@@ -251,6 +248,8 @@ public interface InvocationContext {
      * @return An instance of {@code GovernanceConfig} representing the governance configurations.
      */
     GovernanceConfig getGovernanceConfig();
+
+    ExporterConfig getExporterConfig();
 
     /**
      * Gets the current registry instance.
@@ -931,6 +930,11 @@ public interface InvocationContext {
         @Override
         public GovernanceConfig getGovernanceConfig() {
             return delegate.getGovernanceConfig();
+        }
+
+        @Override
+        public ExporterConfig getExporterConfig() {
+            return delegate.getExporterConfig();
         }
 
         @Override
