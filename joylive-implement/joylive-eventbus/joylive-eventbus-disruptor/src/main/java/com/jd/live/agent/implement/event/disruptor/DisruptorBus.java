@@ -60,8 +60,9 @@ public class DisruptorBus implements EventBus {
     @SuppressWarnings("unchecked")
     @Override
     public <E> Publisher<E> getPublisher(String topic) {
-        if (topic == null || topic.isEmpty())
+        if (topic == null || topic.isEmpty()) {
             return null;
+        }
         DisruptorPublisher<E> result = (DisruptorPublisher<E>) publishers.computeIfAbsent(topic,
                 o -> new DisruptorPublisher<>(topic, application, getConfig(o), started.get()));
         if (!started.get() && result.isStarted()) {

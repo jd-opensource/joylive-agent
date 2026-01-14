@@ -60,8 +60,9 @@ public class JEventBus implements EventBus {
     @SuppressWarnings("unchecked")
     @Override
     public <E> Publisher<E> getPublisher(String topic) {
-        if (topic == null || topic.isEmpty())
+        if (topic == null || topic.isEmpty()) {
             return null;
+        }
         JPublisher<E> result = (JPublisher<E>) publishers.computeIfAbsent(topic,
                 o -> new JPublisher<>(topic, application, getConfig(o), started.get()));
         if (!started.get() && result.isStarted()) {

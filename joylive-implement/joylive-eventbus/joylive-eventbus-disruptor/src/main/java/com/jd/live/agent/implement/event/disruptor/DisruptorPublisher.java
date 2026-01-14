@@ -31,6 +31,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -49,9 +50,11 @@ public class DisruptorPublisher<E> implements Publisher<E> {
 
     private final String topic;
 
-    private final Application application;
-
     private final PublisherConfig config;
+
+    private final String instanceId;
+
+    private final String ip;
 
     private final Set<EventHandler<E>> handlers = new CopyOnWriteArraySet<>();
 
@@ -83,8 +86,9 @@ public class DisruptorPublisher<E> implements Publisher<E> {
      */
     public DisruptorPublisher(String topic, Application application, PublisherConfig config, boolean autoStart) {
         this.topic = topic;
-        this.application = application;
         this.config = config;
+        this.instanceId = application.getInstance();
+        this.ip = Ipv4.getLocalIp();
         this.started = new AtomicBoolean(autoStart);
         this.disruptor = new Disruptor<>(Event::new, nearestPowerOfTwo(config.getCapacity()),
                 new NamedThreadFactory("LiveAgent-publisher-" + topic), ProducerType.MULTI,
@@ -175,8 +179,8 @@ public class DisruptorPublisher<E> implements Publisher<E> {
             Event<E> event = ringBuffer.get(sequence);
             event.setTopic(topic);
             event.setTime(System.currentTimeMillis());
-            event.setInstanceId(application.getInstance());
-            event.setIp(Ipv4.getLocalIp());
+            event.setInstanceId(instanceId);
+            event.setIp(ip);
             event.setData(data);
             ringBuffer.publish(sequence);
             return true;
@@ -213,19 +217,37 @@ public class DisruptorPublisher<E> implements Publisher<E> {
         }
 
         @Override
-        public void onEvent(Event<E> event, long sequence, boolean endOfBatch) {
-            events.add(event);
-            if (endOfBatch || events.size() == batchSize) {
-                try {
-                    for (EventHandler<E> handler : handlers) {
-                        handler.handle(events);
-                    }
-                } catch (Throwable e) {
-                    logger.error(e.getMessage(), e);
-                } finally {
-                    events.forEach(Event::clear);
-                    events.clear();
+        public void onEvent(final Event<E> event, final long sequence, final boolean endOfBatch) {
+            if (endOfBatch) {
+                if (events.isEmpty()) {
+                    fire(Collections.singletonList(event), false);
+                } else {
+                    events.add(event);
+                    fire(events, true);
                 }
+            } else {
+                events.add(event);
+                if (events.size() == batchSize) {
+                    fire(events, true);
+                }
+            }
+        }
+
+        private void fire(final List<Event<E>> events, final boolean clear) {
+            for (EventHandler<E> handler : handlers) {
+                fire(events, handler);
+            }
+            events.forEach(Event::clear);
+            if (clear) {
+                events.clear();
+            }
+        }
+
+        private void fire(final List<Event<E>> events, final EventHandler<E> handler) {
+            try {
+                handler.handle(events);
+            } catch (Throwable e) {
+                logger.error(e.getMessage(), e);
             }
         }
     }

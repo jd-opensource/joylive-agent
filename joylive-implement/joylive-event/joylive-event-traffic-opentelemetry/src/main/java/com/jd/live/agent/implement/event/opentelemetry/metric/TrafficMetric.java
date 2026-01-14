@@ -23,13 +23,13 @@ import com.jd.live.agent.governance.config.ExporterConfig.TrafficConfig;
 import com.jd.live.agent.governance.event.TrafficEvent;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
 
 import java.util.List;
 
-import static com.jd.live.agent.governance.event.TrafficEvent.*;
+import static com.jd.live.agent.governance.event.TrafficEvent.ActionType;
+import static com.jd.live.agent.governance.event.TrafficEvent.ComponentType;
 
 public class TrafficMetric implements Subscription<TrafficEvent> {
 
@@ -129,28 +129,34 @@ public class TrafficMetric implements Subscription<TrafficEvent> {
 
     @Override
     public void handle(List<Event<TrafficEvent>> events) {
-        if (events != null) {
-            TrafficEvent trafficEvent;
-            LongCounter counter;
-            for (Event<TrafficEvent> event : events) {
-                trafficEvent = event.getData();
-                Attributes attributes = attributes(event);
-                if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.INBOUND) {
-                    gatewayInbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayInboundForwards : gatewayInboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isGatewayEnabled() && trafficEvent.getComponentType().isGateway() && trafficEvent.getDirection() == Direction.OUTBOUND) {
-                    gatewayOutbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? gatewayOutboundForwards : gatewayOutboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.OUTBOUND) {
-                    serviceOutbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceOutboundForwards : serviceOutboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
-                } else if (config.isServiceEnabled() && trafficEvent.getComponentType() == ComponentType.SERVICE && trafficEvent.getDirection() == Direction.INBOUND) {
-                    serviceInbounds.add(trafficEvent.getRequests(), attributes);
-                    counter = trafficEvent.getActionType() == ActionType.FORWARD ? serviceInboundForwards : serviceInboundRejects;
-                    counter.add(trafficEvent.getRequests(), attributes);
+        if (events == null) {
+            return;
+        }
+        TrafficEvent event;
+        LongCounter counter;
+        Attributes attributes;
+        for (Event<TrafficEvent> e : events) {
+            event = e.getData();
+            attributes = attributes(e);
+            if (config.isGatewayEnabled() && event.getComponentType().isGateway()) {
+                if (event.inbound()) {
+                    gatewayInbounds.add(event.getRequests(), attributes);
+                    counter = event.getActionType() == ActionType.FORWARD ? gatewayInboundForwards : gatewayInboundRejects;
+                    counter.add(event.getRequests(), attributes);
+                } else if (event.outbound()) {
+                    gatewayOutbounds.add(event.getRequests(), attributes);
+                    counter = event.getActionType() == ActionType.FORWARD ? gatewayOutboundForwards : gatewayOutboundRejects;
+                    counter.add(event.getRequests(), attributes);
+                }
+            } else if (config.isServiceEnabled() && event.getComponentType() == ComponentType.SERVICE) {
+                if (event.inbound()) {
+                    serviceInbounds.add(event.getRequests(), attributes);
+                    counter = event.getActionType() == ActionType.FORWARD ? serviceInboundForwards : serviceInboundRejects;
+                    counter.add(event.getRequests(), attributes);
+                } else if (event.outbound()) {
+                    serviceOutbounds.add(event.getRequests(), attributes);
+                    counter = event.getActionType() == ActionType.FORWARD ? serviceOutboundForwards : serviceOutboundRejects;
+                    counter.add(event.getRequests(), attributes);
                 }
             }
         }
@@ -161,34 +167,40 @@ public class TrafficMetric implements Subscription<TrafficEvent> {
         return Publisher.TRAFFIC;
     }
 
-    private Attributes attributes(Event<TrafficEvent> event) {
-        TrafficEvent trafficEvent = event.getData();
-        AttributesBuilder builder = Attributes.builder();
-        builder.put(ATTRIBUTE_COMPONENT_TYPE, trafficEvent.getComponentType().name()).
-                put(ATTRIBUTE_APPLICATION, application.getName()).
-                put(ATTRIBUTE_LIVE_SPACE_ID, trafficEvent.getLiveSpaceId()).
-                put(ATTRIBUTE_LIVE_RULE_ID, trafficEvent.getUnitRuleId()).
-                put(ATTRIBUTE_LOCAL_UNIT, trafficEvent.getLocalUnit()).
-                put(ATTRIBUTE_LOCAL_CELL, trafficEvent.getLocalCell()).
-                put(ATTRIBUTE_TARGET_UNIT, trafficEvent.getTargetUnit()).
-                put(ATTRIBUTE_TARGET_CELL, trafficEvent.getTargetCell()).
-                put(ATTRIBUTE_LIVE_DOMAIN, trafficEvent.getLiveDomain()).
-                put(ATTRIBUTE_LIVE_PATH, trafficEvent.getLivePath()).
-                put(ATTRIBUTE_LIVE_BIZ_VARIABLE, trafficEvent.getLiveBizVariable()).
-                put(ATTRIBUTE_LANE_SPACE_ID, trafficEvent.getLaneSpaceId()).
-                put(ATTRIBUTE_LANE_RULE_ID, trafficEvent.getLaneRuleId()).
-                put(ATTRIBUTE_LOCAL_LANE, trafficEvent.getLocalLane()).
-                put(ATTRIBUTE_TARGET_LANE, trafficEvent.getTargetLane()).
-                put(ATTRIBUTE_SERVICE_POLICY_ID, trafficEvent.getPolicyId()).
-                put(ATTRIBUTE_SERVICE_NAME, trafficEvent.getService()).
-                put(ATTRIBUTE_SERVICE_GROUP, trafficEvent.getGroup()).
-                put(ATTRIBUTE_SERVICE_PATH, trafficEvent.getPath()).
-                put(ATTRIBUTE_SERVICE_METHOD, trafficEvent.getMethod()).
-                put(ATTRIBUTE_REJECT_TYPE, trafficEvent.getRejectTypeName()).
-                put(ATTRIBUTE_LOCAL_IP, event.getIp());
-        if (trafficEvent.getPolicyTags() != null) {
-            trafficEvent.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));
+    private Attributes attributes(Event<TrafficEvent> e) {
+        TrafficEvent event = e.getData();
+        // use array attributes builder to improve performance
+        ArrayAttributesBuilder builder = new ArrayAttributesBuilder(24);
+        if (event.getPolicyTags() != null) {
+            event.getPolicyTags().forEach((key, value) -> builder.put(AttributeKey.stringKey(key), value));
         }
-        return builder.build();
+        builder.set(ATTRIBUTE_COMPONENT_TYPE, event.getComponentType().name()).
+                set(ATTRIBUTE_APPLICATION, application.getName()).
+                set(ATTRIBUTE_SERVICE_POLICY_ID, event.getPolicyId()).
+                set(ATTRIBUTE_SERVICE_NAME, event.getService()).
+                set(ATTRIBUTE_SERVICE_GROUP, event.getGroup()).
+                set(ATTRIBUTE_SERVICE_PATH, event.getPath()).
+                set(ATTRIBUTE_SERVICE_METHOD, event.getMethod()).
+                set(ATTRIBUTE_REJECT_TYPE, event.getRejectTypeName()).
+                set(ATTRIBUTE_LOCAL_IP, e.getIp());
+        if (config.isLiveEnabled()) {
+            builder.set(ATTRIBUTE_LIVE_SPACE_ID, event.getLiveSpaceId()).
+                    set(ATTRIBUTE_LIVE_RULE_ID, event.getUnitRuleId()).
+                    set(ATTRIBUTE_LOCAL_UNIT, event.getLocalUnit()).
+                    set(ATTRIBUTE_LOCAL_CELL, event.getLocalCell()).
+                    set(ATTRIBUTE_TARGET_UNIT, event.getTargetUnit()).
+                    set(ATTRIBUTE_TARGET_CELL, event.getTargetCell()).
+                    set(ATTRIBUTE_LIVE_DOMAIN, event.getLiveDomain()).
+                    set(ATTRIBUTE_LIVE_PATH, event.getLivePath()).
+                    set(ATTRIBUTE_LIVE_BIZ_VARIABLE, event.getLiveBizVariable());
+        }
+        if (config.isLaneEnabled()) {
+            builder.set(ATTRIBUTE_LANE_SPACE_ID, event.getLaneSpaceId()).
+                    set(ATTRIBUTE_LANE_RULE_ID, event.getLaneRuleId()).
+                    set(ATTRIBUTE_LOCAL_LANE, event.getLocalLane()).
+                    set(ATTRIBUTE_TARGET_LANE, event.getTargetLane());
+        }
+
+        return builder.create();
     }
 }

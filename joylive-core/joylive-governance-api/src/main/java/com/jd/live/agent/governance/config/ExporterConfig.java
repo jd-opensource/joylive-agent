@@ -26,6 +26,8 @@ import java.util.Set;
 @Setter
 public class ExporterConfig {
 
+    public static final String COMPONENT_EXPORTER_CONFIG = "exporterConfig";
+
     public static final String CONFIG_EXPORTER = "agent.exporter";
 
     private boolean enabled = true;
@@ -44,10 +46,14 @@ public class ExporterConfig {
     private long readerInterval = 1000;
 
     @Config("traffic")
-    private TrafficConfig trafficConfig;
+    private TrafficConfig trafficConfig = new TrafficConfig();
 
     @Config("exception")
-    private ExceptionConfig exceptionConfig;
+    private ExceptionConfig exceptionConfig = new ExceptionConfig();
+
+    public boolean isTrafficEnabled() {
+        return trafficConfig.isEnabled();
+    }
 
     @Getter
     @Setter
@@ -58,6 +64,10 @@ public class ExporterConfig {
         private boolean gatewayEnabled = true;
 
         private boolean serviceEnabled = true;
+
+        private boolean liveEnabled = true;
+
+        private boolean laneEnabled = true;
 
     }
 
@@ -85,11 +95,4 @@ public class ExporterConfig {
         }
     }
 
-    public static class DocumentConfig {
-
-        @Getter
-        @Setter
-        private boolean enabled = true;
-
-    }
 }

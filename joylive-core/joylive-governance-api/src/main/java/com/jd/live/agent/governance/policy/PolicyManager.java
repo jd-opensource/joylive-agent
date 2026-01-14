@@ -148,6 +148,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
     @Config(GovernanceConfig.CONFIG_GOVERNANCE)
     private GovernanceConfig governanceConfig;
 
+    @Getter
     @Config(ExporterConfig.CONFIG_EXPORTER)
     private ExporterConfig exporterConfig;
 
@@ -309,6 +310,7 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         source.add(GovernanceConfig.COMPONENT_GOVERNANCE_CONFIG, governanceConfig);
         source.add(ServiceConfig.COMPONENT_SERVICE_CONFIG, governanceConfig == null ? null : governanceConfig.getServiceConfig());
         source.add(RegistryConfig.COMPONENT_REGISTRY_CONFIG, governanceConfig == null ? null : governanceConfig.getRegistryConfig());
+        source.add(ExporterConfig.COMPONENT_EXPORTER_CONFIG, exporterConfig);
     }
 
     @Override
@@ -385,6 +387,12 @@ public class PolicyManager implements PolicySupervisor, InjectSourceSupplier, Ex
         gatewayRole = application.getService().getGateway();
         governEnabled = flowControlEnabled || laneEnabled || liveEnabled;
         registryEnabled = governanceConfig.getRegistryConfig().isEnabled();
+        if (!laneEnabled) {
+            exporterConfig.getTrafficConfig().setLaneEnabled(false);
+        }
+        if (!liveEnabled) {
+            exporterConfig.getTrafficConfig().setLiveEnabled(false);
+        }
 
         List<RouteFilter> forwards = toList(routeFilters, filter -> filter instanceof UnitLiveFilter ? filter : null);
         unitFilters = forwards == null ? null : forwards.toArray(new RouteFilter[0]);
