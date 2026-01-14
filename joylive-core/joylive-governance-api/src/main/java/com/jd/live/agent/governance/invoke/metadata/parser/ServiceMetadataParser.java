@@ -95,7 +95,6 @@ public abstract class ServiceMetadataParser implements ServiceParser {
             return new URI(null, serviceName, null, path, parameters);
         });
 
-
         return new ServiceMetadata(config, serviceName, serviceGroup, path, method, service, servicePolicy, consumer, writeProtect, uri);
     }
 
