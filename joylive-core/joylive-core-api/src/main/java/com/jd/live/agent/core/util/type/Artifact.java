@@ -149,16 +149,14 @@ public class Artifact {
         int pos = name.lastIndexOf('.');
         name = name.substring(0, pos);
 
-        int end = name.length() - 1;
-        int start = name.lastIndexOf('-');
+        int start = name.indexOf('-');
         while (start > 0) {
             if (isDigit(name.charAt(start + 1))) {
-                result.put(VERSION, name.substring(start + 1, end + 1));
+                result.put(VERSION, name.substring(start + 1));
                 result.put(ARTIFACT_ID, name.substring(0, start));
                 break;
             }
-            end = start - 1;
-            start = name.lastIndexOf('-', end);
+            start = name.indexOf('-', start + 1);
         }
         return result;
     }
