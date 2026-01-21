@@ -178,7 +178,7 @@ public class LaneSpace {
             rule = function.apply(r);
             if (rule.match(matcher)) {
                 // total ratio when multiple rules matching
-                ratio += rule.getRatio();
+                ratio += rule.ratio();
                 if (ratio >= 1) {
                     return rule.getLaneCode();
                 }
