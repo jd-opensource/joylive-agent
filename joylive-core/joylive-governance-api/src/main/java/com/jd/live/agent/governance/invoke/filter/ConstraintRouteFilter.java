@@ -34,6 +34,7 @@ public interface ConstraintRouteFilter extends RouteFilter {
         if (constraint != null) {
             invocation.getRouteTarget().filter(constraint.predicate, constraint.maxSize, constraint.protect);
         }
+        chain.filter(invocation);
     }
 
     /**
