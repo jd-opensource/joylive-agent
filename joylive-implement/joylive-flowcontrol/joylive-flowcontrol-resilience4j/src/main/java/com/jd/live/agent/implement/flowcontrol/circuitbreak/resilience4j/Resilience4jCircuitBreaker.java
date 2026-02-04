@@ -230,9 +230,15 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
         }
 
         @Override
+        protected void onOpen(long now) {
+            super.onOpen(now);
+            policy.addInspector(instanceId, Resilience4jCircuitBreaker.this);
+        }
+
+        @Override
         protected void onClose(long now) {
             super.onClose(now);
-            policy.addInspector(instanceId, Resilience4jCircuitBreaker.this);
+            policy.removeInspector(instanceId, Resilience4jCircuitBreaker.this);
         }
 
         @Override
