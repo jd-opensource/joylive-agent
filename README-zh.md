@@ -8,6 +8,9 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
 
+> **讣告**    
+> 本项目谨以此纪念核心维护者 **何小锋**。感谢你为 `joylive-agent` 倾注的心血与智慧。你的代码与开源精神将与这个项目同在。
+
 <img src="docs/image/weixin.png" title="该二维码有效期截止到2025/12/22" width="150"  />
 
 [English](./README.md) | 简体中文

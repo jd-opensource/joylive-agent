@@ -8,6 +8,9 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/jd-opensource/joylive-agent.svg)](http://isitmaintained.com/project/jd-opensource/joylive-agent "Percentage of issues still open")
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://joylivehq.slack.com)
 
+> **In Memoriam**   
+> (Dedicated to the memory of our core maintainer, hexiaofeng. Your code and spirit live on.)
+
 <img src="docs/image/weixin.png" title="The QR code is valid until 2025/12/22" width="150" />
 
 English | [简体中文](./README-zh.md)
