@@ -204,7 +204,7 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
         }
 
         protected void onOpen(long now) {
-            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.OPEN, now, now + policy.getWaitDurationInOpenState()));
+            windowRef.set(new CircuitBreakerStateWindow(CircuitBreakerState.OPEN, now, now + policy.getWaitDurationInOpenState() * 1000L));
         }
 
         protected void onHalfOpen(long now) {
@@ -233,6 +233,12 @@ public class Resilience4jCircuitBreaker extends AbstractCircuitBreaker {
         protected void onOpen(long now) {
             super.onOpen(now);
             policy.addInspector(instanceId, Resilience4jCircuitBreaker.this);
+        }
+
+        @Override
+        protected void onHalfOpen(long now) {
+            super.onHalfOpen(now);
+            policy.removeInspector(instanceId, Resilience4jCircuitBreaker.this);
         }
 
         @Override

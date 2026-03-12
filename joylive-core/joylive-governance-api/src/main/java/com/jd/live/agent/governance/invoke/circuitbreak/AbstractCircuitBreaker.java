@@ -20,6 +20,7 @@ import com.jd.live.agent.governance.invoke.permission.AbstractLicensee;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakInfo;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPhase;
 import com.jd.live.agent.governance.policy.service.circuitbreak.CircuitBreakPolicy;
+import com.jd.live.agent.governance.policy.PolicyId;
 import lombok.Getter;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,7 +53,7 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
 
     @Override
     public boolean acquireWhen(int instances) {
-        return getPolicy().isProtectMode(instances) || acquire();
+        return acquire() || getPolicy().isProtected(instances);
     }
 
     @Override
@@ -89,8 +90,13 @@ public abstract class AbstractCircuitBreaker extends AbstractLicensee<CircuitBre
 
     @Override
     public void onError(long durationInMs, int instances, Throwable throwable) {
-        if (started.get() && !getPolicy().isProtectMode(instances)) {
-            doOnError(durationInMs, throwable);
+        if (started.get()) {
+            String endpointId = uri.getParameter(PolicyId.KEY_SERVICE_ENDPOINT);
+            if (!getPolicy().isProtectMode(endpointId, instances)) {
+                doOnError(durationInMs, throwable);
+            } else {
+                doRelease();
+            }
         }
     }
 

@@ -376,7 +376,7 @@ public class CircuitBreakPolicy extends PolicyId
      * @param instances The number of instances to evaluate.
      * @return {@code true} if protect mode should be enabled, {@code false} otherwise.
      */
-    public boolean isProtectMode(int instances) {
+    public boolean isProtectMode(String endpointId, int instances) {
         if (level == null || !level.isProtectionSupported()) {
             return false;
         }
@@ -384,9 +384,31 @@ public class CircuitBreakPolicy extends PolicyId
         double ratio = getOutlierMaxPercent();
         // The number of instances cannot exceed the maximum limit.
         int max = (int) Math.floor(instances * ratio / 100);
+        // If the endpoint is already quarantined (e.g. HALF_OPEN), we should not protect it
+        // from receiving its own errors; otherwise, it can never complete its probes.
+        if (endpointId != null && inspectors.containsKey(endpointId)) {
+            return false;
+        }
         // The number of instances plus the current request
         int count = inspectors.size() + 1;
         return count > max;
+    }
+
+    /**
+     * Determines whether the system is currently in protect mode based on the number of already broken instances.
+     * Unlike {@link #isProtectMode(String,int)}, this method does not add +1 to the count because it assumes
+     * the current instance is already counted in the inspectors map (already broken).
+     *
+     * @param instances The total number of instances to evaluate.
+     * @return {@code true} if protect mode is currently active, {@code false} otherwise.
+     */
+    public boolean isProtected(int instances) {
+        if (level == null || !level.isProtectionSupported()) {
+            return false;
+        }
+        double ratio = getOutlierMaxPercent();
+        int max = (int) Math.floor(instances * ratio / 100);
+        return inspectors.size() >= max;
     }
 
     /**

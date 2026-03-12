@@ -165,6 +165,9 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                 switch (status.getPhase()) {
                     case OPEN:
                         return false;
+                    case HALF_OPEN:
+                        // In half-open state, allow requests to pass for recovery testing.
+                        break;
                     case RECOVER:
                         // in recover
                         ratio = status.getRecoverRatio();
@@ -343,7 +346,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
 
         private final Map<String, ErrorParser> errorParsers;
 
-        private List<CircuitBreaker> circuitBreakers;
+        private final List<CircuitBreaker> circuitBreakers;
 
         private final List<CircuitBreakPolicy> policies;
 
@@ -379,7 +382,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                     // acquire from instance circuit breaker
                     if (!acquire(invocation.getRequest(), circuitBreakers.subList(index, size), predicate, null)) {
                         // failed to acquire, rollback circuit breakers
-                        circuitBreakers = circuitBreakers.subList(0, index);
+                        circuitBreakers.subList(index, size).clear();
                         return false;
                     }
                 }
