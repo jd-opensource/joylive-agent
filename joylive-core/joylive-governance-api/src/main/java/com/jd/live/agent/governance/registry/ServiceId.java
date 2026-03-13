@@ -152,7 +152,7 @@ public class ServiceId implements Serializable {
         }
         String sourceGroup = source == null ? null : source.getGroup();
         String targetGroup = target == null ? null : target.getGroup();
-        if (DEFAULT_GROUP_BIPREDICATE.test(sourceGroup, defaultGroup)) {
+        if (!DEFAULT_GROUP_BIPREDICATE.test(sourceGroup, defaultGroup)) {
             return DEFAULT_GROUP_BIPREDICATE.test(targetGroup, defaultGroup);
         }
         return sourceGroup.equalsIgnoreCase(targetGroup);
