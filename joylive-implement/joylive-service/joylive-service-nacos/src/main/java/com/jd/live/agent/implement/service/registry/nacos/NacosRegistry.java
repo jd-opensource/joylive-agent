@@ -333,7 +333,7 @@ public class NacosRegistry extends AbstractNacosClient<RegistryClusterConfig, Na
         public void onEvent(Event event) {
             if (event instanceof NamingEvent) {
                 NamingEvent e = (NamingEvent) event;
-                ServiceId id = new ServiceId(e.getServiceName(), e.getGroupName(), interfaceMode);
+                ServiceId id = new ServiceId(e.getServiceName(), null, e.getGroupName(), interfaceMode);
                 consumer.accept(new RegistryEvent(id, toList(e.getInstances(), NacosEndpoint::new), Constants.DEFAULT_GROUP));
             }
         }

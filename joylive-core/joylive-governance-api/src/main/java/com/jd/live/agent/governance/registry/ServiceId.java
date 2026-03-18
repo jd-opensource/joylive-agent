@@ -65,12 +65,12 @@ public class ServiceId implements Serializable {
         this(null, service, group, null, interfaceMode);
     }
 
-    public ServiceId(String namespace, String service, String group) {
-        this(namespace, service, group, null, false);
+    public ServiceId(String service, String group, String catalog, boolean interfaceMode) {
+        this(null, service, group, catalog, interfaceMode);
     }
 
-    public ServiceId(String namespace, String service, String group, boolean interfaceMode) {
-        this(namespace, service, group, null, interfaceMode);
+    public ServiceId(String namespace, String service, String group) {
+        this(namespace, service, group, null, false);
     }
 
     public ServiceId(String namespace, String service, String group, String catalog, boolean interfaceMode) {
@@ -139,23 +139,26 @@ public class ServiceId implements Serializable {
     /**
      * Determines if two service IDs match according to the specified matching rules.
      *
-     * @param source the source service ID to match against (may be null)
-     * @param target the target service ID to check (may be null)
-     * @param defaultGroup the default group name to use when source group is empty (may be null)
+     * @param source the source service ID to match against (maybe null)
+     * @param target the target service ID to check (maybe null)
+     * @param defaultGroup the default group name to use when source group is empty (maybe null)
      * @return true if the service IDs match according to the rules, false otherwise
      */
     public static boolean match(ServiceId source, ServiceId target, String defaultGroup) {
-        String sourceService = source == null ? null : source.getService();
-        String targetService = target == null ? null : target.getService();
+        if (source == null || target == null) {
+            return false;
+        }
+        String sourceService = source.getService();
+        String targetService = target.getService();
         if (sourceService == null || !sourceService.equalsIgnoreCase(targetService)) {
             return false;
         }
-        String sourceGroup = source == null ? null : source.getGroup();
-        String targetGroup = target == null ? null : target.getGroup();
-        if (!DEFAULT_GROUP_BIPREDICATE.test(sourceGroup, defaultGroup)) {
-            return DEFAULT_GROUP_BIPREDICATE.test(targetGroup, defaultGroup);
+        String sourceGroup = source.getGroup();
+        String targetGroup = target.getGroup();
+        if (DEFAULT_GROUP_BIPREDICATE.test(sourceGroup, defaultGroup) || DEFAULT_GROUP_BIPREDICATE.test(targetGroup, defaultGroup)) {
+            return true;
         }
-        return sourceGroup.equalsIgnoreCase(targetGroup);
+        return sourceGroup == null ? targetGroup == null : sourceGroup.equalsIgnoreCase(targetGroup);
     }
 
     /**

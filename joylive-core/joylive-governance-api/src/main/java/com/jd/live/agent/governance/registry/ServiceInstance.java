@@ -62,7 +62,7 @@ public class ServiceInstance extends ServiceId {
                            int port,
                            int weight,
                            Map<String, String> metadata) {
-        super(namespace, service, group, interfaceMode);
+        super(namespace, service, group, null, interfaceMode);
         this.id = id;
         this.framework = framework;
         this.version = version;
