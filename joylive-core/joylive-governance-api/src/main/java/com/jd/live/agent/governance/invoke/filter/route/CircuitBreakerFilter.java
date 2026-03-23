@@ -140,8 +140,9 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
                                                            List<CircuitBreakPolicy> policies) {
         if (policies != null && !policies.isEmpty()) {
             RouteTarget target = invocation.getRouteTarget();
+            int instances = target.size();
             long now = System.currentTimeMillis();
-            target.filter(endpoint -> isHealthy(endpoint, policies, now));
+            target.filter(endpoint -> isHealthy(endpoint, policies, now, instances));
         }
     }
 
@@ -153,7 +154,7 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
      * @param now      The current time in milliseconds.
      * @return True if the endpoint is healthy, false otherwise.
      */
-    private boolean isHealthy(Endpoint endpoint, List<CircuitBreakPolicy> policies, long now) {
+    private boolean isHealthy(Endpoint endpoint, List<CircuitBreakPolicy> policies, long now, int instances) {
         CircuitBreakInspector inspector;
         Double ratio;
         Double minRatio = null;
@@ -164,6 +165,9 @@ public class CircuitBreakerFilter implements RouteFilter, ExtensionInitializer {
             if (status != null) {
                 switch (status.getPhase()) {
                     case OPEN:
+                        if (policy.isProtected(instances)) {
+                            break;
+                        }
                         return false;
                     case HALF_OPEN:
                         // In half-open state, allow requests to pass for recovery testing.

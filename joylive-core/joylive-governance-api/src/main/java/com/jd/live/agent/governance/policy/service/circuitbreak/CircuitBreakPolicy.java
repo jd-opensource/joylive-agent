@@ -377,7 +377,7 @@ public class CircuitBreakPolicy extends PolicyId
      * @return {@code true} if protect mode should be enabled, {@code false} otherwise.
      */
     public boolean isProtectMode(String endpointId, int instances) {
-        if (level == null || !level.isProtectionSupported()) {
+        if (!getLevel().isProtectionSupported()) {
             return false;
         }
         // the ratio is greater than zero.
@@ -403,12 +403,12 @@ public class CircuitBreakPolicy extends PolicyId
      * @return {@code true} if protect mode is currently active, {@code false} otherwise.
      */
     public boolean isProtected(int instances) {
-        if (level == null || !level.isProtectionSupported()) {
+        if (!getLevel().isProtectionSupported()) {
             return false;
         }
         double ratio = getOutlierMaxPercent();
         int max = (int) Math.floor(instances * ratio / 100);
-        return inspectors.size() >= max;
+        return inspectors.size() > max;
     }
 
     /**
