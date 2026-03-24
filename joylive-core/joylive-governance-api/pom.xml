@@ -19,6 +19,7 @@
         <dependency>
             <groupId>com.jd.live</groupId>
             <artifactId>joylive-core-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.jd.live</groupId>
@@ -36,7 +37,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-
     </dependencies>
 
 </project>

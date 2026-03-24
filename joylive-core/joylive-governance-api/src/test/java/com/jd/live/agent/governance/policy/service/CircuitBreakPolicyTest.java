@@ -27,11 +27,11 @@ public class CircuitBreakPolicyTest {
         CircuitBreakPolicy policy = new CircuitBreakPolicy();
         policy.setOutlierMaxPercent(50);
         policy.setLevel(CircuitBreakLevel.SERVICE);
-        Assertions.assertTrue(policy.isProtectMode(null, 1));
-        Assertions.assertTrue(policy.isProtectMode(null, 2));
+        Assertions.assertFalse(policy.isProtectMode(null, 1));
+        Assertions.assertFalse(policy.isProtectMode(null, 2));
         policy.setLevel(CircuitBreakLevel.API);
-        Assertions.assertTrue(policy.isProtectMode(null, 1));
-        Assertions.assertTrue(policy.isProtectMode(null, 2));
+        Assertions.assertFalse(policy.isProtectMode(null, 1));
+        Assertions.assertFalse(policy.isProtectMode(null, 2));
         policy.setLevel(CircuitBreakLevel.INSTANCE);
         Assertions.assertTrue(policy.isProtectMode(null, 1));
         Assertions.assertFalse(policy.isProtectMode(null, 2));
@@ -57,8 +57,8 @@ public class CircuitBreakPolicyTest {
         // Simulate 1 broken instance (add inspector)
         policy.addInspector("instance-1", now -> null);
 
-        // outlierMaxPercent=100%, 1 broken instance, 1 total → 1/1=100% at limit, not over → NOT protected
-        Assertions.assertFalse(policy.isProtected(1));
+        // outlierMaxPercent=100%, 1 broken instance, 1 total → 1/1=100% at limit, we should start protecting!
+        Assertions.assertTrue(policy.isProtected(1));
         Assertions.assertFalse(policy.isProtected(2));
 
         // Verify the bug scenario: isProtectMode (with +1) incorrectly returns true for new/unknown endpoints

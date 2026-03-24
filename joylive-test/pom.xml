@@ -23,6 +23,10 @@
     <dependencies>
         <dependency>
             <groupId>com.jd.live</groupId>
+            <artifactId>joylive-core-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jd.live</groupId>
             <artifactId>joylive-core-framework</artifactId>
         </dependency>
         <dependency>
