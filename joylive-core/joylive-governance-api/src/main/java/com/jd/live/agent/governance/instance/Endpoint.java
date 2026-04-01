@@ -33,8 +33,7 @@ import java.util.function.Predicate;
 
 import static com.jd.live.agent.core.Constants.LABEL_WEIGHT;
 import static com.jd.live.agent.core.Constants.SAME_GROUP_PREDICATE;
-import static com.jd.live.agent.core.util.StringUtils.choose;
-import static com.jd.live.agent.core.util.StringUtils.isEqualsOrEmpty;
+import static com.jd.live.agent.core.util.StringUtils.*;
 
 /**
  * Represents an endpoint in a distributed system, providing methods to access its properties and match against tag conditions.
@@ -414,7 +413,8 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the unit matches, false otherwise.
      */
     default boolean isRegion(String region) {
-        return region != null && !region.isEmpty() && region.equals(getLabel(Constants.LABEL_REGION));
+        String labelRegion = getLabel(Constants.LABEL_REGION);
+        return isEmpty(labelRegion) || (region != null && !region.isEmpty() && region.equals(labelRegion));
     }
 
     /**
@@ -424,7 +424,8 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the unit matches, false otherwise.
      */
     default boolean isZone(String zone) {
-        return zone != null && !zone.isEmpty() && zone.equals(getLabel(Constants.LABEL_ZONE));
+        String labelZone = getLabel(Constants.LABEL_ZONE);
+        return isEmpty(labelZone) || (zone != null && !zone.isEmpty() && zone.equals(labelZone));
     }
 
     /**
@@ -434,7 +435,8 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the unit matches, false otherwise.
      */
     default boolean isCloud(String cloud) {
-        return cloud != null && !cloud.isEmpty() && cloud.equals(getLabel(Constants.LABEL_CLOUD));
+        String labelCloud = getLabel(Constants.LABEL_CLOUD);
+        return isEmpty(labelCloud) || (cloud != null && !cloud.isEmpty() && cloud.equals(labelCloud));
     }
 
     /**
@@ -444,7 +446,8 @@ public interface Endpoint extends Matcher<TagCondition>, Attributes {
      * @return true if the unit matches, false otherwise.
      */
     default boolean isCluster(String cluster) {
-        return cluster != null && !cluster.isEmpty() && cluster.equals(getLabel(Constants.LABEL_CLUSTER));
+        String labelCluster = getLabel(Constants.LABEL_CLUSTER);
+        return isEmpty(labelCluster) || (cluster != null && !cluster.isEmpty() && cluster.equals(labelCluster));
     }
 
     /**
