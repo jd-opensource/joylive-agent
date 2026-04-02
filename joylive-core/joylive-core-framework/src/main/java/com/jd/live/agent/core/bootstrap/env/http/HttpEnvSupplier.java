@@ -49,6 +49,9 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     private static final String KEY_NACOS_NAMESPACE = "CONFIG_NACOS_NAMESPACE";
     private static final String KEY_NACOS_SERVICE = "CONFIG_NACOS_SERVICE";
 
+    @Config("env.http.enabled")
+    private boolean enabled;
+
     @Config("env.http.url")
     private String url;
 
@@ -76,6 +79,10 @@ public class HttpEnvSupplier extends AbstractEnvSupplier {
     @Override
     public void process(AppEnv env) {
         env.setEnvironment(environment);
+        if (!enabled) {
+            logger.info("Ignore loading env from http, caused by enabled switch.");
+            return;
+        }
         if (isEmpty(url)) {
             String serviceApi = env.getString(KEY_SERVICE_API_URL);
             if (isEmpty(serviceApi)) {

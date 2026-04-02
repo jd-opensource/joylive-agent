@@ -24,7 +24,7 @@ import lombok.Getter;
 public enum RegistryRole {
 
     /**
-     * Primary role with highest priority (order=2).
+     * Primary role with the highest priority (order=2).
      */
     PRIMARY(0),
 
@@ -34,7 +34,7 @@ public enum RegistryRole {
     SYSTEM(1),
 
     /**
-     * Secondary role with lowest priority (order=0).
+     * Secondary role with the lowest priority (order=0).
      */
     SECONDARY(2);
 

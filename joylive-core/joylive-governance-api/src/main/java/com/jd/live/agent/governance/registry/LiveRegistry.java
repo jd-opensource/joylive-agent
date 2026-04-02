@@ -316,11 +316,11 @@ public class LiveRegistry extends AbstractService
                             future.complete(v);
                         } else {
                             // don't convert service name in system registry
-                            system.getEndpoints(service).whenComplete((e, r) -> {
-                                if (r != null) {
-                                    future.completeExceptionally(r);
+                            system.getEndpoints(service).whenComplete((r, e) -> {
+                                if (e != null) {
+                                    future.completeExceptionally(e);
                                 } else {
-                                    future.complete(e);
+                                    future.complete(r);
                                 }
                             });
                         }
