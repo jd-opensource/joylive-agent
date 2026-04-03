@@ -478,8 +478,18 @@ public class LiveRegistry extends AbstractService
             }
         }
         if (!result.isEmpty()) {
+            int failures = 0;
             for (RegistryService registry : result) {
-                startCluster(registry);
+                try {
+                    startCluster(registry);
+                } catch (Exception e) {
+                    failures++;
+                    logger.warn("Registry {} failed to start, will keep for background recovery.",
+                            registry.getDescription());
+                }
+            }
+            if (failures == result.size()) {
+                throw new RegistryException("All registry clusters failed to start");
             }
         } else {
             logger.warn("No registry cluster is configured.");

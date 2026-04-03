@@ -54,7 +54,7 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
     protected static final String ENV_NACOS_CONNECTION_TIMEOUT = "NACOS_CONNECTION_TIMEOUT";
     protected static final String ENV_NACOS_INITIALIZATION_TIMEOUT = "NACOS_INITIALIZATION_TIMEOUT";
     protected static final int DEFAULT_CONNECTION_TIMEOUT = 5000;
-    protected static final int DEFAULT_INITIALIZATION_TIMEOUT = 30000;
+    protected static final int DEFAULT_INITIALIZATION_TIMEOUT = 0;
 
     protected final T config;
     protected final HealthProbe probe;
@@ -103,6 +103,11 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
             try {
                 // add connect task
                 addDetectTask(0, false);
+                if (initializationTimeout <= 0) {
+                    // non-blocking mode: connect in background, don't block application startup
+                    logger.info("Non-blocking mode, nacos {} will be connected in background.", svrs);
+                    return;
+                }
                 // wait for connected
                 if (!connectLatch.await(initializationTimeout, TimeUnit.MILLISECONDS)) {
                     logger.error("It's timeout to connect to nacos. {}", svrs);
@@ -327,7 +332,14 @@ public abstract class AbstractNacosClient<T extends OptionSupplier, M> {
 
         @Override
         public void onFailure() {
-            connectLatch.countDown();
+            if (initializationTimeout <= 0 && started.get()) {
+                // non-blocking mode: re-schedule detection to keep retrying
+                String svrs = join(servers);
+                logger.error("Failed to detect healthy nacos {}, will retry in background.", svrs);
+                addDetectTask(Timer.getRetryInterval(3000L, 5000L), false);
+            } else {
+                connectLatch.countDown();
+            }
         }
     }
 
