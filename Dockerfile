@@ -1,5 +1,5 @@
-# Build an image using JDK 17
-FROM hurdes/ubuntu-oracle-jdk:17.0.9 AS builder
+# Build an image using JDK 17 and Maven
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
 
 # Set up a working directory
 WORKDIR /app
@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy the project file to the working directory
 COPY . .
 
-# Build the project with verbose output for maven wrapper debugging
-RUN MVNW_VERBOSE=true ./mvnw clean package -DskipTests=true
+# Build the project
+RUN ./mvnw clean package -DskipTests=true
 
 # Use a smaller base image
 FROM alpine
