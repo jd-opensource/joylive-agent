@@ -15,10 +15,10 @@ FROM alpine
 
 # Set the time zone and locale
 ARG TZ="Asia/Shanghai"
-ENV TZ ${TZ}
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LANGUAGE en_US:en
+ENV TZ=${TZ}
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANGUAGE=en_US:en
 
 RUN set -ex \
     && apk add --no-cache bash tzdata unzip ca-certificates \
