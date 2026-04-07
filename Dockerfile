@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy the project file to the working directory
 COPY . .
 
-# Build the project
-RUN ./mvnw clean package -DskipTests=true
+# Build the project using mvn directly (mvn is available in the maven image)
+RUN mvn clean package -DskipTests=true
 
 # Use a smaller base image
 FROM alpine
