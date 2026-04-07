@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>joylive-core-annotation</artifactId>
+    <name>joylive-core-annotation</name>
 
 </project>

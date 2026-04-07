@@ -12,6 +12,44 @@
     <artifactId>joylive-package</artifactId>
     <name>joylive-package</name>
     <packaging>pom</packaging>
+    <description>The package of JoyLive agent.</description>
+    <url>https://github.com/jd-opensource/joylive-agent</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <organization>
+        <name>JoyLive</name>
+        <url>https://github.com/jd-opensource</url>
+    </organization>
+    <inceptionYear>2024</inceptionYear>
+    <developers>
+        <developer>
+            <name>hexiaofeng</name>
+            <email>hexiaofeng@jd.com</email>
+            <roles>
+                <role>admin</role>
+            </roles>
+            <organization>JoyLive</organization>
+        </developer>
+        <developer>
+            <name>chenzhiguo</name>
+            <email>chenzhiguo@jd.com</email>
+            <roles>
+                <role>admin</role>
+            </roles>
+            <organization>JoyLive</organization>
+        </developer>
+    </developers>
+    <scm>
+        <tag>main</tag>
+        <connection>scm:git:https://github.com/jd-opensource/joylive-agent.git</connection>
+        <developerConnection>scm:git:https://github.com/jd-opensource/joylive-agent.git</developerConnection>
+        <url>scm:git:https://github.com/jd-opensource</url>
+    </scm>
 
     <properties>
         <final.name>live-${revision}</final.name>

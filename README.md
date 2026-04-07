@@ -11,7 +11,7 @@
 > **In Memoriam**   
 > (Dedicated to the memory of our core maintainer, hexiaofeng. Your code and spirit live on.)
 
-<img src="docs/image/weixin.png" title="The QR code is valid until 2025/12/22" width="150" />
+<img src="docs/image/weixin.png" title="The QR code is valid until 2026/4/14" width="150" />
 
 English | [简体中文](./README-zh.md)
 

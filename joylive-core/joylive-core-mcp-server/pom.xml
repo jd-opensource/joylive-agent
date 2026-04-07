@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-core-mcp-server</artifactId>
+    <name>joylive-core-mcp-server</name>
 
     <dependencies>
         <dependency>

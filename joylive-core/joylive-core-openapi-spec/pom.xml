@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>joylive-core-openapi-spec</artifactId>
+    <name>joylive-core-openapi-spec</name>
 
     <dependencies>
         <dependency>

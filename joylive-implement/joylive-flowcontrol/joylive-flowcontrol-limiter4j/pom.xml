@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>joylive-flowcontrol-limiter4j</artifactId>
+    <name>joylive-flowcontrol-limiter4j</name>
+
     <properties>
         <grpc.version>1.73.0</grpc.version>
         <protobuf-java.version>3.25.5</protobuf-java.version>

@@ -26,7 +26,7 @@
 22. Fixed token bucket rate limiting algorithm issues
 23. Fixed Dubbo zookeeper registry null pointer issues
 24. Fixed MQ lane and multi-active routing issues
-25. Fixed other issues
+25. Fixed instance-level circuit breaker failure issue
 
 ## 1.8.0
 

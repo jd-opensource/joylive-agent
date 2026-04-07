@@ -11,6 +11,7 @@
 
     <artifactId>joylive-core-api</artifactId>
     <name>joylive-core-api</name>
+    <description>JoyLive core API module providing fundamental interfaces and APIs for the JoyLive agent.</description>
 
     <dependencies>
         <dependency>

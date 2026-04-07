@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>joylive-system-springboot</artifactId>
+    <name>joylive-system-springboot</name>
 
 </project>
