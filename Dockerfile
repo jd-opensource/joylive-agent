@@ -1,5 +1,5 @@
 # Build an image using JDK 17
-FROM ubuntu/jdk:17-24.04 AS builder
+FROM hurdes/ubuntu-oracle-jdk:17.0.9 AS builder
 
 # Set up a working directory
 WORKDIR /app
