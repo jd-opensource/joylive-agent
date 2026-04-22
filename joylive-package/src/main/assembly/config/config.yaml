@@ -293,6 +293,8 @@ agent:
           - io.netty.channel.SingleThreadEventLoop
           - io.netty.channel.kqueue.KQueueEventLoopGroup
           - io.netty.channel.kqueue.KQueueEventLoop
+          - io.netty.channel.epoll.EpollEventLoopGroup
+          - io.netty.channel.epoll.EpollEventLoop
           - org.apache.tomcat.util.threads.ThreadPoolExecutor
           - org.apache.tomcat.util.threads.ScheduledThreadPoolExecutor
           - org.apache.tomcat.util.threads.InlineExecutorService
