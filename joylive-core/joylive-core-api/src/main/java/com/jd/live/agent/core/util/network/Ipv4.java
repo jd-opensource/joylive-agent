@@ -110,18 +110,22 @@ public class Ipv4 {
             forceIpv6 = Boolean.parseBoolean(System.getProperty(FORCE_IPV_6_STACK, env.get(FORCE_IPV_6_STACK)));
         } catch (Exception ignored) {
         }
-        if (!forceIpv6) {
-            try {
-                // java.net.preferIPv6Addresses indicates whether to prefer returning IPv6 addresses over IPv4
-                // when querying local or remote IP addresses, default is false
-                IPV4 = InetAddress.getLocalHost() instanceof Inet4Address;
-            } catch (UnknownHostException ignored) {
-            }
-        } else {
+        if (forceIpv6) {
             IPV4 = false;
+        } else {
+            String preferIpv4Stack = System.getProperty("java.net.preferIPv4Stack");
+            String preferIpv6Addresses = System.getProperty("java.net.preferIPv6Addresses");
+            if (preferIpv4Stack != null && !preferIpv4Stack.isEmpty()) {
+                IPV4 = Boolean.parseBoolean(preferIpv4Stack);
+            } else if ("true".equalsIgnoreCase(preferIpv6Addresses)) {
+                IPV4 = false;
+            } else {
+                try {
+                    IPV4 = InetAddress.getLocalHost() instanceof Inet4Address;
+                } catch (UnknownHostException ignored) {
+                }
+            }
         }
-        System.setProperty("java.net.preferIPv4Stack", String.valueOf(IPV4));
-        System.setProperty("java.net.preferIPv6Addresses", String.valueOf(!IPV4));
         IP_MIN = IPV4 ? new IpLong("0.0.0.0") : new IpLong("0000:0000:0000:0000:0000:0000:0000:0000");
         IP_MAX = IPV4 ? new IpLong("255.255.255.255") : new IpLong("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF");
         try {
