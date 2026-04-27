@@ -1,5 +1,9 @@
 # Release History
 
+## 1.9.1
+
+1. Fix network dual-stack (IPv4/IPv6) compatibility issues
+
 ## 1.9.0
 
 1. Added support for exposing Spring Web services as MCP services
