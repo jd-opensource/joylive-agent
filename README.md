@@ -50,9 +50,11 @@ thereby enhancing business stability and disaster recovery capabilities.
 
 ## Related Projects
 
-1. [joylive-injector](https://github.com/jd-opensource/joylive-injector), used for cloud-native scenario auto-injection of `joylive-agent`.
+1. [joylive-injector](https://github.com/jd-opensource/joylive-injector) - A component to automatically inject `joylive-agent` in cloud-native environments.
 
-2. [joylive-dashboard](https://github.com/jd-opensource/joylive-dashboard), used for operation and maintenance console of `joylive-agent`.
+2. [joylive-dashboard](https://github.com/jd-opensource/joylive-dashboard) - A component for operation and maintenance console of `joylive-agent`.
+
+3. [joylive-control-plane](https://github.com/jd-opensource/joylive-control-plane) - A microservice governance policy for joylive-agent to distribute control surface.
 
 ## How to use
 

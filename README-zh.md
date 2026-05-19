@@ -46,9 +46,11 @@
 
 ## 关联项目
 
-1. [joylive-injector](https://github.com/jd-opensource/joylive-injector)，用于云原生场景自动注入`joylive-agent`
+1. [joylive-injector](https://github.com/jd-opensource/joylive-injector) - 用于云原生场景自动注入`joylive-agent`的组件。
 
-2. [joylive-dashboard](https://github.com/jd-opensource/joylive-dashboard), 用于`joylive-agent`的运维操作控制台。
+2. [joylive-dashboard](https://github.com/jd-opensource/joylive-dashboard) - `joylive-agent`的运维操作控制台。
+
+3. [joylive-control-plane](https://github.com/jd-opensource/joylive-control-plane) - 服务于joylive-agent的微服务治理策略下发控制面。
 
 ## 如何使用
 
