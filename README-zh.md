@@ -48,6 +48,8 @@
 
 1. [joylive-injector](https://github.com/jd-opensource/joylive-injector)，用于云原生场景自动注入`joylive-agent`
 
+2. [joylive-dashboard](https://github.com/jd-opensource/joylive-dashboard), 用于`joylive-agent`的运维操作控制台。
+
 ## 如何使用
 
 ### 需求
